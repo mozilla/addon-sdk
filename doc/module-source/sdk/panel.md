@@ -31,6 +31,15 @@ in preparation for the next time it is shown.
 Your add-on can receive notifications when a panel is shown or hidden by
 listening to its `show` and `hide` events.
 
+Opening a panel will close an already opened panel.
+
+<div class="warning">
+If your add-on has
+<a href="modules/sdk/private-browsing.html#Opting into private browsing">opted into private browsing</a>,
+then you can't use panels in your add-on. This is due to a platform bug which we expect to
+be fixed in Firefox 21.
+</div>
+
 ## Panel Content ##
 
 The panel's content is specified as HTML, which is loaded from the URL
@@ -376,6 +385,18 @@ when applying your own styles. For example, if you set the panel's
 `background-color` property to `white` and do not set the `color` property,
 then the panel's text will be invisible on OS X although it looks fine on Ubuntu.
 
+## Private Browsing ##
+
+If your add-on has
+[opted into private browsing](modules/sdk/private-browsing.html#Opting into private browsing),
+then **you can't use panels in your add-on**. This is due to a platform bug which we expect to
+be fixed in Firefox 21.
+
+If your add-on has not opted into private browsing, and it calls `panel.show()`
+when the currently active window is a
+[private window](modules/sdk/private-browsing.html#Per-window private browsing),
+then the panel will not be shown.
+
 <api name="Panel">
 @class
 The Panel object represents a floating modal dialog that can by an add-on to
@@ -400,7 +421,77 @@ Creates a panel.
     The width of the panel in pixels. Optional.
   @prop [height] {number}
     The height of the panel in pixels. Optional.
-  @prop [contentURL] {string}
+  @prop [position] {object}
+    The position of the panel.
+    Ignored if the panel is opened by a widget.
+
+    You can set as value an object that has one or more of the following
+    properites: `top`, `right`, `bottom` and `left`. Their values are expressed
+    in pixels. Any other properties will be ignored.
+
+    The default alignment is centered, so for example panel can be displayed in
+    the center of the bottom corner by leaving off vertical axis:
+
+        // Show the panel to the centered horizontally and aligned to the bottom
+        // of the content area
+        require("sdk/panel").Panel({
+          position: {
+           bottom: 0
+          }
+        }).show();
+
+        // Show the panel to the centered vertically and aligned to the left o
+        // the content area
+        require("sdk/panel").Panel({
+          position: {
+            left: 0
+          }
+        }).show();
+
+        // Centered panel, default behavior
+        require("sdk/panel").Panel({}).show();
+
+    In the same way of their CSS counterpart, setting both `top` and `bottom`,
+    or `left` and `right`, will results in calculated the `height` and `width`:
+
+        // Show the panel centered horizontally, that is distant 40px
+        // from the top and 100px from the bottom.
+        require("sdk/panel").Panel({
+          position: {
+            top: 40,
+            bottom: 100
+          }
+        }).show();
+
+    Set implicitly `height` in this example, will makes the panel ignore the
+    `bottom` property, as the CSS homonym properties does:
+
+        // Show the panel centered horizontally, that is distant 40px from the top
+        // and has 400px as height
+        require("sdk/panel").Panel({
+          position: {
+            top: 40,
+            bottom: 100,
+          },
+          height: 400
+        }).show();
+
+        // This is equivalent to:
+
+        require("panel").Panel({
+          position {
+            top: 40
+          },
+          height: 400
+        }).show();
+
+    The same principle is applied for `width`, `left` and `right`.
+
+  @prop [focus=true] {boolean}
+    Set to `false` to prevent taking the focus away when the panel is shown.
+    Only turn this off if necessary, to prevent accessibility issue.
+    Optional, default to `true`.
+  @prop [contentURL] {string,URL}
     The URL of the content to load in the panel.
   @prop [allow] {object}
     An optional object describing permissions for the content.  It should
@@ -470,6 +561,12 @@ The height of the panel in pixels.
 <api name="width">
 @property {number}
 The width of the panel in pixels.
+</api>
+
+<api name="focus">
+@property {boolean}
+Whether of not focus will be taken away when the panel is shown.
+This property is read-only.
 </api>
 
 <api name="contentURL">
@@ -544,6 +641,22 @@ The message to send.  Must be stringifiable to JSON.
 <api name="show">
 @method
 Displays the panel.
+
+If the `options` argument is given, it will be shallow merged with the options
+provided in the constructor: the `options` passed in the `show` method takes
+the precedence.
+It's useful for temporary changes, without touching the default values.
+
+@param options {object}
+  Showing options for the panel, with the following keys:
+  @prop [width] {number}
+    The width of the panel in pixels. Optional.
+  @prop [height] {number}
+    The height of the panel in pixels. Optional.
+  @prop [position] {object}
+    The position of the panel. Optional. See [Panel's options](./modules/sdk/panel.html#Panel%28options%29) for further details.
+  @prop [focus=true] {boolean}
+    Set to `false` to prevent taking the focus away when the panel is shown.
 </api>
 
 <api name="hide">

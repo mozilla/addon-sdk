@@ -68,6 +68,19 @@ exports['test no side-effects in emit'] = function(assert) {
   emit(target, 'message');
 };
 
+exports['test can remove next listener'] = function(assert) {
+  let target = { name: 'target' };
+  function fail() assert.fail('Listener should be removed');
+
+  on(target, 'data', function() {
+    assert.pass('first litener called');
+    off(target, 'data', fail);
+  });
+  on(target, 'data', fail);
+
+  emit(target, 'data', 'hello');
+};
+
 exports['test order of propagation'] = function(assert) {
   let actual = [];
   let target = { name: 'target' };
@@ -157,10 +170,10 @@ exports['test error handling'] = function(assert) {
   emit(target, 'message');
 };
 
-exports['test unhandled errors'] = function(assert) {
+exports['test unhandled exceptions'] = function(assert) {
   let exceptions = [];
   let { loader, messages } = LoaderWithHookedConsole(module);
-  
+
   let { emit, on } = loader.require('sdk/event/core');
   let target = {};
   let boom = Error('Boom!');
@@ -181,6 +194,22 @@ exports['test unhandled errors'] = function(assert) {
   assert.ok(~String(messages[1].msg).indexOf('Draax!'),
             'error in error handler is logged');
 };
+
+exports['test unhandled errors'] = function(assert) {
+  let exceptions = [];
+  let { loader, messages } = LoaderWithHookedConsole(module);
+
+  let { emit, on } = loader.require('sdk/event/core');
+  let target = {};
+  let boom = Error('Boom!');
+
+  emit(target, 'error', boom);
+  assert.equal(messages.length, 1, 'Error was logged');
+  assert.equal(messages[0].type, 'exception', 'The console message is exception');
+  assert.ok(~String(messages[0].msg).indexOf('Boom!'),
+            'unhandled exception is logged');
+};
+
 
 exports['test count'] = function(assert) {
   let target = {};

@@ -5,9 +5,6 @@
 "use strict";
 
 const HTML = "<html>\
-  <head>\
-    <title>{{title}}</title>\
-  </head>\
   <body>\
     <div>foo</div>\
     <div>and</div>\
@@ -23,7 +20,8 @@ const FRAME_URL = "data:text/html;charset=utf-8," + encodeURIComponent(FRAME_HTM
 const { defer } = require("sdk/core/promise");
 const { browserWindows } = require("sdk/windows");
 const tabs = require("sdk/tabs");
-const { setTabURL, getActiveTab, getTabContentWindow, closeTab, getTabs, getURI } = require("sdk/tabs/utils")
+const { setTabURL, getActiveTab, getTabContentWindow, closeTab, getTabs,
+  getTabTitle } = require("sdk/tabs/utils");
 const { getMostRecentBrowserWindow, isFocused } = require("sdk/window/utils");
 const { open: openNewWindow, close: closeWindow, focus } = require("sdk/window/helpers");
 const { Loader } = require("sdk/test/loader");
@@ -56,6 +54,9 @@ function open(url, options) {
 
         if (document.readyState === "complete" && document.URL === url) {
           this.removeEventListener(event.type, ready);
+
+          if (options.title)
+            document.title = options.title;
 
           resolve(document.defaultView);
         }
@@ -230,14 +231,14 @@ function dispatchOnSelectEvent(window) {
 exports["test PWPB Selection Listener"] = function(assert, done) {
   let loader = Loader(module);
   let selection = loader.require("sdk/selection");
-  let testURL = URL.replace(/{{title}}/, "PWPB Selection Listener");
 
-  open(testURL, {private: true}).
+  open(URL, {private: true, title: "PWPB Selection Listener"}).
     then(function(window) {
       selection.once("select", function() {
         assert.equal(browserWindows.length, 2, "there should be only two windows open.");
-        assert.equal(getTabs().length, 2, "there should be only two tabs open: " +
-                     getTabs().map(function(tab) getURI(tab))
+        assert.equal(getTabs().length, 2, "there should be only two tabs open: '" +
+                     getTabs().map(function(tab) getTabTitle(tab)).join("', '") +
+                     "'."
         );
 
         // window should be focused, but force the focus anyhow.. see bug 841823
@@ -263,14 +264,14 @@ exports["test PWPB Selection Listener"] = function(assert, done) {
 exports["test PWPB Textarea OnSelect Listener"] = function(assert, done) {
   let loader = Loader(module);
   let selection = loader.require("sdk/selection");
-  let testURL = URL.replace(/{{title}}/, "PWPB OnSelect Listener");
 
-  open(testURL, {private: true}).
+  open(URL, {private: true, title: "PWPB OnSelect Listener"}).
     then(function(window) {
       selection.once("select", function() {
         assert.equal(browserWindows.length, 2, "there should be only two windows open.");
-        assert.equal(getTabs().length, 2, "there should be only two tabs open: " +
-                     getTabs().map(function(tab) getURI(tab))
+        assert.equal(getTabs().length, 2, "there should be only two tabs open: '" +
+                     getTabs().map(function(tab) getTabTitle(tab)).join("', '") +
+                     "'."
         );
 
         // window should be focused, but force the focus anyhow.. see bug 841823
@@ -292,139 +293,142 @@ exports["test PWPB Textarea OnSelect Listener"] = function(assert, done) {
 exports["test PWPB Single DOM Selection"] = function(assert, done) {
   let loader = Loader(module);
   let selection = loader.require("sdk/selection");
-  let testURL = URL.replace(/{{title}}/, "PWPB Single DOM Selection");
 
-  open(testURL, {private: true}).then(selectFirstDiv).then(function() {
+  open(URL, {private: true, title: "PWPB Single DOM Selection"}).
+    then(selectFirstDiv).
+    then(focus).then(function() {
+      assert.equal(selection.isContiguous, true,
+        "selection.isContiguous with single DOM Selection works.");
 
-    assert.equal(selection.isContiguous, true,
-      "selection.isContiguous with single DOM Selection works.");
+      assert.equal(selection.text, "foo",
+        "selection.text with single DOM Selection works.");
 
-    assert.equal(selection.text, "foo",
-      "selection.text with single DOM Selection works.");
+      assert.equal(selection.html, "<div>foo</div>",
+        "selection.html with single DOM Selection works.");
 
-    assert.equal(selection.html, "<div>foo</div>",
-      "selection.html with single DOM Selection works.");
+      let selectionCount = 0;
+      for each (let sel in selection) {
+        selectionCount++;
 
-    let selectionCount = 0;
-    for each (let sel in selection) {
-      selectionCount++;
+        assert.equal(sel.text, "foo",
+          "iterable selection.text with single DOM Selection works.");
 
-      assert.equal(sel.text, "foo",
-        "iterable selection.text with single DOM Selection works.");
+        assert.equal(sel.html, "<div>foo</div>",
+          "iterable selection.html with single DOM Selection works.");
+      }
 
-      assert.equal(sel.html, "<div>foo</div>",
-        "iterable selection.html with single DOM Selection works.");
-    }
-
-    assert.equal(selectionCount, 1,
-      "One iterable selection");
-
-  }).then(close).then(loader.unload).then(done, assert.fail);
+      assert.equal(selectionCount, 1,
+        "One iterable selection");
+    }).then(close).then(loader.unload).then(done, assert.fail);
 }
-
 
 exports["test PWPB Textarea Selection"] = function(assert, done) {
   let loader = Loader(module);
   let selection = loader.require("sdk/selection");
-  let testURL = URL.replace(/{{title}}/, "PWPB Textarea Listener");
 
-  open(testURL, {private: true}).then(selectTextarea).then(function() {
+  open(URL, {private: true, title: "PWPB Textarea Listener"}).
+    then(selectTextarea).
+    then(focus).
+    then(function() {
 
-    assert.equal(selection.isContiguous, true,
-      "selection.isContiguous with Textarea Selection works.");
+      assert.equal(selection.isContiguous, true,
+        "selection.isContiguous with Textarea Selection works.");
 
-    assert.equal(selection.text, "noodles",
-      "selection.text with Textarea Selection works.");
+      assert.equal(selection.text, "noodles",
+        "selection.text with Textarea Selection works.");
 
-    assert.strictEqual(selection.html, null,
-      "selection.html with Textarea Selection works.");
+      assert.strictEqual(selection.html, null,
+        "selection.html with Textarea Selection works.");
 
-    let selectionCount = 0;
-    for each (let sel in selection) {
-      selectionCount++;
+      let selectionCount = 0;
+      for each (let sel in selection) {
+        selectionCount++;
 
-      assert.equal(sel.text, "noodles",
-        "iterable selection.text with Textarea Selection works.");
+        assert.equal(sel.text, "noodles",
+          "iterable selection.text with Textarea Selection works.");
 
-      assert.strictEqual(sel.html, null,
-        "iterable selection.html with Textarea Selection works.");
-    }
+        assert.strictEqual(sel.html, null,
+          "iterable selection.html with Textarea Selection works.");
+      }
 
-    assert.equal(selectionCount, 1,
-      "One iterable selection");
+      assert.equal(selectionCount, 1,
+        "One iterable selection");
 
-  }).then(close).then(loader.unload).then(done, assert.fail);
+    }).then(close).then(loader.unload).then(done, assert.fail);
 };
 
 exports["test PWPB Set HTML in Multiple DOM Selection"] = function(assert, done) {
   let loader = Loader(module);
   let selection = loader.require("sdk/selection");
-  let testURL = URL.replace(/{{title}}/, "PWPB Set HTML in Multiple DOM Selection");
 
-  open(testURL, {private: true}).then(selectAllDivs).then(function() {
-    let html = "<span>b<b>a</b>r</span>";
+  open(URL, {private: true, title: "PWPB Set HTML in Multiple DOM Selection"}).
+    then(selectAllDivs).
+    then(focus).
+    then(function() {
+      let html = "<span>b<b>a</b>r</span>";
 
-    let expectedText = ["bar", "and"];
-    let expectedHTML = [html, "<div>and</div>"];
+      let expectedText = ["bar", "and"];
+      let expectedHTML = [html, "<div>and</div>"];
 
-    selection.html = html;
+      selection.html = html;
 
-    assert.equal(selection.text, expectedText[0],
-      "set selection.text with DOM Selection works.");
+      assert.equal(selection.text, expectedText[0],
+        "set selection.text with DOM Selection works.");
 
-    assert.equal(selection.html, expectedHTML[0],
-      "selection.html with DOM Selection works.");
+      assert.equal(selection.html, expectedHTML[0],
+        "selection.html with DOM Selection works.");
 
-    let selectionCount = 0;
-    for each (let sel in selection) {
+      let selectionCount = 0;
+      for each (let sel in selection) {
 
-      assert.equal(sel.text, expectedText[selectionCount],
-        "iterable selection.text with multiple DOM Selection works.");
+        assert.equal(sel.text, expectedText[selectionCount],
+          "iterable selection.text with multiple DOM Selection works.");
 
-      assert.equal(sel.html, expectedHTML[selectionCount],
-        "iterable selection.html with multiple DOM Selection works.");
+        assert.equal(sel.html, expectedHTML[selectionCount],
+          "iterable selection.html with multiple DOM Selection works.");
 
-      selectionCount++;
-    }
+        selectionCount++;
+      }
 
-    assert.equal(selectionCount, 2,
-      "Two iterable selections");
-
-  }).then(close).then(loader.unload).then(done, assert.fail);
+      assert.equal(selectionCount, 2,
+        "Two iterable selections");
+    }).then(close).then(loader.unload).then(done, assert.fail);
 };
 
 exports["test PWPB Set Text in Textarea Selection"] = function(assert, done) {
   let loader = Loader(module);
   let selection = loader.require("sdk/selection");
-  let testURL = URL.replace(/{{title}}/, "test PWPB Set Text in Textarea Selection");
 
-  open(testURL, {private: true}).then(selectTextarea).then(function() {
+  open(URL, {private: true, title: "test PWPB Set Text in Textarea Selection"}).
+    then(selectTextarea).
+    then(focus).
+    then(function() {
 
-    let text = "bar";
+      let text = "bar";
 
-    selection.text = text;
+      selection.text = text;
 
-    assert.equal(selection.text, text,
-      "set selection.text with Textarea Selection works.");
+      assert.equal(selection.text, text,
+        "set selection.text with Textarea Selection works.");
 
-    assert.strictEqual(selection.html, null,
-      "selection.html with Textarea Selection works.");
+      assert.strictEqual(selection.html, null,
+        "selection.html with Textarea Selection works.");
 
-    let selectionCount = 0;
-    for each (let sel in selection) {
-      selectionCount++;
+      let selectionCount = 0;
+      for each (let sel in selection) {
+        selectionCount++;
 
-      assert.equal(sel.text, text,
-        "iterable selection.text with Textarea Selection works.");
+        assert.equal(sel.text, text,
+          "iterable selection.text with Textarea Selection works.");
 
-      assert.strictEqual(sel.html, null,
-        "iterable selection.html with Textarea Selection works.");
-    }
+        assert.strictEqual(sel.html, null,
+          "iterable selection.html with Textarea Selection works.");
+      }
 
-    assert.equal(selectionCount, 1,
-      "One iterable selection");
+      assert.equal(selectionCount, 1,
+        "One iterable selection");
 
-  }).then(close).then(loader.unload).then(done, assert.fail);
+    }).then(close).then(loader.unload).then(done, assert.fail);
 };
 
 // If the platform doesn't support the PBPW, we're replacing PBPW tests

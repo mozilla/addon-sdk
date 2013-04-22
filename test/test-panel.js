@@ -10,9 +10,12 @@ const timer = require("sdk/timers");
 const self = require('sdk/self');
 const { open, close, focus } = require('sdk/window/helpers');
 const { isPrivate } = require('sdk/private-browsing');
-const { isWindowPBSupported } = require('sdk/private-browsing/utils');
+const { isWindowPBSupported, isGlobalPBSupported } = require('sdk/private-browsing/utils');
 const { defer } = require('sdk/core/promise');
 const { getMostRecentBrowserWindow } = require('sdk/window/utils');
+const { getWindow } = require('sdk/panel/window');
+const { pb } = require('./private-browsing/helper');
+const { URL } = require('sdk/url');
 
 const SVG_URL = self.data.url('mofo_logo.SVG');
 
@@ -123,7 +126,8 @@ exports["test Document Reload"] = function(assert, done) {
     "</script>";
   let messageCount = 0;
   let panel = Panel({
-    contentURL: "data:text/html;charset=utf-8," + encodeURIComponent(content),
+    // using URL here is intentional, see bug 859009
+    contentURL: URL("data:text/html;charset=utf-8," + encodeURIComponent(content)),
     contentScript: "self.postMessage(window.location.href)",
     onMessage: function (message) {
       messageCount++;
@@ -287,7 +291,10 @@ exports["test Anchor And Arrow"] = function(assert, done) {
   const { Panel } = require('sdk/panel');
 
   let count = 0;
-  function newPanel(tab, anchor) {
+  let queue = [];
+  let tab;
+
+  function newPanel(anchor) {
     let panel = Panel({
       contentURL: "data:text/html;charset=utf-8,<html><body style='padding: 0; margin: 0; " +
                   "background: gray; text-align: center;'>Anchor: " +
@@ -295,17 +302,23 @@ exports["test Anchor And Arrow"] = function(assert, done) {
       width: 200,
       height: 100,
       onShow: function () {
-        count++;
         panel.destroy();
-        if (count==5) {
-          assert.pass("All anchored panel test displayed");
-          tab.close(function () {
-            done();
-          });
-        }
+        next();
       }
     });
-    panel.show(anchor);
+    queue.push({ panel: panel, anchor: anchor });
+  }
+
+  function next () {
+    if (!queue.length) {
+      assert.pass("All anchored panel test displayed");
+      tab.close(function () {
+        done();
+      });
+      return;
+    }
+    let { panel, anchor } = queue.shift();
+    panel.show(null, anchor);
   }
 
   let tabs= require("sdk/tabs");
@@ -321,22 +334,105 @@ exports["test Anchor And Arrow"] = function(assert, done) {
 
   tabs.open({
     url: url,
-    onReady: function(tab) {
+    onReady: function(_tab) {
+      tab = _tab;
       let browserWindow = Cc["@mozilla.org/appshell/window-mediator;1"].
                       getService(Ci.nsIWindowMediator).
                       getMostRecentWindow("navigator:browser");
       let window = browserWindow.content;
-      newPanel(tab, window.document.getElementById('tl'));
-      newPanel(tab, window.document.getElementById('tr'));
-      newPanel(tab, window.document.getElementById('bl'));
-      newPanel(tab, window.document.getElementById('br'));
+      newPanel(window.document.getElementById('tl'));
+      newPanel(window.document.getElementById('tr'));
+      newPanel(window.document.getElementById('bl'));
+      newPanel(window.document.getElementById('br'));
       let anchor = browserWindow.document.getElementById("identity-box");
-      newPanel(tab, anchor);
+      newPanel(anchor);
+
+      next();
     }
   });
+};
 
+exports["test Panel Focus True"] = function(assert, done) {
+  const { Panel } = require('sdk/panel');
 
+  const FM = Cc["@mozilla.org/focus-manager;1"].
+                getService(Ci.nsIFocusManager);
 
+  let browserWindow = Cc["@mozilla.org/appshell/window-mediator;1"].
+                      getService(Ci.nsIWindowMediator).
+                      getMostRecentWindow("navigator:browser");
+
+  // Make sure there is a focused element
+  browserWindow.document.documentElement.focus();
+
+  // Get the current focused element
+  let focusedElement = FM.focusedElement;
+
+  let panel = Panel({
+    contentURL: "about:buildconfig",
+    focus: true,
+    onShow: function () {
+      assert.ok(focusedElement !== FM.focusedElement,
+        "The panel takes the focus away.");
+      done();
+    }
+  });
+  panel.show();
+};
+
+exports["test Panel Focus False"] = function(assert, done) {
+  const { Panel } = require('sdk/panel');
+
+  const FM = Cc["@mozilla.org/focus-manager;1"].
+                getService(Ci.nsIFocusManager);
+
+  let browserWindow = Cc["@mozilla.org/appshell/window-mediator;1"].
+                      getService(Ci.nsIWindowMediator).
+                      getMostRecentWindow("navigator:browser");
+
+  // Make sure there is a focused element
+  browserWindow.document.documentElement.focus();
+
+  // Get the current focused element
+  let focusedElement = FM.focusedElement;
+
+  let panel = Panel({
+    contentURL: "about:buildconfig",
+    focus: false,
+    onShow: function () {
+      assert.ok(focusedElement === FM.focusedElement,
+        "The panel does not take the focus away.");
+      done();
+    }
+  });
+  panel.show();
+};
+
+exports["test Panel Focus Not Set"] = function(assert, done) {
+  const { Panel } = require('sdk/panel');
+
+  const FM = Cc["@mozilla.org/focus-manager;1"].
+                getService(Ci.nsIFocusManager);
+
+  let browserWindow = Cc["@mozilla.org/appshell/window-mediator;1"].
+                      getService(Ci.nsIWindowMediator).
+                      getMostRecentWindow("navigator:browser");
+
+  // Make sure there is a focused element
+  browserWindow.document.documentElement.focus();
+
+  // Get the current focused element
+  let focusedElement = FM.focusedElement;
+
+  let panel = Panel({
+    contentURL: "about:buildconfig",
+    onShow: function () {
+      assert.ok(focusedElement !== FM.focusedElement,
+        "The panel takes the focus away.");
+      done();
+    }
+  });
+  panel.show();
 };
 
 exports["test Panel Text Color"] = function(assert, done) {
@@ -366,6 +462,7 @@ exports["test Change Content URL"] = function(assert, done) {
     contentURL: "about:blank",
     contentScript: "self.port.emit('ready', document.location.href);"
   });
+
   let count = 0;
   panel.port.on("ready", function (location) {
     count++;
@@ -422,19 +519,10 @@ exports["test Automatic Destroy"] = function(assert) {
   assert.pass("check automatic destroy");
 };
 
-exports["test Wait For Init Then Show Then Destroy"] = makeEventOrderTest({
-  test: function(assert, done, expect, panel) {
-    expect('inited', function() { panel.show(); }).
-      then('show', function() { panel.destroy(); }).
-      then('hide', function() { done(); });
-  }
-});
-
-exports["test Show Then Wait For Init Then Destroy"] = makeEventOrderTest({
+exports["test Show Then Destroy"] = makeEventOrderTest({
   test: function(assert, done, expect, panel) {
     panel.show();
-    expect('inited').
-      then('show', function() { panel.destroy(); }).
+    expect('show', function() { panel.destroy(); }).
       then('hide', function() { done(); });
   }
 });
@@ -518,7 +606,7 @@ exports["test console.log in Panel"] = function(assert, done) {
   });
 
   panel.show();
-  
+
   function onMessage(type, message) {
     assert.equal(type, 'log', 'console.log() works');
     assert.equal(message, text, 'console.log() works');
@@ -564,7 +652,7 @@ if (isWindowPBSupported) {
         showTries++;
         panel.show();
         showTries++;
-        panel.show(browserWindow.gBrowser);
+        panel.show(null, browserWindow.gBrowser);
 
         return promise;
       }).
@@ -616,9 +704,9 @@ if (isWindowPBSupported) {
           }
         });
         showTries++;
-        panel.show(window.gBrowser);
+        panel.show(null, window.gBrowser);
         showTries++;
-        panel.show(browserWindow.gBrowser);
+        panel.show(null, browserWindow.gBrowser);
 
         return promise;
       }).
@@ -656,6 +744,106 @@ function testShowPanel(assert, panel) {
   panel.show();
 
   return promise;
+}
+
+exports['test Style Applied Only Once'] = function (assert, done) {
+  let loader = Loader(module);
+  let panel = loader.require("sdk/panel").Panel({
+    contentURL: "data:text/html;charset=utf-8,",
+    contentScript:
+      'self.port.on("check",function() { self.port.emit("count", document.getElementsByTagName("style").length); });' +
+      'self.port.on("ping", function (count) { self.port.emit("pong", count); });'
+  });
+
+  panel.port.on('count', function (styleCount) {
+    assert.equal(styleCount, 1, 'should only have one style');
+    done();
+  });
+
+  panel.port.on('pong', function (counter) {
+    panel[--counter % 2 ? 'hide' : 'show']();
+    panel.port.emit(!counter ? 'check' : 'ping', counter);
+  });
+
+  panel.on('show', init);
+  panel.show();
+
+  function init () {
+    panel.removeListener('show', init);
+    panel.port.emit('ping', 10);
+  }
+};
+
+exports['test Only One Panel Open Concurrently'] = function (assert, done) {
+  const loader = Loader(module);
+  const { Panel } = loader.require('sdk/panel')
+
+  let panelA = Panel({
+    contentURL: 'about:buildconfig'
+  });
+
+  let panelB = Panel({
+    contentURL: 'about:buildconfig',
+    onShow: function () {
+      // When loading two panels simulataneously, only the second
+      // should be shown, never showing the first
+      assert.equal(panelA.isShowing, false, 'First panel is hidden');
+      assert.equal(panelB.isShowing, true, 'Second panel is showing');
+      panelC.show();
+    }
+  });
+
+  let panelC = Panel({
+    contentURL: 'about:buildconfig',
+    onShow: function () {
+      assert.equal(panelA.isShowing, false, 'First panel is hidden');
+      assert.equal(panelB.isShowing, false, 'Second panel is hidden');
+      assert.equal(panelC.isShowing, true, 'Third panel is showing');
+      done();
+    }
+  });
+
+  panelA.show();
+  panelB.show();
+};
+
+if (isWindowPBSupported) {
+  exports.testGetWindow = function(assert, done) {
+    let activeWindow = getMostRecentBrowserWindow();
+    open(null, { features: {
+      toolbar: true,
+      chrome: true,
+      private: true
+    } }).then(function(window) {
+      assert.ok(isPrivate(window), 'window is private');
+      assert.equal(getWindow(window.gBrowser), null, 'private window elements returns null');
+      assert.equal(getWindow(activeWindow.gBrowser), activeWindow, 'non-private window elements returns window');
+      close(window).then(done);
+    })
+  }
+}
+else if (isGlobalPBSupported) {
+  exports.testGetWindow = function(assert, done) {
+    let activeWindow = getMostRecentBrowserWindow();
+
+    assert.equal(getWindow(activeWindow.gBrowser), activeWindow, 'non-private window elements returns window');
+    pb.once('start', function() {
+      assert.ok(isPrivate(activeWindow), 'window is private');
+      assert.equal(getWindow(activeWindow.gBrowser), activeWindow, 'private window elements returns window');
+      open(null, { features: {
+        toolbar: true,
+        chrome: true
+      } }).then(function(window) {
+        assert.ok(isPrivate(window), 'window is private');
+        assert.equal(getWindow(window.gBrowser), window, 'private window elements returns window');
+        assert.equal(getWindow(activeWindow.gBrowser), activeWindow, 'active window elements returns window');
+
+        pb.once('stop', done);
+        pb.deactivate();
+      })
+    });
+    pb.activate();
+  }
 }
 
 try {

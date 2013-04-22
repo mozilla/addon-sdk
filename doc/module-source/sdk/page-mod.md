@@ -1,4 +1,3 @@
-
 <!-- This Source Code Form is subject to the terms of the Mozilla Public
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
@@ -58,8 +57,8 @@ In this case files are specified by a URL typically constructed using the
 
     pageMod.PageMod({
       include: "*.mozilla.org",
-      contentScriptFile: [self.data.url("jquery-1.7.min.js"),
-                          self.data.url("my-script.js")]
+      contentScriptFile: [data.url("jquery-1.7.min.js"),
+                          data.url("my-script.js")]
     });
 
 <div class="warning">
@@ -258,6 +257,16 @@ The following add-on creates a widget which, when clicked, highlights all the
         });
       }
     });
+
+## Private Windows ##
+
+If your add-on has not opted into private browsing, then your page-mods will
+not attach content scripts to documents loaded into private windows, even if
+their URLs match the pattern you have specified.
+
+To learn more about private windows, how to opt into private browsing, and how
+to support private browsing, refer to the
+[documentation for the `private-browsing` module](modules/sdk/private-browsing.html).
 
 <api name="PageMod">
 @class
