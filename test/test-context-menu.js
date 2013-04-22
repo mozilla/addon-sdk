@@ -9,6 +9,7 @@ let { Cc, Ci } = require("chrome");
 
 const { Loader } = require('sdk/test/loader');
 const timer = require("sdk/timers");
+const { merge } = require("sdk/util/object");
 
 // These should match the same constants in the module.
 const ITEM_CLASS = "addon-context-menu-item";
@@ -1989,29 +1990,13 @@ exports.testNewPrivateWindow = function (test) {
 
   let item = new loader.cm.Item({ label: "item" });
 
-  test.withNewPrivateWindow(function () {
-    test.showMenu(null, function (popup) {
-      test.checkMenu([item], [], [item]);
-      test.done();
-    });
-  });
-};
-
-
-// When a new private window is opened, items added by an unloaded module should
-// not be present in the menu.
-exports.testNewPrivateWindowMultipleModules = function (test) {
-  test = new TestHelper(test);
-  let loader = test.newLoader();
-  let item = new loader.cm.Item({ label: "item" });
-
   test.showMenu(null, function (popup) {
     test.checkMenu([item], [], []);
     popup.hidePopup();
-    loader.unload();
+
     test.withNewPrivateWindow(function () {
       test.showMenu(null, function (popup) {
-        test.checkMenu([item], [], [item]);
+        test.checkMenu([], [], []);
         test.done();
       });
     });
@@ -2027,29 +2012,37 @@ exports.testNewPrivateEnabledWindow = function (test) {
 
   let item = new loader.cm.Item({ label: "item" });
 
-  test.withNewPrivateWindow(function () {
-    test.showMenu(null, function (popup) {
-      test.checkMenu([item], [], []);
-      test.done();
+  test.showMenu(null, function (popup) {
+    test.checkMenu([item], [], []);
+    popup.hidePopup();
+
+    test.withNewPrivateWindow(function () {
+      test.showMenu(null, function (popup) {
+        test.checkMenu([item], [], []);
+        test.done();
+      });
     });
   });
 };
 
 
-// When a new private window is opened, items added by an unloaded module should
-// not be present in the menu when private browsing support is enabled.
-exports.testNewPrivateEnabledWindowMultipleModules = function (test) {
+// Existing context menu modifications should apply to new private windows when
+// private browsing support is enabled unless unloaded.
+exports.testNewPrivateEnabledWindowUnloaded = function (test) {
   test = new TestHelper(test);
   let loader = test.newPrivateLoader();
+
   let item = new loader.cm.Item({ label: "item" });
 
   test.showMenu(null, function (popup) {
     test.checkMenu([item], [], []);
     popup.hidePopup();
+
     loader.unload();
+
     test.withNewPrivateWindow(function () {
       test.showMenu(null, function (popup) {
-        test.checkMenu([item], [], [item]);
+        test.checkMenu([], [], []);
         test.done();
       });
     });
@@ -3417,26 +3410,16 @@ TestHelper.prototype = {
 
   // As above but the loader has private-browsing support enabled.
   newPrivateLoader: function() {
-    function shallowClone(source, target) {
-      for (let prop in source) {
-        if (!(prop in target))
-          target[prop] = source[prop];
-      }
-    }
-
-    let options = {
-      metadata: {
-        permissions: {
-          'private-browsing': true
-        }
-      }
-    }
-
     let base = require("@loader/options");
-    // Clone current loader's options into the options for the private loader
-    shallowClone(base, options);
-    shallowClone(base.metadata || {}, options.metadata);
-    shallowClone(base.metadata.permissions || {}, options.metadata.permissions);
+
+    // Clone current loader's options adding the private-browsing permission
+    let options = merge({}, base, {
+      metadata: merge({}, base.metadata || {}, {
+        permissions: merge({}, base.metadata.permissions || {}, {
+          'private-browsing': true
+        })
+      })
+    });
 
     const self = this;
     let loader = Loader(module, null, options);
