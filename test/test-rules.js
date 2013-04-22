@@ -96,7 +96,7 @@ exports.testForEach = function (test) {
   urls.forEach(function (url) { rules.add(url); });
   let count = 0;
 
-  rules.forEach(function (rule, pattern) {
+  rules.forEach(function (pattern, rule) {
     test.ok(pattern.test('http://www.mozilla.org'), 'passes in pattern');
     test.ok(has(urls, rule), 'passes in rule');
     if (count++ >= urls.length) test.fail('Extra iterations');

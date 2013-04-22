@@ -26,7 +26,7 @@ exports.testHas = function(test) {
 exports.testEach = function(test) {
   var count = 0;
   var keys = new Set();
-  each(o, function (key, value, object) {
+  each(o, function (value, key, object) {
     keys.add(key);
     test.assertEqual(o[key], value, 'Key and value pairs passed in');
     test.assertEqual(o, object, 'Object passed in');
