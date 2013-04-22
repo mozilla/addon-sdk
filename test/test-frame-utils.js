@@ -5,6 +5,7 @@
 'use strict';
 
 const { open } = require('sdk/window/utils');
+const { close } = require("sdk/window/helpers");
 const { create } = require('sdk/frame/utils');
 
 exports['test frame creation'] = function(assert, done) {
@@ -22,8 +23,7 @@ exports['test frame creation'] = function(assert, done) {
     assert.equal(frame.docShell.allowJavascript, false, 'js disabled by default');
     assert.equal(frame.docShell.allowPlugins, false,
                  'plugins disabled by default');
-    window.close();
-    done();
+    close(window).then(done);
   }, false);
 };
 
@@ -40,8 +40,7 @@ exports['test fram has js disabled by default'] = function(assert, done) {
       assert.ok(!~frame.contentDocument.documentElement.innerHTML.indexOf('JS'),
                 'JS was executed');
 
-      window.close();
-      done();
+      close(window).then(done);
     }, false);
 
   }, false);
@@ -61,8 +60,7 @@ exports['test frame with js enabled'] = function(assert, done) {
       assert.ok(~frame.contentDocument.documentElement.innerHTML.indexOf('JS'),
                 'JS was executed');
 
-      window.close();
-      done();
+      close(window).then(done);
     }, false);
 
   }, false);
