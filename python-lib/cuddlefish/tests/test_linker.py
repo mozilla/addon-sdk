@@ -43,15 +43,15 @@ class Basic(unittest.TestCase):
         # target_cfg.dependencies is not provided, so we'll search through
         # all known packages (everything in 'deps').
         m = manifest.build_manifest(target_cfg, pkg_cfg, deps, scan_tests=False)
-        m = m.get_harness_options_manifest()
+        m = m.get_harness_options_manifest(False)
 
         def assertReqIs(modname, reqname, path):
             reqs = m["one/%s" % modname]["requirements"]
             self.failUnlessEqual(reqs[reqname], path)
-        assertReqIs("main", "panel", "addon-sdk/sdk/panel")
+        assertReqIs("main", "panel", "sdk/panel")
         assertReqIs("main", "two.js", "one/two")
         assertReqIs("main", "./two", "one/two")
-        assertReqIs("main", "sdk/tabs.js", "addon-sdk/sdk/tabs")
+        assertReqIs("main", "sdk/tabs.js", "sdk/tabs")
         assertReqIs("main", "./subdir/three", "one/subdir/three")
         assertReqIs("two", "main", "one/main")
         assertReqIs("subdir/three", "../main", "one/main")
@@ -72,7 +72,7 @@ class Basic(unittest.TestCase):
                                               [target_cfg.name, "addon-sdk"])
         self.failUnlessEqual(deps, ["addon-sdk", "three"])
         m = manifest.build_manifest(target_cfg, pkg_cfg, deps, scan_tests=False)
-        m = m.get_harness_options_manifest()
+        m = m.get_harness_options_manifest(False)
         def assertReqIs(modname, reqname, path):
             reqs = m["three/%s" % modname]["requirements"]
             self.failUnlessEqual(reqs[reqname], path)
@@ -90,7 +90,7 @@ class Basic(unittest.TestCase):
         self.failUnlessEqual(deps, ["addon-sdk", "five"])
         # all we care about is that this next call doesn't raise an exception
         m = manifest.build_manifest(target_cfg, pkg_cfg, deps, scan_tests=False)
-        m = m.get_harness_options_manifest()
+        m = m.get_harness_options_manifest(False)
         reqs = m["five/main"]["requirements"]
         self.failUnlessEqual(reqs, {});
 

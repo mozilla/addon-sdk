@@ -68,6 +68,18 @@ content:
       });
     });
 
+## Private Windows ##
+
+If your add-on has not opted into private browsing, then you won't see any
+tabs that are hosted by private browser windows.
+
+Tabs hosted by private browser windows won't be seen if you enumerate the
+`tabs` module itself, and you won't receive any events for them.
+
+To learn more about private windows, how to opt into private browsing, and how
+to support private browsing, refer to the
+[documentation for the `private-browsing` module](modules/sdk/private-browsing.html).
+
 <api name="activeTab">
 @property {Tab}
 
@@ -139,6 +151,11 @@ opened in the first tab in that window. This is an optional property.
 If present and true, the new tab will be opened to the right of the active tab
 and will not be active. This is an optional property.
 
+@prop isPrivate {boolean}
+Boolean which will determine whether the new tab should be private or not.
+If your add-on does not support private browsing this will have no effect.
+See the [private-browsing](modules/sdk/private-browsing.html) documentation for more information.
+
 @prop [isPinned] {boolean}
 If present and true, then the new tab will be pinned as an
 [app tab](http://support.mozilla.com/en-US/kb/what-are-app-tabs).
@@ -151,6 +168,12 @@ A callback function that will be registered for 'close' event.
 This is an optional property.
 @prop [onReady] {function}
 A callback function that will be registered for 'ready' event.
+This is an optional property.
+@prop [onLoad] {function}
+A callback function that will be registered for 'load' event.
+This is an optional property.
+@prop [onPageShow] {function}
+A callback function that will be registered for 'pageshow' event.
 This is an optional property.
 @prop [onActivate] {function}
 A callback function that will be registered for 'activate' event.
@@ -313,6 +336,47 @@ content can be used.
 
 @argument {Tab}
 Listeners are passed the tab object.
+</api>
+
+<api name="load">
+@event
+
+This event is emitted when the page for the tab's content is loaded. It is
+equivalent to the `load` event for the given content page.
+
+A single tab will emit this event every time the page is loaded: so it will be
+emitted again if the tab's location changes or the content is reloaded.
+
+After this event has been emitted, all properties relating to the tab's
+content can be used.
+
+This is fired after the `ready` event on DOM content pages and can be used
+for pages that do not have a `DOMContentLoaded` event, like images.
+
+@argument {Tab}
+Listeners are passed the tab object.
+</api>
+
+<api name="pageshow">
+@event
+
+This event is emitted when the page for the tab's content is potentially
+from the cache. It is equivilent to the [pageshow](https://developer.mozilla.org/en-US/docs/DOM/Mozilla_event_reference/pageshow) event for the given
+content page.
+
+After this event has been emitted, all properties relating to the tab's
+content can be used.
+
+While the `ready` and `load` events will not be fired when a user uses the back
+or forward buttons to navigate history, the `pageshow` event will be fired.
+If the `persisted` argument is true, then the contents were loaded from the
+bfcache.
+
+@argument {Tab}
+Listeners are passed the tab object.
+@argument {persisted}
+Listeners are passed a boolean value indicating whether or not the page
+was loaded from the [bfcache](https://developer.mozilla.org/en-US/docs/Working_with_BFCache) or not.
 </api>
 
 <api name="activate">

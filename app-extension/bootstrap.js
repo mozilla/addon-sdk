@@ -19,6 +19,14 @@ const resourceHandler = ioService.getProtocolHandler('resource').
 const systemPrincipal = CC('@mozilla.org/systemprincipal;1', 'nsIPrincipal')();
 const scriptLoader = Cc['@mozilla.org/moz/jssubscript-loader;1'].
                      getService(Ci.mozIJSSubScriptLoader);
+const prefService = Cc['@mozilla.org/preferences-service;1'].
+                    getService(Ci.nsIPrefService).
+                    QueryInterface(Ci.nsIPrefBranch);
+const appInfo = Cc["@mozilla.org/xre/app-info;1"].
+                getService(Ci.nsIXULAppInfo);
+const vc = Cc["@mozilla.org/xpcom/version-comparator;1"].
+           getService(Ci.nsIVersionComparator);
+
 
 const REASON = [ 'unknown', 'startup', 'shutdown', 'enable', 'disable',
                  'install', 'uninstall', 'upgrade', 'downgrade' ];
@@ -74,6 +82,15 @@ function startup(data, reasonCode) {
 
     let id = options.jetpackID;
     let name = options.name;
+
+    // Clean the metadata
+    options.metadata[name]['permissions'] = options.metadata[name]['permissions'] || {};
+
+    // freeze the permissionss
+    Object.freeze(options.metadata[name]['permissions']);
+    // freeze the metadata
+    Object.freeze(options.metadata[name]);
+
     // Register a new resource 'domain' for this addon which is mapping to
     // XPI's `resources` folder.
     // Generate the domain name by using jetpack ID, which is the extension ID
@@ -92,22 +109,87 @@ function startup(data, reasonCode) {
     resourceHandler.setSubstitution(domain, resourcesURI);
 
     // Create path to URLs mapping supported by loader.
-    let paths = Object.keys(options.metadata).reduce(function(result, name) {
-      result[name + '/'] = prefixURI + name + '/lib/'
-      result[name + '/tests/'] = prefixURI + name + '/tests/'
-      return result
-    }, {
+    let paths = {
       // Relative modules resolve to add-on package lib
       './': prefixURI + name + '/lib/',
-      'toolkit/': 'resource://gre/modules/toolkit/',
-      '': 'resources:///modules/'
-    });
+      './tests/': prefixURI + name + '/tests/',
+      '': 'resource://gre/modules/commonjs/'
+    };
+
+    // Maps addon lib and tests ressource folders for each package
+    paths = Object.keys(options.metadata).reduce(function(result, name) {
+      result[name + '/'] = prefixURI + name + '/lib/'
+      result[name + '/tests/'] = prefixURI + name + '/tests/'
+      return result;
+    }, paths);
+
+    // We need to map tests folder when we run sdk tests whose package name
+    // is stripped
+    if (name == 'addon-sdk')
+      paths['tests/'] = prefixURI + name + '/tests/';
+
+    let useBundledSDK = options['force-use-bundled-sdk'];
+    if (!useBundledSDK) {
+      try {
+        useBundledSDK = prefService.getBoolPref("extensions.addon-sdk.useBundledSDK");
+      }
+      catch (e) {
+        // Pref doesn't exist, allow using Firefox shipped SDK
+      }
+    }
+
+    // Starting with Firefox 21.0a1, we start using modules shipped into firefox
+    // Still allow using modules from the xpi if the manifest tell us to do so.
+    // And only try to look for sdk modules in xpi if the xpi actually ship them
+    if (options['is-sdk-bundled'] &&
+        (vc.compare(appInfo.version, '21.0a1') < 0 || useBundledSDK)) {
+      // Maps sdk module folders to their resource folder
+      paths[''] = prefixURI + 'addon-sdk/lib/';
+      // test.js is usually found in root commonjs or SDK_ROOT/lib/ folder,
+      // so that it isn't shipped in the xpi. Keep a copy of it in sdk/ folder
+      // until we no longer support SDK modules in XPI:
+      paths['test'] = prefixURI + 'addon-sdk/lib/sdk/test.js';
+    }
+
+    // Retrieve list of module folder overloads based on preferences in order to
+    // eventually used a local modules instead of files shipped into Firefox.
+    let branch = prefService.getBranch('extensions.modules.' + id + '.path');
+    paths = branch.getChildList('', {}).reduce(function (result, name) {
+      // Allows overloading of any sub folder by replacing . by / in pref name
+      let path = name.substr(1).split('.').join('/');
+      // Only accept overloading folder by ensuring always ending with `/`
+      if (path) path += '/';
+      let fileURI = branch.getCharPref(name);
+
+      // On mobile, file URI has to end with a `/` otherwise, setSubstitution
+      // takes the parent folder instead.
+      if (fileURI[fileURI.length-1] !== '/')
+        fileURI += '/';
+
+      // Maps the given file:// URI to a resource:// in order to avoid various
+      // failure that happens with file:// URI and be close to production env
+      let resourcesURI = ioService.newURI(fileURI, null, null);
+      let resName = 'extensions.modules.' + domain + '.commonjs.path' + name;
+      resourceHandler.setSubstitution(resName, resourcesURI);
+
+      result[path] = 'resource://' + resName + '/';
+      return result;
+    }, paths);
 
     // Make version 2 of the manifest
     let manifest = options.manifest;
 
     // Import `cuddlefish.js` module using a Sandbox and bootstrap loader.
-    let cuddlefishURI = prefixURI + options.loader;
+    let cuddlefishPath = 'loader/cuddlefish.js';
+    let cuddlefishURI = 'resource://gre/modules/commonjs/sdk/' + cuddlefishPath;
+    if (paths['sdk/']) { // sdk folder has been overloaded
+                         // (from pref, or cuddlefish is still in the xpi)
+      cuddlefishURI = paths['sdk/'] + cuddlefishPath;
+    }
+    else if (paths['']) { // root modules folder has been overloaded
+      cuddlefishURI = paths[''] + 'sdk/' + cuddlefishPath;
+    }
+
     cuddlefishSandbox = loadSandbox(cuddlefishURI);
     let cuddlefish = cuddlefishSandbox.exports;
 
@@ -157,7 +239,7 @@ function startup(data, reasonCode) {
       }
     });
 
-    let module = cuddlefish.Module('addon-sdk/sdk/loader/cuddlefish', cuddlefishURI);
+    let module = cuddlefish.Module('sdk/loader/cuddlefish', cuddlefishURI);
     let require = cuddlefish.Require(loader, module);
 
     require('sdk/addon/runner').startup(reason, {
@@ -166,7 +248,8 @@ function startup(data, reasonCode) {
       prefsURI: rootURI + 'defaults/preferences/prefs.js'
     });
   } catch (error) {
-    dump('Bootstrap error: ' + error.message + '\n' +
+    dump('Bootstrap error: ' +
+         (error.message ? error.message : String(error)) + '\n' +
          (error.stack || error.fileName + ': ' + error.lineNumber) + '\n');
     throw error;
   }
@@ -213,12 +296,16 @@ function shutdown(data, reasonCode) {
   if (loader) {
     unload(loader, reason);
     unload = null;
-    // Avoid leaking all modules when something goes wrong with one particular
-    // module. Do not clean it up immediatly in order to allow executing some
-    // actions on addon disabling.
-    // We need to keep a reference to the timer, otherwise it is collected
-    // and won't ever fire.
-    nukeTimer = setTimeout(nukeModules, 1000);
+
+    // Don't waste time cleaning up if the application is shutting down
+    if (reason != "shutdown") {
+      // Avoid leaking all modules when something goes wrong with one particular
+      // module. Do not clean it up immediatly in order to allow executing some
+      // actions on addon disabling.
+      // We need to keep a reference to the timer, otherwise it is collected
+      // and won't ever fire.
+      nukeTimer = setTimeout(nukeModules, 1000);
+    }
   }
 };
 

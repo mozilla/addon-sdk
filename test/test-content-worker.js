@@ -6,7 +6,7 @@
 
 const { Cc, Ci } = require("chrome");
 const { setTimeout } = require("sdk/timers");
-const { Loader, Require, override } = require("sdk/test/loader");
+const { LoaderWithHookedConsole } = require("sdk/test/loader");
 const { Worker } = require("sdk/content/worker");
 
 const DEFAULT_CONTENT_URL = "data:text/html;charset=utf-8,foo";
@@ -175,6 +175,7 @@ exports["test:emit hack message"] = WorkerTest(
 exports["test:n-arguments emit"] = WorkerTest(
   DEFAULT_CONTENT_URL,
   function(assert, browser, done) {
+    let repeat = 0;
     let worker =  Worker({
         window: browser.contentWindow,
         contentScript: "new " + function WorkerScope() {
@@ -187,10 +188,14 @@ exports["test:n-arguments emit"] = WorkerTest(
 
     // Validate worker.port
     worker.port.on("content-to-addon", function (arg1, arg2, arg3) {
-      assert.equal(arg1, "first argument");
-      assert.equal(arg2, "second");
-      assert.equal(arg3, "third");
-      done();
+      if (!repeat++) {
+        this.emit("addon-to-content", "first argument", "second", "third");
+      } else {
+        assert.equal(arg1, "first argument");
+        assert.equal(arg2, "second");
+        assert.equal(arg3, "third");
+        done();
+      }
     });
     worker.port.emit("addon-to-content", "first argument", "second", "third");
   }
@@ -348,24 +353,12 @@ exports["test:nothing is leaked to content script"] = WorkerTest(
 exports["test:ensure console.xxx works in cs"] = WorkerTest(
   DEFAULT_CONTENT_URL,
   function(assert, browser, done) {
-
-    // Create a new module loader in order to be able to create a `console`
-    // module mockup:
-    let loader = Loader(module, {
-      console: {
-        log: hook.bind("log"),
-        info: hook.bind("info"),
-        warn: hook.bind("warn"),
-        error: hook.bind("error"),
-        debug: hook.bind("debug"),
-        exception: hook.bind("exception")
-      }
-    });
+    let { loader } = LoaderWithHookedConsole(module, onMessage);
 
     // Intercept all console method calls
     let calls = [];
-    function hook(msg) {
-      assert.equal(this, msg,
+    function onMessage(type, msg) {
+      assert.equal(type, msg,
                        "console.xxx(\"xxx\"), i.e. message is equal to the " +
                        "console method name we are calling");
       calls.push(msg);
@@ -657,22 +650,11 @@ exports["test:check worker API with page history"] = WorkerTest(
 exports["test:global postMessage"] = WorkerTest(
   DEFAULT_CONTENT_URL,
   function(assert, browser, done) {
-    // Create a new module loader in order to be able to create a `console`
-    // module mockup:
-    let loader = Loader(module, {
-      console: {
-        log: hook.bind(null, "log"),
-        info: hook.bind(null, "info"),
-        warn: hook.bind(null, "warn"),
-        error: hook.bind(null, "error"),
-        debug: hook.bind(null, "debug"),
-        exception: hook.bind(null, "exception")
-      }
-    });
+    let { loader } = LoaderWithHookedConsole(module, onMessage);
 
     // Intercept all console method calls
     let seenMessages = 0;
-    function hook(type, message) {
+    function onMessage(type, message) {
       seenMessages++;
       assert.equal(type, "error", "Should be an error");
       assert.equal(message, "DEPRECATED: The global `postMessage()` function in " +

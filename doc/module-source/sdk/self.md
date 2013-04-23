@@ -51,6 +51,13 @@ downgrade
 
 </api>
 
+<api name="isPrivateBrowsingSupported">
+@property {boolean}
+This property indicates whether or not the add-on supports private browsing.
+It comes from the [`private-browsing` key](dev-guide/package-spec.html#permissions)
+in the add-on's `package.json` file.
+</api>
+
 <api name="data">
 @property {object}
 The `data` object is used to access data that was bundled with the add-on.
@@ -92,3 +99,5 @@ as the Panel:
 @returns {String}
 </api>
 </api>
+
+

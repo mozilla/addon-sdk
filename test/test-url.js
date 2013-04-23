@@ -3,7 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 var url = require("sdk/url");
-var { packed } = require("sdk/self");
 
 exports.testResolve = function(test) {
   test.assertEqual(url.URL("bar", "http://www.foo.com/").toString(),
@@ -85,16 +84,6 @@ exports.testToFilename = function(test) {
     "resource does not exist: resource://nonexistent/",
     "url.toFilename() on nonexistent resources should throw"
   );
-
-  if (!packed)
-    test.assertMatches(url.toFilename(module.uri),
-                       /.*test-url\.js$/,
-                       "url.toFilename() on resource: URIs should work");
-  else
-    test.assertRaises(
-      function() { url.toFilename(module.uri); },
-      "cannot map to filename: "+module.uri,
-      "url.toFilename() can fail for packed XPIs");
 
   test.assertRaises(
     function() { url.toFilename("http://foo.com/"); },
@@ -252,4 +241,114 @@ exports.testDataURLparseBase64 = function (test) {
   test.assertEqual(dataURL.parameters["base64"], "", "parameter set without value");
 
   test.assertEqual(dataURL.toString(), "data:text/plain;base64," + encodeURIComponent(b64text));
+}
+
+exports.testIsValidURI = function (test) {
+  validURIs().forEach(function (aUri) {
+    test.assertEqual(url.isValidURI(aUri), true, aUri + ' is a valid URL');
+  });
+};
+
+exports.testIsInvalidURI = function (test) {
+  invalidURIs().forEach(function (aUri) {
+    test.assertEqual(url.isValidURI(aUri), false, aUri + ' is an invalid URL');
+  });
+};
+
+exports.testURLFromURL = function(test) {
+  let aURL = url.URL('http://mozilla.org');
+  let bURL = url.URL(aURL);
+  test.assertEqual(aURL.toString(), bURL.toString(), 'Making a URL from a URL works');
+};
+
+function validURIs() {
+  return [
+  'http://foo.com/blah_blah',
+  'http://foo.com/blah_blah/',
+  'http://foo.com/blah_blah_(wikipedia)',
+  'http://foo.com/blah_blah_(wikipedia)_(again)',
+  'http://www.example.com/wpstyle/?p=364',
+  'https://www.example.com/foo/?bar=baz&amp;inga=42&amp;quux',
+  'http://✪df.ws/123',
+  'http://userid:password@example.com:8080',
+  'http://userid:password@example.com:8080/',
+  'http://userid@example.com',
+  'http://userid@example.com/',
+  'http://userid@example.com:8080',
+  'http://userid@example.com:8080/',
+  'http://userid:password@example.com',
+  'http://userid:password@example.com/',
+  'http://142.42.1.1/',
+  'http://142.42.1.1:8080/',
+  'http://➡.ws/䨹',
+  'http://⌘.ws',
+  'http://⌘.ws/',
+  'http://foo.com/blah_(wikipedia)#cite-1',
+  'http://foo.com/blah_(wikipedia)_blah#cite-1',
+  'http://foo.com/unicode_(✪)_in_parens',
+  'http://foo.com/(something)?after=parens',
+  'http://☺.damowmow.com/',
+  'http://code.google.com/events/#&amp;product=browser',
+  'http://j.mp',
+  'ftp://foo.bar/baz',
+  'http://foo.bar/?q=Test%20URL-encoded%20stuff',
+  'http://مثال.إختبار',
+  'http://例子.测试',
+  'http://उदाहरण.परीक्षा',
+  'http://-.~_!$&amp;\'()*+,;=:%40:80%2f::::::@example.com',
+  'http://1337.net',
+  'http://a.b-c.de',
+  'http://223.255.255.254',
+  // Also want to validate data-uris, localhost
+  'http://localhost:8432/some-file.js',
+  'data:text/plain;base64,',
+  'data:text/html;charset=US-ASCII,%3Ch1%3EHello!%3C%2Fh1%3E',
+  'data:text/html;charset=utf-8,'
+  ];
+}
+
+// Some invalidURIs are valid according to the regex used,
+// can be improved in the future, but better to pass some
+// invalid URLs than prevent valid URLs
+
+function invalidURIs () {
+  return [
+//  'http://',
+//  'http://.',
+//  'http://..',
+//  'http://../',
+//  'http://?',
+//  'http://??',
+//  'http://??/',
+//  'http://#',
+//  'http://##',
+//  'http://##/',
+//  'http://foo.bar?q=Spaces should be encoded',
+  'not a url',
+  '//',
+  '//a',
+  '///a',
+  '///',
+//  'http:///a',
+  'foo.com',
+  'http:// shouldfail.com',
+  ':// should fail',
+//  'http://foo.bar/foo(bar)baz quux',
+//  'http://-error-.invalid/',
+//  'http://a.b--c.de/',
+//  'http://-a.b.co',
+//  'http://a.b-.co',
+//  'http://0.0.0.0',
+//  'http://10.1.1.0',
+//  'http://10.1.1.255',
+//  'http://224.1.1.1',
+//  'http://1.1.1.1.1',
+//  'http://123.123.123',
+//  'http://3628126748',
+//  'http://.www.foo.bar/',
+//  'http://www.foo.bar./',
+//  'http://.www.foo.bar./',
+//  'http://10.1.1.1',
+//  'http://10.1.1.254'
+  ];
 }
