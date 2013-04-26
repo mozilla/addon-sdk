@@ -182,11 +182,7 @@ exports.testOnOpenOnCloseListeners = function(test) {
 };
 
 exports.testActiveWindow = function(test) {
-  const xulApp = require("sdk/system/xul-app");
-  if (xulApp.versionInRange(xulApp.platformVersion, "1.9.2", "1.9.2.*")) {
-    test.pass("This test is disabled on 3.6. For more information, see bug 598525");
-    return;
-  }
+  test.waitUntilDone();
 
   let windows = browserWindows;
 
@@ -195,8 +191,6 @@ exports.testActiveWindow = function(test) {
 
   // Raw window objects
   let rawWindow2, rawWindow3;
-
-  test.waitUntilDone();
 
   let testSteps = [
     function() {
@@ -243,9 +237,9 @@ exports.testActiveWindow = function(test) {
     onOpen: function(window) {
       window.tabs.activeTab.on('ready', function() {
         window2 = window;
-        test.assert(newWindow, "A new window was opened");
         rawWindow2 = newWindow;
         newWindow = null;
+
         test.assertEqual(rawWindow2.content.document.title, "window 2", "Got correct raw window 2");
         test.assertEqual(rawWindow2.document.title, window2.title, "Saw correct title on window 2");
 
@@ -254,11 +248,12 @@ exports.testActiveWindow = function(test) {
           onOpen: function(window) {
             window.tabs.activeTab.on('ready', function onReady() {
               window3 = window;
-              test.assert(newWindow, "A new window was opened");
               rawWindow3 = newWindow;
               tracker.unload();
+
               test.assertEqual(rawWindow3.content.document.title, "window 3", "Got correct raw window 3");
               test.assertEqual(rawWindow3.document.title, window3.title, "Saw correct title on window 3");
+
               continueAfterFocus(rawWindow3);
               rawWindow3.focus();
             });
@@ -276,8 +271,11 @@ exports.testActiveWindow = function(test) {
   let continueAfterFocus = function(w) onFocus(w).then(nextStep);
 
   function finishTest() {
+    test.assert('finshing test..');
     window3.close(function() {
+      test.assert('window 2 is closed');
       window2.close(function() {
+        test.assert('window 3 is closed, test is done');
         test.done();
       });
     });
