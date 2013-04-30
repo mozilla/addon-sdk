@@ -61,7 +61,7 @@ exports['test new top window with options'] = function(assert, done) {
   close(window).then(done);
 };
 
-exports['test new top window with invalid URI'] = function(assert) {
+exports['test new top window with various URIs'] = function(assert, done) {
   let msg = 'only chrome, resource and data uris are allowed';
   assert.throws(function () {
     open('foo');
@@ -75,6 +75,15 @@ exports['test new top window with invalid URI'] = function(assert) {
   assert.throws(function () {
     open('//foo');
   }, msg);
+  
+  let window = open('chrome://foo/content/');
+  assert.ok(~windows().indexOf(window), 'chrome URI works');
+
+  window = open('resource://foo');
+  assert.ok(~windows().indexOf(window), 'resource URI works');
+
+  // Wait for the window unload before ending test
+  close(window).then(done);
 };
 
 exports.testBackgroundify = function(assert, done) {
