@@ -61,6 +61,22 @@ exports['test new top window with options'] = function(assert, done) {
   close(window).then(done);
 };
 
+exports['test new top window with invalid URI'] = function(assert) {
+  let msg = 'only chrome, resource and data uris are allowed';
+  assert.throws(function () {
+    open('foo');
+  }, msg);
+  assert.throws(function () {
+    open('http://foo');
+  }, msg);
+  assert.throws(function () {
+    open('https://foo');
+  }, msg); 
+  assert.throws(function () {
+    open('//foo');
+  }, msg);
+};
+
 exports.testBackgroundify = function(assert, done) {
   let window = open('data:text/html;charset=utf-8,backgroundy');
   assert.ok(~windows().indexOf(window),
