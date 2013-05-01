@@ -73,6 +73,9 @@ exports['test new top window with various URIs'] = function(assert, done) {
     open('https://foo');
   }, msg); 
   assert.throws(function () {
+    open('ftp://foo');
+  }, msg);
+  assert.throws(function () {
     open('//foo');
   }, msg);
   
