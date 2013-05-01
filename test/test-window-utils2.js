@@ -81,11 +81,10 @@ exports['test new top window with various URIs'] = function(assert, done) {
   
   let window = open('chrome://foo/content/');
   assert.ok(~windows().indexOf(window), 'chrome URI works');
-
+  close(window).then(done);
+  
   window = open('resource://foo');
   assert.ok(~windows().indexOf(window), 'resource URI works');
-
-  // Wait for the window unload before ending test
   close(window).then(done);
 };
 
