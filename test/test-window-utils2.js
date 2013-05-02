@@ -78,14 +78,15 @@ exports['test new top window with various URIs'] = function(assert, done) {
   assert.throws(function () {
     open('//foo');
   }, msg);
+
+  let chromeWindow = open('chrome://foo/content/');
+  assert.ok(~windows().indexOf(chromeWindow), 'chrome URI works');
   
-  let window = open('chrome://foo/content/');
-  assert.ok(~windows().indexOf(window), 'chrome URI works');
-  close(window).then(done);
-  
-  window = open('resource://foo');
-  assert.ok(~windows().indexOf(window), 'resource URI works');
-  close(window).then(done);
+  let resourceWindow = open('resource://foo');
+  assert.ok(~windows().indexOf(resourceWindow), 'resource URI works');
+
+  // Wait for the window unload before ending test
+  close(chromeWindow).then(close.bind(null, resourceWindow)).then(done);
 };
 
 exports.testBackgroundify = function(assert, done) {
