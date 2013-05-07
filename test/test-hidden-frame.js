@@ -14,16 +14,12 @@ exports["test Frame"] = function(assert, done) {
   let hiddenFrame = hiddenFrames.add(HiddenFrame({
     onReady: function () {
       assert.equal(this.element.contentWindow.location, "about:blank",
-                       "HiddenFrame loads about:blank by default.");
-
+                   "HiddenFrame loads about:blank by default.");
       function onDOMReady() {
-        hiddenFrame.element.removeEventListener("DOMContentLoaded", onDOMReady,
-                                                false);
         assert.equal(hiddenFrame.element.contentWindow.location, url,
-                         "HiddenFrame loads the specified content.");
+                   "HiddenFrame loads the specified content.");
         done();
       }
-
       this.element.addEventListener("DOMContentLoaded", onDOMReady, false);
       this.element.setAttribute("src", url);
     }
