@@ -55,7 +55,7 @@ property you can load a new page in the tab:
 
 You can attach a [content script](dev-guide/guides/content-scripts/index.html)
 to the page hosted in a tab, and use that to access and manipulate the page's
-content:
+content see [Modifying the Page Hosted by a Tab](dev-guide/tutorials/modifying-web-pages-tab.html) tutorial):
 
     var tabs = require("sdk/tabs");
 
@@ -312,8 +312,10 @@ Returns thumbnail data URI of the page currently loaded in this tab.
     content script. Optional.
 
 @returns {Worker}
+  The [Worker](modules/sdk/content/worker.html#Worker) object can be used to
+  communicate with the content script.
   See [Content Scripts guide](dev-guide/guides/content-scripts/index.html)
-  to learn how to use the `Worker` object to communicate with the content script.
+  to learn the details.
 
 </api>
 
