@@ -130,11 +130,13 @@ object.
 This event is emitted when the document associated with this worker is unloaded
 or the worker's `destroy()` method is called.
 
-Note that you can not communicate with the content script in response to this 
-event (you'll get the `Error: Couldn't find the worker to receive this message.
-The script may not be initialized yet, or may already have been unloaded`
-message if you try). You can handle the `detach` event in the content script
-itself though:
+Note that you can't communicate with the content script in response to this
+event. If you try, you'll see this error:
+
+<pre>Error: Couldn't find the worker to receive this message.
+The script may not be initialized yet, or may already have been unloaded</pre>
+
+You can handle the `detach` event in the content script itself though:
 
     // in content script
     self.on("detach", function() {

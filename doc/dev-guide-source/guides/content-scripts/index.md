@@ -23,7 +23,7 @@ Retrieve a page and access its content, without displaying it to the user.
 Execute scripts in the context of selected web pages.
 
 **[tabs](modules/sdk/tabs.html)**<br>
-Manipulate browser's tabs, including the web content displayed in the tab.
+Manipulate the browser's tabs, including the web content displayed in the tab.
 
 **[widget](modules/sdk/widget.html)**<br>
 Host an add-on's user interface, including web content.
