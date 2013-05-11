@@ -214,6 +214,12 @@ This property can be set to load a different URL in the tab.
 @property {string}
 The URL of the favicon for the page currently loaded in the tab.
 This property is read-only.
+
+<div class="warning">
+  This property is deprecated.
+  From version 1.15, use the <a href="modules/sdk/places/favicon.html#getFavicon()">favicon module's <code>getFavicon()</code></a> function instead.
+</div>
+
 </api>
 
 <api name="contentType">
