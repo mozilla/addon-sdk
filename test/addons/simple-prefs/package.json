@@ -13,5 +13,10 @@
         "type": "integer",
         "value": 8,
         "title": "my-int"
+    }, {
+        "name": "myHiddenInt",
+        "type": "hidden",
+        "value": 5,
+        "title": "hidden-int"
     }]
 }

@@ -5,7 +5,7 @@
 from xml.dom.minidom import Document
 
 VALID_PREF_TYPES = ['bool', 'boolint', 'integer', 'string', 'color', 'file',
-                    'directory', 'control', 'menulist', 'radio']
+                    'directory', 'control', 'menulist', 'radio', 'hidden']
 
 class Error(Exception):
     pass
@@ -52,6 +52,9 @@ def parse_options(options, jetpack_id):
     doc.appendChild(root)
 
     for pref in options:
+        if (pref["type"] == "hidden"):
+            continue;
+
         setting = doc.createElement("setting")
         setting.setAttribute("pref-name", pref["name"])
         setting.setAttribute("data-jetpack-id", jetpack_id)
