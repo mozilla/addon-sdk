@@ -104,7 +104,7 @@ exports["test compatibility"] = function(assert) {
                require("sdk/deprecated/events"), "sdk/deprecated/events -> events");
 
   assert.equal(require("match-pattern"),
-               require("sdk/page-mod/match-pattern"), "sdk/page-mod/match-pattern -> match-pattern");
+               require("sdk/util/match-pattern"), "sdk/util/match-pattern -> match-pattern");
 
   if (app.is("Firefox")) {
     assert.equal(require("tab-browser"),
