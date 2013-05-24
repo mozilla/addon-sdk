@@ -171,7 +171,7 @@ exports.testAutomaticDestroy = function(test) {
 exports.testTabProperties = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
-    let tabs= require("sdk/tabs");
+    let tabs = require('sdk/tabs');
     let url = "data:text/html;charset=utf-8,<html><head><title>foo</title></head><body>foo</body></html>";
     tabs.open({
       url: url,
@@ -297,39 +297,6 @@ exports.testTabClose = function(test) {
     });
 
     tabs.open(url);
-  });
-};
-
-// TEST: tab.reload()
-exports.testTabReload = function(test) {
-  test.waitUntilDone();
-  openBrowserWindow(function(window, browser) {
-    let tabs = require("sdk/tabs");
-    let url = "data:text/html;charset=utf-8,<!doctype%20html><title></title>";
-
-    tabs.open({ url: url, onReady: function onReady(tab) {
-      tab.removeListener("ready", onReady);
-
-      browser.addEventListener(
-        "load",
-        function onLoad() {
-          browser.removeEventListener("load", onLoad, true);
-
-          browser.addEventListener(
-            "load",
-            function onReload() {
-              browser.removeEventListener("load", onReload, true);
-              test.pass("the tab was loaded again");
-              test.assertEqual(tab.url, url, "the tab has the same URL");
-              closeBrowserWindow(window, function() test.done());
-            },
-            true
-          );
-          tab.reload();
-        },
-        true
-      );
-    }});
   });
 };
 
@@ -956,7 +923,7 @@ exports['test unique tab ids'] = function(test) {
         win: win
       });
     });
-   
+
     return deferred.promise;
   }
 
@@ -967,7 +934,7 @@ exports['test unique tab ids'] = function(test) {
     results[0].win.close();
     results[1].win.close();
     test.done();
-  });  
+  });
 }
 
 // related to Bug 671305
@@ -1060,6 +1027,30 @@ exports.testOnPageShowEvent = function (test) {
     });
   });
 };
+
+exports.testFaviconGetterDeprecation = function (test) {
+  const { LoaderWithHookedConsole } = require("sdk/test/loader");
+  let { loader, messages } = LoaderWithHookedConsole(module);
+  let tabs = loader.require('sdk/tabs');
+  test.waitUntilDone();
+
+  tabs.open({
+    url: 'data:text/html;charset=utf-8,',
+    onOpen: function (tab) {
+      let favicon = tab.favicon;
+      test.assert(messages.length === 1, 'only one error is dispatched');
+      test.assert(messages[0].type, 'error', 'the console message is an error');
+
+      let msg = messages[0].msg;
+      test.assert(msg.indexOf('tab.favicon is deprecated') !== -1,
+        'message contains the given message');
+      tab.close(test.done.bind(test));
+      loader.unload();
+    }
+  });
+}
+
+
 
 /******************* helpers *********************/
 
