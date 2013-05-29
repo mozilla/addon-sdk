@@ -4,7 +4,7 @@
 
 'use strict';
 
-let { Loader, main, unload, parseStack } = require('toolkit/loader');
+let { Loader, main, unload, parseStack, addPath } = require('toolkit/loader');
 
 let root = module.uri.substr(0, module.uri.lastIndexOf('/'))
 
@@ -139,6 +139,41 @@ exports['test early errors in module'] = function(assert) {
   } finally {
     unload(loader);
   }
+}
+
+exports['test addPath with empty paths list'] = function(assert) {
+  let loader = Loader({});
+
+  let dynamicPaths = [
+    ['short/', root + '/fixtures/loader/'],       // Tests adding to an empty path list
+    ['longer/path/', root + '/fixtures/loader/'], // Tests adding to the end of the list
+    ['longer/', root + '/fixtures/loader/'],      // Tests adding to the middle of the list
+    ['', root + '/fixtures/loader/']             // Tests adding to the beginning of the list
+  ];
+
+  for (let path of dynamicPaths) {
+    addPath(loader, path[0], path[1]);
+  }
+
+  let expectedMapping = dynamicPaths.
+    sort(function(a, b) { return b[0].length - a[0].length });
+
+  assert.deepEqual(loader.mapping, expectedMapping);
+
+  let fixture = main(loader, "longer/path/simple/main");
+  assert.equal(fixture.a, 42, "Fixture should load from the newly-added path");
+
+  unload(loader);
+}
+
+exports['test adding duplicate paths'] = function(assert) {
+  let loader = Loader({ paths: { '': root + '/fixtures/loader'} });
+
+  assert.throws(function() {
+    addPath(loader, '', root + '/fixtures/loader');
+  }, /already exists/, "Adding a duplicate path should throw.");
+
+  unload(loader);
 }
 
 require('test').run(exports);
