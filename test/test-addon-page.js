@@ -7,7 +7,7 @@
 const { isTabOpen, activateTab, openTab,
         closeTab, getURI } = require('sdk/tabs/utils');
 const windows = require('sdk/deprecated/window-utils');
-const { Loader } = require('sdk/test/loader');
+const { LoaderWithHookedConsole } = require('sdk/test/loader');
 const { setTimeout } = require('sdk/timers');
 const { is } = require('sdk/system/xul-app');
 const tabs = require('sdk/tabs');
@@ -19,8 +19,23 @@ function isChromeVisible(window) {
   return x !== 'true';
 }
 
+exports['test add-on page deprecation message'] = function(assert) {
+  let { loader, messages } = LoaderWithHookedConsole(module);
+  loader.require('sdk/addon-page');
+
+  assert.equal(messages.length, 1, "only one error is dispatched");
+  assert.equal(messages[0].type, "error", "the console message is an error");
+
+  let msg = messages[0].msg;
+
+  assert.ok(msg.indexOf("DEPRECATED") === 0,
+            "The message is deprecation message");
+
+  loader.unload();
+};
+
 exports['test that add-on page has no chrome'] = function(assert, done) {
-  let loader = Loader(module);
+  let { loader } = LoaderWithHookedConsole(module);
   loader.require('sdk/addon-page');
 
   let window = windows.activeBrowserWindow;
@@ -43,7 +58,7 @@ exports['test that add-on page has no chrome'] = function(assert, done) {
 };
 
 exports['test that add-on page with hash has no chrome'] = function(assert, done) {
-  let loader = Loader(module);
+  let { loader } = LoaderWithHookedConsole(module);
   loader.require('sdk/addon-page');
 
   let window = windows.activeBrowserWindow;
@@ -66,7 +81,7 @@ exports['test that add-on page with hash has no chrome'] = function(assert, done
 };
 
 exports['test that add-on page with querystring has no chrome'] = function(assert, done) {
-  let loader = Loader(module);
+  let { loader } = LoaderWithHookedConsole(module);
   loader.require('sdk/addon-page');
 
   let window = windows.activeBrowserWindow;
@@ -89,7 +104,7 @@ exports['test that add-on page with querystring has no chrome'] = function(asser
 };
 
 exports['test that add-on page with hash and querystring has no chrome'] = function(assert, done) {
-  let loader = Loader(module);
+  let { loader } = LoaderWithHookedConsole(module);
   loader.require('sdk/addon-page');
 
   let window = windows.activeBrowserWindow;
@@ -112,7 +127,7 @@ exports['test that add-on page with hash and querystring has no chrome'] = funct
 };
 
 exports['test that malformed uri is not an addon-page'] = function(assert, done) {
-  let loader = Loader(module);
+  let { loader } = LoaderWithHookedConsole(module);
   loader.require('sdk/addon-page');
 
   let window = windows.activeBrowserWindow;
@@ -132,7 +147,7 @@ exports['test that malformed uri is not an addon-page'] = function(assert, done)
 };
 
 exports['test that add-on pages are closed on unload'] = function(assert, done) {
-  let loader = Loader(module);
+  let { loader } = LoaderWithHookedConsole(module);
   loader.require('sdk/addon-page');
 
   tabs.open({
