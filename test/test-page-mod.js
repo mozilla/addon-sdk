@@ -1137,3 +1137,20 @@ exports["test page-mod on private tab in global pb"] = function (test) {
   });
   pb.activate();
 }
+
+// Bug 699450: Calling worker.tab.close() should not lead to exception
+exports.testWorkerTabClose = function(test) {
+  let mods = testPageMod(test, "about:", [{
+      include: "about:",
+      contentScript: '',
+      onAttach: function(worker) {
+        worker.tab.close();
+        test.assert(!worker.tab,
+                    "worker.tab should be null right after tab.close()");
+      }
+    }],
+    function(win, done) {
+      done();
+    }
+  );
+};

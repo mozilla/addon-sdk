@@ -293,6 +293,14 @@ exports.testTabClose = function(test) {
           test.done()
         });
       });
+
+      // Bug 699450: Multiple calls to tab should not throw
+      try {
+        tab.close();
+      }
+      catch(e) {
+        test.fail("second call to tab.closed thrown an exception: " + e);
+      }
       test.assertNotEqual(tabs.activeTab.url, url, "tab is no longer the active tab");
     });
 
