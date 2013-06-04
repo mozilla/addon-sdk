@@ -287,12 +287,25 @@ exports.testTabClose = function(test) {
     tabs.on('ready', function onReady(tab) {
       tabs.removeListener('ready', onReady);
       test.assertEqual(tabs.activeTab.url, tab.url, "tab is now the active tab");
+      let secondOnCloseCalled = false;
       tab.close(function() {
         closeBrowserWindow(window, function() {
+          test.assert(secondOnCloseCalled,
+            "The immediate second call to tab.close gots its callback fired");
           test.assertNotEqual(tabs.activeTab.url, url, "tab is no longer the active tab");
           test.done()
         });
       });
+
+      // Bug 699450: Multiple calls to tab should not throw
+      try {
+        tab.close(function () {
+          secondOnCloseCalled = true;
+        });
+      }
+      catch(e) {
+        test.fail("second call to tab.close() thrown an exception: " + e);
+      }
       test.assertNotEqual(tabs.activeTab.url, url, "tab is no longer the active tab");
     });
 
