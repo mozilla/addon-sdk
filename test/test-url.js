@@ -1,6 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+"use strict";
 
 var url = require("sdk/url");
 var { Loader } = require("sdk/test/loader");
@@ -93,7 +94,7 @@ exports.testParseHttpWithPort = function(test) {
 
 exports.testParseChrome = function(test) {
   var info = url.URL("chrome://global/content/blah");
-  test.assertEqual(info.protocol, "chrome");
+  test.assertEqual(info.protocol, "chrome:");
   test.assertEqual(info.scheme, "chrome");
   test.assertEqual(info.hostname, "global");
   test.assertEqual(info.host, "global");
@@ -105,7 +106,7 @@ exports.testParseChrome = function(test) {
 
 exports.testParseAbout = function(test) {
   var info = url.URL("about:boop");
-  test.assertEqual(info.protocol, "about");
+  test.assertEqual(info.protocol, "about:");
   test.assertEqual(info.scheme, "about");
   test.assertEqual(info.hostname, null);
   test.assertEqual(info.host, null);
@@ -118,7 +119,7 @@ exports.testParseAbout = function(test) {
 
 exports.testParseFTP = function(test) {
   var info = url.URL("ftp://1.2.3.4/foo");
-  test.assertEqual(info.protocol, "ftp");
+  test.assertEqual(info.protocol, "ftp:");
   test.assertEqual(info.scheme, "ftp");
   test.assertEqual(info.hostname, "1.2.3.4");
   test.assertEqual(info.host, "1.2.3.4");
@@ -147,7 +148,7 @@ exports.testParseFTPWithprePath = function(test) {
 exports.testSetProtocol = function(test) {
   var info = url.URL("ftp://user:pass@1.2.3.4:5/foo");
   info.protocol = "http";
-  test.assertEqual(info.protocol, "http");
+  test.assertEqual(info.protocol, "http:");
   test.assertEqual(info.scheme, "http");
   test.assertEqual(info.hostname, "1.2.3.4");
   test.assertEqual(info.host, "1.2.3.4");
@@ -158,10 +159,44 @@ exports.testSetProtocol = function(test) {
   test.assertEqual(info.prePath, "http://user:pass@1.2.3.4:5");
 };
 
+exports.testSetProtocol_alt = function(test) {
+  var info = url.URL("ftp://user:pass@1.2.3.4:5/foo");
+  test.assertEqual(info.protocol = "http:", "http:", "setting the protocol also returns it");
+  test.assertEqual(info.protocol, "http:");
+  test.assertEqual(info.scheme, "http");
+  test.assertEqual(info.hostname, "1.2.3.4");
+  test.assertEqual(info.host, "1.2.3.4");
+  test.assertEqual(info.port, 5);
+  test.assertEqual(info.auth, "user:pass");
+  test.assertEqual(info.userPass, "user:pass");
+  test.assertEqual(info.path, "/foo");
+  test.assertEqual(info.prePath, "http://user:pass@1.2.3.4:5");
+};
+
+exports.testSetProtocolError = function(test) {
+  var info = url.URL("ftp://user:pass@1.2.3.4:5/foo");
+  try {
+    info.protocol = "::://";
+    test.fail('setting a bad protocol should throw');
+  }
+  catch(e) {
+    test.pass('setting a bad protocol will throw an error');
+  }
+  test.assertEqual(info.protocol, "ftp:");
+  test.assertEqual(info.scheme, "ftp");
+  test.assertEqual(info.hostname, "1.2.3.4");
+  test.assertEqual(info.host, "1.2.3.4");
+  test.assertEqual(info.port, 5);
+  test.assertEqual(info.auth, "user:pass");
+  test.assertEqual(info.userPass, "user:pass");
+  test.assertEqual(info.path, "/foo");
+  test.assertEqual(info.prePath, "ftp://user:pass@1.2.3.4:5");
+};
+
 exports.testSetAuth = function(test) {
   var info = url.URL("ftp://user:pass@1.2.3.4:5/foo");
   info.auth = "admin:mozilla";
-  test.assertEqual(info.protocol, "ftp");
+  test.assertEqual(info.protocol, "ftp:");
   test.assertEqual(info.scheme, "ftp");
   test.assertEqual(info.hostname, "1.2.3.4");
   test.assertEqual(info.host, "1.2.3.4");
@@ -175,7 +210,7 @@ exports.testSetAuth = function(test) {
 exports.testSetHostName = function(test) {
   var info = url.URL("ftp://user:pass@1.2.3.4:5/foo");
   info.hostname = "mozilla.org";
-  test.assertEqual(info.protocol, "ftp");
+  test.assertEqual(info.protocol, "ftp:");
   test.assertEqual(info.scheme, "ftp");
   test.assertEqual(info.hostname, "mozilla.org");
   test.assertEqual(info.host, "mozilla.org");
@@ -188,8 +223,8 @@ exports.testSetHostName = function(test) {
 
 exports.testSetPort = function(test) {
   var info = url.URL("ftp://user:pass@1.2.3.4:5/foo");
-  info.port = 6;
-  test.assertEqual(info.protocol, "ftp");
+  test.assertEqual(info.port = 6, 6, 'setting port also returns');
+  test.assertEqual(info.protocol, "ftp:");
   test.assertEqual(info.scheme, "ftp");
   test.assertEqual(info.hostname, "1.2.3.4");
   test.assertEqual(info.host, "1.2.3.4");
@@ -200,10 +235,27 @@ exports.testSetPort = function(test) {
   test.assertEqual(info.prePath, "ftp://user:pass@1.2.3.4:6");
 };
 
+exports.testSetPortError = function(test) {
+  var info = url.URL("ftp://user:pass@1.2.3.4:5/foo");
+  try {
+    info.port = "foo";
+  }
+  catch(e) {}
+  test.assertEqual(info.protocol, "ftp:");
+  test.assertEqual(info.scheme, "ftp");
+  test.assertEqual(info.hostname, "1.2.3.4");
+  test.assertEqual(info.host, "1.2.3.4");
+  test.assertEqual(info.port, 5);
+  test.assertEqual(info.auth, "user:pass");
+  test.assertEqual(info.userPass, "user:pass");
+  test.assertEqual(info.path, "/foo");
+  test.assertEqual(info.prePath, "ftp://user:pass@1.2.3.4:5");
+};
+
 exports.testSetPath = function(test) {
   var info = url.URL("ftp://user:pass@1.2.3.4:5/foo");
   info.path = "/path";
-  test.assertEqual(info.protocol, "ftp");
+  test.assertEqual(info.protocol, "ftp:");
   test.assertEqual(info.scheme, "ftp");
   test.assertEqual(info.hostname, "1.2.3.4");
   test.assertEqual(info.host, "1.2.3.4");
@@ -249,7 +301,7 @@ exports.testToFilename = function(test) {
 exports.testFromFilename = function(test) {
   var profileDirName = require("sdk/system").pathFor("ProfD");
   var fileUrl = url.fromFilename(profileDirName);
-  test.assertEqual(url.URL(fileUrl).protocol, 'file',
+  test.assertEqual(url.URL(fileUrl).protocol, 'file:',
                    'url.toFilename() should return a file: url');
   test.assertEqual(url.URL(fileUrl).scheme, 'file',
                    'url.toFilename() should return a file: url');
@@ -303,11 +355,11 @@ exports.testStringInterface = function(test) {
 
   // make sure the standard URL properties are enumerable and not the String interface bits
   test.assertEqual(Object.keys(a).join(','),
-    "scheme,pathname,hash,href,origin,protocol,search,auth,userPass,hostname,host,port,path,prePath",
+    "scheme,pathname,hash,href,origin,search,protocol,auth,userPass,hostname,host,port,path,prePath",
     "enumerable key list check for URL.");
   test.assertEqual(
       JSON.stringify(a),
-      "{\"scheme\":\"about\",\"pathname\":\"addons\",\"hash\":\"\",\"href\":\"about:addons\",\"origin\":\"about:\",\"protocol\":\"about:\",\"search\":\"\",\"auth\":null,\"userPass\":null,\"hostname\":null,\"host\":null,\"port\":null,\"path\":\"addons\",\"prePath\":\"about:\"}",
+      "{\"scheme\":\"about\",\"pathname\":\"addons\",\"hash\":\"\",\"href\":\"about:addons\",\"origin\":\"about:\",\"search\":\"\",\"protocol\":\"about:\",\"auth\":null,\"userPass\":null,\"hostname\":null,\"host\":null,\"port\":null,\"path\":\"addons\",\"prePath\":\"about:\"}",
       "JSON.stringify should return a object with correct props and vals.");
 
   // make sure that the String interface exists and works as expected
