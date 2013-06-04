@@ -1140,17 +1140,26 @@ exports["test page-mod on private tab in global pb"] = function (test) {
 
 // Bug 699450: Calling worker.tab.close() should not lead to exception
 exports.testWorkerTabClose = function(test) {
-  let mods = testPageMod(test, "about:", [{
+  let callbackDone;
+  testPageMod(test, "about:", [{
       include: "about:",
       contentScript: '',
       onAttach: function(worker) {
-        worker.tab.close();
-        test.assert(!worker.tab,
-                    "worker.tab should be null right after tab.close()");
+        console.log("call close");
+        worker.tab.close(function () {
+          // On Fennec, tab is completely destroyed right after close event is
+          // dispatch, so we need to wait for the next event loop cycle to
+          // check for tab nulliness.
+          timer.setTimeout(function () {
+            test.assert(!worker.tab,
+                        "worker.tab should be null right after tab.close()");
+            callbackDone();
+          }, 0);
+        });
       }
     }],
     function(win, done) {
-      done();
+      callbackDone = done;
     }
   );
 };
