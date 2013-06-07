@@ -4,5 +4,5 @@
 
 exports.main = 42;
 require("./subdir/subfile");
-require("sdk/self"); // trigger inclusion of our data/ directory
+require("self"); // trigger inclusion of our data/ directory
 
