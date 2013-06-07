@@ -8,6 +8,7 @@ const { getMostRecentBrowserWindow } = require('sdk/window/utils');
 const { open, close, focus } = require('sdk/window/helpers');
 const { setTimeout } = require('sdk/timers');
 
+
 exports.testSidebarBasic = function(assert) {
   assert.ok(!getMostRecentBrowserWindow().document.getElementById('test'), 'sidebar id DNE');
   let sidebarXUL = getMostRecentBrowserWindow().document.getElementById('sidebar');
