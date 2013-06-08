@@ -9,7 +9,8 @@ const { isShowing } = require('sdk/ui/state');
 const { getMostRecentBrowserWindow } = require('sdk/window/utils');
 const { open, close, focus, promise: windowPromise } = require('sdk/window/helpers');
 const { setTimeout } = require('sdk/timers');
-const { isPrivate } = require('sdk/private-browsing')
+const { isPrivate } = require('sdk/private-browsing');
+const { data } = require('sdk/self');
 
 exports.testSidebarBasicLifeCycle = function(assert, done) {
   assert.ok(!getMostRecentBrowserWindow().document.getElementById('test'), 'sidebar id DNE');
@@ -100,7 +101,7 @@ exports.testSideBarIsNotInNewPrivateWindows = function(assert, done) {
 }
 
 exports.testSideBarIsShowingInNewWindows = function(assert, done) {
-  let testName = 'testSideBarOnNewWindow';
+  let testName = 'testSideBarIsShowingInNewWindows';
   let sidebar = Sidebar({
     id: testName,
     label: testName,
@@ -131,6 +132,25 @@ exports.testSideBarIsShowingInNewWindows = function(assert, done) {
       });
     });
     let promise = windowPromise(startWindow.OpenBrowserWindow(), 'load').then(focus);
+  });
+  show(sidebar);
+}
+
+exports.testAddonGlobal = function(assert, done) {
+  let testName = 'testAddonGlobal';
+  let sidebar = Sidebar({
+    id: testName,
+    label: testName,
+    url: data.url('test-sidebar-addon-global.html')
+  });
+
+  sidebar.on('show', function({ worker }) {
+    worker.on('message', function(msg) {
+      assert.equal(msg, 'hello sidebar add-on');
+      sidebar.destroy();
+      done();
+    })
+    worker.postMessage();
   });
   show(sidebar);
 }
