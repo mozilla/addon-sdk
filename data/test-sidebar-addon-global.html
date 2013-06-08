@@ -1,8 +1,10 @@
 <script>
-window.addEventListener('load', function() {
-  addon.onMessage(function() {
-    addon.postMessage('hello sidebar add-on');
-  });
+addon.port.on('X', function(msg) {
+  // last message
+  addon.port.emit('X', msg + '3');
 });
+
+// start messaging chain
+addon.port.emit('X', '1');
 </script>
 SIDEBAR TEST
