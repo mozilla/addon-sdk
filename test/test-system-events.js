@@ -77,14 +77,12 @@ exports["test listeners are GC-ed"] = function(assert, done) {
 
   handler = weakHandler = null;
 
-  Cu.forceGC();
-  setTimeout(function() {
-    Cu.forceGC();
+  Cu.schedulePreciseGC(function() {
     events.emit(type, { data: 2 });
     assert.equal(receivedFromWeak.length, 1, "weak listener was GC-ed");
     assert.equal(receivedFromStrong.length, 2, "strong listener was invoked");
     done();
-  }, 300);
+  });
 };
 
 exports["test handle nsIObserverService notifications"] = function(assert) {
