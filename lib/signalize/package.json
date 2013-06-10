@@ -1,7 +1,7 @@
 {
   "name": "signalize",
   "id": "signalize",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Signals in a functional reactive style",
   "keywords": [
     "signalize",

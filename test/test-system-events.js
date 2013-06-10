@@ -177,8 +177,7 @@ exports["test emit to nsIObserverService observers"] = function(assert) {
 
   assert.equal(timesCalled, 1, "emit notifies observers");
   assert.equal(lastTopic, topic, "event type is notification topic");
-  assert.equal(lastSubject.wrappedJSObject.object, uri,
-               "event.subject is notification subject");
+  assert.equal(lastSubject, uri, "event.subject is notification subject");
   assert.equal(lastData, "some data", "event.data is notification data");
 
   function customSubject() {}

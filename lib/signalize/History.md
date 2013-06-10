@@ -1,5 +1,10 @@
 # Changes
 
+## 0.2.0
+
+  - Export `signal` function.
+  - Implement `hub` for multiplexing signals.
+
 ## 0.1.1
 
   - Upadate `signal` API to avoid passing `self` each

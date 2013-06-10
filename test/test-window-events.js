@@ -10,10 +10,11 @@ const { open, getMostRecentBrowserWindow, getOuterId } = require("sdk/window/uti
 exports["test browser events"] = function(assert, done) {
   let loader = Loader(module);
   let { events } = loader.require("sdk/window/events");
-  let { on, off } = loader.require("sdk/event/core");
+  let { spawn, STOP } = loader.require("signalize/core");
   let actual = [];
 
-  on(events, "data", function handler(e) {
+  spawn(events, function handler(e) {
+    console.log("###", e && e.toSource())
     actual.push(e);
     if (e.type === "load") window.close();
     if (e.type === "close") {
@@ -30,12 +31,9 @@ exports["test browser events"] = function(assert, done) {
       assert.equal(close.type, "close")
       assert.equal(close.target, window, "window load")
 
-      // Note: If window is closed right after this GC won't have time
-      // to claim loader and there for this listener. It's better to remove
-      // remove listener here to avoid race conditions.
-      off(events, "data", handler);
-      loader.unload();
-      done();
+      //loader.unload();
+      //done();
+      return STOP;
     }
   });
 
