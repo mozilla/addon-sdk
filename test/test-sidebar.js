@@ -12,43 +12,92 @@ const { setTimeout } = require('sdk/timers');
 const { isPrivate } = require('sdk/private-browsing');
 const { data } = require('sdk/self');
 const { makeID } = require('sdk/ui/sidebar/utils');
+const { fromIterator } = require('sdk/util/array');
+
+const BUILTIN_SIDEBAR_MENUITEMS = [
+  'menu_socialSidebar',
+  'menu_historySidebar',
+  'menu_bookmarksSidebar'
+]
+
+function isSidebarShowing(window) {
+  window = window || getMostRecentBrowserWindow();
+  let sidebar = window.document.getElementById('sidebar-box');
+  return !sidebar.hidden;
+}
+
+function getSidebarMenuitems(window) {
+  window = window || getMostRecentBrowserWindow();
+  return fromIterator(window.document.querySelectorAll('#viewSidebarMenu menuitem'));
+}
+
+function getExtraSidebarMenuitems() {
+  let menuitems = getSidebarMenuitems();
+  return menuitems.filter(function(mi) {
+    return BUILTIN_SIDEBAR_MENUITEMS.indexOf(mi.getAttribute('id')) < 0;
+  });
+}
 
 exports.testSidebarBasicLifeCycle = function(assert, done) {
-  let testName = 'test';
-  assert.ok(!getMostRecentBrowserWindow().document.getElementById(makeID(testName)), 'sidebar id DNE');
-  let sidebarXUL = getMostRecentBrowserWindow().document.getElementById('sidebar');
+  let testName = 'testSidebarBasicLifeCycle';
+  let window = getMostRecentBrowserWindow();
+  assert.ok(!window.document.getElementById(makeID(testName)), 'sidebar id DNE');
+  let sidebarXUL = window.document.getElementById('sidebar');
   assert.ok(sidebarXUL, 'sidebar xul element does exist');
-  //assert.notEqual(sidebarXUL.getAttribute(''))
+  assert.ok(!getExtraSidebarMenuitems().length, 'there are no extra sidebar menuitems');
+
+  assert.equal(isSidebarShowing(window), false, 'sidebar is not showing 1');
   let sidebar = Sidebar({
     id: testName,
-    label: 'test',
-    url: 'about:blank'
+    title: 'test',
+    url: 'data:text/html;charset=utf-8,'+testName
   });
 
   assert.pass('The Sidebar constructor worked');
-  let ele = getMostRecentBrowserWindow().document.getElementById(makeID(testName));
-  assert.ok(ele, 'sidebar element was added');
-  assert.ok(!ele.hasAttribute('checked'), 'the sidebar is not displayed');
 
+  let extraMenuitems = getExtraSidebarMenuitems();
+  assert.equal(extraMenuitems.length, 1, 'there is one extra sidebar menuitems');
+
+  let ele = window.document.getElementById(makeID(testName));
+  assert.equal(ele, extraMenuitems[0], 'the only extra menuitem is the one for our sidebar.')
+  assert.ok(ele, 'sidebar element was added');
+  assert.ok(ele.getAttribute('checked'), 'false', 'the sidebar is not displayed');
+  assert.equal(ele.getAttribute('label'), sidebar.title, 'the sidebar title is the menuitem label')
+
+  assert.equal(isSidebarShowing(window), false, 'sidebar is not showing 2');
   sidebar.on('show', function() {
     assert.pass('the show event was fired');
+    assert.equal(isSidebarShowing(window), true, 'sidebar is not showing 3');
     assert.equal(isShowing(sidebar), true, 'the sidebar is showing');
     assert.equal(ele.getAttribute('checked'), 'true', 'the sidebar is displayed');
 
     sidebar.once('hide', function() {
       assert.pass('the hide event was fired');
+      assert.equal(ele.getAttribute('checked'), 'false', 'the sidebar menuitem is not checked');
       assert.equal(isShowing(sidebar), false, 'the sidebar is not showing');
+      assert.equal(isSidebarShowing(window), false, 'the sidebar elemnt is hidden');
 
-      sidebar.destroy();
-      assert.ok(!getMostRecentBrowserWindow().document.getElementById(makeID(testName)), 'sidebar id DNE');
-      assert.pass('calling destroy worked without error');
+      sidebar.once('detach', function() {
+        sidebar.destroy();
 
-      done();
+        let sidebarMI = getSidebarMenuitems();
+        for each (let mi in sidebarMI) {
+          assert.ok(BUILTIN_SIDEBAR_MENUITEMS.indexOf(mi.getAttribute('id')) >= 0, 'the menuitem is for a built-in sidebar')
+          assert.equal(mi.getAttribute('checked'), "false", 'no sidebar menuitem is checked');
+        }
+
+        assert.ok(!window.document.getElementById(makeID(testName)), 'sidebar id DNE');
+        assert.pass('calling destroy worked without error');
+
+        done();
+      });
     });
-    hide(sidebar);
+
+    sidebar.hide();
     assert.pass('hiding sidebar..');
   });
-  show(sidebar);
+
+  sidebar.show();
   assert.pass('showing sidebar..');
 }
 
@@ -56,7 +105,7 @@ exports.testSideBarIsInNewWindows = function(assert, done) {
   let testName = 'testSideBarOnNewWindow';
   let sidebar = Sidebar({
     id: testName,
-    label: testName,
+    title: testName,
     url: 'data:text/html;charset=utf-8,'+testName
   });
 
@@ -76,11 +125,11 @@ exports.testSideBarIsInNewWindows = function(assert, done) {
   })
 }
 
-exports.testSideBarIsNotInNewPrivateWindows = function(assert, done) {
+exports.testSideBarIsNotInNewPrivateWindows3 = function(assert, done) {
   let testName = 'testSideBarOnNewWindow';
   let sidebar = Sidebar({
     id: testName,
-    label: testName,
+    title: testName,
     url: 'data:text/html;charset=utf-8,'+testName
   });
 
@@ -105,7 +154,7 @@ exports.testSideBarIsShowingInNewWindows = function(assert, done) {
   let testName = 'testSideBarIsShowingInNewWindows';
   let sidebar = Sidebar({
     id: testName,
-    label: testName,
+    title: testName,
     url: 'data:text/html;charset=utf-8,'+testName
   });
 
@@ -129,7 +178,7 @@ exports.testSideBarIsShowingInNewWindows = function(assert, done) {
           end();
         }
         else {
-          sb.addEventListener('DOMWindowCreated', end, false);console.log(2)
+          sb.addEventListener('DOMWindowCreated', end, false);
         }
 
         function end() {
@@ -139,7 +188,7 @@ exports.testSideBarIsShowingInNewWindows = function(assert, done) {
           let ele = window.document.getElementById(makeID(testName));
 
           assert.ok(ele, 'sidebar element was added 2');
-          assert.equal(ele.hasAttribute('checked'), true, 'the sidebar is checked');
+          assert.equal(ele.getAttribute('checked'), 'true', 'the sidebar is checked');
           assert.notEqual(ele, oldEle, 'there are two different sidebars');
 
           assert.equal(isShowing(sidebar), true, 'the sidebar is showing in new window');
@@ -150,6 +199,8 @@ exports.testSideBarIsShowingInNewWindows = function(assert, done) {
             sidebar.destroy();
 
             assert.equal(isShowing(sidebar), false, 'the sidebar is not showing');
+            assert.ok(!isSidebarShowing(window), 'sidebar in most recent window is not showing');
+            assert.ok(!isSidebarShowing(startWindow), 'sidebar in most start window is not showing');
             assert.ok(!window.document.getElementById(makeID(testName)), 'sidebar id DNE');
             assert.ok(!startWindow.document.getElementById(makeID(testName)), 'sidebar id DNE');
 
@@ -172,7 +223,7 @@ exports.testAddonGlobal = function(assert, done) {
   let testName = 'testAddonGlobal';
   let sidebar = Sidebar({
     id: testName,
-    label: testName,
+    title: testName,
     url: data.url('test-sidebar-addon-global.html')
   });
 
@@ -194,6 +245,61 @@ exports.testAddonGlobal = function(assert, done) {
     })
   });
   show(sidebar);
+}
+
+exports.testShowingOneSidebarAfterAnother = function(assert, done) {
+  let testName = 'testShowingOneSidebarAfterAnother';
+
+  let sidebar1 = Sidebar({
+    id: testName + '1',
+    title: testName + '1',
+    url:  'data:text/html;charset=utf-8,'+ testName + 1
+  });
+  let sidebar2 = Sidebar({
+    id: testName + '2',
+    title: testName + '2',
+    url:  'data:text/html;charset=utf-8,'+ testName + 2
+  });
+
+  let window = getMostRecentBrowserWindow();
+  let IDs = [ sidebar1.id, sidebar2.id ];
+
+  let extraMenuitems = getExtraSidebarMenuitems(window);
+  assert.equal(extraMenuitems.length, 2, 'there are two extra sidebar menuitems');
+
+  function testShowing(sb1, sb2, sbEle) {
+    assert.equal(isShowing(sidebar1), sb1, 'the sidebar1 is not showing');
+    assert.equal(isShowing(sidebar2), sb2, 'the sidebar2 is not showing');
+    assert.equal(isSidebarShowing(window), sbEle, 'sidebar in most recent window is not showing');
+  }
+  testShowing(false, false, false);
+
+  sidebar1.once('show', function() {
+    testShowing(true, false, true);
+    for each (let mi in getExtraSidebarMenuitems(window)) {
+      let menuitemID = mi.getAttribute('id').replace(/^jetpack-sidebar-/, '');
+      assert.ok(IDs.indexOf(menuitemID) >= 0, 'the extra menuitem is for one of our test sidebars');
+      assert.equal(mi.getAttribute('checked'), menuitemID == sidebar1.id ? 'true' : 'false', 'the test sidebar menuitem has the correct checked value');
+    }
+
+    sidebar2.once('show', function() {
+      testShowing(false, true, true);
+      for each (let mi in getExtraSidebarMenuitems(window)) {
+        let menuitemID = mi.getAttribute('id').replace(/^jetpack-sidebar-/, '');
+        assert.ok(IDs.indexOf(menuitemID) >= 0, 'the extra menuitem is for one of our test sidebars');
+        assert.equal(mi.getAttribute('checked'), menuitemID == sidebar2.id ? 'true' : 'false', 'the test sidebar menuitem has the correct checked value');
+      }
+
+      sidebar1.destroy();
+      sidebar2.destroy();
+
+      testShowing(false, false, false);
+
+      done();
+    });
+    show(sidebar2);
+  })
+  show(sidebar1);
 }
 
 require('sdk/test').run(exports);
