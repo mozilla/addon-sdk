@@ -42,9 +42,10 @@ exports["test multiple tabs"] = function(assert, done) {
   let { on, off } = loader.require("sdk/event/core");
   let actual = [];
   on(events, "data", function({type, target, timeStamp}) {
-    // ignore about:blank pages and content-document-global-created
+    // ignore about:blank pages and *-document-global-created
     // events that are not very consistent.
     if (target.URL !== "about:blank" &&
+        type !== "chrome-document-global-created" &&
         type !== "content-document-global-created")
       actual.push(type + " -> " + target.URL)
   });
@@ -83,9 +84,10 @@ exports["test nested frames"] = function(assert, done) {
   let { on, off } = loader.require("sdk/event/core");
   let actual = [];
   on(events, "data", function({type, target, timeStamp}) {
-    // ignore about:blank pages and content-document-global-created
+    // ignore about:blank pages and *-global-created
     // events that are not very consistent.
     if (target.URL !== "about:blank" &&
+       type !== "chrome-document-global-created" &&
        type !== "content-document-global-created")
       actual.push(type + " -> " + target.URL)
   });
