@@ -12,7 +12,7 @@ const { curry, identity, partial } = require("sdk/lang/functional");
 
 let when = curry(function(options, tab) {
   let type = options.type || options;
-  let capture = options.captuer || false;
+  let capture = options.capture || false;
   let target = getBrowserForTab(tab);
   let { promise, resolve } = defer();
 
