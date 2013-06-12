@@ -6,7 +6,7 @@ const events = require("sdk/system/events");
 const self = require("sdk/self");
 const { Cc, Ci, Cu } = require("chrome");
 const { setTimeout } = require("sdk/timers");
-const { LoaderWithHookedConsole2 } = require("sdk/test/loader");
+const { Loader, LoaderWithHookedConsole2 } = require("sdk/test/loader");
 const nsIObserverService = Cc["@mozilla.org/observer-service;1"].
                            getService(Ci.nsIObserverService);
 
@@ -64,7 +64,10 @@ exports["test error reporting"] = function(assert) {
 exports["test listeners are GC-ed"] = function(assert, done) {
   let receivedFromWeak = [];
   let receivedFromStrong = [];
-  let type = Date.now().toString(32);
+  let loader = Loader(module);
+  let events = loader.require('sdk/system/events');
+
+  let type = 'test-listeners-are-garbage-collected';
   function handler(event) { receivedFromStrong.push(event); }
   function weakHandler(event) { receivedFromWeak.push(event); }
 
@@ -79,8 +82,11 @@ exports["test listeners are GC-ed"] = function(assert, done) {
 
   Cu.schedulePreciseGC(function() {
     events.emit(type, { data: 2 });
+
     assert.equal(receivedFromWeak.length, 1, "weak listener was GC-ed");
     assert.equal(receivedFromStrong.length, 2, "strong listener was invoked");
+
+    loader.unload();
     done();
   });
 };
