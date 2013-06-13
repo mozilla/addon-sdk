@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
+const { Loader } = require('sdk/test/loader');
 const { Sidebar } = require('sdk/ui/sidebar');
 const { show, hide } = require('sdk/ui/actions');
 const { isShowing } = require('sdk/ui/state');
@@ -18,7 +19,7 @@ const BUILTIN_SIDEBAR_MENUITEMS = [
   'menu_socialSidebar',
   'menu_historySidebar',
   'menu_bookmarksSidebar'
-]
+];
 
 function isSidebarShowing(window) {
   window = window || getMostRecentBrowserWindow();
@@ -125,7 +126,7 @@ exports.testSideBarIsInNewWindows = function(assert, done) {
   })
 }
 
-exports.testSideBarIsNotInNewPrivateWindows3 = function(assert, done) {
+exports.testSideBarIsNotInNewPrivateWindows = function(assert, done) {
   let testName = 'testSideBarOnNewWindow';
   let sidebar = Sidebar({
     id: testName,
@@ -219,7 +220,8 @@ exports.testSideBarIsShowingInNewWindows = function(assert, done) {
   assert.pass('showing the sidebar');
 }
 
-exports.testAddonGlobal = function(assert, done) {
+/*
+exports.testAddonGlobalSimple = function(assert, done) {
   let testName = 'testAddonGlobal';
   let sidebar = Sidebar({
     id: testName,
@@ -231,7 +233,32 @@ exports.testAddonGlobal = function(assert, done) {
     assert.pass('sidebar was attached');
     assert.ok(!!worker, 'attach event has worker');
 
-    worker.port.once('X', function(msg) {
+    worker.port.on('X', function(msg) {
+      assert.equal(msg, '23', 'the final message is correct');
+
+      sidebar.destroy();
+
+      done();
+    });
+    worker.port.emit('X', '2');
+  });
+  show(sidebar);
+}
+*/
+
+exports.testAddonGlobalComplex = function(assert, done) {
+  let testName = 'testAddonGlobal';
+  let sidebar = Sidebar({
+    id: testName,
+    title: testName,
+    url: data.url('test-sidebar-addon-global.html')
+  });
+
+  sidebar.on('attach', function(worker) {
+    assert.pass('sidebar was attached');
+    assert.ok(!!worker, 'attach event has worker');
+
+    worker.port.once('Y', function(msg) {
       assert.equal(msg, '1', 'got event from worker');
 
       worker.port.on('X', function(msg) {
@@ -268,9 +295,9 @@ exports.testShowingOneSidebarAfterAnother = function(assert, done) {
   assert.equal(extraMenuitems.length, 2, 'there are two extra sidebar menuitems');
 
   function testShowing(sb1, sb2, sbEle) {
-    assert.equal(isShowing(sidebar1), sb1, 'the sidebar1 is not showing');
-    assert.equal(isShowing(sidebar2), sb2, 'the sidebar2 is not showing');
-    assert.equal(isSidebarShowing(window), sbEle, 'sidebar in most recent window is not showing');
+    assert.equal(isShowing(sidebar1), sb1);
+    assert.equal(isShowing(sidebar2), sb2);
+    assert.equal(isSidebarShowing(window), sbEle);
   }
   testShowing(false, false, false);
 
@@ -297,9 +324,54 @@ exports.testShowingOneSidebarAfterAnother = function(assert, done) {
 
       done();
     });
+
     show(sidebar2);
+    assert.pass('showing sidebar 2');
   })
   show(sidebar1);
+  assert.pass('showing sidebar 1');
+}
+
+exports.testSidebarUnload = function(assert, done) {
+  let loader = Loader(module);
+
+  let testName = 'testSidebarUnload';
+  let window = getMostRecentBrowserWindow();
+
+  let sidebar = loader.require('sdk/ui/sidebar').Sidebar({
+    id: testName,
+    title: testName,
+    url:  'data:text/html;charset=utf-8,'+ testName
+  });
+
+  sidebar.on('show', function() {
+    loader.unload();
+
+    let sidebarMI = getSidebarMenuitems();
+    for each (let mi in sidebarMI) {
+      assert.ok(BUILTIN_SIDEBAR_MENUITEMS.indexOf(mi.getAttribute('id')) >= 0, 'the menuitem is for a built-in sidebar')
+      assert.equal(mi.getAttribute('checked'), 'false', 'no sidebar menuitem is checked');
+    }
+    assert.ok(!window.document.getElementById(makeID(testName)), 'sidebar id DNE');
+    assert.equal(isSidebarShowing(window), false, 'the sidebar is not showing');
+
+    done();
+  });
+  sidebar.show();
+}
+
+exports.testRemoteContent = function(assert) {
+  let testName = 'testRemoteContent';
+  try {
+    let sidebar = Sidebar({
+      id: testName,
+      title: 'test',
+      url: 'http://mozilla.org'
+    });
+  }
+  catch(e) {
+    assert.ok(/The option "url" must be one of the following types: string/.test(e), 'remote content is not acceptable');
+  }
 }
 
 require('sdk/test').run(exports);
