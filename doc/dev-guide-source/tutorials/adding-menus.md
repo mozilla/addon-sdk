@@ -30,8 +30,7 @@ Third-party packages like `menuitems` can be installed in three
 different places:
 
 * in the `packages` directory under the SDK root. If you do this the package
-is available to any other add-ons you're developing using that SDK instance,
-and the package's documentation is visible through `cfx docs`.
+is available to any other add-ons you're developing using that SDK instance.
 * in a `packages` directory you create under your add-on's root: if you
 do this, the package is only available to that add-on.
 * in a directory indicated using the `packages` key in
@@ -46,13 +45,6 @@ the SDK root directory, execute something like the following commands:
 cd packages
 tar -xf ../erikvold-menuitems-jplib-d80630c.zip
 </pre>
-
-Now if you run `cfx docs` you'll see a new section appear in the sidebar
-labeled "Third-Party APIs", which lists the modules in the `menuitems`
-package: this package contains a single module, also
-called `menuitems`.
-
-Click on the module name and you'll see API documentation for the module.
 
 ## Module Dependencies ##
 
@@ -78,9 +70,9 @@ and adding it under the `packages` directory alongside `menuitems`.
 We can use the `menuitems` module in exactly the same way we use built-in
 modules.
 
-The documentation for the `menuitems` module tells us to we create a menu
-item using `MenuItem()`. Of the options accepted by `MenuItem()`, we'll use
-this minimal set:
+The [documentation for the `menuitems` module](https://github.com/erikvold/menuitems-jplib/blob/master/docs/menuitems.md)
+tells us to create a menu item using `MenuItem()`. Of the options
+accepted by `MenuItem()`, we'll use this minimal set:
 
 * `id`: identifier for this menu item
 * `label`: text the item displays
