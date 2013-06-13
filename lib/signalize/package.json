@@ -1,0 +1,88 @@
+{
+  "name": "signalize",
+  "id": "signalize",
+  "version": "0.2.0",
+  "description": "Signals in a functional reactive style",
+  "keywords": [
+    "signalize",
+    "FRP",
+    "functional",
+    "reactive",
+    "signal"
+  ],
+  "author": "Irakli Gozalishvili <rfobic@gmail.com> (http://jeditoolkit.com)",
+  "homepage": "https://github.com/Gozala/signalize",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Gozala/signalize.git",
+    "web": "https://github.com/Gozala/signalize"
+  },
+  "bugs": {
+    "url": "http://github.com/Gozala/signalize/issues/"
+  },
+  "dependencies": {
+    "method": "~2.0.0"
+  },
+  "devDependencies": {
+    "test": "~0.x.0",
+    "phantomify": "~0.x.0",
+    "retape": "~0.x.0",
+    "tape": "~0.1.5"
+  },
+  "main": "./core.js",
+  "scripts": {
+    "test": "npm run test-node && npm run test-browser && npm run test-tap",
+    "test-browser": "node ./node_modules/phantomify/bin/cmd.js ./test/phantom-index.js",
+    "test-node": "node ./test/common-index.js",
+    "test-tap": "node ./test/tap-index.js"
+  },
+  "testling": {
+    "files": "test/testling-index.js",
+    "browsers": {
+      "iexplore": [
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "chrome": [
+        16,
+        20,
+        25,
+        "canary"
+      ],
+      "firefox": [
+        10,
+        15,
+        16,
+        17,
+        18,
+        19,
+        "nightly"
+      ],
+      "safari": [
+        5,
+        6
+      ],
+      "opera": [
+        10,
+        11,
+        12,
+        "next"
+      ],
+      "iphone": [
+        6
+      ],
+      "ipad": [
+        6
+      ]
+    }
+  },
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://github.com/Gozala/signalize/License.md"
+    }
+  ]
+}

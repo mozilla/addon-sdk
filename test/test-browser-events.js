@@ -11,10 +11,10 @@ const { setTimeout } = require("sdk/timers");
 exports["test browser events"] = function(assert, done) {
   let loader = Loader(module);
   let { events } = loader.require("sdk/browser/events");
-  let { on, off } = loader.require("sdk/event/core");
+  let { spawn, STOP } = loader.require("signalize/core");
   let actual = [];
 
-  on(events, "data", function handler(e) {
+  spawn(events, function handler(e) {
     actual.push(e);
     if (e.type === "load") window.close();
     if (e.type === "close") {
@@ -31,12 +31,9 @@ exports["test browser events"] = function(assert, done) {
       assert.equal(close.type, "close");
       assert.equal(close.target, window, "window load");
 
-      // Note: If window is closed right after this GC won't have time
-      // to claim loader and there for this listener, there for it's safer
-      // to remove listener.
-      off(events, "data", handler);
       loader.unload();
       done();
+      return STOP;
     }
   });
 
@@ -48,13 +45,13 @@ exports["test browser events ignore other wins"] = function(assert, done) {
   let loader = Loader(module);
   let { events: windowEvents } = loader.require("sdk/window/events");
   let { events: browserEvents } = loader.require("sdk/browser/events");
-  let { on, off } = loader.require("sdk/event/core");
+  let { spawn, STOP } = loader.require("signalize/core");
   let actualBrowser = [];
   let actualWindow = [];
 
   function browserEventHandler(e) actualBrowser.push(e)
-  on(browserEvents, "data", browserEventHandler);
-  on(windowEvents, "data", function handler(e) {
+  spawn(browserEvents, browserEventHandler);
+  spawn(windowEvents, function handler(e) {
     actualWindow.push(e);
     // Delay close so that if "load" is also emitted on `browserEvents`
     // `browserEventHandler` will be invoked.
@@ -77,14 +74,8 @@ exports["test browser events ignore other wins"] = function(assert, done) {
       assert.equal(close.type, "close");
       assert.equal(close.target, window, "window load");
 
-
-      // Note: If window is closed right after this GC won't have time
-      // to claim loader and there for this listener, there for it's safer
-      // to remove listener.
-      off(windowEvents, "data", handler);
-      off(browserEvents, "data", browserEventHandler);
-      loader.unload();
       done();
+      return STOP;
     }
   });
 
