@@ -48,7 +48,7 @@ exports["test readir"] = function(assert, end) {
   async = true;
 };
 
-exports["test readir error"] = function(assert, end) {
+exports["test readdir error"] = function(assert, end) {
   var async = false;
   var path = profilePath + "-does-not-exists";
   fs.readdir(path, function(error, entries) {
@@ -445,7 +445,7 @@ exports["test fs.writeFile"] = function(assert, end) {
 
   var async = false;
   fs.writeFile(path, content, function(error) {
-    assert.ok(async, "fs write is sync");
+    assert.ok(async, "fs write is async");
     assert.ok(!error, "error is falsy");
     assert.ok(fs.existsSync(path), "file was created");
     assert.equal(fs.readFileSync(path).toString(),
