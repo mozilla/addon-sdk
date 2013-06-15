@@ -5,34 +5,39 @@
 
 let { Cc, Ci } = require("chrome");
 let { WebSocket } = require("sdk/web-socket");
-
-let iOService = Cc["@mozilla.org/network/io-service;1"].
-                getService(Ci.nsIIOService);
+let { createServer } = require("sdk/io/net");
 
 exports.testWebSocket = function(assert, done) {
-  if (iOService.offline) {
-    assert.pass("can't test if we're offline");
-    return done();
-  }
+  let server = createServer({ allowHalfOpen: true }, function(socket) {
+    assert.equal(server.connections, 1, "got one connection");
+    socket.on("data", function(data) {
+      assert.ok(data.toString().indexOf("Upgrade: websocket") >= 0,
+                "got websocket client handshake");
+      socket.end();
+      server.close();
+    });
+  });
 
-  let socket = new WebSocket("ws://echo.websocket.org/");
+  server.listen(8099, "localhost", function() {
+    let socket = new WebSocket("ws://localhost:8099/");
 
-  socket.onopen = function(event) {
-    assert.equal(event.type, "open", "open event recieved");
-    socket.send("hello socket");
-  }
-  socket.onmessage = function(event) {
-    assert.equal(event.type, "message", "recieved message");
-    assert.equal(event.data, "hello socket", "message recieved back");
-    socket.close();
-  }
-  socket.onclose = function(event) {
-    assert.equal(event.type, "close", "socket was closed");
-    done();
-  }
-  socket.onerror = function(event) {
-    assert.fail(Error("error event occured"))
-  }
-};
+    socket.onopen = function(event) {
+      assert.equal(event.type, "open", "open event recieved");
+      socket.send("hello socket");
+    }
+    socket.onmessage = function(event) {
+      assert.equal(event.type, "message", "recieved message");
+      assert.equal(event.data, "hello socket", "message recieved back");
+      socket.close();
+    }
+    socket.onclose = function(event) {
+      assert.equal(event.type, "close", "socket was closed");
+      done();
+    }
+    socket.onerror = function(event) {
+      assert.pass("connection will fail because of no handshake");
+    }
+  });
+}
 
 require("sdk/test/runner").runTestsFromModule(module);
