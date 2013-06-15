@@ -50,15 +50,15 @@ function open(url, options) {
 
       let tab = getActiveTab(chromeWindow);
 
-      tab.addEventListener("load", function ready(event) {
-        let { document } = getTabContentWindow(this);
+      tab.linkedBrowser.addEventListener("load", function ready(event) {
+        let { document } = getTabContentWindow(tab);
 
         if (document.readyState === "complete" && document.URL === url) {
           this.removeEventListener(event.type, ready);
 
           resolve(document.defaultView);
         }
-      })
+      }, true);
 
       setTabURL(tab, url);
     });
@@ -159,9 +159,7 @@ function hideAndShowFrame(window) {
 
   iframe.style.display = "none";
 
-  Cu.forceGC();
-
-  setTimeout(function() {
+  Cu.schedulePreciseGC(function() {
     events.on("document-shown", function shown(event) {
       if (iframe.contentWindow !== event.subject.defaultView)
         return;
@@ -171,7 +169,7 @@ function hideAndShowFrame(window) {
     }, true);
 
     iframe.style.display = "";
-  }, 0)
+  });
 
   return promise;
 }
