@@ -42,8 +42,32 @@ exports.testTabCounts = function(test) {
   });
 };
 
+
+// TEST: tabs.activeTab getter
+exports.testActiveTab_getter = function(test) {
+  test.waitUntilDone();
+
+  let url = URL.replace("#title#", "testActiveTab_getter");
+  tabs.open({
+    url: url,
+    onActivate: function(tab) {
+      test.assertEqual(tabs.activeTab.url, tab.url, 'the active tab is correct');
+
+      tab.once('ready', function() {
+        test.assertEqual(tab.url, url);
+        test.assertEqual(tab.title, "foo");
+
+        tab.close(function() {
+          // end test
+          test.done();
+        });
+      });
+    }
+  });
+};
+
 // TEST: tab.activate()
-exports.testActiveTab_setter_alt = function(test) {
+exports.testActiveTab_setter = function(test) {
   test.waitUntilDone();
 
   let url = URL.replace("#title#", "testActiveTab_setter_alt");
