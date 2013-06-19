@@ -576,6 +576,29 @@ exports.testPerTabEvents = function(test) {
   });
 };
 
+// TEST: tabs.activeTab getter
+exports.testActiveTab_getter_alt = function(test) {
+  test.waitUntilDone();
+
+  let url = URL.replace("#title#", "foo");
+  tabs.open({
+    url: url,
+    onActivate: function(tab) {
+      test.assertEqual(tabs.activeTab.url, tab.url, 'the active tab is correct');
+
+      tab.once('ready', function() {
+        test.assertEqual(tab.url, url);
+        test.assertEqual(tab.title, "foo");
+
+        tab.close(function() {
+          // end test
+          test.done();
+        });
+      });
+    }
+  });
+};
+
 exports.testUniqueTabIds = function(test) {
   test.waitUntilDone();
   var tabs = require('sdk/tabs');
