@@ -11,6 +11,8 @@ var httpd = loader.require("sdk/test/httpd");
 var port = 8099;
 var tabs = require("sdk/tabs");
 
+const { URL } = require('sdk/url');
+
 exports.testResolve = function(test) {
   test.assertEqual(url.URL("bar", "http://www.foo.com/").toString(),
                    "http://www.foo.com/bar");
@@ -353,6 +355,11 @@ exports.testWindowLocationMatch = function (test) {
     }
   })
 };
+
+exports.testURLInRegExpTest = function(test) {
+  let url = 'https://mozilla.org';
+  test.assertEqual((new RegExp(url).test(URL(url))), true, 'URL instances work in a RegExp test');
+}
 
 function validURIs() {
   return [

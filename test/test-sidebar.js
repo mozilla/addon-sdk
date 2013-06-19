@@ -5,15 +5,15 @@
 
 const { Loader } = require('sdk/test/loader');
 const { Sidebar } = require('sdk/ui/sidebar');
-const { show, hide } = require('sdk/ui/actions');
-const { isShowing } = require('sdk/ui/state');
+const { show, hide } = require('sdk/ui/sidebar/actions');
+const { isShowing } = require('sdk/ui/sidebar/state');
 const { getMostRecentBrowserWindow } = require('sdk/window/utils');
 const { open, close, focus, promise: windowPromise } = require('sdk/window/helpers');
 const { setTimeout } = require('sdk/timers');
 const { isPrivate } = require('sdk/private-browsing');
 const { data } = require('sdk/self');
-const { makeID } = require('sdk/ui/sidebar/utils');
 const { fromIterator } = require('sdk/util/array');
+const { URL } = require('sdk/url');
 
 const BUILTIN_SIDEBAR_MENUITEMS = [
   'menu_socialSidebar',
@@ -39,6 +39,10 @@ function getExtraSidebarMenuitems() {
   });
 }
 
+function makeID(id) {
+  return 'jetpack-sidebar-' + id;
+}
+
 exports.testSidebarBasicLifeCycle = function(assert, done) {
   let testName = 'testSidebarBasicLifeCycle';
   let window = getMostRecentBrowserWindow();
@@ -48,11 +52,17 @@ exports.testSidebarBasicLifeCycle = function(assert, done) {
   assert.ok(!getExtraSidebarMenuitems().length, 'there are no extra sidebar menuitems');
 
   assert.equal(isSidebarShowing(window), false, 'sidebar is not showing 1');
-  let sidebar = Sidebar({
+  let sidebarDetails = {
     id: testName,
     title: 'test',
     url: 'data:text/html;charset=utf-8,'+testName
-  });
+  };
+  let sidebar = Sidebar(sidebarDetails);
+
+  // test the sidebar attributes
+  for each(let key in Object.keys(sidebarDetails)) {
+    assert.equal(sidebarDetails[key], sidebar[key], 'the attributes match the input');
+  }
 
   assert.pass('The Sidebar constructor worked');
 
@@ -156,7 +166,7 @@ exports.testSideBarIsShowingInNewWindows = function(assert, done) {
   let sidebar = Sidebar({
     id: testName,
     title: testName,
-    url: 'data:text/html;charset=utf-8,'+testName
+    url: URL('data:text/html;charset=utf-8,'+testName)
   });
 
   let startWindow = getMostRecentBrowserWindow();
@@ -338,26 +348,30 @@ exports.testSidebarUnload = function(assert, done) {
   let testName = 'testSidebarUnload';
   let window = getMostRecentBrowserWindow();
 
+  assert.equal(isPrivate(window), false, 'the current window is not private');
+
   let sidebar = loader.require('sdk/ui/sidebar').Sidebar({
     id: testName,
     title: testName,
-    url:  'data:text/html;charset=utf-8,'+ testName
-  });
+    url:  'data:text/html;charset=utf-8,'+ testName,
+    onShow: function() {
+      assert.pass('onShow works for Sidebar');
+      loader.unload();
 
-  sidebar.on('show', function() {
-    loader.unload();
+      let sidebarMI = getSidebarMenuitems();
+      for each (let mi in sidebarMI) {
+        assert.ok(BUILTIN_SIDEBAR_MENUITEMS.indexOf(mi.getAttribute('id')) >= 0, 'the menuitem is for a built-in sidebar')
+        assert.equal(mi.getAttribute('checked'), 'false', 'no sidebar menuitem is checked');
+      }
+      assert.ok(!window.document.getElementById(makeID(testName)), 'sidebar id DNE');
+      assert.equal(isSidebarShowing(window), false, 'the sidebar is not showing');
 
-    let sidebarMI = getSidebarMenuitems();
-    for each (let mi in sidebarMI) {
-      assert.ok(BUILTIN_SIDEBAR_MENUITEMS.indexOf(mi.getAttribute('id')) >= 0, 'the menuitem is for a built-in sidebar')
-      assert.equal(mi.getAttribute('checked'), 'false', 'no sidebar menuitem is checked');
+      done();
     }
-    assert.ok(!window.document.getElementById(makeID(testName)), 'sidebar id DNE');
-    assert.equal(isSidebarShowing(window), false, 'the sidebar is not showing');
+  })
 
-    done();
-  });
   sidebar.show();
+  assert.pass('showing the sidebar');
 }
 
 exports.testRemoteContent = function(assert) {
@@ -365,13 +379,102 @@ exports.testRemoteContent = function(assert) {
   try {
     let sidebar = Sidebar({
       id: testName,
-      title: 'test',
-      url: 'http://mozilla.org'
+      title: testName,
+      url: 'http://dne.xyz.mozilla.org'
     });
+    assert.fail('a bad sidebar was created..');
+    sidebar.destroy();
   }
   catch(e) {
-    assert.ok(/The option "url" must be one of the following types: string/.test(e), 'remote content is not acceptable');
+    assert.ok(/The option "url" must be a valid URI./.test(e), 'remote content is not acceptable');
   }
+}
+
+exports.testInvalidURL = function(assert) {
+  let testName = 'testInvalidURL';
+  try {
+    let sidebar = Sidebar({
+      id: testName,
+      title: testName,
+      url: 'http:mozilla.org'
+    });
+    assert.fail('a bad sidebar was created..');
+    sidebar.destroy();
+  }
+  catch(e) {
+    assert.ok(/The option "url" must be a valid URI./.test(e), 'invalid URIs are not acceptable');
+  }
+}
+
+exports.testInvalidURLType = function(assert) {
+  let testName = 'testInvalidURLType';
+  try {
+    let sidebar = Sidebar({
+      id: testName,
+      title: testName
+    });
+    assert.fail('a bad sidebar was created..');
+    sidebar.destroy();
+  }
+  catch(e) {
+    assert.ok(/The option "url" must be a valid URI./.test(e), 'invalid URIs are not acceptable');
+  }
+}
+
+exports.testInvalidTitle = function(assert) {
+  let testName = 'testInvalidTitle';
+  try {
+    let sidebar = Sidebar({
+      id: testName,
+      title: '',
+      url: 'data:text/html;charset=utf-8,'+testName
+    });
+    assert.fail('a bad sidebar was created..');
+    sidebar.destroy();
+  }
+  catch(e) {
+    assert.equal('The option "title" must be one of the following types: string', e.message, 'invalid titles are not acceptable');
+  }
+}
+
+exports.testInvalidID = function(assert) {
+  let testName = 'testInvalidTitle';
+  try {
+    let sidebar = Sidebar({
+      id: '!',
+      title: testName,
+      url: 'data:text/html;charset=utf-8,'+testName
+    });
+    assert.fail('a bad sidebar was created..');
+    sidebar.destroy();
+  }
+  catch(e) {
+    assert.ok(/The option "id" must be a valid alphanumeric id/.test(e), 'invalid ids are not acceptable');
+  }
+}
+
+exports.testSidebarIsNotOpenInNewPrivateWindow = function(assert, done) {
+  let testName = 'testSidebarIsNotOpenInNewPrivateWindow';
+
+  open().then(focus).then(function(window) {
+    let sidebar = Sidebar({
+      id: testName,
+      title: testName,
+      url: 'data:text/html;charset=utf-8,'+testName
+    });
+   
+    sidebar.show();
+
+    assert.equal(isPrivate(window), false, 'the new window is not private');
+    assert.equal(isSidebarShowing(window), true, 'the sidebar is showing');
+
+    open(null, { features: { private: true } }).then(focus).then(function(window2) {
+      assert.equal(isPrivate(window2), true, 'the new window is private');
+      assert.equal(isSidebarShowing(window2), false, 'the sidebar is not showing');
+      sidebar.destroy();
+      close(window2).then(function() close(window)).then(done);
+    });
+  });
 }
 
 require('sdk/test').run(exports);
