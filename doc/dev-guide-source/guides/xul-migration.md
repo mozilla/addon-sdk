@@ -93,12 +93,36 @@ XUL. However, you can include a
 [chrome.manifest file](https://developer.mozilla.org/en-US/docs/Chrome_Registration)
 in your add-on and it will be included in the generated XPI.
 
+<ul class="tree">
+  <li>my-addon
+    <ul>
+    <li class="highlight-tree-node">chrome
+      <ul><li>content</li>
+          <li>locale</li>
+          <li>skin</li></ul>
+    </li>
+    <li class="highlight-tree-node">chrome.manifest</li>
+    <li>data</li>
+    <li>lib</li>
+    <li>package.json</li>
+    </ul>
+  </li>
+</ul>
+
 There are limitations on what you can do in this manifest file: for example,
 you can't register overlays, `resource:` URIs, or components. However, you
 can register a `chrome:` URI, with a skin and locale, and this means you
 can include XUL windows in an SDK-based add-on.
 
+You can keep the "chrome.manifest" file in your add-on's root directory
+and create a directory there called "chrome". In that directory you can keep
+your "content", "locale", and "skin" subdirectories:
+
+This allows you to refer to objects in these directories from "chrome.manifest" using a relative path, like "chrome/content".
+
 This is provided only as a migration aid, and it's still a good idea to port XUL windows to HTML.
+
+<div style="clear:both"></div>
 
 ## <a name="content-scripts">Content Scripts</a> ##
 
