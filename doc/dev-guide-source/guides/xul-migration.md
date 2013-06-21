@@ -71,27 +71,8 @@ page script.
 
 A XUL-based add-on will need to be reorganized to respect this distinction.
 
-Suppose an add-on wants to make a cross-domain XMLHttpRequest based on some
-data extracted from a web page. In a XUL-based extension you would implement
-all this in a single script. An SDK-based equivalent would need to be
-structured like this:
-
-* the main add-on code (1) attaches a content script to the page, and (2)
-registers a listener function for messages from the content script
-* the content script (3) extracts the data from the page and (4) sends
-it to the main add-on code in a message
-* the main add-on code (5) receives the message and (6) sends the request,
-using the SDK's [`request`](modules/sdk/request.html) API
-
-<img class="image-center" src="static-files/media/xul-migration-cs.png"
-alt="Content script organization">
-
-There are two related reasons for this design. The first is security: it
-reduces the risk that a malicious web page will be able to access privileged
-APIs. The second is the need to be compatible with the multi-process architecture
-planned for Firefox: after this is implemented in Firefox, all add-ons will
-need to use a similar pattern, so it's likely that a XUL-based add-on will
-need to be rewritten anyway.
+The main reason for this design is security: it reduces the risk that a
+malicious web page will be able to access privileged APIs.
 
 There's much more information on content scripts in the
 [Working With Content Scripts](dev-guide/guides/content-scripts/index.html) guide.
