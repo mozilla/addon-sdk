@@ -455,26 +455,93 @@ exports.testInvalidID = function(assert) {
 
 exports.testSidebarIsNotOpenInNewPrivateWindow = function(assert, done) {
   let testName = 'testSidebarIsNotOpenInNewPrivateWindow';
+  let window = getMostRecentBrowserWindow();
 
-  open().then(focus).then(function(window) {
     let sidebar = Sidebar({
       id: testName,
       title: testName,
       url: 'data:text/html;charset=utf-8,'+testName
     });
    
+    sidebar.on('show', function() {
+      assert.equal(isPrivate(window), false, 'the new window is not private');
+      assert.equal(isSidebarShowing(window), true, 'the sidebar is showing');
+      assert.equal(isShowing(sidebar), true, 'the sidebar is showing');
+
+      let window2 = window.OpenBrowserWindow({private: true});
+      windowPromise(window2, 'load').then(focus).then(function() {
+        // TODO: find better alt to setTimeout...
+        setTimeout(function() {
+          assert.equal(isPrivate(window2), true, 'the new window is private');
+          assert.equal(isSidebarShowing(window), true, 'the sidebar is showing in old window still');
+          assert.equal(isSidebarShowing(window2), false, 'the sidebar is not showing in the new private window');
+          assert.equal(isShowing(sidebar), false, 'the sidebar is not showing');
+          sidebar.destroy();
+          close(window2).then(done);
+        }, 500)
+      })
+    });
+
+    sidebar.show();
+}
+
+// TEST: edge case where web panel is destroyed while loading
+exports.testDestroyEdgeCaseBug = function(assert, done) {
+    let testName = 'testDestroyEdgeCaseBug';
+    let window = getMostRecentBrowserWindow();
+    let sidebar = Sidebar({
+      id: testName,
+      title: testName,
+      url: 'data:text/html;charset=utf-8,'+testName
+    });
+
+    // NOTE: purposely not listening to show event b/c the event happens
+    //       between now and then.
     sidebar.show();
 
-    assert.equal(isPrivate(window), false, 'the new window is not private');
-    assert.equal(isSidebarShowing(window), true, 'the sidebar is showing');
+      assert.equal(isPrivate(window), false, 'the new window is not private');
+      assert.equal(isSidebarShowing(window), true, 'the sidebar is showing');
 
-    open(null, { features: { private: true } }).then(focus).then(function(window2) {
-      assert.equal(isPrivate(window2), true, 'the new window is private');
-      assert.equal(isSidebarShowing(window2), false, 'the sidebar is not showing');
-      sidebar.destroy();
-      close(window2).then(function() close(window)).then(done);
-    });
-  });
+      //assert.equal(isShowing(sidebar), true, 'the sidebar is showing');
+
+      open(null, { features: { private: true } }).then(focus).then(function(window2) {
+        assert.equal(isPrivate(window2), true, 'the new window is private');
+        assert.equal(isSidebarShowing(window2), false, 'the sidebar is not showing');
+        assert.equal(isShowing(sidebar), false, 'the sidebar is not showing');
+
+        sidebar.destroy();
+        assert.pass('destroying the sidebar');
+
+        close(window2).then(function() {
+          let loader = Loader(module);
+
+          assert.equal(isPrivate(window), false, 'the current window is not private');
+
+          let sidebar = loader.require('sdk/ui/sidebar').Sidebar({
+            id: testName,
+            title: testName,
+            url:  'data:text/html;charset=utf-8,'+ testName,
+            onShow: function() {
+              assert.pass('onShow works for Sidebar');
+              loader.unload();
+
+              let sidebarMI = getSidebarMenuitems();
+              for each (let mi in sidebarMI) {
+                assert.ok(BUILTIN_SIDEBAR_MENUITEMS.indexOf(mi.getAttribute('id')) >= 0, 'the menuitem is for a built-in sidebar')
+                assert.equal(mi.getAttribute('checked'), 'false', 'no sidebar menuitem is checked');
+              }
+              assert.ok(!window.document.getElementById(makeID(testName)), 'sidebar id DNE');
+              assert.equal(isSidebarShowing(window), false, 'the sidebar is not showing');
+
+              done();
+            }
+          })
+
+          sidebar.show();
+          assert.pass('showing the sidebar');
+
+        });
+      });
 }
 
 require('sdk/test').run(exports);
