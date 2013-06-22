@@ -43,6 +43,15 @@ function makeID(id) {
   return 'jetpack-sidebar-' + id;
 }
 
+function simulateClick(ele) {
+  let window = ele.ownerDocument.defaultView;
+  let { document } = window;
+  var evt = document.createEvent("XULCommandEvent");
+  evt.initCommandEvent("command", true, true, window,
+    0, false, false, false, false, null);
+  ele.dispatchEvent(evt);
+}
+
 exports.testSidebarBasicLifeCycle = function(assert, done) {
   let testName = 'testSidebarBasicLifeCycle';
   let window = getMostRecentBrowserWindow();
@@ -542,6 +551,27 @@ exports.testDestroyEdgeCaseBug = function(assert, done) {
 
         });
       });
+}
+
+exports.testClickingACheckedMenuitem = function(assert, done) {
+  let testName = 'testClickingACheckedMenuitem';
+  let window = getMostRecentBrowserWindow();
+  let sidebar = Sidebar({
+    id: testName,
+    title: testName,
+    url: 'data:text/html;charset=utf-8,'+testName,
+    onShow: function() {
+      sidebar.once('hide', function() {
+        assert.pass('clicking the menuitem after the sidebar has shown hides it.');
+        sidebar.destroy();
+        done();
+      });
+      let menuitem = window.document.getElementById(makeID(sidebar.id));
+      simulateClick(menuitem);
+    }
+  });
+
+  sidebar.show();
 }
 
 require('sdk/test').run(exports);
