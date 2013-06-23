@@ -347,6 +347,11 @@ exports.testWindowLocationMatch = function (assert, done) {
   })
 };
 
+exports.testURLInRegExpTest = function(assert) {
+  let url = 'https://mozilla.org';
+  assert.equal((new RegExp(url).test(URL(url))), true, 'URL instances work in a RegExp test');
+}
+
 function validURIs() {
   return [
   'http://foo.com/blah_blah',

@@ -510,7 +510,6 @@ exports['test button tab state'] = function(assert, done) {
       });
 
       // set previous active tab state
-
       button.state(mainTab, {
         label: 'Tab label',
         icon: './tab-icon.png',
@@ -682,7 +681,7 @@ exports['test button type checkbox'] = function(assert, done) {
     button.click();
     button.click();
 
-    focus(chromeWindow).then(window => {
+    focus(chromeWindow).then(() => {
       button.click();
       button.click();
 
@@ -964,7 +963,6 @@ exports['test button after destroy'] = function(assert) {
   loader.unload();
 };
 
-
 // If the module doesn't support the app we're being run in, require() will
 // throw.  In that case, remove all tests above from exports, and add one dummy
 // test that passes.
@@ -980,4 +978,4 @@ catch (err) {
   }
 }
 
-require('test').run(exports);
+require('sdk/test').run(exports);
