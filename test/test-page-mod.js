@@ -395,9 +395,9 @@ exports.testRelatedTabNoOtherReqs = function(test) {
     include: "about:blank?testRelatedTabNoOtherReqs",
     onAttach: function(worker) {
       test.assert(!!worker.tab, "Worker.tab exists");
-      pageMod.destroy();
+
       worker.tab.close(function() {
-        worker.destroy();
+        test.pass('tab was closed');
         loader.unload();
         test.done();
       });
@@ -1145,7 +1145,6 @@ exports.testWorkerTabClose = function(test) {
       include: "about:",
       contentScript: '',
       onAttach: function(worker) {
-        console.log("call close");
         worker.tab.close(function () {
           // On Fennec, tab is completely destroyed right after close event is
           // dispatch, so we need to wait for the next event loop cycle to
