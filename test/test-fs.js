@@ -92,7 +92,6 @@ exports["test readFile"] = function(assert, end) {
   fs.readFile(filePathInProfile, function(error, content) {
     assert.ok(async, "readFile is async");
     assert.ok(!error, "error is falsy");
-
     assert.ok(Buffer.isBuffer(content), "readFile returns buffer");
     assert.ok(typeof(content.length) === "number", "buffer has length");
     assert.ok(content.toString().indexOf("[Compatibility]") >= 0,
@@ -339,6 +338,7 @@ exports["test fs.truncate"] = function(assert, end) {
     let async = false;
     fs.truncate(path, 0, function(error) {
       assert.ok(async, "truncate is async");
+      console.log(error);
       assert.ok(!error, "no error");
       assert.equal(fs.existsSync(path), true, "file was created");
       fs.unlinkSync(path);
