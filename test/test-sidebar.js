@@ -21,6 +21,8 @@ const BUILTIN_SIDEBAR_MENUITEMS = [
   'menu_bookmarksSidebar'
 ];
 
+const BLANK_IMG = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+
 function isSidebarShowing(window) {
   window = window || getMostRecentBrowserWindow();
   let sidebar = window.document.getElementById('sidebar-box');
@@ -64,12 +66,15 @@ exports.testSidebarBasicLifeCycle = function(assert, done) {
   let sidebarDetails = {
     id: testName,
     title: 'test',
+    icon: BLANK_IMG,
     url: 'data:text/html;charset=utf-8,'+testName
   };
   let sidebar = Sidebar(sidebarDetails);
 
   // test the sidebar attributes
   for each(let key in Object.keys(sidebarDetails)) {
+    if (key == 'icon')
+      continue;
     assert.equal(sidebarDetails[key], sidebar[key], 'the attributes match the input');
   }
 
@@ -126,6 +131,7 @@ exports.testSideBarIsInNewWindows = function(assert, done) {
   let sidebar = Sidebar({
     id: testName,
     title: testName,
+    icon: BLANK_IMG,
     url: 'data:text/html;charset=utf-8,'+testName
   });
 
@@ -150,6 +156,7 @@ exports.testSideBarIsNotInNewPrivateWindows = function(assert, done) {
   let sidebar = Sidebar({
     id: testName,
     title: testName,
+    icon: BLANK_IMG,
     url: 'data:text/html;charset=utf-8,'+testName
   });
 
@@ -175,6 +182,7 @@ exports.testSideBarIsShowingInNewWindows = function(assert, done) {
   let sidebar = Sidebar({
     id: testName,
     title: testName,
+    icon: BLANK_IMG,
     url: URL('data:text/html;charset=utf-8,'+testName)
   });
 
@@ -245,6 +253,7 @@ exports.testAddonGlobalSimple = function(assert, done) {
   let sidebar = Sidebar({
     id: testName,
     title: testName,
+    icon: BLANK_IMG,
     url: data.url('test-sidebar-addon-global.html')
   });
 
@@ -270,6 +279,7 @@ exports.testAddonGlobalComplex = function(assert, done) {
   let sidebar = Sidebar({
     id: testName,
     title: testName,
+    icon: BLANK_IMG,
     url: data.url('test-sidebar-addon-global.html')
   });
 
@@ -299,11 +309,13 @@ exports.testShowingOneSidebarAfterAnother = function(assert, done) {
   let sidebar1 = Sidebar({
     id: testName + '1',
     title: testName + '1',
+    icon: BLANK_IMG,
     url:  'data:text/html;charset=utf-8,'+ testName + 1
   });
   let sidebar2 = Sidebar({
     id: testName + '2',
     title: testName + '2',
+    icon: BLANK_IMG,
     url:  'data:text/html;charset=utf-8,'+ testName + 2
   });
 
@@ -362,6 +374,7 @@ exports.testSidebarUnload = function(assert, done) {
   let sidebar = loader.require('sdk/ui/sidebar').Sidebar({
     id: testName,
     title: testName,
+    icon: BLANK_IMG,
     url:  'data:text/html;charset=utf-8,'+ testName,
     onShow: function() {
       assert.pass('onShow works for Sidebar');
@@ -389,6 +402,7 @@ exports.testRemoteContent = function(assert) {
     let sidebar = Sidebar({
       id: testName,
       title: testName,
+      icon: BLANK_IMG,
       url: 'http://dne.xyz.mozilla.org'
     });
     assert.fail('a bad sidebar was created..');
@@ -405,6 +419,7 @@ exports.testInvalidURL = function(assert) {
     let sidebar = Sidebar({
       id: testName,
       title: testName,
+      icon: BLANK_IMG,
       url: 'http:mozilla.org'
     });
     assert.fail('a bad sidebar was created..');
@@ -420,7 +435,8 @@ exports.testInvalidURLType = function(assert) {
   try {
     let sidebar = Sidebar({
       id: testName,
-      title: testName
+      title: testName,
+      icon: BLANK_IMG
     });
     assert.fail('a bad sidebar was created..');
     sidebar.destroy();
@@ -436,6 +452,7 @@ exports.testInvalidTitle = function(assert) {
     let sidebar = Sidebar({
       id: testName,
       title: '',
+      icon: BLANK_IMG,
       url: 'data:text/html;charset=utf-8,'+testName
     });
     assert.fail('a bad sidebar was created..');
@@ -446,12 +463,29 @@ exports.testInvalidTitle = function(assert) {
   }
 }
 
-exports.testInvalidID = function(assert) {
+exports.testInvalidIcon = function(assert) {
   let testName = 'testInvalidTitle';
+  try {
+    let sidebar = Sidebar({
+      id: testName,
+      title: testName,
+      url: 'data:text/html;charset=utf-8,'+testName
+    });
+    assert.fail('a bad sidebar was created..');
+    sidebar.destroy();
+  }
+  catch(e) {
+    assert.ok(/The option "icon" must be a local URL or an object with/.test(e), 'invalid icons are not acceptable');
+  }
+}
+
+exports.testInvalidID = function(assert) {
+  let testName = 'testInvalidID';
   try {
     let sidebar = Sidebar({
       id: '!',
       title: testName,
+      icon: BLANK_IMG,
       url: 'data:text/html;charset=utf-8,'+testName
     });
     assert.fail('a bad sidebar was created..');
@@ -469,6 +503,7 @@ exports.testSidebarIsNotOpenInNewPrivateWindow = function(assert, done) {
     let sidebar = Sidebar({
       id: testName,
       title: testName,
+      icon: BLANK_IMG,
       url: 'data:text/html;charset=utf-8,'+testName
     });
    
@@ -496,61 +531,63 @@ exports.testSidebarIsNotOpenInNewPrivateWindow = function(assert, done) {
 
 // TEST: edge case where web panel is destroyed while loading
 exports.testDestroyEdgeCaseBug = function(assert, done) {
-    let testName = 'testDestroyEdgeCaseBug';
-    let window = getMostRecentBrowserWindow();
-    let sidebar = Sidebar({
-      id: testName,
-      title: testName,
-      url: 'data:text/html;charset=utf-8,'+testName
+  let testName = 'testDestroyEdgeCaseBug';
+  let window = getMostRecentBrowserWindow();
+  let sidebar = Sidebar({
+    id: testName,
+    title: testName,
+    icon: BLANK_IMG,
+    url: 'data:text/html;charset=utf-8,'+testName
+  });
+
+  // NOTE: purposely not listening to show event b/c the event happens
+  //       between now and then.
+  sidebar.show();
+
+  assert.equal(isPrivate(window), false, 'the new window is not private');
+  assert.equal(isSidebarShowing(window), true, 'the sidebar is showing');
+
+  //assert.equal(isShowing(sidebar), true, 'the sidebar is showing');
+
+  open(null, { features: { private: true } }).then(focus).then(function(window2) {
+    assert.equal(isPrivate(window2), true, 'the new window is private');
+    assert.equal(isSidebarShowing(window2), false, 'the sidebar is not showing');
+    assert.equal(isShowing(sidebar), false, 'the sidebar is not showing');
+
+    sidebar.destroy();
+    assert.pass('destroying the sidebar');
+
+    close(window2).then(function() {
+      let loader = Loader(module);
+
+      assert.equal(isPrivate(window), false, 'the current window is not private');
+
+      let sidebar = loader.require('sdk/ui/sidebar').Sidebar({
+        id: testName,
+        title: testName,
+        icon: BLANK_IMG,
+        url:  'data:text/html;charset=utf-8,'+ testName,
+        onShow: function() {
+          assert.pass('onShow works for Sidebar');
+          loader.unload();
+
+          let sidebarMI = getSidebarMenuitems();
+          for each (let mi in sidebarMI) {
+            assert.ok(BUILTIN_SIDEBAR_MENUITEMS.indexOf(mi.getAttribute('id')) >= 0, 'the menuitem is for a built-in sidebar')
+            assert.equal(mi.getAttribute('checked'), 'false', 'no sidebar menuitem is checked');
+          }
+          assert.ok(!window.document.getElementById(makeID(testName)), 'sidebar id DNE');
+          assert.equal(isSidebarShowing(window), false, 'the sidebar is not showing');
+
+          done();
+        }
+      })
+
+      sidebar.show();
+      assert.pass('showing the sidebar');
+
     });
-
-    // NOTE: purposely not listening to show event b/c the event happens
-    //       between now and then.
-    sidebar.show();
-
-      assert.equal(isPrivate(window), false, 'the new window is not private');
-      assert.equal(isSidebarShowing(window), true, 'the sidebar is showing');
-
-      //assert.equal(isShowing(sidebar), true, 'the sidebar is showing');
-
-      open(null, { features: { private: true } }).then(focus).then(function(window2) {
-        assert.equal(isPrivate(window2), true, 'the new window is private');
-        assert.equal(isSidebarShowing(window2), false, 'the sidebar is not showing');
-        assert.equal(isShowing(sidebar), false, 'the sidebar is not showing');
-
-        sidebar.destroy();
-        assert.pass('destroying the sidebar');
-
-        close(window2).then(function() {
-          let loader = Loader(module);
-
-          assert.equal(isPrivate(window), false, 'the current window is not private');
-
-          let sidebar = loader.require('sdk/ui/sidebar').Sidebar({
-            id: testName,
-            title: testName,
-            url:  'data:text/html;charset=utf-8,'+ testName,
-            onShow: function() {
-              assert.pass('onShow works for Sidebar');
-              loader.unload();
-
-              let sidebarMI = getSidebarMenuitems();
-              for each (let mi in sidebarMI) {
-                assert.ok(BUILTIN_SIDEBAR_MENUITEMS.indexOf(mi.getAttribute('id')) >= 0, 'the menuitem is for a built-in sidebar')
-                assert.equal(mi.getAttribute('checked'), 'false', 'no sidebar menuitem is checked');
-              }
-              assert.ok(!window.document.getElementById(makeID(testName)), 'sidebar id DNE');
-              assert.equal(isSidebarShowing(window), false, 'the sidebar is not showing');
-
-              done();
-            }
-          })
-
-          sidebar.show();
-          assert.pass('showing the sidebar');
-
-        });
-      });
+  });
 }
 
 exports.testClickingACheckedMenuitem = function(assert, done) {
@@ -559,6 +596,7 @@ exports.testClickingACheckedMenuitem = function(assert, done) {
   let sidebar = Sidebar({
     id: testName,
     title: testName,
+    icon: BLANK_IMG,
     url: 'data:text/html;charset=utf-8,'+testName,
     onShow: function() {
       sidebar.once('hide', function() {
@@ -572,6 +610,10 @@ exports.testClickingACheckedMenuitem = function(assert, done) {
   });
 
   sidebar.show();
+}
+
+exports.testSidebarButtonChanges = function(assert, done) {
+  done()
 }
 
 require('sdk/test').run(exports);
