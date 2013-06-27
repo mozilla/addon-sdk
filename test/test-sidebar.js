@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
+const { Cu } = require('chrome');
 const { Loader } = require('sdk/test/loader');
 const { Sidebar } = require('sdk/ui/sidebar');
 const { show, hide } = require('sdk/ui/sidebar/actions');
@@ -14,6 +15,8 @@ const { isPrivate } = require('sdk/private-browsing');
 const { data } = require('sdk/self');
 const { fromIterator } = require('sdk/util/array');
 const { URL } = require('sdk/url');
+
+const { CustomizableUI } = Cu.import('resource:///modules/CustomizableUI.jsm', {});
 
 const BUILTIN_SIDEBAR_MENUITEMS = [
   'menu_socialSidebar',
@@ -45,14 +48,37 @@ function makeID(id) {
   return 'jetpack-sidebar-' + id;
 }
 
-function simulateClick(ele) {
+function simulateCommand(ele) {
   let window = ele.ownerDocument.defaultView;
   let { document } = window;
-  var evt = document.createEvent("XULCommandEvent");
-  evt.initCommandEvent("command", true, true, window,
+  var evt = document.createEvent('XULCommandEvent');
+  evt.initCommandEvent('command', true, true, window,
     0, false, false, false, false, null);
   ele.dispatchEvent(evt);
 }
+function simulateClick(ele) {
+  let window = ele.ownerDocument.defaultView;
+  let { document } = window;
+  let evt = document.createEvent('MouseEvents');
+  evt.initMouseEvent('click', true, true, window,
+    0, 0, 0, 0, 0, false, false, false, false, 0, null);
+  ele.dispatchEvent(evt);
+}
+
+function getWidget(buttonId, window = getMostRecentBrowserWindow()) {
+  const { AREA_NAVBAR } = CustomizableUI;
+
+  let widgets = CustomizableUI.getWidgetsInArea(AREA_NAVBAR).
+    filter(({id}) => id.startsWith('button--') && id.endsWith(buttonId));
+
+  if (widgets.length === 0)
+    throw new Error('Widget with id `' + buttonId +'` not found.');
+
+  if (widgets.length > 1)
+    throw new Error('Unexpected number of widgets: ' + widgets.length)
+
+  return widgets[0].forWindow(window);
+};
 
 exports.testSidebarBasicLifeCycle = function(assert, done) {
   let testName = 'testSidebarBasicLifeCycle';
@@ -191,11 +217,11 @@ exports.testSideBarIsShowingInNewWindows = function(assert, done) {
   assert.ok(ele, 'sidebar element was added');
 
   let oldEle = ele;
-  sidebar.once('show', function() {
-    assert.pass('show event fired');
+  sidebar.once('attach', function() {
+    assert.pass('attach event fired');
 
-    sidebar.once('attach', function() {
-      assert.pass('attach event fired');
+    sidebar.once('show', function() {
+      assert.pass('show event fired');
 
       sidebar.once('show', function() {
         let window = getMostRecentBrowserWindow();
@@ -221,8 +247,6 @@ exports.testSideBarIsShowingInNewWindows = function(assert, done) {
 
           assert.equal(isShowing(sidebar), true, 'the sidebar is showing in new window');
 
-          webPanelBrowser.contentWindow.addEventListener('load', function onload() {
-            webPanelBrowser.contentWindow.addEventListener('load', onload, false);
 
             sidebar.destroy();
 
@@ -235,7 +259,6 @@ exports.testSideBarIsShowingInNewWindows = function(assert, done) {
             setTimeout(function() {
               close(window).then(done, assert.fail);
             });
-          }, false);
         }
       });
 
@@ -247,7 +270,6 @@ exports.testSideBarIsShowingInNewWindows = function(assert, done) {
   assert.pass('showing the sidebar');
 }
 
-/*
 exports.testAddonGlobalSimple = function(assert, done) {
   let testName = 'testAddonGlobal';
   let sidebar = Sidebar({
@@ -257,7 +279,7 @@ exports.testAddonGlobalSimple = function(assert, done) {
     url: data.url('test-sidebar-addon-global.html')
   });
 
-  sidebar.on('attach', function(worker) {
+  sidebar.on('show', function({worker}) {
     assert.pass('sidebar was attached');
     assert.ok(!!worker, 'attach event has worker');
 
@@ -272,7 +294,6 @@ exports.testAddonGlobalSimple = function(assert, done) {
   });
   show(sidebar);
 }
-*/
 
 exports.testAddonGlobalComplex = function(assert, done) {
   let testName = 'testAddonGlobal';
@@ -300,6 +321,7 @@ exports.testAddonGlobalComplex = function(assert, done) {
       worker.port.emit('X', msg + '2');
     })
   });
+
   show(sidebar);
 }
 
@@ -598,22 +620,69 @@ exports.testClickingACheckedMenuitem = function(assert, done) {
     title: testName,
     icon: BLANK_IMG,
     url: 'data:text/html;charset=utf-8,'+testName,
+  });
+
+  sidebar.show(function() {
+    assert.pass('the show callback works');
+
+    sidebar.once('hide', function() {
+      assert.pass('clicking the menuitem after the sidebar has shown hides it.');
+      sidebar.destroy();
+      done();
+    });
+
+    let menuitem = window.document.getElementById(makeID(sidebar.id));
+    simulateCommand(menuitem);
+  });
+};
+
+exports.testClickingACheckedButton = function(assert, done) {
+  let testName = 'testClickingACheckedButton';
+  let window = getMostRecentBrowserWindow();
+
+  let sidebar = Sidebar({
+    id: testName,
+    title: testName,
+    icon: BLANK_IMG,
+    url: 'data:text/html;charset=utf-8,'+testName,
     onShow: function() {
+      assert.pass('the sidebar was shown');
+      //assert.equal(button.checked, true, 'the button is now checked');
+
       sidebar.once('hide', function() {
-        assert.pass('clicking the menuitem after the sidebar has shown hides it.');
-        sidebar.destroy();
-        done();
+        assert.pass('clicking the button after the sidebar has shown hides it.');
+
+        sidebar.once('show', function() {
+          assert.pass('clicking the button again shows it.');
+
+          sidebar.hide(function() {
+            assert.pass('hide callback works');
+
+            assert.equal(isShowing(sidebar), false, 'the sidebar is not showing');
+            sidebar.destroy();
+
+            assert.equal(button.parentNode, null, 'the button\'s parents were shot')
+
+            done();
+          });
+        });
+
+        assert.equal(isShowing(sidebar), false, 'the sidebar is not showing');
+
+        // TODO: figure out why this is necessary..
+        setTimeout(function() simulateCommand(button), 500);
       });
-      let menuitem = window.document.getElementById(makeID(sidebar.id));
-      simulateClick(menuitem);
+
+      assert.equal(isShowing(sidebar), true, 'the sidebar is showing');
+
+      simulateCommand(button);
     }
   });
 
-  sidebar.show();
-}
+  let { node: button } = getWidget(sidebar.id, window);
+  //assert.equal(button.checked, false, 'the button exists and is not checked');
 
-exports.testSidebarButtonChanges = function(assert, done) {
-  done()
+  assert.equal(isShowing(sidebar), false, 'the sidebar is not showing');
+  simulateCommand(button);
 }
-
 require('sdk/test').run(exports);

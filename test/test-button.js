@@ -446,7 +446,6 @@ exports['test button tab state'] = function(assert, done) {
       });
 
       // set previous active tab state
-
       button.state(mainTab, {
         label: 'Tab label',
         icon: './tab-icon.png',
