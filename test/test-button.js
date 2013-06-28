@@ -205,7 +205,7 @@ exports['test button removed on dispose'] = function(assert, done) {
   // was removed or it's not in the UX build yet
   widgetId = getWidget(button.id).id;
 
-  button.dispose();
+  button.destroy();
 };
 
 exports['test button global state updated'] = function(assert) {
