@@ -1,7 +1,6 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 "use strict";
 
 const { Cc, Ci } = require("chrome");
@@ -10,6 +9,12 @@ const url = require("sdk/url");
 const timer = require("sdk/timers");
 const self = require("sdk/self");
 const windowUtils = require("sdk/deprecated/window-utils");
+const { getMostRecentBrowserWindow } = require('sdk/window/utils');
+
+let jetpackID = "testID";
+try {
+  jetpackID = require("sdk/self").id;
+} catch(e) {}
 
 exports.testConstructor = function(test) {
   test.waitUntilDone();
@@ -664,7 +669,7 @@ exports.testConstructor = function(test) {
   doneTest();
 };
 
-exports.testPanelWidget1 = function testPanelWidget1(test) {
+exports.testWidgetWithValidPanel = function(test) {
   const widgets = require("sdk/widget");
 
   let widget1 = widgets.Widget({
@@ -677,6 +682,13 @@ exports.testPanelWidget1 = function testPanelWidget1(test) {
     panel: require("sdk/panel").Panel({
       contentURL: "data:text/html;charset=utf-8,<body>Look ma, a panel!</body>",
       onShow: function() {
+        let { document } = getMostRecentBrowserWindow();
+        let widgetEle = document.getElementById("widget:" + jetpackID + "-" + widget1.id);
+        let panelEle = document.getElementById('mainPopupSet').lastChild;
+        // See bug https://bugzilla.mozilla.org/show_bug.cgi?id=859592
+        test.assertEqual(panelEle.getAttribute("type"), "arrow", 'the panel is a arrow type');
+        test.assertStrictEqual(panelEle.anchorNode, widgetEle, 'the panel is properly anchored to the widget');
+
         widget1.destroy();
         test.pass("panel displayed on click");
         test.done();
@@ -686,7 +698,7 @@ exports.testPanelWidget1 = function testPanelWidget1(test) {
   test.waitUntilDone();
 };
 
-exports.testPanelWidget2 = function testPanelWidget2(test) {
+exports.testWidgetWithInvalidPanel = function(test) {
   const widgets = require("sdk/widget");
   test.assertRaises(
     function() {
