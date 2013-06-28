@@ -120,8 +120,8 @@ exports['test button added'] = function(assert) {
   });
 
   // check defaults
-//  assert.equal(button.size, 'small',
-//    'size is set to default "small" value');
+  assert.equal(button.size, 'small',
+    'size is set to default "small" value');
 
   assert.equal(button.disabled, false,
     'disabled is set to default `false` value');
@@ -394,7 +394,7 @@ exports['test button window state'] = function(assert, done) {
 
     assert.equal(node.getAttribute('image'), data.url(state.icon.substr(2)),
       'node image is correct');
-    assert.equal(node.getAttribute('disabled'), String(state.disabled),
+    assert.equal(node.hasAttribute('disabled'), state.disabled,
       'disabled is correct');
 
     let node = nodes[1]
@@ -407,7 +407,7 @@ exports['test button window state'] = function(assert, done) {
 
     assert.equal(node.getAttribute('image'), data.url(state.icon.substr(2)),
       'node image is correct');
-    assert.equal(node.getAttribute('disabled'), String(state.disabled),
+    assert.equal(node.hasAttribute('disabled'), state.disabled,
       'disabled is correct');
 
     return window;
@@ -514,7 +514,7 @@ exports['test button tab state'] = function(assert, done) {
         'node tooltip is correct');
       assert.equal(node.getAttribute('image'), data.url(state.icon.substr(2)),
         'node image is correct');
-      assert.equal(node.getAttribute('disabled'), String(state.disabled),
+      assert.equal(node.hasAttribute('disabled'), state.disabled,
         'disabled is correct');
 
       tabs.once('activate', () => {
@@ -529,7 +529,7 @@ exports['test button tab state'] = function(assert, done) {
             'node tooltip is correct');
           assert.equal(node.getAttribute('image'), data.url(state.icon.substr(2)),
             'node image is correct');
-          assert.equal(node.getAttribute('disabled'), String(state.disabled),
+          assert.equal(node.hasAttribute('disabled'), state.disabled,
             'disabled is correct');
 
           tab.close();
@@ -651,21 +651,67 @@ exports['test button icon set'] = function(assert) {
     label: 'my button',
     icon: {
       '16': './icon16.png',
-      '32': './icon32.png'
+      '32': './icon32.png',
+      '64': './icon64.png'
     }
   });
 
-  let { node } = getWidget(button.id);
-  let window = node.ownerDocument.defaultView;
+  let { node, id: widgetId } = getWidget(button.id);
+  console.log('current:', uneval(getWidget(button.id)))
+  let { devicePixelRatio } = node.ownerDocument.defaultView;
 
-  let size = 16 * window.devicePixelRatio;
+  let size = 16 * devicePixelRatio;
 
   assert.equal(node.getAttribute('image'), data.url(button.icon[size].substr(2)),
-    'the icon is properly with the best match');
+    'the icon is set properly in navbar');
+
+  let size = 32 * devicePixelRatio;
+
+  CustomizableUI.addWidgetToArea(widgetId, CustomizableUI.AREA_PANEL);
+
+  assert.equal(node.getAttribute('image'), data.url(button.icon[size].substr(2)),
+    'the icon is set properly in panel');
+
+  // Using `loader.unload` without move back the button to the original area
+  // raises an error in the CustomizableUI. This is doesn't happen if the
+  // button is moved manually from navbar to panel. I believe it has to do
+  // with `addWidgetToArea` method, because even with a `timeout` the issue
+  // persist.
+  CustomizableUI.addWidgetToArea(widgetId, CustomizableUI.AREA_NAVBAR);
 
   loader.unload();
 }
 
+exports['test button state validation'] = function(assert) {
+  let loader = Loader(module);
+  let { Button } = loader.require('sdk/ui');
+  let { browserWindows } = loader.require('sdk/windows');
+
+  let button = Button({
+    id: 'my-button',
+    label: 'my button',
+    icon: './icon.png'
+  })
+
+  button.state(button, {
+    size: 'large'
+  });
+
+  assert.equal(button.size, 'small',
+    'button.size is unchanged');
+
+  let state = button.state(button);
+
+  assert.equal(button.size, 'small',
+    'button state is unchanged');
+
+  assert.throws(
+    () => button.state(button, { icon: 'http://www.mozilla.org/favicon.ico' }),
+    /^The option "icon"/,
+    'throws on remote icon given');
+
+  loader.unload();
+};
 
 // If the module doesn't support the app we're being run in, require() will
 // throw.  In that case, remove all tests above from exports, and add one dummy
