@@ -5,7 +5,6 @@
 
 const { Cu } = require('chrome');
 const { Loader } = require('sdk/test/loader');
-const { Sidebar } = require('sdk/ui/sidebar');
 const { show, hide } = require('sdk/ui/sidebar/actions');
 const { isShowing } = require('sdk/ui/sidebar/utils');
 const { getMostRecentBrowserWindow } = require('sdk/window/utils');
@@ -81,6 +80,7 @@ function getWidget(buttonId, window = getMostRecentBrowserWindow()) {
 };
 
 exports.testSidebarBasicLifeCycle = function(assert, done) {
+  const { Sidebar } = require('sdk/ui/sidebar');
   let testName = 'testSidebarBasicLifeCycle';
   let window = getMostRecentBrowserWindow();
   assert.ok(!window.document.getElementById(makeID(testName)), 'sidebar id DNE');
@@ -153,6 +153,7 @@ exports.testSidebarBasicLifeCycle = function(assert, done) {
 }
 
 exports.testSideBarIsInNewWindows = function(assert, done) {
+  const { Sidebar } = require('sdk/ui/sidebar');
   let testName = 'testSideBarOnNewWindow';
   let sidebar = Sidebar({
     id: testName,
@@ -179,6 +180,7 @@ exports.testSideBarIsInNewWindows = function(assert, done) {
 
 
 exports.testSideBarIsNotInNewPrivateWindows = function(assert, done) {
+  const { Sidebar } = require('sdk/ui/sidebar');
   let testName = 'testSideBarOnNewWindow';
   let sidebar = Sidebar({
     id: testName,
@@ -205,6 +207,7 @@ exports.testSideBarIsNotInNewPrivateWindows = function(assert, done) {
 }
 
 exports.testSideBarIsShowingInNewWindows = function(assert, done) {
+  const { Sidebar } = require('sdk/ui/sidebar');
   let testName = 'testSideBarIsShowingInNewWindows';
   let sidebar = Sidebar({
     id: testName,
@@ -272,6 +275,7 @@ exports.testSideBarIsShowingInNewWindows = function(assert, done) {
 }
 
 exports.testAddonGlobalSimple = function(assert, done) {
+  const { Sidebar } = require('sdk/ui/sidebar');
   let testName = 'testAddonGlobal';
   let sidebar = Sidebar({
     id: testName,
@@ -297,6 +301,7 @@ exports.testAddonGlobalSimple = function(assert, done) {
 }
 
 exports.testAddonGlobalComplex = function(assert, done) {
+  const { Sidebar } = require('sdk/ui/sidebar');
   let testName = 'testAddonGlobal';
   let sidebar = Sidebar({
     id: testName,
@@ -327,6 +332,7 @@ exports.testAddonGlobalComplex = function(assert, done) {
 }
 
 exports.testShowingOneSidebarAfterAnother = function(assert, done) {
+  const { Sidebar } = require('sdk/ui/sidebar');
   let testName = 'testShowingOneSidebarAfterAnother';
 
   let sidebar1 = Sidebar({
@@ -387,6 +393,7 @@ exports.testShowingOneSidebarAfterAnother = function(assert, done) {
 }
 
 exports.testSidebarUnload = function(assert, done) {
+  const { Sidebar } = require('sdk/ui/sidebar');
   let loader = Loader(module);
 
   let testName = 'testSidebarUnload';
@@ -421,6 +428,7 @@ exports.testSidebarUnload = function(assert, done) {
 }
 
 exports.testRemoteContent = function(assert) {
+  const { Sidebar } = require('sdk/ui/sidebar');
   let testName = 'testRemoteContent';
   try {
     let sidebar = Sidebar({
@@ -438,6 +446,7 @@ exports.testRemoteContent = function(assert) {
 }
 
 exports.testInvalidURL = function(assert) {
+  const { Sidebar } = require('sdk/ui/sidebar');
   let testName = 'testInvalidURL';
   try {
     let sidebar = Sidebar({
@@ -455,6 +464,7 @@ exports.testInvalidURL = function(assert) {
 }
 
 exports.testInvalidURLType = function(assert) {
+  const { Sidebar } = require('sdk/ui/sidebar');
   let testName = 'testInvalidURLType';
   try {
     let sidebar = Sidebar({
@@ -471,6 +481,7 @@ exports.testInvalidURLType = function(assert) {
 }
 
 exports.testInvalidTitle = function(assert) {
+  const { Sidebar } = require('sdk/ui/sidebar');
   let testName = 'testInvalidTitle';
   try {
     let sidebar = Sidebar({
@@ -488,6 +499,7 @@ exports.testInvalidTitle = function(assert) {
 }
 
 exports.testInvalidIcon = function(assert) {
+  const { Sidebar } = require('sdk/ui/sidebar');
   let testName = 'testInvalidTitle';
   try {
     let sidebar = Sidebar({
@@ -504,6 +516,7 @@ exports.testInvalidIcon = function(assert) {
 }
 
 exports.testInvalidID = function(assert) {
+  const { Sidebar } = require('sdk/ui/sidebar');
   let testName = 'testInvalidID';
   try {
     let sidebar = Sidebar({
@@ -557,6 +570,7 @@ exports.testSidebarIsNotOpenInNewPrivateWindow = function(assert, done) {
 
 // TEST: edge case where web panel is destroyed while loading
 exports.testDestroyEdgeCaseBug = function(assert, done) {
+  const { Sidebar } = require('sdk/ui/sidebar');
   let testName = 'testDestroyEdgeCaseBug';
   let window = getMostRecentBrowserWindow();
   let sidebar = Sidebar({
@@ -617,6 +631,7 @@ exports.testDestroyEdgeCaseBug = function(assert, done) {
 }
 
 exports.testClickingACheckedMenuitem = function(assert, done) {
+  const { Sidebar } = require('sdk/ui/sidebar');
   let testName = 'testClickingACheckedMenuitem';
   let window = getMostRecentBrowserWindow();
   let sidebar = Sidebar({
@@ -641,6 +656,7 @@ exports.testClickingACheckedMenuitem = function(assert, done) {
 };
 
 exports.testClickingACheckedButton = function(assert, done) {
+  const { Sidebar } = require('sdk/ui/sidebar');
   let testName = 'testClickingACheckedButton';
   let window = getMostRecentBrowserWindow();
 
@@ -689,4 +705,69 @@ exports.testClickingACheckedButton = function(assert, done) {
   assert.equal(isShowing(sidebar), false, 'the sidebar is not showing');
   simulateCommand(button);
 }
+
+exports.testTitleSetter = function(assert, done) {
+  const { Sidebar } = require('sdk/ui/sidebar');
+  let testName = 'testTitleSetter';
+  let { document } = getMostRecentBrowserWindow();
+
+  let sidebar1 = Sidebar({
+    id: testName,
+    title: testName,
+    icon: BLANK_IMG,
+    url: 'data:text/html;charset=utf-8,'+testName,
+  });
+
+  assert.equal(sidebar1.title, testName, 'title getter works');
+
+  sidebar1.show().then(function() {
+    let button = document.querySelector('toolbarbutton[label=' + testName + ']');
+    assert.ok(button, 'button was found');
+
+    assert.equal(document.getElementById(makeID(sidebar1.id)).getAttribute('label'),
+                 testName,
+                 'the menuitem label is correct');
+
+    assert.equal(document.getElementById('sidebar-title').value, testName, 'the menuitem label is correct');
+
+    sidebar1.title = 'foo';
+
+    assert.equal(sidebar1.title, 'foo', 'title getter works');
+
+    assert.equal(document.getElementById(makeID(sidebar1.id)).getAttribute('label'),
+                 'foo',
+                 'the menuitem label was updated');
+
+    assert.equal(document.getElementById('sidebar-title').value, 'foo', 'the sidebar title was updated');
+
+    assert.equal(button.getAttribute('label'), 'foo', 'the button label was updated');
+
+    sidebar1.destroy();
+    done();
+  }, assert.fail);
+}
+
+exports.testDuplicateID = function(assert, done) {
+  done();
+}
+
+exports.testShowInPrivateWindow = function(assert, done) {
+  done();
+}
+
+// If the module doesn't support the app we're being run in, require() will
+// throw.  In that case, remove all tests above from exports, and add one dummy
+// test that passes.
+try {
+  require('sdk/ui/sidebar');
+}
+catch (err) {
+  if (!/^Unsupported Application/.test(err.message))
+    throw err;
+
+  module.exports = {
+    'test Unsupported Application': assert => assert.pass(err.message)
+  }
+}
+
 require('sdk/test').run(exports);

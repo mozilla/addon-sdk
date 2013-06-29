@@ -754,4 +754,4 @@ catch (err) {
   }
 }
 
-require('test').run(exports);
+require('sdk/test').run(exports);
