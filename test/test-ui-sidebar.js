@@ -763,7 +763,6 @@ exports.testButtonShowingInOneWindowDoesNotAffectOtherWindows = function(assert,
   assert.equal(isShowing(sidebar1), false, 'the sidebar is not showing');
   let checkCount = 1;
   function checkSidebarShowing(window, expected) {
-    expected = expected || false;
     assert.pass('check count ' + checkCount++);
     let mi = window.document.getElementById(makeID(sidebar1.id));
     if (mi) {
@@ -771,9 +770,9 @@ exports.testButtonShowingInOneWindowDoesNotAffectOtherWindows = function(assert,
                    expected.toString(),
                    'the menuitem is not checked');
     }
-    assert.equal(isSidebarShowing(window), expected, 'the new window sidebar is not showing');
+    assert.equal(isSidebarShowing(window), expected || false, 'the new window sidebar is not showing');
   }
-  checkSidebarShowing(window1);
+  checkSidebarShowing(window1, false);
 
   windowPromise(window1.OpenBrowserWindow(), 'load').then(function(window) {
 
@@ -787,7 +786,7 @@ exports.testButtonShowingInOneWindowDoesNotAffectOtherWindows = function(assert,
       checkSidebarShowing(window, true);
 
       // check state of old window
-      checkSidebarShowing(window1);
+      checkSidebarShowing(window1, false);
 
       // waiting for show using url setter
       sidebar1.once('show', function() {
@@ -798,16 +797,16 @@ exports.testButtonShowingInOneWindowDoesNotAffectOtherWindows = function(assert,
         checkSidebarShowing(window, true);
 
         // check state of old window
-        checkSidebarShowing(window1);
+        checkSidebarShowing(window1, false);
 
         sidebar1.destroy();
 
         // check state of the new window
         assert.equal(isShowing(sidebar1), false, 'the sidebar is not showing');
-        checkSidebarShowing(window);
+        checkSidebarShowing(window, undefined);
 
         // check state of old window
-        checkSidebarShowing(window1);
+        checkSidebarShowing(window1, undefined);
 
         close(window).then(done);
       });
