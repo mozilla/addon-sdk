@@ -177,6 +177,7 @@ exports.testSideBarIsInNewWindows = function(assert, done) {
   })
 }
 
+
 exports.testSideBarIsNotInNewPrivateWindows = function(assert, done) {
   let testName = 'testSideBarOnNewWindow';
   let sidebar = Sidebar({
@@ -393,7 +394,8 @@ exports.testSidebarUnload = function(assert, done) {
 
   assert.equal(isPrivate(window), false, 'the current window is not private');
 
-  let sidebar = loader.require('sdk/ui/sidebar').Sidebar({
+  // EXPLICIT: testing require('sdk/ui')
+  let sidebar = loader.require('sdk/ui').Sidebar({
     id: testName,
     title: testName,
     icon: BLANK_IMG,
@@ -518,6 +520,7 @@ exports.testInvalidID = function(assert) {
   }
 }
 
+/*
 exports.testSidebarIsNotOpenInNewPrivateWindow = function(assert, done) {
   let testName = 'testSidebarIsNotOpenInNewPrivateWindow';
   let window = getMostRecentBrowserWindow();
@@ -550,6 +553,7 @@ exports.testSidebarIsNotOpenInNewPrivateWindow = function(assert, done) {
 
     sidebar.show();
 }
+*/
 
 // TEST: edge case where web panel is destroyed while loading
 exports.testDestroyEdgeCaseBug = function(assert, done) {
