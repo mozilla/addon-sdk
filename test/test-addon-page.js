@@ -11,6 +11,7 @@ const { LoaderWithHookedConsole } = require('sdk/test/loader');
 const { setTimeout } = require('sdk/timers');
 const { is } = require('sdk/system/xul-app');
 const tabs = require('sdk/tabs');
+const isAustralis = "gCustomizeMode" in windows.activeBrowserWindow;
 
 let uri = require('sdk/self').data.url('index.html');
 
@@ -48,7 +49,8 @@ exports['test that add-on page has no chrome'] = function(assert, done) {
   setTimeout(function() {
     activateTab(tab);
 
-    assert.equal(isChromeVisible(window), is('Fennec'), 'chrome is not visible for addon page');
+    assert.equal(isChromeVisible(window), is('Fennec') || isAustralis,
+      'chrome is not visible for addon page');
 
     closeTab(tab);
     assert.ok(isChromeVisible(window), 'chrome is visible again');
@@ -71,7 +73,8 @@ exports['test that add-on page with hash has no chrome'] = function(assert, done
   setTimeout(function() {
     activateTab(tab);
 
-    assert.equal(isChromeVisible(window), is('Fennec'), 'chrome is not visible for addon page');
+    assert.equal(isChromeVisible(window), is('Fennec') || isAustralis,
+      'chrome is not visible for addon page');
 
     closeTab(tab);
     assert.ok(isChromeVisible(window), 'chrome is visible again');
@@ -94,7 +97,8 @@ exports['test that add-on page with querystring has no chrome'] = function(asser
   setTimeout(function() {
     activateTab(tab);
 
-    assert.equal(isChromeVisible(window), is('Fennec'), 'chrome is not visible for addon page');
+    assert.equal(isChromeVisible(window), is('Fennec') || isAustralis,
+      'chrome is not visible for addon page');
 
     closeTab(tab);
     assert.ok(isChromeVisible(window), 'chrome is visible again');
@@ -117,7 +121,8 @@ exports['test that add-on page with hash and querystring has no chrome'] = funct
   setTimeout(function() {
     activateTab(tab);
 
-    assert.equal(isChromeVisible(window), is('Fennec'), 'chrome is not visible for addon page');
+    assert.equal(isChromeVisible(window), is('Fennec') || isAustralis,
+      'chrome is not visible for addon page');
 
     closeTab(tab);
     assert.ok(isChromeVisible(window), 'chrome is visible again');

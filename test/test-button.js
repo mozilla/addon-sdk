@@ -114,14 +114,14 @@ exports['test button added'] = function(assert) {
   let { Button } = loader.require('sdk/ui');
 
   let button = Button({
-    id: 'my-button',
+    id: 'my-button-1',
     label: 'my button',
     icon: './icon.png'
   });
 
   // check defaults
-//  assert.equal(button.size, 'small',
-//    'size is set to default "small" value');
+  assert.equal(button.size, 'small',
+    'size is set to default "small" value');
 
   assert.equal(button.disabled, false,
     'disabled is set to default `false` value');
@@ -159,14 +159,14 @@ exports['test button duplicate id'] = function(assert) {
   let { Button } = loader.require('sdk/ui');
 
   let button = Button({
-    id: 'my-button',
+    id: 'my-button-2',
     label: 'my button',
     icon: './icon.png'
   });
 
   assert.throws(() => {
     let doppelganger = Button({
-      id: 'my-button',
+      id: 'my-button-2',
       label: 'my button',
       icon: './icon.png'
     });
@@ -196,7 +196,7 @@ exports['test button removed on dispose'] = function(assert, done) {
   });
 
   let button = Button({
-    id: 'my-button',
+    id: 'my-button-3',
     label: 'my button',
     icon: './icon.png'
   });
@@ -205,7 +205,7 @@ exports['test button removed on dispose'] = function(assert, done) {
   // was removed or it's not in the UX build yet
   widgetId = getWidget(button.id).id;
 
-  button.dispose();
+  button.destroy();
 };
 
 exports['test button global state updated'] = function(assert) {
@@ -213,7 +213,7 @@ exports['test button global state updated'] = function(assert) {
   let { Button } = loader.require('sdk/ui');
 
   let button = Button({
-    id: 'my-button',
+    id: 'my-button-4',
     label: 'my button',
     icon: './icon.png'
   });
@@ -226,7 +226,7 @@ exports['test button global state updated'] = function(assert) {
   // check read-only properties
 
   button.id = 'another-id';
-  assert.equal(button.id, 'my-button',
+  assert.equal(button.id, 'my-button-4',
     'id is unchanged');
   assert.equal(node.id, widgetId,
     'node id is unchanged');
@@ -275,7 +275,7 @@ exports['test button global state updated on multiple windows'] = function(asser
   let { Button } = loader.require('sdk/ui');
 
   let button = Button({
-    id: 'my-button',
+    id: 'my-button-5',
     label: 'my button',
     icon: './icon.png'
   });
@@ -319,7 +319,7 @@ exports['test button window state'] = function(assert, done) {
   let { browserWindows } = loader.require('sdk/windows');
 
   let button = Button({
-    id: 'my-button',
+    id: 'my-button-6',
     label: 'my button',
     icon: './icon.png'
   });
@@ -394,7 +394,7 @@ exports['test button window state'] = function(assert, done) {
 
     assert.equal(node.getAttribute('image'), data.url(state.icon.substr(2)),
       'node image is correct');
-    assert.equal(node.getAttribute('disabled'), String(state.disabled),
+    assert.equal(node.hasAttribute('disabled'), state.disabled,
       'disabled is correct');
 
     let node = nodes[1]
@@ -407,7 +407,7 @@ exports['test button window state'] = function(assert, done) {
 
     assert.equal(node.getAttribute('image'), data.url(state.icon.substr(2)),
       'node image is correct');
-    assert.equal(node.getAttribute('disabled'), String(state.disabled),
+    assert.equal(node.hasAttribute('disabled'), state.disabled,
       'disabled is correct');
 
     return window;
@@ -425,7 +425,7 @@ exports['test button tab state'] = function(assert, done) {
   let tabs = loader.require('sdk/tabs');
 
   let button = Button({
-    id: 'my-button',
+    id: 'my-button-7',
     label: 'my button',
     icon: './icon.png'
   });
@@ -513,7 +513,7 @@ exports['test button tab state'] = function(assert, done) {
         'node tooltip is correct');
       assert.equal(node.getAttribute('image'), data.url(state.icon.substr(2)),
         'node image is correct');
-      assert.equal(node.getAttribute('disabled'), String(state.disabled),
+      assert.equal(node.hasAttribute('disabled'), state.disabled,
         'disabled is correct');
 
       tabs.once('activate', () => {
@@ -528,7 +528,7 @@ exports['test button tab state'] = function(assert, done) {
             'node tooltip is correct');
           assert.equal(node.getAttribute('image'), data.url(state.icon.substr(2)),
             'node image is correct');
-          assert.equal(node.getAttribute('disabled'), String(state.disabled),
+          assert.equal(node.hasAttribute('disabled'), state.disabled,
             'disabled is correct');
 
           tab.close();
@@ -552,7 +552,7 @@ exports['test button click'] = function(assert, done) {
   let labels = [];
 
   let button = Button({
-    id: 'my-button',
+    id: 'my-button-8',
     label: 'my button',
     icon: './icon.png',
     onClick: ({label}) => labels.push(label)
@@ -587,7 +587,7 @@ exports['test button type checkbox'] = function(assert, done) {
   let events = [];
 
   let button = Button({
-    id: 'my-button',
+    id: 'my-button-9',
     label: 'my button',
     icon: './icon.png',
     type: 'checkbox',
@@ -636,7 +636,7 @@ exports['test button icon set'] = function(assert) {
   // Test remote icon set
   assert.throws(
     () => Button({
-      id: 'my-button',
+      id: 'my-button-10',
       label: 'my button',
       icon: {
         '16': 'http://www.mozilla.org/favicon.ico'
@@ -646,25 +646,98 @@ exports['test button icon set'] = function(assert) {
     'throws on no valid icon given');
 
   let button = Button({
-    id: 'my-button',
+    id: 'my-button-11',
     label: 'my button',
     icon: {
       '16': './icon16.png',
-      '32': './icon32.png'
+      '32': './icon32.png',
+      '64': './icon64.png'
     }
   });
 
-  let { node } = getWidget(button.id);
-  let window = node.ownerDocument.defaultView;
+  let { node, id: widgetId } = getWidget(button.id);
+  let { devicePixelRatio } = node.ownerDocument.defaultView;
 
-  let size = 16 * window.devicePixelRatio;
+  let size = 16 * devicePixelRatio;
 
   assert.equal(node.getAttribute('image'), data.url(button.icon[size].substr(2)),
-    'the icon is properly with the best match');
+    'the icon is set properly in navbar');
+
+  let size = 32 * devicePixelRatio;
+
+  CustomizableUI.addWidgetToArea(widgetId, CustomizableUI.AREA_PANEL);
+
+  assert.equal(node.getAttribute('image'), data.url(button.icon[size].substr(2)),
+    'the icon is set properly in panel');
+
+  // Using `loader.unload` without move back the button to the original area
+  // raises an error in the CustomizableUI. This is doesn't happen if the
+  // button is moved manually from navbar to panel. I believe it has to do
+  // with `addWidgetToArea` method, because even with a `timeout` the issue
+  // persist.
+  CustomizableUI.addWidgetToArea(widgetId, CustomizableUI.AREA_NAVBAR);
 
   loader.unload();
 }
 
+exports['test button state validation'] = function(assert) {
+  let loader = Loader(module);
+  let { Button } = loader.require('sdk/ui');
+  let { browserWindows } = loader.require('sdk/windows');
+
+  let button = Button({
+    id: 'my-button-12',
+    label: 'my button',
+    icon: './icon.png'
+  })
+
+  button.state(button, {
+    size: 'large'
+  });
+
+  assert.equal(button.size, 'small',
+    'button.size is unchanged');
+
+  let state = button.state(button);
+
+  assert.equal(button.size, 'small',
+    'button state is unchanged');
+
+  assert.throws(
+    () => button.state(button, { icon: 'http://www.mozilla.org/favicon.ico' }),
+    /^The option "icon"/,
+    'throws on remote icon given');
+
+  loader.unload();
+};
+
+exports['test button are not in private windows'] = function(assert, done) {
+  let loader = Loader(module);
+  let { Button } = loader.require('sdk/ui');
+  let{ isPrivate } = loader.require('sdk/private-browsing');
+  let { browserWindows } = loader.require('sdk/windows');
+
+  let button = Button({
+    id: 'my-button-13',
+    label: 'my button',
+    icon: './icon.png'
+  });
+
+  open(null, { features: { toolbar: true, private: true }}).then(window => {
+    assert.ok(isPrivate(window),
+      'the new window is private');
+
+    let { node } = getWidget(button.id, window);
+
+    assert.ok(!node || node.style.display === 'none',
+      'the button is not added / is not visible on private window');
+
+    return window;
+  }).
+  then(close).
+  then(loader.unload).
+  then(done, assert.fail)
+}
 
 // If the module doesn't support the app we're being run in, require() will
 // throw.  In that case, remove all tests above from exports, and add one dummy
