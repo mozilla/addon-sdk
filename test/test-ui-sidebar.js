@@ -67,6 +67,8 @@ exports.testSidebarBasicLifeCycle = function(assert, done) {
       assert.equal(isSidebarShowing(window), false, 'the sidebar elemnt is hidden');
 
       sidebar.once('detach', function() {
+        // calling destroy twice should not matter
+        sidebar.destroy();
         sidebar.destroy();
 
         let sidebarMI = getSidebarMenuitems();
@@ -108,7 +110,10 @@ exports.testSideBarIsInNewWindows = function(assert, done) {
       let ele = window.document.getElementById(makeID(testName));
       assert.ok(ele, 'sidebar element was added');
 
+      // calling destroy twice should not matter
       sidebar.destroy();
+      sidebar.destroy();
+
       assert.ok(!window.document.getElementById(makeID(testName)), 'sidebar id DNE');
       assert.ok(!startWindow.document.getElementById(makeID(testName)), 'sidebar id DNE');
 
@@ -799,6 +804,8 @@ exports.testButtonShowingInOneWindowDoesNotAffectOtherWindows = function(assert,
         // check state of old window
         checkSidebarShowing(window1, false);
 
+        // calling destroy() twice should not matter
+        sidebar1.destroy();
         sidebar1.destroy();
 
         // check state of the new window
