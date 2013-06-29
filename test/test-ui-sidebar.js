@@ -859,8 +859,60 @@ exports.testDuplicateID = function(assert, done) {
   done();
 }
 
-exports.testURLSetterToSameValueReloadsSidebar = function(assert) {
-  assert.pass('TODO');
+exports.testURLSetterToSameValueReloadsSidebar = function(assert, done) {
+  const { Sidebar } = require('sdk/ui/sidebar');
+  let testName = 'testURLSetter';
+  let window = getMostRecentBrowserWindow();
+  let { document } = window;
+  let url = 'data:text/html;charset=utf-8,'+testName;
+
+  let sidebar1 = Sidebar({
+    id: testName,
+    title: testName,
+    icon: BLANK_IMG,
+    url: url
+  });
+
+  assert.equal(sidebar1.url, url, 'url getter works');
+  assert.equal(isShowing(sidebar1), false, 'the sidebar is not showing');
+  assert.equal(document.getElementById(makeID(sidebar1.id)).getAttribute('checked'),
+               'false',
+               'the menuitem is not checked');
+  assert.equal(isSidebarShowing(window), false, 'the new window sidebar is not showing');
+
+  windowPromise(window.OpenBrowserWindow(), 'load').then(function(window) {
+    let { document } = window;
+    assert.pass('new window was opened');
+
+    sidebar1.show().then(function() {
+      assert.equal(isShowing(sidebar1), true, 'the sidebar is showing');
+      assert.equal(document.getElementById(makeID(sidebar1.id)).getAttribute('checked'),
+                   'true',
+                   'the menuitem is checked');
+      assert.ok(isSidebarShowing(window), 'the new window sidebar is showing');
+
+      sidebar1.once('show', function() {
+        assert.pass('setting the sidebar.url causes a show event');
+
+        assert.equal(isShowing(sidebar1), true, 'the sidebar is showing');
+        assert.ok(isSidebarShowing(window), 'the new window sidebar is still showing');
+
+        assert.equal(document.getElementById(makeID(sidebar1.id)).getAttribute('checked'),
+                     'true',
+                     'the menuitem is still checked');
+
+        sidebar1.destroy();
+
+        close(window).then(done);
+      });
+
+      sidebar1.url = url;
+
+      assert.equal(sidebar1.url, url, 'url getter works');
+      assert.equal(isShowing(sidebar1), true, 'the sidebar is showing');
+      assert.ok(isSidebarShowing(window), 'the new window sidebar is showing');
+    }, assert.fail);
+  }, assert.fail);
 }
 
 exports.testButtonShowingInOneWindowDoesNotAffectOtherWindows = function(assert, done) {
