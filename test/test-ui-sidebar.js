@@ -665,7 +665,9 @@ exports.testClickingACheckedButton = function(assert, done) {
     title: testName,
     icon: BLANK_IMG,
     url: 'data:text/html;charset=utf-8,'+testName,
-    onShow: function() {
+    onShow: function onShow() {
+      sidebar.off('show', onShow);
+
       assert.pass('the sidebar was shown');
       //assert.equal(button.checked, true, 'the button is now checked');
 
@@ -677,14 +679,16 @@ exports.testClickingACheckedButton = function(assert, done) {
 
           sidebar.hide().then(function() {
             assert.pass('hide callback works');
+            assert.equal(isShowing(sidebar), false, 'the sidebar is not showing, final.');
 
-            assert.equal(isShowing(sidebar), false, 'the sidebar is not showing');
+            assert.pass('the sidebar was destroying');
             sidebar.destroy();
+            assert.pass('the sidebar was destroyed');
 
             assert.equal(button.parentNode, null, 'the button\'s parents were shot')
 
             done();
-          });
+          }, assert.fail);
         });
 
         assert.equal(isShowing(sidebar), false, 'the sidebar is not showing');
@@ -803,11 +807,6 @@ exports.testURLSetter = function(assert, done) {
   }, assert.fail);
 }
 
-exports.testDuplicateID = function(assert, done) {
-  assert.pass('TODO');
-  done();
-}
-
 exports.testShowInPrivateWindow = function(assert, done) {
   const { Sidebar } = require('sdk/ui/sidebar');
   let testName = 'testShowInPrivateWindow';
@@ -849,6 +848,35 @@ exports.testShowInPrivateWindow = function(assert, done) {
         close(window).then(done);
       },
       assert.fail);
+  }, assert.fail);
+}
+
+exports.testDuplicateID = function(assert, done) {
+  assert.pass('TODO');
+  done();
+}
+
+exports.testURLSetterToSameValueReloadsSidebar = function(assert) {
+  assert.pass('TODO');
+}
+
+exports.testShowingInOneWindowDoesNotAffectOtherWindows = function(assert) {
+  assert.pass('TODO');
+}
+
+exports.testHidingAHiddenSidebarRejects = function(assert) {
+  const { Sidebar } = require('sdk/ui/sidebar');
+  let testName = 'testHidingAHiddenSidebarRejects';
+  let sidebar = Sidebar({
+    id: testName,
+    title: testName,
+    icon: BLANK_IMG,
+    url: url
+  });
+
+  sidebar.hide().then(assert.fail, assert.pass).then(function() {
+    sidebar.destroy();
+    done();
   }, assert.fail);
 }
 
