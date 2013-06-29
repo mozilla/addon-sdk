@@ -7,7 +7,7 @@ const { Cu } = require('chrome');
 const { Loader } = require('sdk/test/loader');
 const { show, hide } = require('sdk/ui/sidebar/actions');
 const { isShowing } = require('sdk/ui/sidebar/utils');
-const { getMostRecentBrowserWindow } = require('sdk/window/utils');
+const { getMostRecentBrowserWindow, isWindowPrivate } = require('sdk/window/utils');
 const { open, close, focus, promise: windowPromise } = require('sdk/window/helpers');
 const { setTimeout } = require('sdk/timers');
 const { isPrivate } = require('sdk/private-browsing');
@@ -766,7 +766,7 @@ exports.testURLSetter = function(assert, done) {
   assert.equal(document.getElementById(makeID(sidebar1.id)).getAttribute('checked'),
                'false',
                'the menuitem is not checked');
-  assert.equal(isSidebarShowing(window), false, 'the new window sidebar is still showing');
+  assert.equal(isSidebarShowing(window), false, 'the new window sidebar is not showing');
 
   windowPromise(window.OpenBrowserWindow(), 'load').then(function(window) {
     let { document } = window;
@@ -804,11 +804,52 @@ exports.testURLSetter = function(assert, done) {
 }
 
 exports.testDuplicateID = function(assert, done) {
+  assert.pass('TODO');
   done();
 }
 
 exports.testShowInPrivateWindow = function(assert, done) {
-  done();
+  const { Sidebar } = require('sdk/ui/sidebar');
+  let testName = 'testShowInPrivateWindow';
+  let window = getMostRecentBrowserWindow();
+  let { document } = window;
+  let url = 'data:text/html;charset=utf-8,'+testName;
+
+  let sidebar1 = Sidebar({
+    id: testName,
+    title: testName,
+    icon: BLANK_IMG,
+    url: url
+  });
+
+  assert.equal(sidebar1.url, url, 'url getter works');
+  assert.equal(isShowing(sidebar1), false, 'the sidebar is not showing');
+  assert.equal(document.getElementById(makeID(sidebar1.id)).getAttribute('checked'),
+               'false',
+               'the menuitem is not checked');
+  assert.equal(isSidebarShowing(window), false, 'the new window sidebar is not showing');
+
+  windowPromise(window.OpenBrowserWindow({ private: true }), 'load').then(function(window) {
+    let { document } = window;
+    assert.equal(isWindowPrivate(window), true, 'new window is private');
+    assert.equal(isPrivate(window), true, 'new window is private');
+
+    sidebar1.show().then(
+      function bad() {
+        assert.fail('a successful show should not happen here..');
+      },
+      function good() {
+        assert.equal(isShowing(sidebar1), false, 'the sidebar is still not showing');
+        assert.equal(document.getElementById(makeID(sidebar1.id)),
+                     null,
+                     'the menuitem dne on the private window');
+        assert.equal(isSidebarShowing(window), false, 'the new window sidebar is not showing');
+
+        sidebar1.destroy();
+        close(window).then(done);
+      },
+      assert.fail);
+  }, assert.fail);
 }
 
 // If the module doesn't support the app we're being run in, require() will
