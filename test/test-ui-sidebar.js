@@ -154,7 +154,7 @@ exports.testSidebarBasicLifeCycle = function(assert, done) {
 
 exports.testSideBarIsInNewWindows = function(assert, done) {
   const { Sidebar } = require('sdk/ui/sidebar');
-  let testName = 'testSideBarOnNewWindow';
+  let testName = 'testSideBarIsInNewWindows';
   let sidebar = Sidebar({
     id: testName,
     title: testName,
@@ -181,7 +181,7 @@ exports.testSideBarIsInNewWindows = function(assert, done) {
 
 exports.testSideBarIsNotInNewPrivateWindows = function(assert, done) {
   const { Sidebar } = require('sdk/ui/sidebar');
-  let testName = 'testSideBarOnNewWindow';
+  let testName = 'testSideBarIsNotInNewPrivateWindows';
   let sidebar = Sidebar({
     id: testName,
     title: testName,
@@ -276,7 +276,7 @@ exports.testSideBarIsShowingInNewWindows = function(assert, done) {
 
 exports.testAddonGlobalSimple = function(assert, done) {
   const { Sidebar } = require('sdk/ui/sidebar');
-  let testName = 'testAddonGlobal';
+  let testName = 'testAddonGlobalSimple';
   let sidebar = Sidebar({
     id: testName,
     title: testName,
@@ -302,7 +302,7 @@ exports.testAddonGlobalSimple = function(assert, done) {
 
 exports.testAddonGlobalComplex = function(assert, done) {
   const { Sidebar } = require('sdk/ui/sidebar');
-  let testName = 'testAddonGlobal';
+  let testName = 'testAddonGlobalComplex';
   let sidebar = Sidebar({
     id: testName,
     title: testName,
@@ -394,9 +394,9 @@ exports.testShowingOneSidebarAfterAnother = function(assert, done) {
 
 exports.testSidebarUnload = function(assert, done) {
   const { Sidebar } = require('sdk/ui/sidebar');
+  let testName = 'testSidebarUnload';
   let loader = Loader(module);
 
-  let testName = 'testSidebarUnload';
   let window = getMostRecentBrowserWindow();
 
   assert.equal(isPrivate(window), false, 'the current window is not private');
@@ -753,7 +753,7 @@ exports.testTitleSetter = function(assert, done) {
 
 exports.testURLSetter = function(assert, done) {
   const { Sidebar } = require('sdk/ui/sidebar');
-  let testName = 'testTitleSetter';
+  let testName = 'testURLSetter';
   let window = getMostRecentBrowserWindow();
   let { document } = window;
   let url = 'data:text/html;charset=utf-8,'+testName;
@@ -860,13 +860,89 @@ exports.testURLSetterToSameValueReloadsSidebar = function(assert) {
   assert.pass('TODO');
 }
 
-exports.testShowingInOneWindowDoesNotAffectOtherWindows = function(assert) {
-  assert.pass('TODO');
+exports.testButtonShowingInOneWindowDoesNotAffectOtherWindows = function(assert, done) {
+  const { Sidebar } = require('sdk/ui/sidebar');
+  let testName = 'testButtonShowingInOneWindowDoesNotAffectOtherWindows';
+  let window1 = getMostRecentBrowserWindow();
+  let url = 'data:text/html;charset=utf-8,'+testName;
+
+  let sidebar1 = Sidebar({
+    id: testName,
+    title: testName,
+    icon: BLANK_IMG,
+    url: url
+  });
+
+  assert.equal(sidebar1.url, url, 'url getter works');
+  assert.equal(isShowing(sidebar1), false, 'the sidebar is not showing');
+  let checkCount = 1;
+  function checkSidebarShowing(window, expected) {
+    expected = expected || false;
+    assert.pass('check count ' + checkCount++);
+    let mi = window.document.getElementById(makeID(sidebar1.id));
+    if (mi) {
+      assert.equal(mi.getAttribute('checked') || 'false',
+                   expected.toString(),
+                   'the menuitem is not checked');
+    }
+    assert.equal(isSidebarShowing(window), expected, 'the new window sidebar is not showing');
+  }
+  checkSidebarShowing(window1);
+
+  windowPromise(window1.OpenBrowserWindow(), 'load').then(function(window) {
+
+    let { document } = window;
+    assert.pass('new window was opened!');
+
+    // waiting for show using button
+    sidebar1.once('show', function() {
+      // check state of the new window
+      assert.equal(isShowing(sidebar1), true, 'the sidebar is showing');
+      checkSidebarShowing(window, true);
+
+      // check state of old window
+      checkSidebarShowing(window1);
+
+      // waiting for show using url setter
+      sidebar1.once('show', function() {
+        assert.pass('setting the sidebar.url causes a new show event');
+
+        // check state of the new window
+        assert.equal(isShowing(sidebar1), true, 'the sidebar is showing');
+        checkSidebarShowing(window, true);
+
+        // check state of old window
+        checkSidebarShowing(window1);
+
+        sidebar1.destroy();
+
+        // check state of the new window
+        assert.equal(isShowing(sidebar1), false, 'the sidebar is not showing');
+        checkSidebarShowing(window);
+
+        // check state of old window
+        checkSidebarShowing(window1);
+
+        close(window).then(done);
+      });
+
+      assert.pass('setting sidebar1.url');
+      sidebar1.url += '1';
+      assert.pass('set sidebar1.url');
+    });
+
+    // clicking the sidebar button on the second window
+    let { node: button } = getWidget(sidebar1.id, window);
+    assert.ok(!!button, 'the button was found!');
+    simulateCommand(button);
+
+  }, assert.fail);
 }
 
 exports.testHidingAHiddenSidebarRejects = function(assert) {
   const { Sidebar } = require('sdk/ui/sidebar');
   let testName = 'testHidingAHiddenSidebarRejects';
+  let url = 'data:text/html;charset=utf-8,'+testName;
   let sidebar = Sidebar({
     id: testName,
     title: testName,
