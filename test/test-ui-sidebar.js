@@ -7,7 +7,7 @@ const { Cu } = require('chrome');
 const { Loader } = require('sdk/test/loader');
 const { Sidebar } = require('sdk/ui/sidebar');
 const { show, hide } = require('sdk/ui/sidebar/actions');
-const { isShowing } = require('sdk/ui/sidebar/state');
+const { isShowing } = require('sdk/ui/sidebar/utils');
 const { getMostRecentBrowserWindow } = require('sdk/window/utils');
 const { open, close, focus, promise: windowPromise } = require('sdk/window/helpers');
 const { setTimeout } = require('sdk/timers');
@@ -626,7 +626,7 @@ exports.testClickingACheckedMenuitem = function(assert, done) {
     url: 'data:text/html;charset=utf-8,'+testName,
   });
 
-  sidebar.show(function() {
+  sidebar.show().then(function() {
     assert.pass('the show callback works');
 
     sidebar.once('hide', function() {
@@ -659,7 +659,7 @@ exports.testClickingACheckedButton = function(assert, done) {
         sidebar.once('show', function() {
           assert.pass('clicking the button again shows it.');
 
-          sidebar.hide(function() {
+          sidebar.hide().then(function() {
             assert.pass('hide callback works');
 
             assert.equal(isShowing(sidebar), false, 'the sidebar is not showing');
