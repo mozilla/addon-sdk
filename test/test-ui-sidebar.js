@@ -453,6 +453,59 @@ exports.testInvalidID = function(assert) {
   }
 }
 
+exports.testInvalidBlankID = function(assert) {
+  const { Sidebar } = require('sdk/ui/sidebar');
+  let testName = 'testInvalidBlankID';
+  try {
+    let sidebar = Sidebar({
+      id: '',
+      title: testName,
+      icon: BLANK_IMG,
+      url: 'data:text/html;charset=utf-8,'+testName
+    });
+    assert.fail('a bad sidebar was created..');
+    sidebar.destroy();
+  }
+  catch(e) {
+    assert.ok(/The option "id" must be a valid alphanumeric id/.test(e), 'invalid ids are not acceptable');
+  }
+}
+
+exports.testInvalidNullID = function(assert) {
+  const { Sidebar } = require('sdk/ui/sidebar');
+  let testName = 'testInvalidBlankID';
+  try {
+    let sidebar = Sidebar({
+      id: null,
+      title: testName,
+      icon: BLANK_IMG,
+      url: 'data:text/html;charset=utf-8,'+testName
+    });
+    assert.fail('a bad sidebar was created..');
+    sidebar.destroy();
+  }
+  catch(e) {
+    assert.ok(/The option "id" must be a valid alphanumeric id/.test(e), 'invalid ids are not acceptable');
+  }
+}
+
+exports.testInvalidUndefinedID = function(assert) {
+  const { Sidebar } = require('sdk/ui/sidebar');
+  let testName = 'testInvalidBlankID';
+  try {
+    let sidebar = Sidebar({
+      title: testName,
+      icon: BLANK_IMG,
+      url: 'data:text/html;charset=utf-8,'+testName
+    });
+    assert.fail('a bad sidebar was created..');
+    sidebar.destroy();
+  }
+  catch(e) {
+    assert.ok(/The option "id" must be a valid alphanumeric id/.test(e), 'invalid ids are not acceptable');
+  }
+}
+
 // TEST: edge case where web panel is destroyed while loading
 exports.testDestroyEdgeCaseBug = function(assert, done) {
   const { Sidebar } = require('sdk/ui/sidebar');
