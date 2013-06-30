@@ -692,9 +692,30 @@ exports.testURLSetter = function(assert, done) {
   }, assert.fail);
 }
 
-exports.testDuplicateID = function(assert, done) {
-  assert.pass('TODO');
-  done();
+exports.testDuplicateID = function(assert) {
+  const { Sidebar } = require('sdk/ui/sidebar');
+  let testName = 'testDuplicateID';
+  let window = getMostRecentBrowserWindow();
+  let { document } = window;
+  let url = 'data:text/html;charset=utf-8,'+testName;
+
+  let sidebar1 = Sidebar({
+    id: testName,
+    title: testName,
+    icon: BLANK_IMG,
+    url: url
+  });
+
+  assert.throws(function() {
+    Sidebar({
+      id: testName,
+      title: testName,
+      icon: BLANK_IMG,
+      url: url
+    }).destroy();
+  }, /The ID .+ seems already used\./i, 'duplicate IDs will throw errors');
+
+  sidebar1.destroy();
 }
 
 exports.testURLSetterToSameValueReloadsSidebar = function(assert, done) {

@@ -58,8 +58,7 @@ exports.testSidebarIsOpenInNewPrivateWindow = function(assert, done) {
  
   assert.equal(isPrivate(window), false, 'the window is not private');
 
-  // TODO: using sidebar.on was causing an issue..
-  sidebar.once('show', function() {
+  sidebar.on('show', function() {
     assert.equal(isSidebarShowing(window), true, 'the sidebar is showing');
     assert.equal(isShowing(sidebar), true, 'the sidebar is showing');
 
