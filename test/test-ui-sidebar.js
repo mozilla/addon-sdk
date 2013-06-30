@@ -191,7 +191,7 @@ exports.testSideBarIsShowingInNewWindows = function(assert, done) {
   assert.pass('showing the sidebar');
 }
 
-// TODO: determine if the is acceptable..
+// TODO: determine if this is acceptable..
 /*
 exports.testAddonGlobalSimple = function(assert, done) {
   const { Sidebar } = require('sdk/ui/sidebar');
