@@ -634,7 +634,7 @@ exports.testClickingACheckedButton = function(assert, done) {
         assert.equal(isShowing(sidebar), false, 'the sidebar is not showing');
 
         // TODO: figure out why this is necessary..
-        setTimeout(function() simulateCommand(button), 500);
+        setTimeout(function() simulateCommand(button));
       });
 
       assert.equal(isShowing(sidebar), true, 'the sidebar is showing');
@@ -847,6 +847,7 @@ exports.testButtonShowingInOneWindowDoesNotAffectOtherWindows = function(assert,
   let checkCount = 1;
   function checkSidebarShowing(window, expected) {
     assert.pass('check count ' + checkCount++);
+
     let mi = window.document.getElementById(makeID(sidebar1.id));
     if (mi) {
       assert.equal(mi.getAttribute('checked') || 'false',
@@ -858,7 +859,6 @@ exports.testButtonShowingInOneWindowDoesNotAffectOtherWindows = function(assert,
   checkSidebarShowing(window1, false);
 
   windowPromise(window1.OpenBrowserWindow(), 'load').then(function(window) {
-
     let { document } = window;
     assert.pass('new window was opened!');
 
@@ -1133,7 +1133,6 @@ exports.testButtonIconSet = function(assert) {
 }
 
 exports.testSidebarLeakCheckDestroyAfterAttach = function(assert, done) {
-  const loader = Loader(module);
   const { Sidebar } = require('sdk/ui/sidebar');
   let testName = 'testSidebarLeakCheckDestroyAfterAttach';
   let window = getMostRecentBrowserWindow();
@@ -1176,7 +1175,7 @@ exports.testSidebarLeakCheckDestroyAfterAttach = function(assert, done) {
 
 exports.testSidebarLeakCheckUnloadAfterAttach = function(assert, done) {
   const loader = Loader(module);
-  const { Sidebar } = require('sdk/ui/sidebar');
+  const { Sidebar } = loader.require('sdk/ui/sidebar');
   let testName = 'testSidebarLeakCheckUnloadAfterAttach';
   let window = getMostRecentBrowserWindow();
   let sidebar = Sidebar({
