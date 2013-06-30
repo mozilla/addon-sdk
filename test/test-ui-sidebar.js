@@ -1048,6 +1048,33 @@ exports.testGCdHiddenSidebarsOnUnload = function(assert, done) {
   });
 }
 
+exports.testSidebarGettersAndSettersAfterDestroy = function(assert) {
+  const { Sidebar } = require('sdk/ui/sidebar');
+  let testName = 'testSidebarGettersAndSettersAfterDestroy';
+  let url = 'data:text/html;charset=utf-8,'+testName;
+
+  let sidebar = Sidebar({
+    id: testName,
+    title: testName,
+    icon: BLANK_IMG,
+    url: url
+  });
+
+  sidebar.destroy();
+
+  assert.equal(sidebar.id, undefined, 'sidebar after destroy has no id');
+  sidebar.id = 'foo-tang';
+  assert.equal(sidebar.id, undefined, 'sidebar after destroy has no id');
+
+  assert.equal(sidebar.title, undefined, 'sidebar after destroy has no title');
+  sidebar.title = 'boo-tang';
+  assert.equal(sidebar.title, undefined, 'sidebar after destroy has no title');
+
+  assert.equal(sidebar.url, undefined, 'sidebar after destroy has no url');
+  sidebar.url = url + 'barz';
+  assert.equal(sidebar.url, undefined, 'sidebar after destroy has no url');
+}
+
 // If the module doesn't support the app we're being run in, require() will
 // throw.  In that case, remove all tests above from exports, and add one dummy
 // test that passes.
