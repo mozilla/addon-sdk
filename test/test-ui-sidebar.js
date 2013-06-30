@@ -19,6 +19,8 @@ const { BLANK_IMG, BUILTIN_SIDEBAR_MENUITEMS, isSidebarShowing,
         getSidebarMenuitems, getExtraSidebarMenuitems, makeID, simulateCommand,
         simulateClick, getWidget } = require('./sidebar/utils');
 
+const { CustomizableUI } = Cu.import('resource:///modules/CustomizableUI.jsm', {});
+
 exports.testSidebarBasicLifeCycle = function(assert, done) {
   const { Sidebar } = require('sdk/ui/sidebar');
   let testName = 'testSidebarBasicLifeCycle';
@@ -1073,6 +1075,61 @@ exports.testSidebarGettersAndSettersAfterDestroy = function(assert) {
   assert.equal(sidebar.url, undefined, 'sidebar after destroy has no url');
   sidebar.url = url + 'barz';
   assert.equal(sidebar.url, undefined, 'sidebar after destroy has no url');
+}
+
+exports.testButtonIconSet = function(assert) {
+  let loader = Loader(module);
+  let { Sidebar } = loader.require('sdk/ui');
+  let testName = 'testButtonIconSet';
+  let url = 'data:text/html;charset=utf-8,'+testName;
+
+  // Test remote icon set
+  assert.throws(
+    () => Sidebar({
+      id: 'my-button-10',
+      title: 'my button',
+      url: url,
+      icon: {
+        '16': 'http://www.mozilla.org/favicon.ico'
+      }
+    }),
+    /^The option "icon"/,
+    'throws on no valid icon given');
+
+  let sidebar = Sidebar({
+    id: 'my-button-11',
+    title: 'my button',
+    url: url,
+    icon: {
+      '16': './icon16.png',
+      '32': './icon32.png',
+      '64': './icon64.png'
+    }
+  });
+
+  let { node, id: widgetId } = getWidget(sidebar.id);
+  let { devicePixelRatio } = node.ownerDocument.defaultView;
+
+  let size = 16 * devicePixelRatio;
+
+  assert.equal(node.getAttribute('image'), data.url(sidebar.icon[size].substr(2)),
+    'the icon is set properly in navbar');
+
+  let size = 32 * devicePixelRatio;
+
+  CustomizableUI.addWidgetToArea(widgetId, CustomizableUI.AREA_PANEL);
+
+  assert.equal(node.getAttribute('image'), data.url(sidebar.icon[size].substr(2)),
+    'the icon is set properly in panel');
+
+  // Using `loader.unload` without move back the button to the original area
+  // raises an error in the CustomizableUI. This is doesn't happen if the
+  // button is moved manually from navbar to panel. I believe it has to do
+  // with `addWidgetToArea` method, because even with a `timeout` the issue
+  // persist.
+  CustomizableUI.addWidgetToArea(widgetId, CustomizableUI.AREA_NAVBAR);
+
+  loader.unload();
 }
 
 // If the module doesn't support the app we're being run in, require() will

@@ -84,6 +84,7 @@ exports.testDestroyEdgeCaseBugWithPrivateWindow = function(assert, done) {
   const { Sidebar } = require('sdk/ui/sidebar');
   let testName = 'testDestroyEdgeCaseBug';
   let window = getMostRecentBrowserWindow();
+
   let sidebar = Sidebar({
     id: testName,
     title: testName,
