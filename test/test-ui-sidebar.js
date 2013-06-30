@@ -1132,6 +1132,90 @@ exports.testButtonIconSet = function(assert) {
   loader.unload();
 }
 
+exports.testSidebarLeakCheckDestroyAfterAttach = function(assert, done) {
+  const loader = Loader(module);
+  const { Sidebar } = require('sdk/ui/sidebar');
+  let testName = 'testSidebarLeakCheckDestroyAfterAttach';
+  let window = getMostRecentBrowserWindow();
+  let sidebar = Sidebar({
+    id: testName,
+    title: testName,
+    icon: BLANK_IMG,
+    url: 'data:text/html;charset=utf-8,'+testName
+  });
+
+  sidebar.on('attach', function() {
+    assert.pass('the sidebar was shown');
+
+    sidebar.on('show', function() {
+      assert.fail('the sidebar show listener should have been removed');
+    });
+    assert.pass('added a sidebar show listener');
+
+    sidebar.on('hide', function() {
+      assert.fail('the sidebar hide listener should have been removed');
+    });
+    assert.pass('added a sidebar hide listener');
+
+    let panelBrowser = window.document.getElementById('sidebar').contentDocument.getElementById('web-panels-browser');
+    panelBrowser.contentWindow.addEventListener('unload', function onUnload() {
+      panelBrowser.contentWindow.removeEventListener('unload', onUnload, false);
+      // wait a tick..
+      setTimeout(function() {
+        assert.pass('the sidebar web panel was unloaded properly');
+        done();
+      })
+    }, false);
+
+    sidebar.destroy();
+  });
+
+  assert.pass('showing the sidebar');
+  sidebar.show();
+}
+
+exports.testSidebarLeakCheckUnloadAfterAttach = function(assert, done) {
+  const loader = Loader(module);
+  const { Sidebar } = require('sdk/ui/sidebar');
+  let testName = 'testSidebarLeakCheckUnloadAfterAttach';
+  let window = getMostRecentBrowserWindow();
+  let sidebar = Sidebar({
+    id: testName,
+    title: testName,
+    icon: BLANK_IMG,
+    url: 'data:text/html;charset=utf-8,'+testName
+  });
+
+  sidebar.on('attach', function() {
+    assert.pass('the sidebar was shown');
+
+    sidebar.on('show', function() {
+      assert.fail('the sidebar show listener should have been removed');
+    });
+    assert.pass('added a sidebar show listener');
+
+    sidebar.on('hide', function() {
+      assert.fail('the sidebar hide listener should have been removed');
+    });
+    assert.pass('added a sidebar hide listener');
+
+    let panelBrowser = window.document.getElementById('sidebar').contentDocument.getElementById('web-panels-browser');
+    panelBrowser.contentWindow.addEventListener('unload', function onUnload() {
+      panelBrowser.contentWindow.removeEventListener('unload', onUnload, false);
+      // wait a tick..
+      setTimeout(function() {
+        assert.pass('the sidebar web panel was unloaded properly');
+        done();
+      })
+    }, false);
+
+    loader.unload();
+  });
+
+  assert.pass('showing the sidebar');
+  sidebar.show();
+}
+
 // If the module doesn't support the app we're being run in, require() will
 // throw.  In that case, remove all tests above from exports, and add one dummy
 // test that passes.
