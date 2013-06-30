@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
+const { Cu } = require('chrome');
 const { Loader } = require('sdk/test/loader');
 const { show, hide } = require('sdk/ui/sidebar/actions');
 const { isShowing } = require('sdk/ui/sidebar/utils');
@@ -12,6 +13,7 @@ const { setTimeout } = require('sdk/timers');
 const { isPrivate } = require('sdk/private-browsing');
 const { data } = require('sdk/self');
 const { URL } = require('sdk/url');
+const { once, off, emit } = require('sdk/event/core');
 
 const { BLANK_IMG, BUILTIN_SIDEBAR_MENUITEMS, isSidebarShowing,
         getSidebarMenuitems, getExtraSidebarMenuitems, makeID, simulateCommand,
@@ -846,6 +848,130 @@ exports.testHidingAHiddenSidebarRejects = function(assert) {
     sidebar.destroy();
     done();
   }, assert.fail);
+}
+
+exports.testGCdSidebarsOnUnload = function(assert, done) {
+  const loader = Loader(module);
+  const { Sidebar } = loader.require('sdk/ui/sidebar');
+  const window = getMostRecentBrowserWindow();
+
+  let testName = 'testGCdSidebarsOnUnload';
+  let url = 'data:text/html;charset=utf-8,'+testName;
+
+  assert.equal(isSidebarShowing(window), false, 'the sidebar is not showing');
+
+  // IMPORTANT: make no reference to the sidebar instance, so it is GC'd
+  let sidebar = Sidebar({
+    id: testName,
+    title: testName,
+    icon: BLANK_IMG,
+    url: url
+  });
+
+  sidebar.show().then(function() {
+    sidebar = null;
+
+    assert.equal(isSidebarShowing(window), true, 'the sidebar is showing');
+
+    let buttonID = getWidget(testName, window).node.getAttribute('id');
+    let menuitemID = makeID(testName);
+
+    assert.ok(!!window.document.getElementById(buttonID), 'the button was found');
+    assert.ok(!!window.document.getElementById(menuitemID), 'the menuitem was found');
+
+    Cu.schedulePreciseGC(function() {
+      loader.unload();
+
+      assert.equal(isSidebarShowing(window), false, 'the sidebar is not showing after unload');
+      assert.ok(!window.document.getElementById(buttonID), 'the button was removed');
+      assert.ok(!window.document.getElementById(menuitemID), 'the menuitem was removed');
+
+      done();
+    })
+  }, assert.fail).then(null, assert.fail);
+}
+
+exports.testGCdShowingSidebarsOnUnload = function(assert, done) {
+  const loader = Loader(module);
+  const { Sidebar } = loader.require('sdk/ui/sidebar');
+  const window = getMostRecentBrowserWindow();
+
+  let testName = 'testGCdShowingSidebarsOnUnload';
+  let url = 'data:text/html;charset=utf-8,'+testName;
+
+  assert.equal(isSidebarShowing(window), false, 'the sidebar is not showing');
+
+  let sidebar = Sidebar({
+    id: testName,
+    title: testName,
+    icon: BLANK_IMG,
+    url: url
+  });
+
+  sidebar.on('show', function() {
+    sidebar = null;
+
+    assert.equal(isSidebarShowing(window), true, 'the sidebar is showing');
+
+    let buttonID = getWidget(testName, window).node.getAttribute('id');
+    let menuitemID = makeID(testName);
+
+    assert.ok(!!window.document.getElementById(buttonID), 'the button was found');
+    assert.ok(!!window.document.getElementById(menuitemID), 'the menuitem was found');
+
+    Cu.schedulePreciseGC(function() {
+      assert.equal(isSidebarShowing(window), true, 'the sidebar is still showing after gc');
+      assert.ok(!!window.document.getElementById(buttonID), 'the button was found after gc');
+      assert.ok(!!window.document.getElementById(menuitemID), 'the menuitem was found after gc');
+
+      loader.unload();
+
+      assert.equal(isSidebarShowing(window), false, 'the sidebar is not showing after unload');
+      assert.ok(!window.document.getElementById(buttonID), 'the button was removed');
+      assert.ok(!window.document.getElementById(menuitemID), 'the menuitem was removed');
+
+      done();
+    })
+  });
+
+  sidebar.show();
+}
+
+exports.testGCdHiddenSidebarsOnUnload = function(assert, done) {
+  const loader = Loader(module);
+  const { Sidebar } = loader.require('sdk/ui/sidebar');
+  const window = getMostRecentBrowserWindow();
+
+  let testName = 'testGCdHiddenSidebarsOnUnload';
+  let url = 'data:text/html;charset=utf-8,'+testName;
+
+  assert.equal(isSidebarShowing(window), false, 'the sidebar is not showing');
+
+  // IMPORTANT: make no reference to the sidebar instance, so it is GC'd
+  Sidebar({
+    id: testName,
+    title: testName,
+    icon: BLANK_IMG,
+    url: url
+  });
+
+  let buttonID = getWidget(testName, window).node.getAttribute('id');
+  let menuitemID = makeID(testName);
+
+  assert.ok(!!window.document.getElementById(buttonID), 'the button was found');
+  assert.ok(!!window.document.getElementById(menuitemID), 'the menuitem was found');
+
+  Cu.schedulePreciseGC(function() {
+    assert.ok(!!window.document.getElementById(buttonID), 'the button was found after gc');
+    assert.ok(!!window.document.getElementById(menuitemID), 'the menuitem was found after gc');
+
+    loader.unload();
+
+    assert.ok(!window.document.getElementById(buttonID), 'the button was removed');
+    assert.ok(!window.document.getElementById(menuitemID), 'the menuitem was removed');
+
+    done();
+  });
 }
 
 // If the module doesn't support the app we're being run in, require() will
