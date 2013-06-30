@@ -764,9 +764,9 @@ exports.testDuplicateID = function(assert) {
   assert.throws(function() {
     Sidebar({
       id: testName,
-      title: testName,
+      title: testName + 1,
       icon: BLANK_IMG,
-      url: url
+      url: url + 2
     }).destroy();
   }, /The ID .+ seems already used\./i, 'duplicate IDs will throw errors');
 
@@ -1213,6 +1213,51 @@ exports.testSidebarLeakCheckUnloadAfterAttach = function(assert, done) {
 
   assert.pass('showing the sidebar');
   sidebar.show();
+}
+
+exports.testTwoSidebarsWithSameTitleAndURL = function(assert) {
+  const { Sidebar } = require('sdk/ui/sidebar');
+  let testName = 'testSidebarLeakCheckDestroyAfterAttach';
+
+  let title = testName;
+  let url = 'data:text/html;charset=utf-8,' + testName;
+
+  let sidebar1 = Sidebar({
+    id: testName + 1,
+    title: title,
+    icon: BLANK_IMG,
+    url: url
+  });
+
+  assert.throws(function() {
+    Sidebar({
+      id: testName + 2,
+      title: title,
+      icon: BLANK_IMG,
+      url: url
+    }).destroy();
+  }, /title.+url.+invalid/i, 'Creating two sidebars with the same title + url is not allowed');
+ 
+  let sidebar2 = Sidebar({
+    id: testName + 2,
+    title: title,
+    icon: BLANK_IMG,
+    url: 'data:text/html;charset=utf-8,X'
+  });
+
+  assert.throws(function() {
+    sidebar2.url = url;
+  }, /title.+url.+invalid/i, 'Creating two sidebars with the same title + url is not allowed');
+
+  sidebar2.title = 'foo';
+  sidebar2.url = url;
+
+  assert.throws(function() {
+    sidebar2.title = title;
+  }, /title.+url.+invalid/i, 'Creating two sidebars with the same title + url is not allowed');
+
+  sidebar1.destroy();
+  sidebar2.destroy();
 }
 
 // If the module doesn't support the app we're being run in, require() will
