@@ -44,18 +44,13 @@ exports.testBug682681_aboutURI = function(test) {
 exports.testTitleForDataURI = function(test) {
   test.waitUntilDone();
 
-  tabs.on('ready', function onReady(tab) {
-    tabs.removeListener('ready', onReady);
-
-    test.assertEqual(tab.title, "tab", "data: title is not Connecting...");
-
-    tab.close(function() test.done());
-  });
-
-  // open a about: url
   tabs.open({
     url: "data:text/html;charset=utf-8,<title>tab</title>",
-    inBackground: true
+    inBackground: true,
+    onReady: function(tab) {
+      test.assertEqual(tab.title, "tab", "data: title is not Connecting...");
+      tab.close(function() test.done());
+    }
   });
 };
 
@@ -108,45 +103,44 @@ exports.testAutomaticDestroy = function(test) {
 exports.testTabProperties = function(test) {
   test.waitUntilDone();
 
-  open().then(function(window) {
-    let url = "data:text/html;charset=utf-8,<html><head><title>foo</title></head><body>foo</body></html>";
-    tabs.open({
-      url: url,
-      onReady: function(tab) {
-        test.assertEqual(tab.title, "foo", "title of the new tab matches");
-        test.assertEqual(tab.url, url, "URL of the new tab matches");
-        test.assert(tab.favicon, "favicon of the new tab is not empty");
-        test.assertEqual(tab.style, null, "style of the new tab matches");
-        test.assertEqual(tab.index, 1, "index of the new tab matches");
-        test.assertNotEqual(tab.getThumbnail(), null, "thumbnail of the new tab matches");
-        test.assertNotEqual(tab.id, null, "a tab object always has an id property.");
-        onReadyOrLoad(window);
-      },
-      onLoad: function(tab) {
-        test.assertEqual(tab.title, "foo", "title of the new tab matches");
-        test.assertEqual(tab.url, url, "URL of the new tab matches");
-        test.assert(tab.favicon, "favicon of the new tab is not empty");
-        test.assertEqual(tab.style, null, "style of the new tab matches");
-        test.assertEqual(tab.index, 1, "index of the new tab matches");
-        test.assertNotEqual(tab.getThumbnail(), null, "thumbnail of the new tab matches");
-        test.assertNotEqual(tab.id, null, "a tab object always has an id property.");
-        onReadyOrLoad(window);
-      }
-    });
-  });
-
   let count = 0;
-  function onReadyOrLoad (window) {
-    if (count++)
-      closeBrowserWindow(window, function() test.done());
+  function onReadyOrLoad (tab) {
+    if (count++) {
+      tab.close(test.done.bind(test));
+    }
   }
+
+  let url = "data:text/html;charset=utf-8,<html><head><title>foo</title></head><body>foo</body></html>";
+  tabs.open({
+    url: url,
+    onReady: function(tab) {
+      test.assertEqual(tab.title, "foo", "title of the new tab matches");
+      test.assertEqual(tab.url, url, "URL of the new tab matches");
+      test.assert(tab.favicon, "favicon of the new tab is not empty");
+      test.assertEqual(tab.style, null, "style of the new tab matches");
+      test.assertEqual(tab.index, 1, "index of the new tab matches");
+      test.assertNotEqual(tab.getThumbnail(), null, "thumbnail of the new tab matches");
+      test.assertNotEqual(tab.id, null, "a tab object always has an id property.");
+      onReadyOrLoad(tab);
+    },
+    onLoad: function(tab) {
+      test.assertEqual(tab.title, "foo", "title of the new tab matches");
+      test.assertEqual(tab.url, url, "URL of the new tab matches");
+      test.assert(tab.favicon, "favicon of the new tab is not empty");
+      test.assertEqual(tab.style, null, "style of the new tab matches");
+      test.assertEqual(tab.index, 1, "index of the new tab matches");
+      test.assertNotEqual(tab.getThumbnail(), null, "thumbnail of the new tab matches");
+      test.assertNotEqual(tab.id, null, "a tab object always has an id property.");
+      onReadyOrLoad(tab);
+    }
+  });
 };
 
 // TEST: tab properties
 exports.testTabContentTypeAndReload = function(test) {
   test.waitUntilDone();
 
-  open().then(function(window) {
+  open().then(focus).then(function(window) {
     let url = "data:text/html;charset=utf-8,<html><head><title>foo</title></head><body>foo</body></html>";
     let urlXML = "data:text/xml;charset=utf-8,<foo>bar</foo>";
     tabs.open({
@@ -168,11 +162,12 @@ exports.testTabContentTypeAndReload = function(test) {
 exports.testTabsIteratorAndLength = function(test) {
   test.waitUntilDone();
 
-  open(null, { features: { chrome: true, toolbar: true } }).then(function(window) {
+  open(null, { features: { chrome: true, toolbar: true } }).then(focus).then(function(window) {
     let startCount = 0;
     for each (let t in tabs) startCount++;
     test.assertEqual(startCount, tabs.length, "length property is correct");
     let url = "data:text/html;charset=utf-8,default";
+
     tabs.open(url);
     tabs.open(url);
     tabs.open({
@@ -182,6 +177,7 @@ exports.testTabsIteratorAndLength = function(test) {
         for each (let t in tabs) count++;
         test.assertEqual(count, startCount + 3, "iterated tab count matches");
         test.assertEqual(startCount + 3, tabs.length, "iterated tab count matches length property");
+
         closeBrowserWindow(window, function() test.done());
       }
     });
@@ -192,7 +188,7 @@ exports.testTabsIteratorAndLength = function(test) {
 exports.testTabLocation = function(test) {
   test.waitUntilDone();
 
-  open().then(function(window) {
+  open().then(focus).then(function(window) {
     let url1 = "data:text/html;charset=utf-8,foo";
     let url2 = "data:text/html;charset=utf-8,bar";
 
