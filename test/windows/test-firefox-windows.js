@@ -6,7 +6,7 @@
 const { Cc, Ci } = require('chrome');
 const { setTimeout } = require('sdk/timers');
 const { Loader } = require('sdk/test/loader');
-const { onFocus, getMostRecentWindow, windows } = require('sdk/window/utils');
+const { onFocus, getMostRecentWindow, windows, open: openWindow } = require('sdk/window/utils');
 const { open, close, focus } = require('sdk/window/helpers');
 const { browserWindows } = require("sdk/windows");
 const tabs = require("sdk/tabs");
@@ -14,6 +14,7 @@ const winUtils = require("sdk/deprecated/window-utils");
 const { WindowTracker } = winUtils;
 const { isPrivate } = require('sdk/private-browsing');
 const { isWindowPBSupported } = require('sdk/private-browsing/utils');
+const { getSDKWindow, getRawWindow } = require('sdk/window/getters');
 
 // TEST: open & close window
 exports.testOpenAndCloseWindow = function(test) {
@@ -407,4 +408,25 @@ exports.testWindowIteratorPrivateDefault = function(test) {
 
     close(window).then(test.done.bind(test));
   }));
+}
+
+exports.testWindowGetterHelpers = function(test) {
+  test.waitUntilDone();
+
+  let testName = 'testWindowGetterHelpers';
+
+  browserWindows.once('open', function(window) {
+    test.assertEqual(rawWindow, getRawWindow(window), 'getRawWindow works');
+    test.assertEqual(window, getSDKWindow(rawWindow), 'getSDKWindow works');
+
+    // end test
+    window.close(function() {
+      test.assertEqual(null, getSDKWindow(rawWindow), 'cannot get from raw window now');
+      test.assertEqual(null, getRawWindow(window), 'cannot get raw window now');
+
+      test.done();
+    });
+  });
+
+  let rawWindow = openWindow();
 }
