@@ -21,7 +21,7 @@ exports.testOpenAndCloseWindow = function(assert, done) {
   let title = 'testOpenAndCloseWindow';
 
   browserWindows.open({
-    url: "data:text/html;charset=utf-8,<title>" + title + "</title>",
+    url: "data:text/html;charset=utf-8,<html><head><title>" + title + "</title></head><body>" + title + "</body></html>",
     onOpen: function(window) {
       assert.equal(this, browserWindows, "The 'this' object is the windows object.");
       assert.equal(window.tabs.length, 1, "Only one tab open");
