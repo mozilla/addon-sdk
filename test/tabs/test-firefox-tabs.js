@@ -338,38 +338,28 @@ exports.testInBackground = function(test) {
 // TEST: open tab in new window
 exports.testOpenInNewWindow = function(test) {
   test.waitUntilDone();
-  openBrowserWindow(function(window, browser) {
-    let cache = [];
-    let windowUtils = require("sdk/deprecated/window-utils");
-    let wt = new windowUtils.WindowTracker({
-      onTrack: function(win) {
-        cache.push(win);
-      },
-      onUntrack: function(win) {
-        cache.splice(cache.indexOf(win), 1)
-      }
-    });
-    let startWindowCount = cache.length;
 
-    let url = "data:text/html;charset=utf-8,newwindow";
-    tabs.open({
-      url: url,
-      inNewWindow: true,
-      onReady: function(tab) {
-        let newWindow = cache[cache.length - 1];
-        test.assertEqual(cache.length, startWindowCount + 1, "a new window was opened");
+  let startWindowCount = windows().length;
+
+  let url = "data:text/html;charset=utf-8,testOpenInNewWindow";
+  tabs.open({
+    url: url,
+    inNewWindow: true,
+    onReady: function(tab) {
+      let newWindow = getOwnerWindow(tab);
+      test.assertEqual(windows().length, startWindowCount + 1, "a new window was opened");
+
+      onFocus(newWindow).then(function() {
         test.assertEqual(activeWindow, newWindow, "new window is active");
         test.assertEqual(tab.url, url, "URL of the new tab matches");
         test.assertEqual(newWindow.content.location, url, "URL of new tab in new window matches");
         test.assertEqual(tabs.activeTab.url, url, "URL of activeTab matches");
-        for (let i in cache) cache[i] = null;
-        wt.unload();
-        closeBrowserWindow(newWindow, function() {
-          closeBrowserWindow(window, function() test.done());
-        });
-      }
-    });
+
+        closeBrowserWindow(newWindow, test.done.bind(test));
+      }, test.fail).then(null, test.fail);
+    }
   });
+
 }
 
 // Test tab.open inNewWindow + onOpen combination
