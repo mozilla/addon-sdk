@@ -2,7 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-# This file must be used with "source bin/activate" *from fish*
+# This file must be used with "source bin/activate.fish" *from fish*
 # you cannot run it directly
 
 # Much of this code is based off of the activate.fish file for the
