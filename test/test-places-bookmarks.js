@@ -10,6 +10,7 @@ const { on, off } = require('sdk/event/core');
 const { setTimeout } = require('sdk/timers');
 const { newURI } = require('sdk/url/utils');
 const { defer, all } = require('sdk/core/promise');
+const { defer: async } = require('sdk/lang/functional');
 
 // Test for unsupported platforms
 try {
@@ -806,39 +807,25 @@ exports.testCaching = function (assert, done) {
    */
 
   saveP(bookmarks).then(() => {
-    let deferred = defer();
-    setTimeout(() => {
-      assert.equal(count, 0, 'all new items and root group, no fetches should occur');
-      count = 0;
-      deferred.resolve(saveP([
-        { title: 'moz4', url: 'http://moz4.com', type: 'bookmark', group: group },
-        { title: 'moz5', url: 'http://moz5.com', type: 'bookmark', group: group }
-      ]));
-    }, 10);
-    return deferred.promise;
-    /*
-     * Test `save` look-up
-     */
+    assert.equal(count, 0, 'all new items and root group, no fetches should occur');
+    count = 0;
+    return saveP([
+      { title: 'moz4', url: 'http://moz4.com', type: 'bookmark', group: group },
+      { title: 'moz5', url: 'http://moz5.com', type: 'bookmark', group: group }
+    ]);
+  // Test `save` look-up
   }).then(() => {
-    let deferred = defer();
-    setTimeout(() => {
-      assert.equal(count, 1, 'should only look up parent once');
-      count = 0;
-      deferred.resolve(search({ query: 'moz' }));
-    }, 10);
-    return deferred.promise;
+    assert.equal(count, 1, 'should only look up parent once');
+    count = 0;
+    return searchP({ query: 'moz' });
   }).then(results => {
-    setTimeout(() => {
-      /*
-      * Should query for each bookmark (5) from the query (id -> data),
-      * their parent during `construct` (1) and the root shouldn't
-      * require a lookup
-      */
-      assert.equal(count, 6, 'lookup occurs once for each item and parent');
-      off(stream, 'data', handle);
-      clearAllBookmarks();
-      done();
-    }, 10);
+    // Should query for each bookmark (5) from the query (id -> data),
+    // their parent during `construct` (1) and the root shouldn't
+    // require a lookup
+    assert.equal(count, 6, 'lookup occurs once for each item and parent');
+    off(stream, 'data', handle);
+    clearAllBookmarks();
+    done();
   });
 
   function handle ({data}) count++
