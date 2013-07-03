@@ -4,8 +4,10 @@
 'use strict';
 
 const { defer, all } = require('sdk/core/promise');
-const { TreeNode } = require('sdk/places/utils');
 const { setTimeout } = require('sdk/timers');
+try {
+const { TreeNode } = require('sdk/places/utils');
+} catch(e) { unsupported(e); }
 
 exports['test construct tree'] = function (assert) {
   let tree = TreeNode(1);
@@ -71,5 +73,19 @@ exports['test async walk'] = function (assert, done) {
     done();
   });
 };
+
+// If the module doesn't support the app we're being run in, require() will
+// throw.  In that case, remove all tests above from exports, and add one dummy
+// test that passes.
+function unsupported (err) {
+  if (!/^Unsupported Application/.test(err.message))
+    throw err;
+
+  module.exports = {
+    "test Unsupported Application": function Unsupported (assert) {
+      assert.pass(err.message);
+    }
+  };
+}
 
 require('test').run(exports);
