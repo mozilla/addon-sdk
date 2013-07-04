@@ -21,7 +21,7 @@
 
 
 // Shim process global from node.
-var process = Object.create(require('../system'));
+var process = Object.create(require('sdk/system'));
 process.cwd = process.pathFor.bind(process, 'CurProcD');
 
 // Update original check in node `process.platform === 'win32'` since in SDK it's `winnt`.
