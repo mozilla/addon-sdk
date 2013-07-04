@@ -20,15 +20,47 @@
 // USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-// Adapted version of:
-// https://github.com/joyent/node/blob/v0.9.1/test/simple/test-path.js
+// Shim process global from node.
+var process = Object.create(require('../system'));
+process.cwd = process.pathFor.bind(process, 'CurProcD');
 
+// Update original check in node `process.platform === 'win32'` since in SDK it's `winnt`.
+var isWindows = process.platform.indexOf('win') === 0;
+
+// wrap all test in a test function so that test runner will be able to run it.
 exports['test path'] = function(assert) {
 
-var system = require('sdk/system');
 var path = require('sdk/fs/path');
-var isWindows = require('sdk/system').platform.indexOf('win') === 0;
 
+var isWindows = process.platform === 'win32';
+
+var f = module.uri;
+
+assert.equal(path.basename(f), 'test-path.js');
+assert.equal(path.basename(f, '.js'), 'test-path');
+assert.equal(path.basename(''), '');
+assert.equal(path.basename('/dir/basename.ext'), 'basename.ext');
+assert.equal(path.basename('/basename.ext'), 'basename.ext');
+assert.equal(path.basename('basename.ext'), 'basename.ext');
+assert.equal(path.basename('basename.ext/'), 'basename.ext');
+assert.equal(path.basename('basename.ext//'), 'basename.ext');
+
+if (isWindows) {
+  // On Windows a backslash acts as a path separator.
+  assert.equal(path.basename('\\dir\\basename.ext'), 'basename.ext');
+  assert.equal(path.basename('\\basename.ext'), 'basename.ext');
+  assert.equal(path.basename('basename.ext'), 'basename.ext');
+  assert.equal(path.basename('basename.ext\\'), 'basename.ext');
+  assert.equal(path.basename('basename.ext\\\\'), 'basename.ext');
+
+} else {
+  // On unix a backslash is just treated as any other character.
+  assert.equal(path.basename('\\dir\\basename.ext'), '\\dir\\basename.ext');
+  assert.equal(path.basename('\\basename.ext'), '\\basename.ext');
+  assert.equal(path.basename('basename.ext'), 'basename.ext');
+  assert.equal(path.basename('basename.ext\\'), 'basename.ext\\');
+  assert.equal(path.basename('basename.ext\\\\'), 'basename.ext\\\\');
+}
 
 // POSIX filenames may include control characters
 // c.f. http://www.dwheeler.com/essays/fixing-unix-linux-filenames.html
@@ -38,11 +70,14 @@ if (!isWindows) {
                controlCharFilename);
 }
 
+assert.equal(path.extname(f), '.js');
 
 assert.equal(path.dirname('/a/b/'), '/a');
 assert.equal(path.dirname('/a/b'), '/a');
 assert.equal(path.dirname('/a'), '/');
+assert.equal(path.dirname(''), '.');
 assert.equal(path.dirname('/'), '/');
+assert.equal(path.dirname('////'), '/');
 
 if (isWindows) {
   assert.equal(path.dirname('c:\\'), 'c:\\');
@@ -110,18 +145,34 @@ assert.equal(path.extname('..file..'), '.');
 assert.equal(path.extname('...'), '.');
 assert.equal(path.extname('...ext'), '.ext');
 assert.equal(path.extname('....'), '.');
-assert.equal(path.extname('file.ext/'), '');
+assert.equal(path.extname('file.ext/'), '.ext');
+assert.equal(path.extname('file.ext//'), '.ext');
+assert.equal(path.extname('file/'), '');
+assert.equal(path.extname('file//'), '');
+assert.equal(path.extname('file./'), '.');
+assert.equal(path.extname('file.//'), '.');
 
 if (isWindows) {
   // On windows, backspace is a path separator.
   assert.equal(path.extname('.\\'), '');
   assert.equal(path.extname('..\\'), '');
-  assert.equal(path.extname('file.ext\\'), '');
+  assert.equal(path.extname('file.ext\\'), '.ext');
+  assert.equal(path.extname('file.ext\\\\'), '.ext');
+  assert.equal(path.extname('file\\'), '');
+  assert.equal(path.extname('file\\\\'), '');
+  assert.equal(path.extname('file.\\'), '.');
+  assert.equal(path.extname('file.\\\\'), '.');
+
 } else {
   // On unix, backspace is a valid name component like any other character.
   assert.equal(path.extname('.\\'), '');
   assert.equal(path.extname('..\\'), '.\\');
   assert.equal(path.extname('file.ext\\'), '.ext\\');
+  assert.equal(path.extname('file.ext\\\\'), '.ext\\\\');
+  assert.equal(path.extname('file\\'), '');
+  assert.equal(path.extname('file\\\\'), '');
+  assert.equal(path.extname('file.\\'), '.\\');
+  assert.equal(path.extname('file.\\\\'), '.\\\\');
 }
 
 // path.join tests
@@ -168,9 +219,65 @@ var joinTests =
      [[' ', '.'], ' '],
      [[' ', '/'], ' /'],
      [[' ', ''], ' '],
-     // filtration of non-strings.
-     [['x', true, 7, 'y', null, {}], 'x/y']
+     [['/', 'foo'], '/foo'],
+     [['/', '/foo'], '/foo'],
+     [['/', '//foo'], '/foo'],
+     [['/', '', '/foo'], '/foo'],
+     [['', '/', 'foo'], '/foo'],
+     [['', '/', '/foo'], '/foo']
     ];
+
+// Windows-specific join tests
+if (isWindows) {
+  joinTests = joinTests.concat(
+    [// UNC path expected
+     [['//foo/bar'], '//foo/bar/'],
+     [['\\/foo/bar'], '//foo/bar/'],
+     [['\\\\foo/bar'], '//foo/bar/'],
+     // UNC path expected - server and share separate
+     [['//foo', 'bar'], '//foo/bar/'],
+     [['//foo/', 'bar'], '//foo/bar/'],
+     [['//foo', '/bar'], '//foo/bar/'],
+     // UNC path expected - questionable
+     [['//foo', '', 'bar'], '//foo/bar/'],
+     [['//foo/', '', 'bar'], '//foo/bar/'],
+     [['//foo/', '', '/bar'], '//foo/bar/'],
+     // UNC path expected - even more questionable
+     [['', '//foo', 'bar'], '//foo/bar/'],
+     [['', '//foo/', 'bar'], '//foo/bar/'],
+     [['', '//foo/', '/bar'], '//foo/bar/'],
+     // No UNC path expected (no double slash in first component)
+     [['\\', 'foo/bar'], '/foo/bar'],
+     [['\\', '/foo/bar'], '/foo/bar'],
+     [['', '/', '/foo/bar'], '/foo/bar'],
+     // No UNC path expected (no non-slashes in first component - questionable)
+     [['//', 'foo/bar'], '/foo/bar'],
+     [['//', '/foo/bar'], '/foo/bar'],
+     [['\\\\', '/', '/foo/bar'], '/foo/bar'],
+     [['//'], '/'],
+     // No UNC path expected (share name missing - questionable).
+     [['//foo'], '/foo'],
+     [['//foo/'], '/foo/'],
+     [['//foo', '/'], '/foo/'],
+     [['//foo', '', '/'], '/foo/'],
+     // No UNC path expected (too many leading slashes - questionable)
+     [['///foo/bar'], '/foo/bar'],
+     [['////foo', 'bar'], '/foo/bar'],
+     [['\\\\\\/foo/bar'], '/foo/bar'],
+     // Drive-relative vs drive-absolute paths. This merely describes the
+     // status quo, rather than being obviously right
+     [['c:'], 'c:.'],
+     [['c:.'], 'c:.'],
+     [['c:', ''], 'c:.'],
+     [['', 'c:'], 'c:.'],
+     [['c:.', '/'], 'c:./'],
+     [['c:.', 'file'], 'c:file'],
+     [['c:', '/'], 'c:/'],
+     [['c:', 'file'], 'c:/file']
+    ]);
+}
+
+// Run the join tests.
 joinTests.forEach(function(test) {
   var actual = path.join.apply(path, test[0]);
   var expected = isWindows ? test[1].replace(/\//g, '\\') : test[1];
@@ -181,6 +288,16 @@ joinTests.forEach(function(test) {
   // assert.equal(actual, expected, message);
 });
 assert.equal(failures.length, 0, failures.join(''));
+var joinThrowTests = [true, false, 7, null, {}, undefined, [], NaN];
+joinThrowTests.forEach(function(test) {
+  assert.throws(function() {
+    path.join(test);
+  }, TypeError);
+  assert.throws(function() {
+    path.resolve(test);
+  }, TypeError);
+});
+
 
 // path normalize tests
 if (isWindows) {
@@ -210,16 +327,22 @@ if (isWindows) {
        [['c:/ignore', 'd:\\a/b\\c/d', '\\e.exe'], 'd:\\e.exe'],
        [['c:/ignore', 'c:/some/file'], 'c:\\some\\file'],
        [['d:/ignore', 'd:some/dir//'], 'd:\\ignore\\some\\dir'],
-       [['.'], system.pathFor('CurProcD')],
-       [['//server/share', '..', 'relative\\'], '\\\\server\\share\\relative']];
+       [['.'], process.cwd()],
+       [['//server/share', '..', 'relative\\'], '\\\\server\\share\\relative'],
+       [['c:/', '//'], 'c:\\'],
+       [['c:/', '//dir'], 'c:\\dir'],
+       [['c:/', '//server/share'], '\\\\server\\share\\'],
+       [['c:/', '//server//share'], '\\\\server\\share\\'],
+       [['c:/', '///some//dir'], 'c:\\some\\dir']
+      ];
 } else {
   // Posix
   var resolveTests =
       // arguments                                    result
       [[['/var/lib', '../', 'file/'], '/var/file'],
        [['/var/lib', '/../', 'file/'], '/file'],
-       [['a/b/c/', '../../..'], system.pathFor('CurProcD')],
-       [['.'], system.pathFor('CurProcD')],
+       [['a/b/c/', '../../..'], process.cwd()],
+       [['.'], process.cwd()],
        [['/some/dir', '.', '/absolute/'], '/absolute']];
 }
 var failures = [];
@@ -233,6 +356,23 @@ resolveTests.forEach(function(test) {
   // assert.equal(actual, expected, message);
 });
 assert.equal(failures.length, 0, failures.join(''));
+
+// path.isAbsolute tests
+if (isWindows) {
+  assert.equal(path.isAbsolute('//server/file'), true);
+  assert.equal(path.isAbsolute('\\\\server\\file'), true);
+  assert.equal(path.isAbsolute('C:/Users/'), true);
+  assert.equal(path.isAbsolute('C:\\Users\\'), true);
+  assert.equal(path.isAbsolute('C:cwd/another'), false);
+  assert.equal(path.isAbsolute('C:cwd\\another'), false);
+  assert.equal(path.isAbsolute('directory/directory'), false);
+  assert.equal(path.isAbsolute('directory\\directory'), false);
+} else {
+  assert.equal(path.isAbsolute('/home/foo'), true);
+  assert.equal(path.isAbsolute('/home/foo/..'), true);
+  assert.equal(path.isAbsolute('bar/'), false);
+  assert.equal(path.isAbsolute('./baz'), false);
+}
 
 // path.relative tests
 if (isWindows) {
@@ -273,12 +413,22 @@ assert.equal(failures.length, 0, failures.join(''));
 
 // path.sep tests
 if (isWindows) {
-    // windows
-    assert.equal(path.sep, '\\');
+  // windows
+  assert.equal(path.sep, '\\');
 } else {
-    // posix
-    assert.equal(path.sep, '/');
+  // posix
+  assert.equal(path.sep, '/');
 }
+
+// path.delimiter tests
+if (isWindows) {
+  // windows
+  assert.equal(path.delimiter, ';');
+} else {
+  // posix
+  assert.equal(path.delimiter, ':');
+}
+
 
 };
 
