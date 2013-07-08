@@ -16,17 +16,18 @@ if 'CUDDLEFISH_ROOT' not in os.environ:
 
 # add our own python-lib path to the python module search path.
 python_lib_dir = os.path.join(cuddlefish_root, "python-lib")
-if python_lib_dir not in sys.path:
-    sys.path.insert(0, python_lib_dir)
-
+mozbase_lib_dir = os.path.join(python_lib_dir, "mozbase")
+paths = []
+if 'PYTHONPATH' in os.environ:
+    paths = os.environ['PYTHONPATH'].split(os.pathsep) 
+for d in [python_lib_dir, mozbase_lib_dir]:
+    if d not in sys.path:
+        sys.path.insert(0, d)
+    if d not in paths:
+        paths.insert(0, d)
 # now export to env so sub-processes get it too
-if 'PYTHONPATH' not in os.environ:
-    os.environ['PYTHONPATH'] = python_lib_dir
-elif python_lib_dir not in os.environ['PYTHONPATH'].split(os.pathsep):
-    paths = os.environ['PYTHONPATH'].split(os.pathsep)
-    paths.insert(0, python_lib_dir)
-    os.environ['PYTHONPATH'] = os.pathsep.join(paths)
-
+os.environ['PYTHONPATH'] = os.pathsep.join(paths)
+    
 import cuddlefish
 
 if __name__ == '__main__':

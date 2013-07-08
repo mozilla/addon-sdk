@@ -59,8 +59,8 @@ def build_xpi(template_root_dir, manifest, xpi_path,
           goodfiles = list(filter_filenames(filenames, IGNORED_FILES))
           dirnames[:] = filter_dirnames(dirnames)
           for dirname in dirnames:
-            arcpath = make_zipfile_path(template_root_dir,
-                                        os.path.join(dirpath, dirname))
+            arcpath = ZIPSEP.join([folder, make_zipfile_path(abs_dirname,
+                                        os.path.join(dirpath, dirname))])
             dirs_to_create.add(arcpath)
           for filename in goodfiles:
               abspath = os.path.join(dirpath, filename)

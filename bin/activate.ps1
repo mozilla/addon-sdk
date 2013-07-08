@@ -71,7 +71,8 @@ else {
 }
 
 $Env:_OLD_PYTHONPATH=$Env:PYTHONPATH;
-$Env:PYTHONPATH= "$Env:VIRTUAL_ENV\python-lib;$Env:PYTHONPATH";
+$PYTHON_LIB_DIR = "$Env:VIRTUAL_ENV\python-lib"
+$Env:PYTHONPATH= "$PYTHON_LIB_DIR;$PYTHON_LIB_DIR\mozbase;$Env:PYTHONPATH";
 
 if (Test-Path Function:_OLD_VIRTUAL_PROMPT) {
     Set-Content Function:Prompt (Get-Content Function:_OLD_VIRTUAL_PROMPT);

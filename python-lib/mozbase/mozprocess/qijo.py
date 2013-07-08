@@ -1,6 +1,6 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+# License, v. 2.0. If a copy of the MPL was not distributed with this file,
+# You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from ctypes import c_void_p, POINTER, sizeof, Structure, windll, WinError, WINFUNCTYPE, addressof, c_size_t, c_ulong
 from ctypes.wintypes import BOOL, BYTE, DWORD, HANDLE, LARGE_INTEGER
@@ -47,6 +47,10 @@ class JOBOBJECT_BASIC_LIMIT_INFORMATION(Structure):
                 ('SchedulingClass', DWORD)
                 ]
 
+class JOBOBJECT_ASSOCIATE_COMPLETION_PORT(Structure):
+    _fields_ = [('CompletionKey', c_ulong),
+                ('CompletionPort', HANDLE)]
+
 # see http://msdn.microsoft.com/en-us/library/ms684156%28VS.85%29.aspx
 class JOBOBJECT_EXTENDED_LIMIT_INFORMATION(Structure):
     _fields_ = [('BasicLimitInformation', JOBOBJECT_BASIC_LIMIT_INFORMATION),
@@ -56,19 +60,20 @@ class JOBOBJECT_EXTENDED_LIMIT_INFORMATION(Structure):
                 ('PeakProcessMemoryUsed', SIZE_T),
                 ('PeakJobMemoryUsed', SIZE_T)]
 
-# XXX Magical numbers like 8 should be documented
+# These numbers below come from:
+# http://msdn.microsoft.com/en-us/library/ms686216%28v=vs.85%29.aspx
+JobObjectAssociateCompletionPortInformation = 7
 JobObjectBasicAndIoAccountingInformation = 8
-
-# ...like magical number 9 comes from
-# http://community.flexerasoftware.com/archive/index.php?t-181670.html
-# I wish I had a more canonical source
 JobObjectExtendedLimitInformation = 9
 
 class JobObjectInfo(object):
     mapping = { 'JobObjectBasicAndIoAccountingInformation': 8,
-                'JobObjectExtendedLimitInformation': 9
+                'JobObjectExtendedLimitInformation': 9,
+                'JobObjectAssociateCompletionPortInformation': 7
                 }
-    structures = { 8: JOBOBJECT_BASIC_AND_IO_ACCOUNTING_INFORMATION,
+    structures = {
+                   7: JOBOBJECT_ASSOCIATE_COMPLETION_PORT,
+                   8: JOBOBJECT_BASIC_AND_IO_ACCOUNTING_INFORMATION,
                    9: JOBOBJECT_EXTENDED_LIMIT_INFORMATION
                    }
     def __init__(self, _class):
@@ -78,7 +83,7 @@ class JobObjectInfo(object):
         assert _class in self.structures, 'Class should be one of %s; you gave %s' % (self.structures, _class)
         self.code = _class
         self.info = self.structures[_class]()
-    
+
 
 QueryInformationJobObjectProto = WINFUNCTYPE(
     BOOL,        # Return type
@@ -133,34 +138,3 @@ def QueryInformationJobObject(hJob, JobObjectInfoClass):
     if not result:
         raise WinError()
     return SubscriptableReadOnlyStruct(jobinfo.info)
-
-def test_qijo():
-    from killableprocess import Popen
-
-    popen = Popen('c:\\windows\\notepad.exe')
-
-    try:
-        result = QueryInformationJobObject(0, 8)
-        raise AssertionError('throw should occur')
-    except WindowsError, e:
-        pass
-
-    try:
-        result = QueryInformationJobObject(0, 1)
-        raise AssertionError('throw should occur')
-    except NotImplementedError, e:
-        pass
-
-    result = QueryInformationJobObject(popen._job, 8)
-    if result['BasicInfo']['ActiveProcesses'] != 1:
-        raise AssertionError('expected ActiveProcesses to be 1')
-    popen.kill()
-
-    result = QueryInformationJobObject(popen._job, 8)
-    if result.BasicInfo.ActiveProcesses != 0:
-        raise AssertionError('expected ActiveProcesses to be 0')
-
-if __name__ == '__main__':
-    print "testing."
-    test_qijo()
-    print "success!"
