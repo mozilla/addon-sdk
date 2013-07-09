@@ -83,4 +83,12 @@ if [ -n "$BASH" -o -n "$ZSH_VERSION" ] ; then
     hash -r
 fi
 
-python -c "from jetpack_sdk_env import welcome; welcome()"
+pyexe='python'
+if [ -n "$(command -v python2)" ] ; then
+    DIR=`realpath $(dirname ${BASH_SOURCE[0]})`
+    if [ -z "$(grep 'python2' $DIR/cfx)" ] ; then
+        pyexe='python2'
+    fi
+fi
+
+$pyexe -c "from jetpack_sdk_env import welcome; welcome()"
