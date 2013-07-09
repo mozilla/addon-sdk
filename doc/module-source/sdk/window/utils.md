@@ -181,6 +181,7 @@ element.
   Opens a top level window and returns its `nsIDOMWindow` representation.
   This is the same as `open`, but you can supply more features.
   It wraps [`window.openDialog`](https://developer.mozilla.org/en-US/docs/DOM/window.openDialog).
+
   @param options {object}
   Options for the function, with the following properties:
     @prop url {String}
@@ -193,6 +194,7 @@ element.
     `{ width: 10, height: 15, chrome: true }`. For the set of features
     you can set, see the [`window.openDialog`](https://developer.mozilla.org/en-US/docs/DOM/window.openDialog)
     documentation. Optional, defaults to: `{'chrome,all,dialog=no'}`.
+
   @returns {nsIDOMWindow}
 </api>
 
@@ -201,9 +203,17 @@ element.
   Returns an array of all currently opened windows.
   Note that these windows may still be loading.
 
-  If your add-on has not
-  [opted into private browsing](modules/sdk/private-browsing.html),
-  any private browser windows will not be included in the array.
+  @param type {String}
+  If `null` or `undefined` (the default) all types are returned, if a type is specified then only
+  windows of that type are returned (for example using `navigator:window`
+  will only return browser windows, and not a preferences window).
+
+  @param options {Object}
+  Options for the function, with the following properties:
+    @prop includePrivate {Boolean}
+    If `false` (the default), then private windows will not be included.
+    If `true`, then private windows will be included (this should only be used
+    if your add-on has [opted into private browsing](modules/sdk/private-browsing.html)).
 
   @returns {Array}
   Array of `nsIDOMWindow` instances.
