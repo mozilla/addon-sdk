@@ -28,7 +28,7 @@ class Profile(object):
     sets preferences and handles cleanup."""
 
     def __init__(self, profile=None, addons=None, addon_manifests=None, apps=None,
-                 preferences=None, locations=None, proxy=None, restore=True):
+                 preferences=None, locations=None, proxy=None, restore=True, use_staged_dir=True):
         """
         :param profile: Path to the profile
         :param addons: String of one or list of addons to install
@@ -38,6 +38,7 @@ class Profile(object):
         :param locations: locations to proxy
         :param proxy: setup a proxy - dict of server-loc,server-port,ssl-port
         :param restore: If true remove all installed addons preferences when cleaning up
+        :param use_staged_dir: If true, addons will be installed to "extensions/staged"; if false, "extensions"
         """
 
         # if true, remove installed addons/prefs afterwards
@@ -86,7 +87,7 @@ class Profile(object):
         self.set_preferences(user_js)
 
         # handle addon installation
-        self.addon_manager = AddonManager(self.profile)
+        self.addon_manager = AddonManager(self.profile, use_staged_dir)
         self.addon_manager.install_addons(addons, addon_manifests)
 
         # handle webapps

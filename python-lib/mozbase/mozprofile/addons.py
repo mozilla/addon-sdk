@@ -19,11 +19,13 @@ class AddonManager(object):
     Handles all operations regarding addons in a profile including: installing and cleaning addons
     """
 
-    def __init__(self, profile):
+    def __init__(self, profile, use_staged_dir):
         """
         :param profile: the path to the profile for which we install addons
+        :param use_staged_dir: If true, addons will be installed to "extensions/staged"; if false, "extensions"
         """
         self.profile = profile
+        self.extensions_path = os.path.join(self.profile, os.path.join('extensions', 'staged') if use_staged_dir else 'extensions')
 
         # information needed for profile reset:
         # https://github.com/mozilla/mozbase/blob/270a857328b130860d1b1b512e23899557a3c8f7/mozprofile/mozprofile/profile.py#L93
@@ -221,11 +223,10 @@ class AddonManager(object):
             assert addon_id, 'The addon id could not be found: %s' % addon
 
             # copy the addon to the profile
-            extensions_path = os.path.join(self.profile, 'extensions', 'staged')
-            addon_path = os.path.join(extensions_path, addon_id)
+            addon_path = os.path.join(self.extensions_path, addon_id)
             if not unpack and not addon_details['unpack'] and xpifile:
-                if not os.path.exists(extensions_path):
-                    os.makedirs(extensions_path)
+                if not os.path.exists(self.extensions_path):
+                    os.makedirs(self.extensions_path)
                 # save existing xpi file to restore later
                 if os.path.exists(addon_path + '.xpi'):
                     self.backup_dir = self.backup_dir or tempfile.mkdtemp()
@@ -254,10 +255,9 @@ class AddonManager(object):
                 dir_util.remove_tree(addon)
         # restore backups
         if self.backup_dir and os.path.isdir(self.backup_dir):
-            extensions_path = os.path.join(self.profile, 'extensions', 'staged')
             for backup in os.listdir(self.backup_dir):
                 backup_path = os.path.join(self.backup_dir, backup)
-                addon_path = os.path.join(extensions_path, backup)
+                addon_path = os.path.join(self.extensions_path, backup)
                 shutil.move(backup_path, addon_path)
             if not os.listdir(self.backup_dir):
                 shutil.rmtree(self.backup_dir, ignore_errors=True)
