@@ -11,6 +11,7 @@ const { setTimeout } = require('sdk/timers');
 const { newURI } = require('sdk/url/utils');
 const { defer, all } = require('sdk/core/promise');
 const { defer: async } = require('sdk/lang/functional');
+const { before, after } = require('sdk/test/utils');
 
 // Test for unsupported platforms
 try {
@@ -22,14 +23,13 @@ const {
 const {
   invalidResolve, invalidReject, clearBookmarks, createTree,
   compareWithHost, clearAllBookmarks, createBookmark, createBookmarkItem,
-  createBookmarkTree, clearHistory, addVisits
+  createBookmarkTree, addVisits
 } = require('./places-helper');
 const { promisedEmitter } = require('sdk/places/utils');
 const bmsrv = Cc['@mozilla.org/browser/nav-bookmarks-service;1'].
                     getService(Ci.nsINavBookmarksService);
 const tagsrv = Cc['@mozilla.org/browser/tagging-service;1'].
                     getService(Ci.nsITaggingService);
-  clear();
 } catch (e) { unsupported(e); }
 
 exports.testDefaultFolders = function (assert) {
@@ -91,7 +91,6 @@ exports.testCreateBookmarks = function (assert, done) {
     assert.equal(bookmarks[0].tags.has('moz2'), true, 'has second tag');
     assert.equal(bookmarks[0].tags.has('moz3'), true, 'has third tag');
     assert.pass('end event is called');
-    clearAllBookmarks();
     done();
   });
 };
@@ -105,7 +104,6 @@ exports.testCreateGroup = function (assert, done) {
   }).on('end', results => {
     assert.equal(results.length, 1);
     assert.pass('end event is called');
-    clearAllBookmarks();
     done();
   });
 };
@@ -118,7 +116,6 @@ exports.testCreateSeparator = function (assert, done) {
   }).on('end', function (results) {
     assert.equal(results.length, 1);
     assert.pass('end event is called');
-    clearAllBookmarks();
     done();
   });
 };
@@ -165,7 +162,6 @@ exports.testCreateError = function (assert, done) {
           assert.equal(items.length, 3, 'only 3 items saved');
           items.map(item =>
             assert.ok(/moz\d\.com/.test(item.url), 'correct item'))
-          clearAllBookmarks();
           done();
         });
       });
@@ -180,7 +176,6 @@ exports.testSaveDucktypes = function (assert, done) {
     type: 'bookmark'
   }).on('data', (bookmark) => {
     compareWithHost(assert, bookmark);
-    clearAllBookmarks();
     done();
   });
 };
@@ -194,7 +189,6 @@ exports.testSaveDucktypesParent = function (assert, done) {
     compareWithHost(assert, res[1]);
     assert.equal(res[0].group.title, 'myfolder', 'parent is ducktyped group');
     assert.equal(res[1].group.title, 'myfolder', 'parent is ducktyped group');
-    clearAllBookmarks();
     done();
   });
 };
@@ -211,7 +205,6 @@ exports.testResaveOriginalItemMapping = function (assert, done) {
     save(bookmark).on('data', newNewBookmark => {
       assert.equal(newBookmark.id, newNewBookmark.id, 'should be the same bookmark item');
       assert.equal(bmsrv.getItemTitle(newBookmark.id), 'new moz', 'should have updated title');
-      clearAllBookmarks();
       done();
     });
   });
@@ -231,7 +224,6 @@ exports.testCreateMultipleBookmarks = function (assert, done) {
     compareWithHost(assert, bookmark);
   }).on('end', function (bookmarks) {
     assert.equal(bookmarks.length, 3, 'all bookmarks returned');
-    clearAllBookmarks();
     done();
   });
 };
@@ -253,7 +245,6 @@ exports.testCreateImplicitParent = function (assert, done) {
     }
   }).on('end', function (results) {
     assert.equal(results.length, 3, 'results should only hold explicit saves');
-    clearAllBookmarks();
     done();
   });
 };
@@ -274,7 +265,6 @@ exports.testCreateExplicitParent = function (assert, done) {
       compareWithHost(assert, bookmark);
     }
   }).on('end', function () {
-    clearAllBookmarks();
     done();
   });
 };
@@ -301,7 +291,6 @@ exports.testCreateNested = function (assert, done) {
   }).on('end', () => {
     assert.equal(dataEventCount, 5, 'data events for all saves have occurred');
     assert.ok('end event called');
-    clearAllBookmarks();
     done();
   });
 };
@@ -329,7 +318,6 @@ exports.testAddingToExistingParent = function (assert, done) {
     secondBatch = data;
     assert.equal(firstBatch[0].group.id, secondBatch[0].group.id,
       'successfully saved to the same parent');
-    clearAllBookmarks();
     done();
   }, console.error);
 };
@@ -341,7 +329,6 @@ exports.testUpdateParent = function (assert, done) {
     return saveP(item[0]);
   }).then(item => {
     assert.equal(item[0].title, 'mozgroup-resave', 'group saved successfully');
-    clearAllBookmarks();
     done();
   });
 };
@@ -353,7 +340,6 @@ exports.testUpdateSeparator = function (assert, done) {
     return saveP(item[0]);
   }).then(item => {
     assert.equal(item[0].index, 2, 'updated index of separator');
-    clearAllBookmarks();
     done();
   });
 };
@@ -380,7 +366,6 @@ exports.testPromisedSave = function (assert, done) {
     assert.equal(bmsrv.getItemIndex(first.id), 2, 'properly moved bookmark');
     assert.equal(bmsrv.getItemIndex(second.id), 0, 'other bookmarks adjusted');
     assert.equal(bmsrv.getItemIndex(third.id), 1, 'other bookmarks adjusted');
-    clearAllBookmarks();
     done();
   });
 };
@@ -403,7 +388,6 @@ exports.testPromisedErrorSave = function (assert, done) {
   }).then(res => {
     assert.equal(res.length, 3, 'all 3 should be saved upon retry');
     res.map(item => assert.ok(/moz\d\.com/.test(item.url), 'correct item'));
-    clearAllBookmarks();
     done();
   }, invalidReject);
 };
@@ -433,7 +417,6 @@ exports.testMovingChildren = function (assert, done) {
       assert.equal(bmsrv.getItemIndex(first.id), 2, 'properly moved bookmark');
       assert.equal(bmsrv.getItemIndex(second.id), 0, 'other bookmarks adjusted');
       assert.equal(bmsrv.getItemIndex(third.id), 1, 'other bookmarks adjusted');
-      clearAllBookmarks();
       done();
     });
   });
@@ -470,7 +453,6 @@ exports.testMovingChildrenNewFolder = function (assert, done) {
         'sibling bookmarks did not move');
       assert.equal(bmsrv.getFolderIdForItem(third.id), definedMidFolder.id,
         'sibling bookmarks did not move');
-      clearAllBookmarks();
       done();
     });
   });
@@ -501,7 +483,6 @@ exports.testRemove = function (assert, done) {
       assert.throws(function () {
         bmsrv.getItemTitle(id);
       }, 'item should no longer exist');
-      clearAllBookmarks();
       done();
     });
   });
@@ -528,7 +509,6 @@ exports.testRemoveAllChildren = function (assert, done) {
           bmsrv.getItemTitle(item.id);
         }, 'item should no longer exist');
       });
-      clearAllBookmarks();
       done();
     });
   });
@@ -558,7 +538,6 @@ exports.testResolution = function (assert, done) {
       }}).on('end', (results) => {
         let result = results[0];
         assert.equal(result.title, 'a new title', 'resolve handles results');
-        clearAllBookmarks();
         done();
       });
     });
@@ -589,7 +568,6 @@ exports.testResolutionMapping = function (assert, done) {
       }}).on('end', (results) => {
         let result = results[0];
         assert.equal(result.title, 'a new title', 'resolve handles results');
-        clearAllBookmarks();
         done();
       });
     });
@@ -606,7 +584,6 @@ exports.testUpdateTags = function (assert, done) {
       assert.ok(saved.tags.has('jagermonkey'), 'should have added tag');
       assert.ok(saved.tags.has('ionmonkey'), 'should have added tag');
       assert.ok(!saved.tags.has('spidermonkey'), 'should not have removed tag');
-      clearAllBookmarks();
       done();
     });
   });
@@ -639,7 +616,6 @@ exports.testSearchByGroupSimple = function (assert, done) {
       'returns all children bookmarks/folders');
     assert.ok(results.filter(({url}) => url === 'http://w3schools.com/'),
       'returns nested children');
-    clearAllBookmarks();
     done();
   }).then(null, console.error);
 };
@@ -658,7 +634,6 @@ exports.testSearchByGroupComplex = function (assert, done) {
     assert.ok(
       !results.filter(({url}) => /developer.mozilla/.test(url)).length,
       'does not find results from other folders');
-    clearAllBookmarks();
     done();
   }, console.error);
 };
@@ -680,7 +655,6 @@ exports.testSearchEmitters = function (assert, done) {
       assert.equal(data[1].title, 'mozilla.org', 'returns correct bookmark');
       assert.equal(data[2].title, 'firefox', 'returns correct bookmark');
       assert.equal(data[0] + '', '[object Bookmark]', 'returns bookmarks');
-      clearAllBookmarks();
       done();
     });
   });
@@ -702,7 +676,6 @@ exports.testSearchTags = function (assert, done) {
     // OR tags
     assert.equal(data.length, 6,
       'should return all bookmarks with firefox OR javascript tag');
-    clearAllBookmarks();
     done();
   });
 };
@@ -743,7 +716,6 @@ exports.testSearchURL = function (assert, done) {
     assert.equal(data[1].url, 'http://mozilla.org/thunderbird/');
     assert.equal(data[2].url, 'http://component.fm/');
   }).then(() => {
-    clearAllBookmarks();
     done();
   });
 };
@@ -772,7 +744,6 @@ exports.testSearchQuery = function (assert, done) {
     assert.equal(data[0].title, 'mdn',
       'only one item matches moz query AND has a javascript tag');
   }).then(() => {
-    clearAllBookmarks();
     done();
   });
 };
@@ -824,7 +795,6 @@ exports.testCaching = function (assert, done) {
     // require a lookup
     assert.equal(count, 6, 'lookup occurs once for each item and parent');
     off(stream, 'data', handle);
-    clearAllBookmarks();
     done();
   });
 
@@ -844,7 +814,6 @@ exports.testSearchCount = function (assert, done) {
   .then(testCount(5))
   .then(testCount(10))
   .then(() => {
-    clear();
     done();
   });
 
@@ -924,7 +893,6 @@ exports.testSearchSort = function (assert, done) {
     assert.equal(results[0].url, 'http://mozilla.com/webfwd/',
       'last modified should be first');
   }).then(() => {
-    clear();
     done();
   });
   
@@ -949,7 +917,6 @@ exports.testSearchComplexQueryWithOptions = function (assert, done) {
     ];
     for (let i = 0; i < expected.length; i++)
       assert.equal(results[i].url, expected[i], 'correct ordering and item');
-    clearAllBookmarks();
     done();
   });
 };
@@ -967,15 +934,17 @@ exports.testCheckSaveOrder = function (assert, done) {
     for (let i = 0; i < bookmarks.length; i++)
       assert.equal(results[i].url, bookmarks[i].url,
         'correct ordering of bookmark results');
-    clear();
     done();
   });
 };
 
-function clear () {
+before(exports, name => {
   clearAllBookmarks();
-  clearHistory();
-}
+});
+
+after(exports, name => {
+  clearAllBookmarks();
+});
 
 // If the module doesn't support the app we're being run in, require() will
 // throw.  In that case, remove all tests above from exports, and add one dummy

@@ -18,6 +18,7 @@ const { send } = require('sdk/addon/events');
 const { setTimeout } = require('sdk/timers');
 const { newURI } = require('sdk/url/utils');
 const { defer, all } = require('sdk/core/promise');
+const { once } = require('sdk/system/events');
 const {
   Bookmark, Group, Separator,
   save, search,
@@ -104,8 +105,9 @@ function createVisit (url) {
   return place;
 }
 
-function clearHistory () {
+function clearHistory (done) {
   hsrv.removeAllPages();
+  once('places-expiration-finished', done);
 }
 exports.clearHistory = clearHistory;
 
