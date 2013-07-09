@@ -84,6 +84,10 @@ if [ -n "$BASH" -o -n "$ZSH_VERSION" ] ; then
 fi
 
 pyexe=python
+
+# Checks if there is python2 command available and if pyexe variable
+# has not been updated yet. 
+
 if [ -n "$(command -v python2)" -a "$pyexe" = "python" ] ; then
     DIR=`realpath $(dirname ${BASH_SOURCE[0]})`
     if [ -z "$(grep 'python2' $DIR/cfx)" ] ; then
