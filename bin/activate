@@ -83,8 +83,8 @@ if [ -n "$BASH" -o -n "$ZSH_VERSION" ] ; then
     hash -r
 fi
 
-pyexe='python'
-if [ -n "$(command -v python2)" ] ; then
+pyexe=python
+if [ -n "$(command -v python2)" -a "$pyexe" = "python" ] ; then
     DIR=`realpath $(dirname ${BASH_SOURCE[0]})`
     if [ -z "$(grep 'python2' $DIR/cfx)" ] ; then
         pyexe='python2'
