@@ -89,7 +89,7 @@ if [ -n "$(command -v python2)" ] ; then
     if [ -z "$(grep 'python2' $DIR/cfx)" ] ; then
         pyexe='python2'
         (cd $DIR/..; 
-          grep -Rl python . | xargs sed -ri 's/([^!]|^)python(\s|$)/\1python2\2/g');
+          grep -Rl 'python' . | xargs sed -ri 's/([^!]|^)python(\s|$)/\1python2\2/g');
     fi
 fi
 
