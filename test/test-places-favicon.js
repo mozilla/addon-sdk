@@ -173,9 +173,10 @@ function waitAndExpire (url) {
 
 function complete(tab, srv, done) {
   tab.close(function () {
-    clearHistory();
-    srv.stop(done);
-  })
+    clearHistory(() => {
+      srv.stop(done);
+    });
+  });
 }
 
 require("test").run(exports);

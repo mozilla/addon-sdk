@@ -7,6 +7,7 @@ const { Cc, Ci } = require('chrome');
 const { defer, all } = require('sdk/core/promise');
 const { has } = require('sdk/util/array');
 const { setTimeout } = require('sdk/timers');
+const { before, after } = require('sdk/test/utils');
 try {
 const {
   search 
@@ -18,7 +19,6 @@ const {
 const { promisedEmitter } = require('sdk/places/utils');
 const hsrv = Cc['@mozilla.org/browser/nav-history-service;1'].
               getService(Ci.nsINavHistoryService);
-clear();
 } catch(e) { unsupported(e); }
 
 exports.testEmptyQuery = function (assert, done) {
@@ -41,7 +41,6 @@ exports.testEmptyQuery = function (assert, done) {
     assert.ok(within(results[1].time), 'accurate access time');
     assert.equal(Object.keys(results[0]).length, 4,
       'no addition exposed properties on history result');
-    clear();
     done();
   }, invalidReject);
 };
@@ -54,7 +53,6 @@ exports.testVisitCount = function (assert, done) {
     assert.equal(results.length, 1, 'Correct number of entries returned');
     assert.equal(results[0].url, 'http://simplequery-1.com/', 'correct url');
     assert.equal(results[0].visitCount, 4, 'matches access count');
-    clear();
     done();
   }, invalidReject);
 };
@@ -82,7 +80,6 @@ exports.testSearchURL = function (assert, done) {
     return searchP({ url: 'http://mozilla.org/*' });
   }).then(results => {
     assert.equal(results.length, 2, 'should match anything starting with substring');
-    clear();
     done();
   });
 };
@@ -117,7 +114,6 @@ exports.testSearchTimeRange = function (assert, done) {
     results.map(item => {
       assert.ok(/newvisit/.test(item.url), 'correct entry');
     });
-    clear();
     done();
   });
 };
@@ -138,7 +134,6 @@ exports.testSearchQuery = function (assert, done) {
     results.map(({url}) => {
       assert.ok(/webfwd|aud\.io/.test(url), 'correct item');
     });
-    clear();
     done();
   });
 };
@@ -155,10 +150,7 @@ exports.testSearchCount = function (assert, done) {
   .then(testCount(2))
   .then(testCount(3))
   .then(testCount(5))
-  .then(() => {
-    clear();
-    done();
-  });
+  .then(done);
 
   function testCount (n) {
     return function () {
@@ -207,10 +199,7 @@ exports.testSearchSort = function (assert, done) {
   }).then(results => {
     assert.equal(results[0].url, 'http://github.com/',
       'latest visited should be at the end');
-  }).then(() => {
-    clear();
-    done();
-  });
+  }).then(done);
 
   function checkOrder (results, nums) {
     assert.equal(results.length, nums.length, 'expected return count');
@@ -233,7 +222,6 @@ exports.testEmitters = function (assert, done) {
     }).on('end', results => {
       assert.equal(results.length, 5, 'correct count of items');
       assert.equal(count, 5, 'data event called 5 times');
-      clear();
       done();
     });
   });
@@ -247,9 +235,9 @@ function toBeWithin (range) {
   };
 }
 
-function clear () {
+function clear (done) {
   clearAllBookmarks();
-  clearHistory();
+  clearHistory(done);
 }
 
 // If the module doesn't support the app we're being run in, require() will
@@ -269,5 +257,8 @@ function unsupported (err) {
 function searchP () {
   return promisedEmitter(search.apply(null, Array.slice(arguments)));
 }
+
+before(exports, (name, done) => clear(done));
+after(exports, (name, done) => clear(done));
 
 require('test').run(exports);
