@@ -88,6 +88,8 @@ if [ -n "$(command -v python2)" ] ; then
     DIR=`realpath $(dirname ${BASH_SOURCE[0]})`
     if [ -z "$(grep 'python2' $DIR/cfx)" ] ; then
         pyexe='python2'
+        (cd $DIR/..; 
+          grep -Rl python . | xargs sed -ri 's/([^!]|^)python(\s|$)/\1python2\2/g');
     fi
 fi
 
