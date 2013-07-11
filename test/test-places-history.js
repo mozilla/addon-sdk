@@ -248,7 +248,7 @@ function searchP () {
   return promisedEmitter(search.apply(null, Array.slice(arguments)));
 }
 
-before(exports, (name, done) => clear(done));
-after(exports, (name, done) => clear(done));
+before(exports, (name, assert, done) => clear(done));
+after(exports, (name, assert, done) => clear(done));
 
 require('test').run(exports);
