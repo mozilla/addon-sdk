@@ -956,4 +956,5 @@ function saveP () {
 function searchP () {
   return promisedEmitter(search.apply(null, Array.slice(arguments)));
 }
-require('test').run(exports);
+
+require('sdk/test').run(exports);
