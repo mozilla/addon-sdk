@@ -459,4 +459,28 @@ exports["test fs.writeFile"] = function(assert, end) {
   async = true;
 };
 
+exports["test fs.writeFile (with large files)"] = function(assert, end) {
+  let path = writePath;
+  let content = "";
+
+  for (var i = 0; i < 100000; i++) {
+    content += "buffer\n";
+  }
+
+  var async = false;
+  fs.writeFile(path, content, function(error) {
+    assert.ok(async, "fs write is async");
+    assert.ok(!error, "error is falsy");
+    assert.ok(fs.existsSync(path), "file was created");
+    assert.equal(fs.readFileSync(path).toString(),
+                 content,
+                 "contet was written");
+    fs.unlinkSync(path);
+    assert.ok(!fs.exists(path), "file was removed");
+
+    end();
+  });
+  async = true;
+};
+
 require("test").run(exports);
