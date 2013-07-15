@@ -5,7 +5,7 @@ const { is } = require('sdk/system/xul-app');
 const { isPrivate } = require('sdk/private-browsing');
 const pbUtils = require('sdk/private-browsing/utils');
 const { getOwnerWindow } = require('sdk/private-browsing/window/utils');
-const { promise: windowPromise, close } = require('sdk/window/helpers');
+const { promise: windowPromise, close, focus } = require('sdk/window/helpers');
 const { getMostRecentBrowserWindow } = require('sdk/window/utils');
 
 exports.testPrivateTabsAreListed = function (assert, done) {
@@ -37,7 +37,7 @@ exports.testPrivateTabsAreListed = function (assert, done) {
 exports.testOpenTabWithPrivateActiveWindowNoIsPrivateOption = function(assert, done) {
   let window = getMostRecentBrowserWindow().OpenBrowserWindow({ private: true });
 
-  windowPromise(window, 'load').then(function (window) {
+  windowPromise(window, 'load').then(focus).then(function (window) {
     assert.ok(isPrivate(window), 'new window is private');
 
     tabs.open({
@@ -56,7 +56,7 @@ exports.testOpenTabWithPrivateActiveWindowNoIsPrivateOption = function(assert, d
 exports.testOpenTabWithNonPrivateActiveWindowNoIsPrivateOption = function(assert, done) {
   let window = getMostRecentBrowserWindow().OpenBrowserWindow({ private: false });
 
-  windowPromise(window, 'load').then(function (window) {
+  windowPromise(window, 'load').then(focus).then(function (window) {
     assert.equal(isPrivate(window), false, 'new window is not private');
 
     tabs.open({
@@ -75,7 +75,7 @@ exports.testOpenTabWithNonPrivateActiveWindowNoIsPrivateOption = function(assert
 exports.testOpenTabWithPrivateActiveWindowWithIsPrivateOptionTrue = function(assert, done) {
   let window = getMostRecentBrowserWindow().OpenBrowserWindow({ private: true });
 
-  windowPromise(window, 'load').then(function (window) {
+  windowPromise(window, 'load').then(focus).then(function (window) {
     assert.ok(isPrivate(window), 'new window is private');
 
     tabs.open({
@@ -95,7 +95,7 @@ exports.testOpenTabWithPrivateActiveWindowWithIsPrivateOptionTrue = function(ass
 exports.testOpenTabWithNonPrivateActiveWindowWithIsPrivateOptionFalse = function(assert, done) {
   let window = getMostRecentBrowserWindow().OpenBrowserWindow({ private: false });
 
-  windowPromise(window, 'load').then(function (window) {
+  windowPromise(window, 'load').then(focus).then(function (window) {
     assert.equal(isPrivate(window), false, 'new window is not private');
 
     tabs.open({
