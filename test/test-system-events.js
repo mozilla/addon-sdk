@@ -10,6 +10,8 @@ const { Loader, LoaderWithHookedConsole2 } = require("sdk/test/loader");
 const nsIObserverService = Cc["@mozilla.org/observer-service;1"].
                            getService(Ci.nsIObserverService);
 
+let isConsoleEvent = (topic) =>
+  !!~["console-api-log-event", "console-storage-cache-event"].indexOf(topic)
 
 exports["test basic"] = function(assert) {
   let type = Date.now().toString(32);
@@ -105,7 +107,7 @@ exports["test handle nsIObserverService notifications"] = function(assert) {
 
   function handler({ subject, data, type }) {
     // Ignores internal console events
-    if (type == "console-api-log-event")
+    if (isConsoleEvent(type))
       return;
     timesCalled++;
     lastSubject = subject;
@@ -172,7 +174,7 @@ exports["test emit to nsIObserverService observers"] = function(assert) {
     },
     observe: function(subject, topic, data) {
       // Ignores internal console events
-      if (topic == "console-api-log-event")
+      if (isConsoleEvent(topic))
         return;
       timesCalled = timesCalled + 1;
       lastSubject = subject;
@@ -190,7 +192,6 @@ exports["test emit to nsIObserverService observers"] = function(assert) {
   assert.equal(lastSubject.wrappedJSObject.object, uri,
                "event.subject is notification subject");
   assert.equal(lastData, "some data", "event.data is notification data");
-
   function customSubject() {}
   function customData() {}
   events.emit(topic, { subject: customSubject, data: customData });
@@ -212,13 +213,14 @@ exports["test emit to nsIObserverService observers"] = function(assert) {
   events.emit(topic, { data: "data again" });
 
   assert.equal(timesCalled, 3, "emit notifies * observers");
+
   assert.equal(lastTopic, topic, "event.type is notification");
   assert.equal(lastSubject, null,
                "event.subject is notification subject");
   assert.equal(lastData, "data again", "event.data is notification data");
 
   nsIObserverService.removeObserver(nsIObserver, "*");
-
+  
   events.emit(topic, { data: "last data" });
   assert.equal(timesCalled, 3, "removed observers no longer invoked");
 }
