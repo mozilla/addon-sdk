@@ -48,10 +48,10 @@ exports["test error reporting"] = function(assert) {
   events.on(errorType, brokenHandler);
   events.emit(errorType, { data: "yo yo" });
 
-  assert.equal(messages.length, 1, "Got an exception");
-  let text = messages[0];
-  assert.ok(text.indexOf(self.name + ": An exception occurred.") >= 0,
-            "error is logged");
+  assert.equal(messages.length, 2, "Got an exception");
+  assert.equal(messages[0], "console.error: " + self.name + ": \n",
+               "error is logged");
+  let text = messages[1];
   assert.ok(text.indexOf("Error: foo") >= 0, "error message is logged");
   assert.ok(text.indexOf(module.uri) >= 0, "module uri is logged");
   assert.ok(text.indexOf(lineNumber) >= 0, "error line is logged");
@@ -104,6 +104,9 @@ exports["test handle nsIObserverService notifications"] = function(assert) {
   let lastType = null;
 
   function handler({ subject, data, type }) {
+    // Ignores internal console events
+    if (type == "console-api-log-event")
+      return;
     timesCalled++;
     lastSubject = subject;
     lastData = data;
@@ -168,6 +171,9 @@ exports["test emit to nsIObserverService observers"] = function(assert) {
       return nsIObserver;
     },
     observe: function(subject, topic, data) {
+      // Ignores internal console events
+      if (topic == "console-api-log-event")
+        return;
       timesCalled = timesCalled + 1;
       lastSubject = subject;
       lastData = data;
