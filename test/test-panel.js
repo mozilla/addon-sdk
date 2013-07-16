@@ -9,12 +9,12 @@ module.metadata = {
   }
 };
 
-const { Cc, Ci } = require("chrome");
+const { Cc, Ci, Cu } = require("chrome");
 const { Loader } = require('sdk/test/loader');
 const { LoaderWithHookedConsole } = require("sdk/test/loader");
 const timer = require("sdk/timers");
 const self = require('sdk/self');
-const { open, close, focus } = require('sdk/window/helpers');
+const { open, close, focus, promise: windowPromise } = require('sdk/window/helpers');
 const { isPrivate } = require('sdk/private-browsing');
 const { isWindowPBSupported, isGlobalPBSupported } = require('sdk/private-browsing/utils');
 const { defer, all } = require('sdk/core/promise');
@@ -39,6 +39,122 @@ function makeEmptyPrivateBrowserWindow(options) {
       private: true
     }
   });
+}
+
+exports.testPanelHidesOnNewWindowNoDestroy = function(assert, done) {
+  const loader = Loader(module);
+  const { Panel } = loader.require('sdk/panel');
+  let window = getMostRecentBrowserWindow();
+  let { document } = window;
+  let lastPopup = document.getElementById('mainPopupSet').lastChild;
+  let panelEle = null;
+
+  function last() {
+    timer.setTimeout(function() {
+      Cu.schedulePreciseGC(function() {
+        windowPromise(window.OpenBrowserWindow(), 'load').then(focus).then(function(window) {
+          assert.equal(panelEle.state, 'closed', 'the panel is closed');
+          loader.unload();
+          close(window).then(done);
+        })
+      });
+    }, 500);
+  }
+
+  (function() {
+    let panel = Panel({
+      contentURL: "data:text/html;charset=utf-8,old-page",
+      onShow: function() {
+        panelEle = document.getElementById('mainPopupSet').lastChild;
+
+        assert.notEqual(lastPopup, panelEle, "the panel element was added");
+        assert.equal(panelEle.nodeName, "panel", 'the panel ele is a panel ele');
+        assert.equal(panelEle.getAttribute("type"), "arrow", 'the panel is a arrow type');
+        assert.equal(panelEle.state, "open", 'the panel is open');
+        last();
+      }
+    });
+    panel.show();
+  })();  
+}
+
+
+exports.testPanelHidesOnNewWindowWithDestroy = function(assert, done) {
+  const loader = Loader(module);
+  const { Panel } = loader.require('sdk/panel');
+  let window = getMostRecentBrowserWindow();
+  let { document } = window;
+  let lastPopup = document.getElementById('mainPopupSet').lastChild;
+  let panelEle = null;
+
+  function last() {
+    timer.setTimeout(function() {
+      Cu.schedulePreciseGC(function() {
+        windowPromise(window.OpenBrowserWindow(), 'load').then(focus).then(function() {
+          assert.equal(panelEle.state, undefined, 'the panel is destroyed');
+          loader.unload();
+          close(window).then(done);
+        })
+      });
+    }, 500);
+  }
+
+  (function() {
+    let panel = Panel({
+      contentURL: "data:text/html;charset=utf-8,old-page",
+      onShow: function() {
+        panelEle = document.getElementById('mainPopupSet').lastChild;
+
+        assert.notEqual(lastPopup, panelEle, "the panel element was added");
+        assert.equal(panelEle.nodeName, "panel", 'the panel ele is a panel ele');
+        assert.equal(panelEle.getAttribute("type"), "arrow", 'the panel is a arrow type');
+        assert.equal(panelEle.state, "open", 'the panel is open');
+        panel.destroy();
+        last();
+      }
+    });
+    panel.show();
+  })();  
+}
+
+exports.testPanelHidesOnNewWindowWithDestroyOnHide = function(assert, done) {
+  const loader = Loader(module);
+  const { Panel } = loader.require('sdk/panel');
+  let window = getMostRecentBrowserWindow();
+  let { document } = window;
+  let lastPopup = document.getElementById('mainPopupSet').lastChild;
+  let panelEle = null;
+
+  function last() {
+    timer.setTimeout(function() {
+      Cu.schedulePreciseGC(function() {
+        windowPromise(window.OpenBrowserWindow(), 'load').then(function() {   
+          assert.equal(panelEle.state, undefined, 'the panel is destroyed');       
+          done();
+        })
+      });
+    }, 500);
+  }
+
+  (function() {
+    let panel = Panel({
+      contentURL: "data:text/html;charset=utf-8,old-page",
+      onShow: function() {
+        panelEle = document.getElementById('mainPopupSet').lastChild;
+
+        assert.notEqual(lastPopup, panelEle, "the panel element was added");
+        assert.equal(panelEle.nodeName, "panel", 'the panel ele is a panel ele');
+        assert.equal(panelEle.getAttribute("type"), "arrow", 'the panel is a arrow type');
+        assert.equal(panelEle.state, "open", 'the panel is open');
+        last();
+      }
+    });
+    panel.on('hide', function() {
+      assert.pass('destroying the panel');
+      panel.destroy()
+    });
+    panel.show();
+  })();  
 }
 
 exports["test Panel"] = function(assert, done) {
