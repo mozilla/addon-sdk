@@ -14,6 +14,7 @@ const { isPrivate } = require('sdk/private-browsing');
 const { data } = require('sdk/self');
 const { URL } = require('sdk/url');
 const { once, off, emit } = require('sdk/event/core');
+const { defer, all } = require('sdk/core/promise');
 
 const { BLANK_IMG, BUILTIN_SIDEBAR_MENUITEMS, isSidebarShowing,
         getSidebarMenuitems, getExtraSidebarMenuitems, makeID, simulateCommand,
@@ -1364,6 +1365,109 @@ exports.testDestroyWhileNonBrowserWindowIsOpen = function(assert, done) {
   }).then(close).then(function() {
     assert.equal(isSidebarShowing(getMostRecentBrowserWindow()), false, 'the sidebar is not showing');
   }).then(done, assert.fail);
+}
+
+exports.testEventListeners = function(assert, done) {
+  const { Sidebar } = require('sdk/ui/sidebar');
+  let testName = 'testWhatThisIsInSidebarEventListeners';
+  let eventListenerOrder = [];
+
+  let constructorOnShow = defer();
+  let constructorOnHide = defer();
+  let constructorOnAttach = defer();
+
+  let onShow = defer();
+  let onHide = defer();
+  let onAttach = defer();
+
+  let onceShow = defer();
+  let onceHide = defer();
+  let onceAttach = defer();
+
+  function testThis() {
+    assert(this, sidebar, '`this` is correct');
+  }
+
+  let sidebar = Sidebar({
+    id: testName,
+    title: testName,
+    icon: BLANK_IMG,
+    url: 'data:text/html;charset=utf-8,' + testName,
+    onShow: function() {
+      assert.equal(this, sidebar, '`this` is correct in onShow');
+      eventListenerOrder.push('onShow');
+      constructorOnShow.resolve();
+    },
+    onAttach: function() {
+      assert.equal(this, sidebar, '`this` is correct in onAttach');
+      eventListenerOrder.push('onAttach');
+      constructorOnAttach.resolve();
+    },
+    onHide: function() {
+      assert.equal(this, sidebar, '`this` is correct in onHide');
+      eventListenerOrder.push('onHide');
+      constructorOnHide.resolve();
+    }
+  });
+
+  sidebar.once('show', function() {
+    assert.equal(this, sidebar, '`this` is correct in once show');
+    eventListenerOrder.push('once show');
+    onceShow.resolve();
+  });
+  sidebar.once('attach', function() {
+    assert.equal(this, sidebar, '`this` is correct in once attach');
+    eventListenerOrder.push('once attach');
+    onceAttach.resolve();
+  });
+  sidebar.once('hide', function() {
+    assert.equal(this, sidebar, '`this` is correct in once hide');
+    eventListenerOrder.push('once hide');
+    onceHide.resolve();
+  });
+
+  sidebar.on('show', function() {
+    assert.equal(this, sidebar, '`this` is correct in on show');
+    eventListenerOrder.push('on show');
+    onShow.resolve();
+
+    sidebar.hide();
+  });
+  sidebar.on('attach', function() {
+    assert.equal(this, sidebar, '`this` is correct in on attach');
+    eventListenerOrder.push('on attach');
+    onAttach.resolve();
+  });
+  sidebar.on('hide', function() {
+    assert.equal(this, sidebar, '`this` is correct in on hide');
+    eventListenerOrder.push('on hide');
+    onHide.resolve();
+  });
+
+  all(constructorOnShow.promise,
+      constructorOnAttach.promise,
+      constructorOnHide.promise,
+      onceShow.promise,
+      onceAttach.promise,
+      onceHide.promise,
+      onShow.promise,
+      onAttach.promise,
+      onHide.promise).then(function() {
+        assert.equal(eventListenerOrder.join(), [
+            'onAttach',
+            'once attach',
+            'on attach',
+            'onShow',
+            'once show',
+            'on show',
+            'onHide',
+            'once hide',
+            'on hide'
+          ].join(), 'the event order was correct');
+        sidebar.destroy();
+      }).then(done, assert.fail);
+
+  sidebar.show();
 }
 
 // If the module doesn't support the app we're being run in, require() will
