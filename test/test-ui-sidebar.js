@@ -423,7 +423,7 @@ exports.testInvalidTitle = function(assert) {
 
 exports.testInvalidIcon = function(assert) {
   const { Sidebar } = require('sdk/ui/sidebar');
-  let testName = 'testInvalidTitle';
+  let testName = 'testInvalidIcon';
   try {
     let sidebar = Sidebar({
       id: testName,
@@ -476,7 +476,7 @@ exports.testInvalidBlankID = function(assert) {
 
 exports.testInvalidNullID = function(assert) {
   const { Sidebar } = require('sdk/ui/sidebar');
-  let testName = 'testInvalidBlankID';
+  let testName = 'testInvalidNullID';
   try {
     let sidebar = Sidebar({
       id: null,
@@ -1218,7 +1218,7 @@ exports.testSidebarLeakCheckUnloadAfterAttach = function(assert, done) {
 
 exports.testTwoSidebarsWithSameTitleAndURL = function(assert) {
   const { Sidebar } = require('sdk/ui/sidebar');
-  let testName = 'testSidebarLeakCheckDestroyAfterAttach';
+  let testName = 'testTwoSidebarsWithSameTitleAndURL';
 
   let title = testName;
   let url = 'data:text/html;charset=utf-8,' + testName;
@@ -1301,7 +1301,7 @@ exports.testButtonToOpenXToClose = function(assert, done) {
 
 exports.testButtonToOpenMenuitemToClose = function(assert, done) {
   const { Sidebar } = require('sdk/ui/sidebar');
-  let testName = 'testButtonToOpenXToClose';
+  let testName = 'testButtonToOpenMenuitemToClose';
 
   let title = testName;
   let url = 'data:text/html;charset=utf-8,' + testName;
@@ -1334,6 +1334,37 @@ exports.testButtonToOpenMenuitemToClose = function(assert, done) {
   assert.equal(menuitem.getAttribute('checked') || 'false', 'false', 'menuitem is not checked');
 
   simulateCommand(button);
+}
+
+exports.testDestroyWhileNonBrowserWindowIsOpen = function(assert, done) {
+  const { Sidebar } = require('sdk/ui/sidebar');
+  let testName = 'testDestroyWhileNonBrowserWindowIsOpen';
+  let url = 'data:text/html;charset=utf-8,' + testName;
+
+  let sidebar = Sidebar({
+    id: testName,
+    title: testName,
+    icon: BLANK_IMG,
+    url: url
+  });
+
+  open('chrome://browser/content/preferences/preferences.xul').then(function(window) {
+    try {
+      sidebar.show();
+      assert.equal(isSidebarShowing(getMostRecentBrowserWindow()), true, 'the sidebar is showing');
+
+      sidebar.destroy();
+
+      assert.pass('sidebar was destroyed while a non browser window was open');
+    }
+    catch(e) {
+      assert.fail(e);
+    }
+
+    return window;
+  }).then(close).then(function() {
+    assert.equal(isSidebarShowing(getMostRecentBrowserWindow()), false, 'the sidebar is not showing');
+  }).then(done, assert.fail);
 }
 
 exports.testEventListeners = function(assert, done) {
