@@ -3,6 +3,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
+module.metadata = {
+  'engines': {
+    'Firefox': '> 24'
+  }
+};
+
 const { Cu } = require('chrome');
 const { Loader } = require('sdk/test/loader');
 const { show, hide } = require('sdk/ui/sidebar/actions');
@@ -1066,7 +1072,11 @@ exports.testSidebarGettersAndSettersAfterDestroy = function(assert) {
   sidebar.destroy();
 
   assert.equal(sidebar.id, undefined, 'sidebar after destroy has no id');
-  sidebar.id = 'foo-tang';
+
+  assert.throws(() => sidebar.id = 'foo-tang',
+    /^setting a property that has only a getter/,
+    'id cannot be set at runtime');
+
   assert.equal(sidebar.id, undefined, 'sidebar after destroy has no id');
 
   assert.equal(sidebar.title, undefined, 'sidebar after destroy has no title');
@@ -1238,7 +1248,7 @@ exports.testTwoSidebarsWithSameTitleAndURL = function(assert) {
       url: url
     }).destroy();
   }, /title.+url.+invalid/i, 'Creating two sidebars with the same title + url is not allowed');
- 
+
   let sidebar2 = Sidebar({
     id: testName + 2,
     title: title,
