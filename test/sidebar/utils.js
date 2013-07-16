@@ -3,6 +3,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
+module.metadata = {
+  'engines': {
+    'Firefox': '> 24'
+  }
+};
+
 const { Cu } = require('chrome');
 const { getMostRecentBrowserWindow } = require('sdk/window/utils');
 const { fromIterator } = require('sdk/util/array');
