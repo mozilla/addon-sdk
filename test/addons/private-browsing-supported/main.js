@@ -11,18 +11,14 @@ merge(module.exports,
   require('./test-tabs'),
   require('./test-page-mod'),
   require('./test-selection'),
+  require('./test-panel'),
   require('./test-private-browsing'),
   isGlobalPBSupported ? require('./test-global-private-browsing') : {}
 );
 
 // Doesn't make sense to test window-utils and windows on fennec,
 // as there is only one window which is never private
-if (!app.is('Fennec')) {
-  merge(module.exports,
-  	require('./test-panel'),
-    require('./test-tabs-and-windows'),
-  	require('./test-windows')
-  );
-}
+if (!app.is('Fennec'))
+  merge(module.exports, require('./test-windows'));
 
 require('sdk/test/runner').runTestsFromModule(module);
