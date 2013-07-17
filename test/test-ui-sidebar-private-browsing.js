@@ -3,6 +3,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
+module.metadata = {
+  'engines': {
+    'Firefox': '> 24'
+  }
+};
+
 const { Loader } = require('sdk/test/loader');
 const { show, hide } = require('sdk/ui/sidebar/actions');
 const { isShowing } = require('sdk/ui/sidebar/utils');
@@ -55,7 +61,7 @@ exports.testSidebarIsNotOpenInNewPrivateWindow = function(assert, done) {
       icon: BLANK_IMG,
       url: 'data:text/html;charset=utf-8,'+testName
     });
-   
+
     sidebar.on('show', function() {
       assert.equal(isPrivate(window), false, 'the new window is not private');
       assert.equal(isSidebarShowing(window), true, 'the sidebar is showing');

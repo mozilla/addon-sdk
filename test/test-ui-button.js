@@ -4,6 +4,12 @@
 
 'use strict';
 
+module.metadata = {
+  'engines': {
+    'Firefox': '> 24'
+  }
+};
+
 const { Cu } = require('chrome');
 const { CustomizableUI } = Cu.import('resource:///modules/CustomizableUI.jsm', {});
 const { Loader } = require('sdk/test/loader');
@@ -289,19 +295,28 @@ exports['test button global state updated'] = function(assert) {
 
   // check read-only properties
 
-  button.id = 'another-id';
+  assert.throws(() => button.id = 'another-id',
+    /^setting a property that has only a getter/,
+    'id cannot be set at runtime');
+
   assert.equal(button.id, 'my-button-4',
     'id is unchanged');
   assert.equal(node.id, widgetId,
     'node id is unchanged');
 
-  button.type = 'checkbox';
+  assert.throws(() => button.type = 'checkbox',
+    /^setting a property that has only a getter/,
+    'type cannot be set at runtime');
+
   assert.equal(button.type, 'button',
     'type is unchanged');
   assert.equal(node.getAttribute('type'), button.type,
     'node type is unchanged');
 
-  button.size = 'medium';
+  assert.throws(() => button.size = 'medium',
+    /^setting a property that has only a getter/,
+    'size cannot be set at runtime');
+
   assert.equal(button.size, 'small',
     'size is unchanged');
   assert.equal(node.getAttribute('width'), 16,

@@ -113,7 +113,9 @@ exports.testTabProperties = function(test) {
       // TODO: remove need for this test by implementing the favicon feature
       // Poors man deepEqual with JSON.stringify...
       test.assertEqual(JSON.stringify(messages),
-                       JSON.stringify([ERR_FENNEC_MSG]),
+                       JSON.stringify(['tab.favicon is deprecated, and ' +
+                          'currently favicon helpers are not yet supported ' +
+                          'by Fennec']),
                        "favicon logs an error for now");
       test.assertEqual(tab.style, null, "style of the new tab matches");
       test.assertEqual(tab.index, tabsLen, "index of the new tab matches");
