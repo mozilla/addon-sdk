@@ -496,9 +496,6 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
     logfile = os.path.abspath(os.path.expanduser(logfile))
     maybe_remove_logfile()
 
-    if app_type != "fennec-on-device":
-        harness_options['logFile'] = logfile
-
     env = {}
     env.update(os.environ)
     env['MOZ_NO_REMOTE'] = '1'
