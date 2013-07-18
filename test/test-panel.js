@@ -134,7 +134,7 @@ exports["test Document Reload"] = function(assert, done) {
     "window.onload = function() {" +
     "  setTimeout(function () {" +
     "    window.location = 'about:blank';" +
-    "  }, 0);" +
+    "  }, 10);" + // Use longer timeout so message can go through before reload
     "}" +
     "</script>";
   let messageCount = 0;
@@ -387,9 +387,13 @@ exports["test Panel Focus True"] = function(assert, done) {
     contentURL: "about:buildconfig",
     focus: true,
     onShow: function () {
-      assert.ok(focusedElement !== FM.focusedElement,
-        "The panel takes the focus away.");
-      done();
+      // delay focus check for a tick since focus manager not always
+      // in synchronised in the same tick.
+      timer.setTimeout(function() {
+        assert.ok(focusedElement !== FM.focusedElement,
+                  "The panel takes the focus away.");
+        done();
+      });
     }
   });
   panel.show();
@@ -415,9 +419,13 @@ exports["test Panel Focus False"] = function(assert, done) {
     contentURL: "about:buildconfig",
     focus: false,
     onShow: function () {
-      assert.ok(focusedElement === FM.focusedElement,
-        "The panel does not take the focus away.");
-      done();
+      // delay focus check for a tick since focus manager not always
+      // in synchronised in the same tick.
+      timer.setTimeout(function() {
+        assert.ok(focusedElement === FM.focusedElement,
+                  "The panel does not take the focus away.");
+        done();
+      });
     }
   });
   panel.show();
@@ -442,9 +450,13 @@ exports["test Panel Focus Not Set"] = function(assert, done) {
   let panel = Panel({
     contentURL: "about:buildconfig",
     onShow: function () {
-      assert.ok(focusedElement !== FM.focusedElement,
-        "The panel takes the focus away.");
-      done();
+      // delay focus check for a tick since focus manager not always
+      // in synchronised in the same tick.
+      timer.setTimeout(function() {
+        assert.ok(focusedElement !== FM.focusedElement,
+                  "The panel takes the focus away.");
+        done();
+      });
     }
   });
   panel.show();
