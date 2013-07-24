@@ -132,14 +132,4 @@ exports["test behavior on close"] = function(assert, done) {
   });
 };
 
-if (require("sdk/system/xul-app").is("Fennec")) {
-  module.exports = {
-    "test Unsupported Test": function UnsupportedTest (assert) {
-        assert.pass(
-          "Skipping this test until Fennec support is implemented." +
-          "See Bug 809362");
-    }
-  }
-}
-
 require("test").run(exports);
