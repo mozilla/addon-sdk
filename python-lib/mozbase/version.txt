@@ -1,0 +1,4 @@
+These libraries are from the mozbase project (https://github.com/mozilla/mozbase).
+They were copied from the mozbase repository at commit:
+e1b546a0820c72748a6fbdee54a93b68a94508ce - July 12 2013
+

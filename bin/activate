@@ -53,10 +53,12 @@ if [ "x$OSTYPE" = "xmsys" ] ; then
   PATH="`pwd`/bin:$PATH"
   # msys will convert any env vars with PATH in it to use msys
   # form and will unconvert before launching
-  PYTHONPATH="`pwd -W`/python-lib;$PYTHONPATH"
+  PYTHON_LIB_PATH="`pwd -W`/python-lib"
+  PYTHONPATH="$PYTHON_LIB_PATH;$PYTHON_LIB_PATH/mozbase;$PYTHONPATH"
 else
   CUDDLEFISH_ROOT="$VIRTUAL_ENV"
-  PYTHONPATH="$VIRTUAL_ENV/python-lib:$PYTHONPATH"
+  PYTHON_LIB_PATH="$VIRTUAL_ENV/python-lib"
+  PYTHONPATH="$PYTHON_LIB_PATH:$PYTHON_LIB_PATH/mozbase:$PYTHONPATH"
   PATH="$VIRTUAL_ENV/bin:$PATH"
 fi
 

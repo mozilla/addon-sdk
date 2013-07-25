@@ -57,7 +57,8 @@ if not defined PYTHONPATH (
     set PYTHONPATH=;
 )
 set _OLD_PYTHONPATH=%PYTHONPATH%
-set PYTHONPATH=%VIRTUAL_ENV%\python-lib;%PYTHONPATH%
+set PYTHON_LIB_DIR=%VIRTUAL_ENV%\python-lib
+set PYTHONPATH=%PYTHON_LIB_DIR%;%PYTHON_LIB_DIR%\mozbase;%PYTHONPATH%
 
 if not defined PROMPT (
     set PROMPT=$P$G

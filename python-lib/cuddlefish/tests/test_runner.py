@@ -10,7 +10,7 @@ def xulrunner_app_runner_doctests():
     >>> runner.XulrunnerAppRunner(binary='foo')
     Traceback (most recent call last):
     ...
-    Exception: Binary path does not exist foo
+    OSError: Binary path does not exist: foo
 
     >>> runner.XulrunnerAppRunner(binary=sys.executable)
     Traceback (most recent call last):

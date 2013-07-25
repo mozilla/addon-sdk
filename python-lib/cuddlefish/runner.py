@@ -13,6 +13,7 @@ import re
 import shutil
 
 import mozrunner
+import mozprofile
 from cuddlefish.prefs import DEFAULT_COMMON_PREFS
 from cuddlefish.prefs import DEFAULT_FIREFOX_PREFS
 from cuddlefish.prefs import DEFAULT_THUNDERBIRD_PREFS
@@ -36,6 +37,16 @@ RUN_TIMEOUT = 1.5 * 60 * 60 # 1.5 Hour
 # The purpose of this timeout is to recover from hangs.  It should be longer
 # than the amount of time any test takes to report results.
 OUTPUT_TIMEOUT = 60 # one minute
+
+def findInPath(fileName, path=os.environ['PATH']):
+    dirs = path.split(os.pathsep)
+    for dir in dirs:
+        if os.path.isfile(os.path.join(dir, fileName)):
+            return os.path.join(dir, fileName)
+        if os.name == 'nt' or sys.platform == 'cygwin':
+            if os.path.isfile(os.path.join(dir, fileName + ".exe")):
+                return os.path.join(dir, fileName + ".exe")
+    return None
 
 def follow_file(filename):
     """
@@ -99,11 +110,144 @@ def check_output(*popenargs, **kwargs):
     return output
 
 
-class FennecProfile(mozrunner.Profile):
+class JetpackFirefoxProfile(mozprofile.FirefoxProfile):
+    # focusmanager.testmode breaks test-panel.testPanelDoesNotShowInPrivateWindowNoAnchor,
+    # and other tests of private browsing functionality
+    del mozprofile.FirefoxProfile.preferences['focusmanager.testmode']
+
+    def __init__(self, addons=None, profile=None, preferences=None):
+        # Functionality enabled in bug 854937 isn't triggered if we install into
+        # the 'staged' dir. If use_staged_dir is True, test-self.js fails.
+        mozprofile.FirefoxProfile.__init__(self, addons=addons, profile=profile, preferences=preferences, use_staged_dir=False)
+
+class JetpackRunner(mozrunner.Runner):
+    def __init__(self, binary=None, **kwargs):
+        if binary is None:
+            binary = self.find_binary()
+        mozrunner.Runner.__init__(self, binary=binary, **kwargs)
+        
+    def find_binary(self):
+        """Finds the binary for self.names if one was not provided."""
+        binary = None
+        if sys.platform in ('linux2', 'sunos5', 'solaris'):
+            for name in reversed(self.names):
+                binary = findInPath(name)
+        elif os.name == 'nt' or sys.platform == 'cygwin':
+
+            # find the default executable from the windows registry
+            try:
+                import _winreg
+            except ImportError:
+                pass
+            else:
+                sam_flags = [0]
+                # KEY_WOW64_32KEY etc only appeared in 2.6+, but that's OK as
+                # only 2.6+ has functioning 64bit builds.
+                if hasattr(_winreg, "KEY_WOW64_32KEY"):
+                    if "64 bit" in sys.version:
+                        # a 64bit Python should also look in the 32bit registry
+                        sam_flags.append(_winreg.KEY_WOW64_32KEY)
+                    else:
+                        # possibly a 32bit Python on 64bit Windows, so look in
+                        # the 64bit registry incase there is a 64bit app.
+                        sam_flags.append(_winreg.KEY_WOW64_64KEY)
+                for sam_flag in sam_flags:
+                    try:
+                        # assumes self.app_name is defined, as it should be for
+                        # implementors
+                        keyname = r"Software\Mozilla\Mozilla %s" % self.app_name
+                        sam = _winreg.KEY_READ | sam_flag
+                        app_key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, keyname, 0, sam)
+                        version, _type = _winreg.QueryValueEx(app_key, "CurrentVersion")
+                        version_key = _winreg.OpenKey(app_key, version + r"\Main")
+                        path, _ = _winreg.QueryValueEx(version_key, "PathToExe")
+                        return path
+                    except _winreg.error:
+                        pass
+
+            # search for the binary in the path            
+            for name in reversed(self.names):
+                binary = findInPath(name)
+                if sys.platform == 'cygwin':
+                    program_files = os.environ['PROGRAMFILES']
+                else:
+                    program_files = os.environ['ProgramFiles']
+
+                if binary is None:
+                    for bin in [(program_files, 'Mozilla Firefox', 'firefox.exe'),
+                                (os.environ.get("ProgramFiles(x86)"),'Mozilla Firefox', 'firefox.exe'),
+                                (program_files, 'Nightly', 'firefox.exe'),
+                                (os.environ.get("ProgramFiles(x86)"),'Nightly', 'firefox.exe'),
+                                (program_files, 'Aurora', 'firefox.exe'),
+                                (os.environ.get("ProgramFiles(x86)"),'Aurora', 'firefox.exe')
+                                ]:
+                        path = os.path.join(*bin)
+                        if os.path.isfile(path):
+                            binary = path
+                            break
+        elif sys.platform == 'darwin':
+            for bundle_name in self.bundle_names:
+                # Look for the application bundle in the user's home directory
+                # or the system-wide /Applications directory.  If we don't find
+                # it in one of those locations, we move on to the next possible
+                # bundle name.
+                appdir = os.path.join("~/Applications/%s.app" % bundle_name)
+                if not os.path.isdir(appdir):
+                    appdir = "/Applications/%s.app" % bundle_name
+                if not os.path.isdir(appdir):
+                    continue
+
+                # Look for a binary with any of the possible binary names
+                # inside the application bundle.
+                for binname in self.names:
+                    binpath = os.path.join(appdir,
+                                           "Contents/MacOS/%s-bin" % binname)
+                    if (os.path.isfile(binpath)):
+                        binary = binpath
+                        break
+
+                if binary:
+                    break
+
+        if binary is None:
+            raise Exception('Mozrunner could not locate your binary, you will need to set it.')
+        return binary
+
+class JetpackFirefoxRunner(JetpackRunner, mozrunner.FirefoxRunner):
+    app_name = 'Firefox'
+
+    # The possible names of application bundles on Mac OS X, in order of
+    # preference from most to least preferred.
+    # Note: Nightly is obsolete, as it has been renamed to FirefoxNightly,
+    # but it will still be present if users update an older nightly build
+    # only via the app update service.
+    bundle_names = ['Firefox', 'FirefoxNightly', 'Nightly']
+
+    @property
+    def names(self):
+        if sys.platform == 'darwin':
+            return ['firefox', 'nightly', 'shiretoko']
+        if (sys.platform == 'linux2') or (sys.platform in ('sunos5', 'solaris')):
+            return ['firefox', 'mozilla-firefox', 'iceweasel']
+        if os.name == 'nt' or sys.platform == 'cygwin':
+            return ['firefox']
+
+class JetpackThunderbirdRunner(JetpackRunner, mozrunner.ThunderbirdRunner):
+    app_name = 'Thunderbird'
+
+    # The possible names of application bundles on Mac OS X, in order of
+    # preference from most to least preferred.
+    bundle_names = ["Thunderbird", "Shredder"]
+
+    # The possible names of binaries, in order of preference from most to least
+    # preferred.
+    names = ["thunderbird", "shredder"]
+
+class FennecProfile(mozprofile.Profile):
     preferences = {}
     names = ['fennec']
 
-class FennecRunner(mozrunner.Runner):
+class FennecRunner(JetpackRunner):
     profile_class = FennecProfile
 
     names = ['fennec']
@@ -117,19 +261,19 @@ class FennecRunner(mozrunner.Runner):
 
         self.__real_binary = binary
 
-        mozrunner.Runner.__init__(self, **kwargs)
+        JetpackRunner.__init__(self, **kwargs)
 
     def find_binary(self):
         if not self.__real_binary:
             if sys.platform == 'darwin':
                 if os.path.exists(self.__DARWIN_PATH):
                     return self.__DARWIN_PATH
-            self.__real_binary = mozrunner.Runner.find_binary(self)
+            self.__real_binary = JetpackRunner.find_binary(self)
         return self.__real_binary
 
 FENNEC_REMOTE_PATH = '/mnt/sdcard/jetpack-profile'
 
-class RemoteFennecRunner(mozrunner.Runner):
+class RemoteFennecRunner(JetpackRunner):
     profile_class = FennecProfile
 
     names = ['fennec']
@@ -270,11 +414,11 @@ class RemoteFennecRunner(mozrunner.Runner):
         return names
 
 
-class XulrunnerAppProfile(mozrunner.Profile):
+class XulrunnerAppProfile(mozprofile.Profile):
     preferences = {}
     names = []
 
-class XulrunnerAppRunner(mozrunner.Runner):
+class XulrunnerAppRunner(JetpackRunner):
     """
     Runner for any XULRunner app. Can use a Firefox binary in XULRunner
     mode to execute the app, or can use XULRunner itself. Expects the
@@ -300,15 +444,17 @@ class XulrunnerAppRunner(mozrunner.Runner):
     # an "installed" XULRunner app on OS X.
     __DARWIN_APP_INI_SUFFIX = '.app/Contents/Resources/application.ini'
 
-    def __init__(self, binary=None, **kwargs):
+    def __init__(self, binary=None, profile=None, **kwargs):
         if sys.platform == 'darwin' and binary and binary.endswith('.app'):
             # Assume it's a Firefox app dir.
             binary = os.path.join(binary, 'Contents/MacOS/firefox-bin')
 
         self.__app_ini = None
         self.__real_binary = binary
+        if profile is None:
+            profile = self.profile_class()
 
-        mozrunner.Runner.__init__(self, **kwargs)
+        JetpackRunner.__init__(self, binary, profile=profile, **kwargs)
 
         # See if we're using a genuine xulrunner-bin from the XULRunner SDK,
         # or if we're being asked to use Firefox in XULRunner mode.
@@ -373,7 +519,7 @@ class XulrunnerAppRunner(mozrunner.Runner):
             self.__real_binary = self.__find_xulrunner_binary()
             if not self.__real_binary:
                 dummy_profile = {}
-                runner = mozrunner.FirefoxRunner(profile=dummy_profile)
+                runner = JetpackFirefoxRunner(profile=dummy_profile)
                 self.__real_binary = runner.find_binary()
                 self.names = runner.names
         return self.__real_binary
@@ -449,13 +595,13 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
         runner_class = XulrunnerAppRunner
         cmdargs.append(os.path.join(harness_root_dir, 'application.ini'))
     elif app_type == "firefox":
-        profile_class = mozrunner.FirefoxProfile
+        profile_class = JetpackFirefoxProfile
         preferences.update(DEFAULT_FIREFOX_PREFS)
-        runner_class = mozrunner.FirefoxRunner
+        runner_class = JetpackFirefoxRunner
     elif app_type == "thunderbird":
-        profile_class = mozrunner.ThunderbirdProfile
+        profile_class = mozprofile.ThunderbirdProfile
         preferences.update(DEFAULT_THUNDERBIRD_PREFS)
-        runner_class = mozrunner.ThunderbirdRunner
+        runner_class = JetpackThunderbirdRunner
     else:
         raise ValueError("Unknown app: %s" % app_type)
     if sys.platform == 'darwin' and app_type != 'xulrunner':
@@ -498,7 +644,7 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
 
     env = {}
     env.update(os.environ)
-    env['MOZ_NO_REMOTE'] = '1'
+    env['MOZ_CRASHREPORTER_NO_REPORT'] = '1'
     env['XPCOM_DEBUG_BREAK'] = 'stack'
     env['NS_TRACE_MALLOC_DISABLE_STACKS'] = '1'
     env.update(extra_environment)

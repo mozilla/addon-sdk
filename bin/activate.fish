@@ -48,7 +48,8 @@ set -gx _OLD_FISH_PROMPT_OVERRIDE "true"
 set VIRTUAL_ENV (pwd)
 
 set -gx CUDDLEFISH_ROOT $VIRTUAL_ENV
-set -gx PYTHONPATH "$VIRTUAL_ENV/python-lib" $PYTHONPATH
+set PYTHON_LIB_DIR "$VIRTUAL_ENV/python-lib"
+set -gx PYTHONPATH $PYTHON_LIB_DIR "$PYTHON_LIB_DIR/mozbase" $PYTHONPATH
 set -gx PATH "$VIRTUAL_ENV/bin" $PATH
 
 # save the current fish_prompt function as the function _old_fish_prompt

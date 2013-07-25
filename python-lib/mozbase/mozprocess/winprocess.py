@@ -34,15 +34,15 @@
 # NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
 # WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-from ctypes import c_void_p, POINTER, sizeof, Structure, windll, WinError, WINFUNCTYPE
-from ctypes.wintypes import BOOL, BYTE, DWORD, HANDLE, LPCWSTR, LPWSTR, UINT, WORD, \
-                            c_buffer, c_ulong, byref
+from ctypes import c_void_p, POINTER, sizeof, Structure, Union, windll, WinError, WINFUNCTYPE, c_ulong
+from ctypes.wintypes import BOOL, BYTE, DWORD, HANDLE, LPCWSTR, LPWSTR, UINT, WORD, ULONG
 from qijo import QueryInformationJobObject
 
 LPVOID = c_void_p
 LPBYTE = POINTER(BYTE)
 LPDWORD = POINTER(DWORD)
 LPBOOL = POINTER(BOOL)
+LPULONG = POINTER(c_ulong)
 
 def ErrCheckBool(result, func, args):
     """errcheck function for Windows functions that return a BOOL True
@@ -143,7 +143,17 @@ class EnvironmentBlock:
                       for (key, value) in dict.iteritems()]
             values.append("")
             self._as_parameter_ = LPCWSTR("\0".join(values))
-        
+
+# Error Messages we need to watch for go here
+# See: http://msdn.microsoft.com/en-us/library/ms681388%28v=vs.85%29.aspx
+ERROR_ABANDONED_WAIT_0 = 735
+            
+# GetLastError()
+GetLastErrorProto = WINFUNCTYPE(DWORD                   # Return Type
+                               )
+GetLastErrorFlags = ()
+GetLastError = GetLastErrorProto(("GetLastError", windll.kernel32), GetLastErrorFlags)
+
 # CreateProcess()
 
 CreateProcessProto = WINFUNCTYPE(BOOL,                  # Return type
@@ -189,18 +199,87 @@ CREATE_NO_WINDOW = 0x08000000
 CREATE_SUSPENDED = 0x00000004
 CREATE_UNICODE_ENVIRONMENT = 0x00000400
 
+# Flags for IOCompletion ports (some of these would probably be defined if 
+# we used the win32 extensions for python, but we don't want to do that if we 
+# can help it.
+INVALID_HANDLE_VALUE = HANDLE(-1) # From winbase.h
+
+# Self Defined Constants for IOPort <--> Job Object communication
+COMPKEY_TERMINATE = c_ulong(0)
+COMPKEY_JOBOBJECT = c_ulong(1)
+
 # flags for job limit information
 # see http://msdn.microsoft.com/en-us/library/ms684147%28VS.85%29.aspx
 JOB_OBJECT_LIMIT_BREAKAWAY_OK = 0x00000800
 JOB_OBJECT_LIMIT_SILENT_BREAKAWAY_OK = 0x00001000
 
-# XXX these flags should be documented
+# Flags for Job Object Completion Port Message IDs from winnt.h
+# See also: http://msdn.microsoft.com/en-us/library/ms684141%28v=vs.85%29.aspx
+JOB_OBJECT_MSG_END_OF_JOB_TIME =          1
+JOB_OBJECT_MSG_END_OF_PROCESS_TIME =      2
+JOB_OBJECT_MSG_ACTIVE_PROCESS_LIMIT =     3
+JOB_OBJECT_MSG_ACTIVE_PROCESS_ZERO =      4
+JOB_OBJECT_MSG_NEW_PROCESS =              6
+JOB_OBJECT_MSG_EXIT_PROCESS =             7
+JOB_OBJECT_MSG_ABNORMAL_EXIT_PROCESS =    8
+JOB_OBJECT_MSG_PROCESS_MEMORY_LIMIT =     9
+JOB_OBJECT_MSG_JOB_MEMORY_LIMIT =         10
+
+# See winbase.h
 DEBUG_ONLY_THIS_PROCESS = 0x00000002
 DEBUG_PROCESS = 0x00000001
 DETACHED_PROCESS = 0x00000008
+    
+# GetQueuedCompletionPortStatus - http://msdn.microsoft.com/en-us/library/aa364986%28v=vs.85%29.aspx
+GetQueuedCompletionStatusProto = WINFUNCTYPE(BOOL,         # Return Type
+                                             HANDLE,       # Completion Port
+                                             LPDWORD,      # Msg ID
+                                             LPULONG,      # Completion Key
+                                             LPULONG,      # PID Returned from the call (may be null)
+                                             DWORD)        # milliseconds to wait
+GetQueuedCompletionStatusFlags = ((1, "CompletionPort", INVALID_HANDLE_VALUE),
+                                  (1, "lpNumberOfBytes", None),
+                                  (1, "lpCompletionKey", None),
+                                  (1, "lpPID", None),
+                                  (1, "dwMilliseconds", 0))
+GetQueuedCompletionStatus = GetQueuedCompletionStatusProto(("GetQueuedCompletionStatus",
+                                                            windll.kernel32),
+                                                           GetQueuedCompletionStatusFlags)
+
+# CreateIOCompletionPort
+# Note that the completion key is just a number, not a pointer.
+CreateIoCompletionPortProto = WINFUNCTYPE(HANDLE,      # Return Type
+                                          HANDLE,      # File Handle
+                                          HANDLE,      # Existing Completion Port
+                                          c_ulong,     # Completion Key
+                                          DWORD        # Number of Threads
+                                         )
+CreateIoCompletionPortFlags = ((1, "FileHandle", INVALID_HANDLE_VALUE),
+                               (1, "ExistingCompletionPort", 0),
+                               (1, "CompletionKey", c_ulong(0)),
+                               (1, "NumberOfConcurrentThreads", 0))
+CreateIoCompletionPort = CreateIoCompletionPortProto(("CreateIoCompletionPort",
+                                                      windll.kernel32),
+                                                      CreateIoCompletionPortFlags)
+CreateIoCompletionPort.errcheck = ErrCheckHandle
+
+# SetInformationJobObject
+SetInformationJobObjectProto = WINFUNCTYPE(BOOL,      # Return Type
+                                           HANDLE,    # Job Handle
+                                           DWORD,     # Type of Class next param is
+                                           LPVOID,    # Job Object Class
+                                           DWORD      # Job Object Class Length
+                                          )
+SetInformationJobObjectProtoFlags = ((1, "hJob", None),
+                                     (1, "JobObjectInfoClass", None),
+                                     (1, "lpJobObjectInfo", None),
+                                     (1, "cbJobObjectInfoLength", 0))
+SetInformationJobObject = SetInformationJobObjectProto(("SetInformationJobObject",
+                                                        windll.kernel32),
+                                                        SetInformationJobObjectProtoFlags)
+SetInformationJobObject.errcheck = ErrCheckBool
 
 # CreateJobObject()
-
 CreateJobObjectProto = WINFUNCTYPE(HANDLE,             # Return type
                                    LPVOID,             # lpJobAttributes
                                    LPCWSTR             # lpName
@@ -310,11 +389,17 @@ WaitForSingleObject = WaitForSingleObjectProto(
     ("WaitForSingleObject", windll.kernel32),
     WaitForSingleObjectFlags)
 
+# http://msdn.microsoft.com/en-us/library/ms681381%28v=vs.85%29.aspx
 INFINITE = -1
 WAIT_TIMEOUT = 0x0102
 WAIT_OBJECT_0 = 0x0
 WAIT_ABANDONED = 0x0080
-WAIT_FAILED = 0xFFFFFFFF
+
+# http://msdn.microsoft.com/en-us/library/ms683189%28VS.85%29.aspx
+STILL_ACTIVE = 259
+
+# Used when we terminate a process.
+ERROR_CONTROL_C_EXIT = 0x23c
 
 # GetExitCodeProcess()
 
@@ -330,9 +415,13 @@ GetExitCodeProcess = GetExitCodeProcessProto(
 GetExitCodeProcess.errcheck = ErrCheckBool
 
 def CanCreateJobObject():
-    # Running firefox in a job (from cfx) hangs on sites using flash plugin
-    # so job creation is turned off for now. (see Bug 768651).
-    return False
+    currentProc = GetCurrentProcess()
+    if IsProcessInJob(currentProc):
+        jobinfo = QueryInformationJobObject(HANDLE(0), 'JobObjectExtendedLimitInformation')
+        limitflags = jobinfo['BasicLimitInformation']['LimitFlags']
+        return bool(limitflags & JOB_OBJECT_LIMIT_BREAKAWAY_OK) or bool(limitflags & JOB_OBJECT_LIMIT_SILENT_BREAKAWAY_OK)
+    else:
+        return True
 
 ### testing functions
 
@@ -366,14 +455,3 @@ def child():
     limitflags = jobinfo['BasicLimitInformation']['LimitFlags']
     print 'LimitFlags: %s' % limitflags
     process.kill()
-
-if __name__ == '__main__':
-    import sys
-    from killableprocess import Popen
-    nargs = len(sys.argv[1:])
-    if nargs:
-        if nargs != 1 or sys.argv[1] != '-child':
-            raise AssertionError('Wrong flags; run like `python /path/to/winprocess.py`')
-        child()
-    else:
-        parent()
