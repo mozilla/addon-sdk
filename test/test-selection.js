@@ -2,7 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-"use strict";
+'use strict';
+
+module.metadata = {
+  'engines': {
+    'Firefox': '*'
+  }
+};
 
 const HTML = "<html>\
   <body>\
@@ -159,9 +165,7 @@ function hideAndShowFrame(window) {
 
   iframe.style.display = "none";
 
-  Cu.forceGC();
-
-  setTimeout(function() {
+  Cu.schedulePreciseGC(function() {
     events.on("document-shown", function shown(event) {
       if (iframe.contentWindow !== event.subject.defaultView)
         return;
@@ -171,7 +175,7 @@ function hideAndShowFrame(window) {
     }, true);
 
     iframe.style.display = "";
-  }, 0)
+  });
 
   return promise;
 }
@@ -988,23 +992,6 @@ if (!require("sdk/private-browsing/utils").isWindowPBSupported) {
       }
     }
   });
-}
-
-// If the module doesn't support the app we're being run in, require() will
-// throw.  In that case, remove all tests above from exports, and add one dummy
-// test that passes.
-try {
-  require("sdk/selection");
-}
-catch (err) {
-  if (!/^Unsupported Application/.test(err.message))
-    throw err;
-
-  module.exports = {
-    "test Unsupported Application": function Unsupported (assert) {
-      assert.pass(err.message);
-    }
-  }
 }
 
 require("test").run(exports)
