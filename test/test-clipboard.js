@@ -89,7 +89,8 @@ function comparePixelImages(imageA, imageB, callback) {
           compared = pixels;
           this.emit("draw-image", imageB);
         } else {
-          tab.close(callback.bind(null, compared === pixels))
+          callback(compared === pixels);
+          tab.close()
         }
       });
 

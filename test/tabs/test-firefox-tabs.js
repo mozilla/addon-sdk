@@ -299,35 +299,6 @@ exports.testTabMove = function(test) {
   });
 };
 
-exports.testIgnoreClosing = function(test) {
-  test.waitUntilDone();
-  openBrowserWindow(function(window, browser) {
-    let tabs = require("sdk/tabs");
-    let url = "data:text/html;charset=utf-8,foobar";
-
-    test.assertEqual(tabs.length, 2, "should be two windows open each with one tab");
-
-    tabs.on('ready', function onReady(tab) {
-      tabs.removeListener('ready', onReady);
-
-      let win = tab.window;
-      test.assertEqual(win.tabs.length, 2, "should be two tabs in the new window");
-      test.assertEqual(tabs.length, 3, "should be three tabs in total");
-
-      tab.close(function() {
-        test.assertEqual(win.tabs.length, 1, "should be one tab in the new window");
-        test.assertEqual(tabs.length, 2, "should be two tabs in total");
-
-        closeBrowserWindow(window, function() {
-          test.done()
-        });
-      });
-    });
-
-    tabs.open(url);
-  });
-};
-
 // TEST: open tab with default options
 exports.testOpen = function(test) {
   test.waitUntilDone();
@@ -919,11 +890,9 @@ exports['test unique tab ids'] = function(test) {
   var one = openWindow(), two = openWindow();
   all([one, two]).then(function(results) {
     test.assertNotEqual(results[0].id, results[1].id, "tab Ids should not be equal.");
-     results[0].win.close(function() {
-       results[1].win.close(function () {
-         test.done();
-       });
-     });
+    results[0].win.close();
+    results[1].win.close();
+    test.done();
   });
 }
 
