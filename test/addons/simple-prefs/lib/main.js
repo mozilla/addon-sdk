@@ -12,6 +12,7 @@ const tabs = require('sdk/tabs');
 const { AddonManager } = Cu.import('resource://gre/modules/AddonManager.jsm', {});
 
 exports.testDefaultValues = function (assert) {
+  assert.equal(sp.prefs.myHiddenInt, 5, 'myHiddenInt default is 5');
   assert.equal(sp.prefs.myInteger, 8, 'myInteger default is 8');
   assert.equal(sp.prefs.somePreference, 'TEST', 'somePreference default is correct');
 }
@@ -35,7 +36,8 @@ if (app.is('Firefox')) {
           		               'setTimeout(function() {\n' + // TODO: figure out why this is necessary..
                                  'self.postMessage({\n' +
                                    'somePreference: getAttributes(unsafeWindow.document.querySelector("setting[title=\'some-title\']")),\n' +
-                                   'myInteger: getAttributes(unsafeWindow.document.querySelector("setting[title=\'my-int\']"))\n' +
+                                   'myInteger: getAttributes(unsafeWindow.document.querySelector("setting[title=\'my-int\']")),\n' +
+                                   'myHiddenInt: getAttributes(unsafeWindow.document.querySelector("setting[title=\'hidden-int\']"))\n' +
                                  '});\n' +
           		               '}, 250);\n' +
           		             '}, false);\n' +
@@ -62,6 +64,12 @@ if (app.is('Firefox')) {
               assert.equal(msg.myInteger.pref, 'extensions.'+self.id+'.myInteger', 'extensions.test-simple-prefs.myInteger');
               assert.equal(msg.myInteger.title, 'my-int', 'myInteger title is correct');
               assert.equal(msg.myInteger.desc, 'How many of them we have.', 'myInteger desc is correct');
+
+              // test myHiddenInt
+              assert.equal(msg.myHiddenInt.type, undefined, 'myHiddenInt was not displayed');
+              assert.equal(msg.myHiddenInt.pref, undefined, 'myHiddenInt was not displayed');
+              assert.equal(msg.myHiddenInt.title, undefined, 'myHiddenInt was not displayed');
+              assert.equal(msg.myHiddenInt.desc, undefined, 'myHiddenInt was not displayed');
 
               tab.close(done);
             }
