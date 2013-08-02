@@ -78,3 +78,10 @@ function getWidget(buttonId, window = getMostRecentBrowserWindow()) {
   return widgets[0].forWindow(window);
 };
 exports.getWidget = getWidget;
+
+// OSX and Windows exhibit different behaviors when 'checked' is false,
+// so compare against the consistent 'true'. See bug 894809.
+function isChecked(node) {
+  return node.getAttribute('checked') === 'true';
+};
+exports.isChecked = isChecked;

@@ -24,7 +24,7 @@ const { defer, all } = require('sdk/core/promise');
 
 const { BLANK_IMG, BUILTIN_SIDEBAR_MENUITEMS, isSidebarShowing,
         getSidebarMenuitems, getExtraSidebarMenuitems, makeID, simulateCommand,
-        simulateClick, getWidget } = require('./sidebar/utils');
+        simulateClick, getWidget, isChecked } = require('./sidebar/utils');
 
 const { CustomizableUI } = Cu.import('resource:///modules/CustomizableUI.jsm', {});
 
@@ -61,7 +61,7 @@ exports.testSidebarBasicLifeCycle = function(assert, done) {
   let ele = window.document.getElementById(makeID(testName));
   assert.equal(ele, extraMenuitems[0], 'the only extra menuitem is the one for our sidebar.')
   assert.ok(ele, 'sidebar element was added');
-  assert.ok(ele.getAttribute('checked'), 'false', 'the sidebar is not displayed');
+  assert.ok(!isChecked(ele), 'the sidebar is not displayed');
   assert.equal(ele.getAttribute('label'), sidebar.title, 'the sidebar title is the menuitem label')
 
   assert.equal(isSidebarShowing(window), false, 'sidebar is not showing 2');
@@ -69,11 +69,11 @@ exports.testSidebarBasicLifeCycle = function(assert, done) {
     assert.pass('the show event was fired');
     assert.equal(isSidebarShowing(window), true, 'sidebar is not showing 3');
     assert.equal(isShowing(sidebar), true, 'the sidebar is showing');
-    assert.equal(ele.getAttribute('checked'), 'true', 'the sidebar is displayed');
+    assert.ok(isChecked(ele), 'the sidebar is displayed');
 
     sidebar.once('hide', function() {
       assert.pass('the hide event was fired');
-      assert.equal(ele.getAttribute('checked'), 'false', 'the sidebar menuitem is not checked');
+      assert.ok(!isChecked(ele), 'the sidebar menuitem is not checked');
       assert.equal(isShowing(sidebar), false, 'the sidebar is not showing');
       assert.equal(isSidebarShowing(window), false, 'the sidebar elemnt is hidden');
 
@@ -85,7 +85,7 @@ exports.testSidebarBasicLifeCycle = function(assert, done) {
         let sidebarMI = getSidebarMenuitems();
         for each (let mi in sidebarMI) {
           assert.ok(BUILTIN_SIDEBAR_MENUITEMS.indexOf(mi.getAttribute('id')) >= 0, 'the menuitem is for a built-in sidebar')
-          assert.equal(mi.getAttribute('checked'), "false", 'no sidebar menuitem is checked');
+          assert.ok(!isChecked(mi), 'no sidebar menuitem is checked');
         }
 
         assert.ok(!window.document.getElementById(makeID(testName)), 'sidebar id DNE');
@@ -172,7 +172,7 @@ exports.testSideBarIsShowingInNewWindows = function(assert, done) {
           let ele = window.document.getElementById(makeID(testName));
 
           assert.ok(ele, 'sidebar element was added 2');
-          assert.equal(ele.getAttribute('checked'), 'true', 'the sidebar is checked');
+          assert.ok(isChecked(ele), 'the sidebar is checked');
           assert.notEqual(ele, oldEle, 'there are two different sidebars');
 
           assert.equal(isShowing(sidebar), true, 'the sidebar is showing in new window');
@@ -295,7 +295,7 @@ exports.testShowingOneSidebarAfterAnother = function(assert, done) {
     for each (let mi in getExtraSidebarMenuitems(window)) {
       let menuitemID = mi.getAttribute('id').replace(/^jetpack-sidebar-/, '');
       assert.ok(IDs.indexOf(menuitemID) >= 0, 'the extra menuitem is for one of our test sidebars');
-      assert.equal(mi.getAttribute('checked'), menuitemID == sidebar1.id ? 'true' : 'false', 'the test sidebar menuitem has the correct checked value');
+      assert.equal(isChecked(mi), menuitemID == sidebar1.id, 'the test sidebar menuitem has the correct checked value');
     }
 
     sidebar2.once('show', function() {
@@ -303,7 +303,7 @@ exports.testShowingOneSidebarAfterAnother = function(assert, done) {
       for each (let mi in getExtraSidebarMenuitems(window)) {
         let menuitemID = mi.getAttribute('id').replace(/^jetpack-sidebar-/, '');
         assert.ok(IDs.indexOf(menuitemID) >= 0, 'the extra menuitem is for one of our test sidebars');
-        assert.equal(mi.getAttribute('checked'), menuitemID == sidebar2.id ? 'true' : 'false', 'the test sidebar menuitem has the correct checked value');
+        assert.equal(isChecked(mi), menuitemID == sidebar2.id, 'the test sidebar menuitem has the correct checked value');
       }
 
       sidebar1.destroy();
@@ -343,7 +343,7 @@ exports.testSidebarUnload = function(assert, done) {
       let sidebarMI = getSidebarMenuitems();
       for each (let mi in sidebarMI) {
         assert.ok(BUILTIN_SIDEBAR_MENUITEMS.indexOf(mi.getAttribute('id')) >= 0, 'the menuitem is for a built-in sidebar')
-        assert.equal(mi.getAttribute('checked'), 'false', 'no sidebar menuitem is checked');
+        assert.ok(!isChecked(mi), 'no sidebar menuitem is checked');
       }
       assert.ok(!window.document.getElementById(makeID(testName)), 'sidebar id DNE');
       assert.equal(isSidebarShowing(window), false, 'the sidebar is not showing');
@@ -561,7 +561,7 @@ exports.testDestroyEdgeCaseBug = function(assert, done) {
           let sidebarMI = getSidebarMenuitems();
           for each (let mi in sidebarMI) {
             assert.ok(BUILTIN_SIDEBAR_MENUITEMS.indexOf(mi.getAttribute('id')) >= 0, 'the menuitem is for a built-in sidebar')
-            assert.equal(mi.getAttribute('checked'), 'false', 'no sidebar menuitem is checked');
+            assert.ok(!isChecked(mi), 'no sidebar menuitem is checked');
           }
           assert.ok(!window.document.getElementById(makeID(testName)), 'sidebar id DNE');
           assert.equal(isSidebarShowing(window), false, 'the sidebar is not showing');
@@ -714,8 +714,7 @@ exports.testURLSetter = function(assert, done) {
 
   assert.equal(sidebar1.url, url, 'url getter works');
   assert.equal(isShowing(sidebar1), false, 'the sidebar is not showing');
-  assert.equal(document.getElementById(makeID(sidebar1.id)).getAttribute('checked'),
-               'false',
+  assert.ok(!isChecked(document.getElementById(makeID(sidebar1.id))),
                'the menuitem is not checked');
   assert.equal(isSidebarShowing(window), false, 'the new window sidebar is not showing');
 
@@ -725,8 +724,7 @@ exports.testURLSetter = function(assert, done) {
 
     sidebar1.show().then(function() {
       assert.equal(isShowing(sidebar1), true, 'the sidebar is showing');
-      assert.equal(document.getElementById(makeID(sidebar1.id)).getAttribute('checked'),
-                   'true',
+      assert.ok(isChecked(document.getElementById(makeID(sidebar1.id))),
                    'the menuitem is checked');
       assert.ok(isSidebarShowing(window), 'the new window sidebar is showing');
 
@@ -736,8 +734,7 @@ exports.testURLSetter = function(assert, done) {
         assert.equal(isShowing(sidebar1), true, 'the sidebar is showing');
         assert.ok(isSidebarShowing(window), 'the new window sidebar is still showing');
 
-        assert.equal(document.getElementById(makeID(sidebar1.id)).getAttribute('checked'),
-                     'true',
+        assert.ok(isChecked(document.getElementById(makeID(sidebar1.id))),
                      'the menuitem is still checked');
 
         sidebar1.destroy();
@@ -796,8 +793,7 @@ exports.testURLSetterToSameValueReloadsSidebar = function(assert, done) {
 
   assert.equal(sidebar1.url, url, 'url getter works');
   assert.equal(isShowing(sidebar1), false, 'the sidebar is not showing');
-  assert.equal(document.getElementById(makeID(sidebar1.id)).getAttribute('checked'),
-               'false',
+  assert.ok(!isChecked(document.getElementById(makeID(sidebar1.id))),
                'the menuitem is not checked');
   assert.equal(isSidebarShowing(window), false, 'the new window sidebar is not showing');
 
@@ -807,8 +803,7 @@ exports.testURLSetterToSameValueReloadsSidebar = function(assert, done) {
 
     sidebar1.show().then(function() {
       assert.equal(isShowing(sidebar1), true, 'the sidebar is showing');
-      assert.equal(document.getElementById(makeID(sidebar1.id)).getAttribute('checked'),
-                   'true',
+      assert.ok(isChecked(document.getElementById(makeID(sidebar1.id))),
                    'the menuitem is checked');
       assert.ok(isSidebarShowing(window), 'the new window sidebar is showing');
 
@@ -818,8 +813,7 @@ exports.testURLSetterToSameValueReloadsSidebar = function(assert, done) {
         assert.equal(isShowing(sidebar1), true, 'the sidebar is showing');
         assert.ok(isSidebarShowing(window), 'the new window sidebar is still showing');
 
-        assert.equal(document.getElementById(makeID(sidebar1.id)).getAttribute('checked'),
-                     'true',
+        assert.ok(isChecked(document.getElementById(makeID(sidebar1.id))),
                      'the menuitem is still checked');
 
         sidebar1.destroy();
@@ -857,8 +851,7 @@ exports.testButtonShowingInOneWindowDoesNotAffectOtherWindows = function(assert,
 
     let mi = window.document.getElementById(makeID(sidebar1.id));
     if (mi) {
-      assert.equal(mi.getAttribute('checked') || 'false',
-                   expected.toString(),
+      assert.equal(isChecked(mi), expected,
                    'the menuitem is not checked');
     }
     assert.equal(isSidebarShowing(window), expected || false, 'the new window sidebar is not showing');
@@ -1285,15 +1278,15 @@ exports.testButtonToOpenXToClose = function(assert, done) {
     icon: BLANK_IMG,
     url: url,
     onShow: function() {
-      assert.equal(button.getAttribute('checked'), 'true', 'button is checked');
-      assert.equal(menuitem.getAttribute('checked'), 'true', 'menuitem is checked');
+      assert.ok(isChecked(button), 'button is checked');
+      assert.ok(isChecked(menuitem), 'menuitem is checked');
 
       let closeButton = window.document.querySelector('#sidebar-header > toolbarbutton.tabs-closebutton');
       simulateCommand(closeButton);
     },
     onHide: function() {
-      assert.equal(button.getAttribute('checked') || 'false', 'false', 'button is not checked');
-      assert.equal(menuitem.getAttribute('checked') || 'false', 'false', 'menuitem is not checked');
+      assert.ok(!isChecked(button), 'button is not checked');
+      assert.ok(!isChecked(menuitem), 'menuitem is not checked');
 
       sidebar.destroy();
       done();
@@ -1303,8 +1296,8 @@ exports.testButtonToOpenXToClose = function(assert, done) {
   let { node: button } = getWidget(sidebar.id, window);
   let menuitem = window.document.getElementById(makeID(sidebar.id));
 
-  assert.equal(button.getAttribute('checked') || 'false', 'false', 'button is not checked');
-  assert.equal(menuitem.getAttribute('checked') || 'false', 'false', 'menuitem is not checked');
+  assert.ok(!isChecked(button), 'button is not checked');
+  assert.ok(!isChecked(menuitem), 'menuitem is not checked');
 
   simulateCommand(button);
 }
@@ -1323,14 +1316,14 @@ exports.testButtonToOpenMenuitemToClose = function(assert, done) {
     icon: BLANK_IMG,
     url: url,
     onShow: function() {
-      assert.equal(button.getAttribute('checked'), 'true', 'button is checked');
-      assert.equal(menuitem.getAttribute('checked'), 'true', 'menuitem is checked');
+      assert.ok(isChecked(button), 'button is checked');
+      assert.ok(isChecked(menuitem), 'menuitem is checked');
 
       simulateCommand(menuitem);
     },
     onHide: function() {
-      assert.equal(button.getAttribute('checked') || 'false', 'false', 'button is not checked');
-      assert.equal(menuitem.getAttribute('checked') || 'false', 'false', 'menuitem is not checked');
+      assert.ok(!isChecked(button), 'button is not checked');
+      assert.ok(!isChecked(menuitem), 'menuitem is not checked');
 
       sidebar.destroy();
       done();
@@ -1340,8 +1333,8 @@ exports.testButtonToOpenMenuitemToClose = function(assert, done) {
   let { node: button } = getWidget(sidebar.id, window);
   let menuitem = window.document.getElementById(makeID(sidebar.id));
 
-  assert.equal(button.getAttribute('checked') || 'false', 'false', 'button is not checked');
-  assert.equal(menuitem.getAttribute('checked') || 'false', 'false', 'menuitem is not checked');
+  assert.ok(!isChecked(button), 'button is not checked');
+  assert.ok(!isChecked(menuitem), 'menuitem is not checked');
 
   simulateCommand(button);
 }
