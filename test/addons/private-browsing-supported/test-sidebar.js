@@ -21,7 +21,7 @@ const { URL } = require('sdk/url');
 
 const { BLANK_IMG, BUILTIN_SIDEBAR_MENUITEMS, isSidebarShowing,
         getSidebarMenuitems, getExtraSidebarMenuitems, makeID, simulateCommand,
-        simulateClick, getWidget } = require('./sidebar/utils');
+        simulateClick, getWidget, isChecked } = require('./sidebar/utils');
 
 exports.testSideBarIsInNewPrivateWindows = function(assert, done) {
   const { Sidebar } = require('sdk/ui/sidebar');
@@ -140,7 +140,7 @@ exports.testDestroyEdgeCaseBugWithPrivateWindow = function(assert, done) {
           let sidebarMI = getSidebarMenuitems();
           for each (let mi in sidebarMI) {
             assert.ok(BUILTIN_SIDEBAR_MENUITEMS.indexOf(mi.getAttribute('id')) >= 0, 'the menuitem is for a built-in sidebar')
-            assert.equal(mi.getAttribute('checked'), 'false', 'no sidebar menuitem is checked');
+            assert.ok(!isChecked(mi), 'no sidebar menuitem is checked');
           }
           assert.ok(!window.document.getElementById(makeID(testName)), 'sidebar id DNE');
           assert.equal(isSidebarShowing(window), false, 'the sidebar is not showing');
@@ -172,8 +172,7 @@ exports.testShowInPrivateWindow = function(assert, done) {
 
   assert.equal(sidebar1.url, url, 'url getter works');
   assert.equal(isShowing(sidebar1), false, 'the sidebar is not showing');
-  assert.equal(window1.document.getElementById(menuitemID).getAttribute('checked'),
-               'false',
+  assert.ok(!isChecked(window1.document.getElementById(menuitemID)),
                'the menuitem is not checked');
   assert.equal(isSidebarShowing(window1), false, 'the new window sidebar is not showing');
 
