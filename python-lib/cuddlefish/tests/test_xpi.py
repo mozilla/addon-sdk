@@ -40,10 +40,11 @@ class PrefsTests(unittest.TestCase):
 
     def testPackageWithSimplePrefs(self):
         self.makexpi('simple-prefs')
+        packageName = 'jid1-fZHqN9JfrDBa8A@jetpack'
         self.failUnless('options.xul' in self.xpi.namelist())
         optsxul = self.xpi.read('options.xul').decode("utf-8")
-        self.failUnlessEqual(self.xpi_harness_options["jetpackID"],
-                             "jid1-fZHqN9JfrDBa8A@jetpack")
+        self.failUnlessEqual(self.xpi_harness_options["jetpackID"], packageName)
+        self.failUnlessEqual(self.xpi_harness_options["prefsRoot"], packageName)
 
         root = ElementTree.XML(optsxul.encode('utf-8'))
 
@@ -53,7 +54,6 @@ class PrefsTests(unittest.TestCase):
         settings = root.findall(xulNamespacePrefix + 'setting')
 
         def assertPref(setting, name, prefType, title):
-            packageName = 'jid1-fZHqN9JfrDBa8A@jetpack'
             self.failUnlessEqual(setting.get('data-jetpack-id'), packageName)
             self.failUnlessEqual(setting.get('pref'),
                                  'extensions.' + packageName + '.' + name)
@@ -87,6 +87,24 @@ class PrefsTests(unittest.TestCase):
                u'pref("extensions.jid1-fZHqN9JfrDBa8A@jetpack.test4", "red");',
                ]
         self.failUnlessEqual(prefsjs, "\n".join(exp)+"\n")
+
+    def testPackageWithPrefsRoot(self):
+        self.makexpi('prefs-root')
+        self.failUnless('options.xul' in self.xpi.namelist())
+        optsxul = self.xpi.read('options.xul').decode("utf-8")
+        self.failUnlessEqual(self.xpi_harness_options["prefsRoot"], "human-readable")
+
+        root = ElementTree.XML(optsxul.encode('utf-8'))
+        xulNamespacePrefix = \
+            "{http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul}"
+        
+        setting = root.find(xulNamespacePrefix + 'setting')
+        self.failUnlessEqual(setting.get('pref'),
+                             'extensions.human-readable.test42')
+
+        prefsjs = self.xpi.read('defaults/preferences/prefs.js').decode("utf-8")
+        self.failUnlessEqual(prefsjs, 
+                            'pref("extensions.human-readable.test42", false);\n')
 
     def testPackageWithNoPrefs(self):
         self.makexpi('no-prefs')
