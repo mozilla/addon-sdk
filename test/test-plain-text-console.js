@@ -5,10 +5,11 @@
 const prefs = require("sdk/preferences/service");
 const { id, name } = require("sdk/self");
 const { Cc, Cu, Ci } = require("chrome");
+const { prefsRoot } = require('@loader/options');
 const { loadSubScript } = Cc['@mozilla.org/moz/jssubscript-loader;1'].
                      getService(Ci.mozIJSSubScriptLoader);
 
-const ADDON_LOG_LEVEL_PREF = "extensions." + id + ".sdk.console.logLevel";
+const ADDON_LOG_LEVEL_PREF = "extensions." + prefsRoot + ".sdk.console.logLevel";
 const SDK_LOG_LEVEL_PREF = "extensions.sdk.console.logLevel";
 
 const HAS_ORIGINAL_ADDON_LOG_LEVEL = prefs.has(ADDON_LOG_LEVEL_PREF);

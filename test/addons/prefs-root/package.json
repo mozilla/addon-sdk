@@ -1,0 +1,14 @@
+{
+    "id": "test-prefs-root",
+    "fullName": "prefsRoot Test",
+    "author": "Erik Vold",
+
+    "preferences": [{
+        "name": "test42",
+        "type": "bool",
+        "title": "test42",
+        "value": false
+    }],
+
+    "prefsRoot": "human-readable"
+}
