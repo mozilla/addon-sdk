@@ -8,6 +8,49 @@ This page lists more theoretical in-depth articles about the SDK.
 
 <hr>
 
+<h2><a name="contributors-guide">Contributor's Guide</a></h2>
+
+<table class="catalog">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+  <tr>
+    <td>
+      <h4><a href="dev-guide/guides/contributors-guide/getting-started.html">Getting Started</a></h4>
+      Learn how to start contributing to the SDK.
+    </td>
+
+    <td>
+      <h4><a href="dev-guide/guides/contributors-guide/private-properties.html">Private Properties</a></h4>
+      Learn how to private properties are implemented in the SDK
+    </td>
+
+  </tr>
+  <tr>
+    <td>
+      <h4><a href="dev-guide/guides/contributors-guide/modules.html">Modules</a></h4>
+      Learn how modules are implemented in the SDK
+    </td>
+
+    <td>
+      <h4><a href="dev-guide/guides/contributors-guide/content-processes.html">Content Processes</a></h4>
+      Learn what content processes are and how they are used by the SDK
+    </td>
+
+  </tr>
+  <tr>
+    <td>
+      <h4><a href="dev-guide/guides/contributors-guide/classes-and-inheritance.html">Classes and Inheritance</a></h4>
+      Learn how classes and inheritance are implemented in the SDK
+    </td>
+
+    <td>
+    </td>
+
+  </tr>
+</table>
+
 <h2><a name="sdk-infrastructure">SDK Infrastructure</a></h2>
 
 <table class="catalog">
