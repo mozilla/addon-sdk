@@ -26,8 +26,6 @@ const { BLANK_IMG, BUILTIN_SIDEBAR_MENUITEMS, isSidebarShowing,
         getSidebarMenuitems, getExtraSidebarMenuitems, makeID, simulateCommand,
         simulateClick, getWidget, isChecked } = require('./sidebar/utils');
 
-const { CustomizableUI } = Cu.import('resource:///modules/CustomizableUI.jsm', {});
-
 exports.testSidebarBasicLifeCycle = function(assert, done) {
   const { Sidebar } = require('sdk/ui/sidebar');
   let testName = 'testSidebarBasicLifeCycle';
@@ -1082,6 +1080,7 @@ exports.testSidebarGettersAndSettersAfterDestroy = function(assert) {
 }
 
 exports.testButtonIconSet = function(assert) {
+  const { CustomizableUI } = Cu.import('resource:///modules/CustomizableUI.jsm', {});
   let loader = Loader(module);
   let { Sidebar } = loader.require('sdk/ui');
   let testName = 'testButtonIconSet';
