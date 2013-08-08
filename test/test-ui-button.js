@@ -11,7 +11,6 @@ module.metadata = {
 };
 
 const { Cu } = require('chrome');
-const { CustomizableUI } = Cu.import('resource:///modules/CustomizableUI.jsm', {});
 const { Loader } = require('sdk/test/loader');
 const { data } = require('sdk/self');
 const { open, focus, close } = require('sdk/window/helpers');
@@ -19,6 +18,7 @@ const { setTimeout } = require('sdk/timers');
 const { getMostRecentBrowserWindow } = require('sdk/window/utils');
 
 function getWidget(buttonId, window = getMostRecentBrowserWindow()) {
+  const { CustomizableUI } = Cu.import('resource:///modules/CustomizableUI.jsm', {});
   const { AREA_NAVBAR } = CustomizableUI;
 
   let widgets = CustomizableUI.getWidgetsInArea(AREA_NAVBAR).
@@ -248,6 +248,7 @@ exports['test button multiple destroy'] = function(assert) {
 }
 
 exports['test button removed on dispose'] = function(assert, done) {
+  const { CustomizableUI } = Cu.import('resource:///modules/CustomizableUI.jsm', {});
   let loader = Loader(module);
   let { Button } = loader.require('sdk/ui');
 
@@ -714,6 +715,7 @@ exports['test button type checkbox'] = function(assert, done) {
 }
 
 exports['test button icon set'] = function(assert) {
+  const { CustomizableUI } = Cu.import('resource:///modules/CustomizableUI.jsm', {});
   let loader = Loader(module);
   let { Button } = loader.require('sdk/ui');
 
@@ -766,6 +768,7 @@ exports['test button icon set'] = function(assert) {
 }
 
 exports['test button icon se with only one option'] = function(assert) {
+  const { CustomizableUI } = Cu.import('resource:///modules/CustomizableUI.jsm', {});
   let loader = Loader(module);
   let { Button } = loader.require('sdk/ui');
 

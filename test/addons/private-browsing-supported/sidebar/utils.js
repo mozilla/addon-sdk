@@ -7,8 +7,6 @@ const { Cu } = require('chrome');
 const { getMostRecentBrowserWindow } = require('sdk/window/utils');
 const { fromIterator } = require('sdk/util/array');
 
-const { CustomizableUI } = Cu.import('resource:///modules/CustomizableUI.jsm', {});
-
 const BLANK_IMG = exports.BLANK_IMG = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
 
 const BUILTIN_SIDEBAR_MENUITEMS = exports.BUILTIN_SIDEBAR_MENUITEMS = [
@@ -64,6 +62,7 @@ function simulateClick(ele) {
 exports.simulateClick = simulateClick;
 
 function getWidget(buttonId, window = getMostRecentBrowserWindow()) {
+  const { CustomizableUI } = Cu.import('resource:///modules/CustomizableUI.jsm', {});
   const { AREA_NAVBAR } = CustomizableUI;
 
   let widgets = CustomizableUI.getWidgetsInArea(AREA_NAVBAR).
