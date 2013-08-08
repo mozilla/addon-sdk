@@ -44,7 +44,7 @@ class PrefsTests(unittest.TestCase):
         self.failUnless('options.xul' in self.xpi.namelist())
         optsxul = self.xpi.read('options.xul').decode("utf-8")
         self.failUnlessEqual(self.xpi_harness_options["jetpackID"], packageName)
-        self.failUnlessEqual(self.xpi_harness_options["prefsRoot"], packageName)
+        self.failUnlessEqual(self.xpi_harness_options["preferencesBranch"], packageName)
 
         root = ElementTree.XML(optsxul.encode('utf-8'))
 
@@ -88,11 +88,11 @@ class PrefsTests(unittest.TestCase):
                ]
         self.failUnlessEqual(prefsjs, "\n".join(exp)+"\n")
 
-    def testPackageWithPrefsRoot(self):
-        self.makexpi('prefs-root')
+    def testPackageWithPreferencesBranch(self):
+        self.makexpi('preferences-branch')
         self.failUnless('options.xul' in self.xpi.namelist())
         optsxul = self.xpi.read('options.xul').decode("utf-8")
-        self.failUnlessEqual(self.xpi_harness_options["prefsRoot"], "human-readable")
+        self.failUnlessEqual(self.xpi_harness_options["preferencesBranch"], "human-readable")
 
         root = ElementTree.XML(optsxul.encode('utf-8'))
         xulNamespacePrefix = \

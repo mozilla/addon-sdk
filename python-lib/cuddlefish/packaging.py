@@ -23,7 +23,7 @@ DEFAULT_ICON64 = 'icon64.png'
 
 METADATA_PROPS = ['name', 'description', 'keywords', 'author', 'version',
                   'translators', 'contributors', 'license', 'homepage', 'icon',
-                  'icon64', 'main', 'directories', 'permissions', 'prefsRoot']
+                  'icon64', 'main', 'directories', 'permissions', 'preferences-branch']
 
 RESOURCE_HOSTNAME_RE = re.compile(r'^[a-z0-9_\-]+$')
 
@@ -401,15 +401,15 @@ def generate_build_for_target(pkg_cfg, target, deps,
         jid = target_cfg['id']
         if not ('@' in jid or jid.startswith('{')):
             jid += '@jetpack'
-        build['prefsRoot'] = jid
+        build['preferencesBranch'] = jid
 
-    if 'prefsRoot' in target_cfg:
+    if 'preferences-branch' in target_cfg:
         # check it's a non-empty, valid pref path
-        prefsRoot = target_cfg['prefsRoot']
-        if re.match('^[\w{@}-]+$', prefsRoot):
-            build['prefsRoot'] = prefsRoot
+        preferencesBranch = target_cfg['preferences-branch']
+        if re.match('^[\w{@}-]+$', preferencesBranch):
+            build['preferencesBranch'] = preferencesBranch
         else:
-            print >>sys.stderr, "IGNORING prefsRoot (not a valid pref path)"
+            print >>sys.stderr, "IGNORING preferences-branch (not a valid pref path)"
 
     return build
 

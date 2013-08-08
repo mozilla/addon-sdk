@@ -223,7 +223,7 @@ function startup(data, reasonCode) {
       // Arguments passed as --static-args
       staticArgs: options.staticArgs,
       // addon preferences root path
-      prefsRoot: options.prefsRoot,
+      preferencesBranch: options.preferencesBranch,
 
       // Arguments related to test runner.
       modules: {

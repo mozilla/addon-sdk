@@ -8,7 +8,7 @@ const sp = require('sdk/simple-prefs');
 const app = require('sdk/system/xul-app');
 const self = require('sdk/self');
 const tabs = require('sdk/tabs');
-const { prefsRoot } = require('@loader/options');
+const { preferencesBranch } = require('@loader/options');
 
 const { AddonManager } = Cu.import('resource://gre/modules/AddonManager.jsm', {});
 
@@ -80,8 +80,8 @@ if (app.is('Firefox')) {
   }
 }
 
-exports.testDefaultPrefsRoot = function(assert) {
-  assert.equal(prefsRoot, self.id, 'prefsRoot default the same as self.id');
+exports.testDefaultPreferencesBranch = function(assert) {
+  assert.equal(preferencesBranch, self.id, 'preferencesBranch default the same as self.id');
 }
 
 require('sdk/test/runner').runTestsFromModule(module);

@@ -1,6 +1,6 @@
 {
-    "id": "test-prefs-root",
-    "fullName": "prefsRoot Test",
+    "id": "jid1-fZHqN9JfrDBa8A",
+    "fullName": "preferences-branch Test",
     "author": "Erik Vold",
 
     "preferences": [{
@@ -10,5 +10,5 @@
         "value": false
     }],
 
-    "prefsRoot": "human-readable"
+    "preferences-branch": "human-readable"
 }

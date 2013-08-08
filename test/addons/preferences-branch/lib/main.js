@@ -6,10 +6,10 @@
 
 const simple = require('sdk/simple-prefs');
 const service = require('sdk/preferences/service');
-const { prefsRoot } = require('@loader/options');
+const { preferencesBranch } = require('@loader/options');
 
-exports.testPrefsRoot = function(assert) {
-  assert.equal(prefsRoot, 'human-readable', 'prefsRoot is human-readable');
+exports.testPreferencesBranch = function(assert) {
+  assert.equal(preferencesBranch, 'human-readable', 'preferencesBranch is human-readable');
 
   assert.equal(simple.prefs.test42, false, 'test42 is false');
 
