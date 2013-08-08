@@ -3,12 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
-module.metadata = {
-  'engines': {
-    'Firefox': '> 24'
-  }
-};
-
 const { Loader } = require('sdk/test/loader');
 const { show, hide } = require('sdk/ui/sidebar/actions');
 const { isShowing } = require('sdk/ui/sidebar/utils');
