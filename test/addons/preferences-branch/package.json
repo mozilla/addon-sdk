@@ -1,0 +1,14 @@
+{
+    "id": "test-preferences-branch",
+    "fullName": "preferences-branch Test",
+    "author": "Erik Vold",
+
+    "preferences": [{
+        "name": "test42",
+        "type": "bool",
+        "title": "test42",
+        "value": false
+    }],
+
+    "preferences-branch": "human-readable"
+}
