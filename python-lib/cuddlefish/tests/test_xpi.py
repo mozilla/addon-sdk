@@ -92,7 +92,8 @@ class PrefsTests(unittest.TestCase):
         self.makexpi('preferences-branch')
         self.failUnless('options.xul' in self.xpi.namelist())
         optsxul = self.xpi.read('options.xul').decode("utf-8")
-        self.failUnlessEqual(self.xpi_harness_options["preferencesBranch"], "human-readable")
+        self.failUnlessEqual(self.xpi_harness_options["preferencesBranch"], 
+                             "human-readable")
 
         root = ElementTree.XML(optsxul.encode('utf-8'))
         xulNamespacePrefix = \
@@ -104,7 +105,7 @@ class PrefsTests(unittest.TestCase):
 
         prefsjs = self.xpi.read('defaults/preferences/prefs.js').decode("utf-8")
         self.failUnlessEqual(prefsjs, 
-                            'pref("extensions.human-readable.test42", false);\n')
+                            'pref("extensions.human-readable.test42", true);\n')
 
     def testPackageWithNoPrefs(self):
         self.makexpi('no-prefs')
@@ -113,6 +114,33 @@ class PrefsTests(unittest.TestCase):
                              "jid1-fZHqN9JfrDBa8A@jetpack")
         prefsjs = self.xpi.read('defaults/preferences/prefs.js').decode("utf-8")
         self.failUnlessEqual(prefsjs, "")
+
+    def testPackageWithInvalidPreferencesBranch(self):
+        self.makexpi('curly-id')
+        self.failIfEqual(self.xpi_harness_options["preferencesBranch"], 
+                         "invalid^branch*name")
+        self.failUnlessEqual(self.xpi_harness_options["preferencesBranch"], 
+                             "{34a1eae1-c20a-464f-9b0e-000000000000}")
+
+    def testPackageWithCurlyID(self):
+        self.makexpi('curly-id')
+        self.failUnlessEqual(self.xpi_harness_options["jetpackID"], 
+                             "{34a1eae1-c20a-464f-9b0e-000000000000}")
+
+        self.failUnless('options.xul' in self.xpi.namelist())
+        optsxul = self.xpi.read('options.xul').decode("utf-8")
+
+        root = ElementTree.XML(optsxul.encode('utf-8'))
+        xulNamespacePrefix = \
+            "{http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul}"
+        
+        setting = root.find(xulNamespacePrefix + 'setting')
+        self.failUnlessEqual(setting.get('pref'),
+                             'extensions.{34a1eae1-c20a-464f-9b0e-000000000000}.test13')
+
+        prefsjs = self.xpi.read('defaults/preferences/prefs.js').decode("utf-8")
+        self.failUnlessEqual(prefsjs, 
+                            'pref("extensions.{34a1eae1-c20a-464f-9b0e-000000000000}.test13", 26);\n')
 
 
 class Bug588119Tests(unittest.TestCase):
