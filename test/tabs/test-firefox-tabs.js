@@ -974,6 +974,29 @@ exports.testFaviconGetterDeprecation = function (test) {
   });
 }
 
+exports.testGetTabById = function(test) {
+  test.waitUntilDone();
+
+  let tabs = require("sdk/tabs");
+
+  tabs.on('ready', function onReady(tab) {
+
+    var _tab = tabs.getTabById(tab.id);
+    test.assertEqual(tab, _tab, 'The returned tab object is identical to the newly opened tab.');
+
+    // end of test
+    tab.close(function(tab) {
+      test.done();
+    });
+  });
+
+  // open a data URI
+  tabs.open({
+    url: "data:text/html;charset=utf-8,<title>tab</title>",
+    inBackground: true
+  });
+}
+
 /******************* helpers *********************/
 
 // Helper for getting the active window

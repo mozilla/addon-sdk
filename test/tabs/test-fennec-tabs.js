@@ -617,3 +617,28 @@ exports.testUniqueTabIds = function(test) {
 
   next(0);
 }
+
+// TEST: test getting a tab by it's unique id.
+exports.testGetTabById = function(test) {
+  test.waitUntilDone();
+
+  openBrowserWindow(function(window, browser) {
+    let tabs = require("sdk/tabs");
+
+    tabs.on('ready', function onReady(tab) {
+      tabs.removeListener('ready', onReady);
+
+      var _tab = tabs.getTabById(tab.id);
+      test.assertEqual(tab, _tab, 'The returned tab object is identical to the newly opened tab.');
+
+      // end of test
+      closeBrowserWindow(window, function() test.done());
+    });
+
+    // open a about: url
+    tabs.open({
+      url: "data:text/html;charset=utf-8,<title>tab</title>",
+      inBackground: true
+    });
+  });
+}
