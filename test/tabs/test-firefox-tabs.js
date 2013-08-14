@@ -519,7 +519,7 @@ exports.testTabsEvent_onCloseWindow = function(test) {
     });
 
     function beginCloseWindow() {
-      closeBrowserWindow(window, function testFinished() {
+      close(window).then(function() {
         tabs.removeListener("close", listener);
 
         test.assertEqual(closeCount, 4, "Correct number of close events received");
