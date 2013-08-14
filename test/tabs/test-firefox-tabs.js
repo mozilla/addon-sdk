@@ -70,7 +70,7 @@ exports.testBrowserWindowCreationOnActivate = function(test) {
 
   open().then(function(window) {
     test.assert(gotActivate, "Received activate event before openBrowserWindow's callback is called");
-    closeBrowserWindow(window, function () test.done());
+    close(window).then(function() test.done());
   });
 }
 
@@ -192,9 +192,10 @@ exports.testTabContentTypeAndReload = function(test) {
         if (tab.url === url) {
           test.assertEqual(tab.contentType, "text/html");
           tab.url = urlXML;
-        } else {
+        }
+        else {
           test.assertEqual(tab.contentType, "text/xml");
-          closeBrowserWindow(window, function() test.done());
+          close(window).then(function() test.done());
         }
       }
     });
@@ -221,7 +222,7 @@ exports.testTabsIteratorAndLength = function(test) {
         test.assertEqual(count, startCount + 3, "iterated tab count matches");
         test.assertEqual(startCount + 3, tabs.length, "iterated tab count matches length property");
 
-        closeBrowserWindow(window, function() test.done());
+        close(window).then(function() test.done());
       }
     });
   });
@@ -240,7 +241,7 @@ exports.testTabLocation = function(test) {
         return;
       tabs.removeListener('ready', onReady);
       test.pass("tab.load() loaded the correct url");
-      closeBrowserWindow(window, function() test.done());
+      close(window)then(function() test.done());
     });
 
     tabs.open({
@@ -296,7 +297,7 @@ exports.testTabMove = function(test) {
         test.assertEqual(tab.index, 1, "tab index before move matches");
         tab.index = 0;
         test.assertEqual(tab.index, 0, "tab index after move matches");
-        closeBrowserWindow(window, function() test.done());
+        close(window).then(function() test.done());
       }
     });
   });
@@ -394,7 +395,7 @@ exports.testOpenInNewWindow = function(test) {
         test.assertEqual(newWindow.content.location, url, "URL of new tab in new window matches");
         test.assertEqual(tabs.activeTab.url, url, "URL of activeTab matches");
 
-        closeBrowserWindow(newWindow, test.done.bind(test));
+        close(newWindow).then(test.done.bind(test));
       }, test.fail).then(null, test.fail);
     }
   });
@@ -418,7 +419,7 @@ exports.testOpenInNewWindowOnOpen = function(test) {
         test.assertEqual(windows().length, startWindowCount + 1, "a new window was opened");
         test.assertEqual(activeWindow, newWindow, "new window is active");
 
-        closeBrowserWindow(newWindow, function() {
+        close(newWindow).then(function() {
           test.done();
         });
       });
@@ -444,7 +445,7 @@ exports.testTabsEvent_onOpen = function(test) {
       test.assertEqual(++eventCount, 2, "both listeners notified");
       tabs.removeListener('open', listener1);
       tabs.removeListener('open', listener2);
-      closeBrowserWindow(window, function() test.done());
+      close(window).then(test.done.bind(test));
     });
 
     tabs.open(url);
@@ -469,7 +470,7 @@ exports.testTabsEvent_onClose = function(test) {
       test.assertEqual(++eventCount, 2, "both listeners notified");
       tabs.removeListener('close', listener1);
       tabs.removeListener('close', listener2);
-      closeBrowserWindow(window, function() test.done());
+      close(window).then(test.done.bind(test));
     });
 
     tabs.on('ready', function onReady(tab) {
@@ -519,7 +520,7 @@ exports.testTabsEvent_onCloseWindow = function(test) {
     });
 
     function beginCloseWindow() {
-      closeBrowserWindow(window, function testFinished() {
+      close(window).then(function testFinished() {
         tabs.removeListener("close", listener);
 
         test.assertEqual(closeCount, 4, "Correct number of close events received");
@@ -552,7 +553,7 @@ exports.testTabsEvent_onReady = function(test) {
       test.assertEqual(++eventCount, 2, "both listeners notified");
       tabs.removeListener('ready', listener1);
       tabs.removeListener('ready', listener2);
-      closeBrowserWindow(window, function() test.done());
+      close(window).then(test.done.bind(test));
     });
 
     tabs.open(url);
@@ -577,7 +578,7 @@ exports.testTabsEvent_onActivate = function(test) {
       test.assertEqual(++eventCount, 2, "both listeners notified");
       tabs.removeListener('activate', listener1);
       tabs.removeListener('activate', listener2);
-      closeBrowserWindow(window, function() test.done());
+      close(window).then(test.done.bind(test));
     });
 
     tabs.open(url);
@@ -602,7 +603,7 @@ exports.testTabsEvent_onDeactivate = function(test) {
       test.assertEqual(++eventCount, 2, "both listeners notified");
       tabs.removeListener('deactivate', listener1);
       tabs.removeListener('deactivate', listener2);
-      closeBrowserWindow(window, function() test.done());
+      close(window).then(test.done.bind(test));
     });
 
     tabs.on('open', function onOpen(tab) {
@@ -634,7 +635,7 @@ exports.testTabsEvent_pinning = function(test) {
     tabs.on('unpinned', function onUnpinned(tab) {
       tabs.removeListener('unpinned', onUnpinned);
       test.assert(!tab.isPinned, "notified tab is not pinned");
-      closeBrowserWindow(window, function() test.done());
+      close(window).then(test.done.bind(test));
     });
 
     tabs.open(url);
@@ -661,7 +662,7 @@ exports.testPerTabEvents = function(test) {
           test.assertEqual(eventCount, 1, "both listeners notified");
           tab.removeListener('ready', listener1);
           tab.removeListener('ready', listener2);
-          closeBrowserWindow(window, function() test.done());
+          close(window).then(test.done.bind(test));
         });
       }
     });
@@ -681,7 +682,7 @@ exports.testAttachOnOpen = function (test) {
             test.assertEqual(msg, "about:blank",
               "Worker document url is about:blank on open");
             worker.destroy();
-            closeBrowserWindow(window, function() test.done());
+            close(window).then(test.done.bind(test));
           }
         });
       }
@@ -764,7 +765,7 @@ exports.testAttachOnMultipleDocuments = function (test) {
 
       test.pass("Got all detach events");
 
-      closeBrowserWindow(window, function() test.done());
+      close(window).then(test.done.bind(test));
     }
 
   });
@@ -792,7 +793,7 @@ exports.testAttachWrappers = function (test) {
           onMessage: function (msg) {
             test.assertEqual(msg, true, "Worker has wrapped objects ("+count+")");
             if (count++ == 1)
-              closeBrowserWindow(window, function() test.done());
+              close(window).then(test.done.bind(test));
           }
         });
       }
@@ -822,7 +823,7 @@ exports.testAttachUnwrapped = function (test) {
                          '}',
           onMessage: function (msg) {
             test.assertEqual(msg, true, "Worker has access to javascript content globals ("+count+")");
-            closeBrowserWindow(window, function() test.done());
+            close(window).then(test.done.bind(test));
           }
         });
       }
@@ -867,9 +868,7 @@ exports['test ready event on new window tab'] = function(test) {
     if (tab.url === uri) {
       require("sdk/tabs").removeListener("ready", onReady);
       test.pass("ready event was emitted");
-      closeBrowserWindow(window, function() {
-        test.done();
-      });
+      close(window).then(test.done.bind(test));
     }
   });
 
@@ -925,7 +924,7 @@ exports.testOnLoadEventWithDOM = function(test) {
         // end of test
         tabs.removeListener('load', onLoad);
         test.pass('onLoad event called on reload');
-        closeBrowserWindow(window, function() test.done());
+        close(window).then(test.done.bind(test));
       }
     });
 
@@ -951,7 +950,7 @@ exports.testOnLoadEventWithImage = function(test) {
         // end of test
         tabs.removeListener('load', onLoad);
         test.pass('onLoad event called on reload with image');
-        closeBrowserWindow(window, function() test.done());
+        close(window).then(test.done.bind(test));
       }
     });
 
@@ -1022,13 +1021,4 @@ function openBrowserWindow(callback, url) {
   }
 
   return window;
-}
-
-// Helper for calling code at window close
-function closeBrowserWindow(window, callback) {
-  window.addEventListener("unload", function unload() {
-    window.removeEventListener("unload", unload, false);
-    callback();
-  }, false);
-  window.close();
 }
