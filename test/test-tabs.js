@@ -18,5 +18,3 @@ if (app.is('Fennec')) {
 else {
   module.exports = require('./tabs/test-firefox-tabs');
 }
-
-require('sdk/test').run(exports);
