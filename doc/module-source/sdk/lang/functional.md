@@ -290,3 +290,134 @@ of having to set a boolean flag and checking it later.
 @function
 An alias for [once](modules/sdk/lang/functional.html#once(fn)).
 </api>
+
+<api name="complement">
+@function
+Takes a `f` function and returns a function that takes the same
+arguments as `f`, has the same effects, if any, and returns the
+opposite truth value.
+
+    let { complement } = require("sdk/lang/functional");
+
+    let isOdd = x => Boolean(x % 2);
+
+    isOdd(1)     // => true
+    isOdd(2)     // => false
+
+    let isEven = complement(isOdd);
+
+    isEven(1)     // => false
+    isEven(2)     // => true
+
+@param lambda {function}
+  The function to compose from
+
+@returns {boolean}
+  `!lambda(...)`
+</api>
+
+<api name="constant">
+@function
+Constructs function that returns `x` no matter what is it
+invoked with.
+
+    let { constant } = require("sdk/lang/functional");
+
+    let one = constant(1);
+
+    one();              // => 1
+    one(2);             // => 1
+    one.apply({}, 3);   // => 1
+
+@param x {object}
+  Value that will be returned by composed function
+
+@returns {function}
+</api>
+
+
+<api name="apply">
+@function
+Apply function that behaves as `apply` does in lisp:
+
+    let { apply } = require("sdk/lang/functional");
+
+    let dashify = (...args) => args.join("-");
+
+    apply(dashify, 1, [2, 3]);        // => "1-2-3"
+    apply(dashify, "a");              // => "a"
+    apply(dashify, ["a", "b"]);       // => "a-b"
+    apply(dashify, ["a", "b"], "c");  // => "a,b-c"
+    apply(dashify, [1, 2], [3, 4]);   // => "1,2-3-4"
+
+@param f {function}
+  function to be invoked
+</api>
+
+<api name="flip">
+@function
+Returns function identical to given `f` but with flipped order
+of arguments.
+
+    let { flip } = require("sdk/lang/functional");
+
+    let append = (left, right) => left + " " + right;
+    let prepend = flip(append);
+
+    append("hello", "world")       // => "hello world"
+    prepend("hello", "world")      // => "world hello"
+
+@param f {function}
+  function whose arguments should to be flipped
+
+@returns {function}
+  function with flipped arguments
+</api>
+
+<api name="when">
+@function
+Takes `p` predicate, `consequent` function and an optional
+`alternate` function and composes function that returns
+application of arguments over `consequent` if application over
+`p` is `true` otherwise returns application over `alternate`.
+If `alternate` is not a function returns `undefined`.
+
+    let { when } = require("sdk/lang/functional");
+
+    function Point(x, y) {
+      this.x = x
+      this.y = y
+    }
+
+    let isPoint = x => x instanceof Point
+
+    let inc = when(isPoint, ({x, y}) => new Point(x + 1, y + 1));
+
+    inc({})                 // => undefined
+    inc(new Point(0, 0))    // => { x: 1, y: 1 }
+
+    let axis = when(isPoint,
+                    ({ x, y }) => [x, y],
+                    _ => [0, 0])
+
+    axis(new Point(1, 4))   // => [1, 4]
+    axis({ foo: "bar" })   // => [0, 0]
+
+@param p {function}
+  predicate function whose return value determines to which
+  function be delegated control.
+
+@param consequent {function}
+  function to which arguments are applied if `predicate` returned
+  `true`.
+
+@param alternate {function}
+  function to which arguments are applied if `predicate` returned
+  `false`.
+
+@returns
+  Return value from `consequent` if `p` returned `true` or return
+  value from `alternate` if `p` returned `false`. If `alternate`
+  is not provided and `p` returned `false` then `undefined` is
+  returned.
+</api>

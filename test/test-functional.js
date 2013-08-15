@@ -180,4 +180,112 @@ exports['test once'] = function(assert) {
   assert.equal(target.state, 1, 'this was passed in and called only once');
 };
 
+exports['test complement'] = assert => {
+  let { complement } = require("sdk/lang/functional");
+
+  let isOdd = x => Boolean(x % 2);
+
+  assert.equal(isOdd(1), true)
+  assert.equal(isOdd(2), false)
+
+  let isEven = complement(isOdd);
+
+  assert.equal(isEven(1), false);
+  assert.equal(isEven(2), true);
+
+  let foo = {}
+  let isFoo = function() this === foo
+  let insntFoo = complement(isFoo)
+
+  assert.equal(insntFoo.call(foo), false);
+  assert.equal(insntFoo.call({}), true);
+};
+
+exports['test constant'] = assert => {
+  let { constant } = require("sdk/lang/functional");
+
+  let one = constant(1);
+
+  assert.equal(one(1), 1)
+  assert.equal(one(2), 1)
+};
+
+exports['test apply'] = assert => {
+  let { apply } = require("sdk/lang/functional");
+
+  let dashify = (...args) => args.join("-");
+
+  assert.equal(apply(dashify, 1, [2, 3]), "1-2-3");
+  assert.equal(apply(dashify, "a"), "a");
+  assert.equal(apply(dashify, ["a", "b"]), "a-b");
+  assert.equal(apply(dashify, ["a", "b"], "c"), "a,b-c");
+  assert.equal(apply(dashify, [1, 2], [3, 4]), "1,2-3-4");
+};
+
+exports['test flip'] = assert => {
+  let { flip } = require("sdk/lang/functional");
+
+  let append = (left, right) => left + " " + right;
+  let prepend = flip(append);
+
+  assert.equal(append("hello", "world"), "hello world");
+  assert.equal(prepend("hello", "world"), "world hello");
+
+  let wrap = function(left, right) left + " " + this + " " + right;
+  let invertWrap = flip(wrap);
+
+  assert.equal(wrap.call("@", "hello", "world"), "hello @ world");
+  assert.equal(invertWrap.call("@", "hello", "world"), "world @ hello");
+
+  let reverse = flip((...args) => args)
+
+  assert.deepEqual(reverse(1, 2, 3, 4), [4, 3, 2, 1]);
+  assert.deepEqual(reverse(1), [1]);
+  assert.deepEqual(reverse(), []);
+
+  // currying still works
+  let prependr = curry(prepend);
+
+  assert.equal(prependr("hello", "world"), "world hello");
+  assert.equal(prependr("hello")("world"), "world hello");
+};
+
+exports["test when"] = assert => {
+  let { when } = require("sdk/lang/functional");
+
+  let areNums = (...xs) => xs.every(x => typeof(x) === "number");
+
+  let sum = when(areNums, (...xs) => xs.reduce((y, x) => x + y, 0));
+
+  assert.equal(sum(1, 2, 3), 6);
+  assert.equal(sum(1, 2, "3"), undefined);
+
+  let multiply = when(areNums,
+                      (...xs) => xs.reduce((y, x) => x * y, 1),
+                      (...xs) => xs);
+
+  assert.equal(multiply(2), 2);
+  assert.equal(multiply(2, 3), 6);
+  assert.deepEqual(multiply(2, "4"), [2, "4"]);
+
+  function Point(x, y) {
+    this.x = x;
+    this.y = y;
+  }
+
+  let isPoint = x => x instanceof Point;
+
+  let inc = when(isPoint, ({x, y}) => new Point(x + 1, y + 1));
+
+  assert.equal(inc({}), undefined);
+  assert.deepEqual(inc(new Point(0, 0)), { x: 1, y: 1 });
+
+  let axis = when(isPoint,
+                  ({ x, y }) => [x, y],
+                  _ => [0, 0]);
+
+  assert.deepEqual(axis(new Point(1, 4)), [1, 4]);
+  assert.deepEqual(axis({ foo: "bar" }), [0, 0]);
+};
+
 require('test').run(exports);
