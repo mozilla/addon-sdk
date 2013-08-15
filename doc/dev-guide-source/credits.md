@@ -70,6 +70,7 @@ We'd like to thank our many Jetpack project contributors!  They include:
 
 ### J ###
 
+* Tomislav Jovanovic
 * Eric H. Jung
 
 ### K ###
