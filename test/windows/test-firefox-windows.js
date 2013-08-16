@@ -16,38 +16,42 @@ const { isPrivate } = require('sdk/private-browsing');
 const { isWindowPBSupported } = require('sdk/private-browsing/utils');
 
 // TEST: open & close window
-exports.testOpenAndCloseWindow = function(assert, done) {
-  assert.equal(browserWindows.length, 1, "Only one window open");
-  let title = 'testOpenAndCloseWindow';
+exports.testOpenAndCloseWindow = function(test) {
+  test.waitUntilDone();
+
+  test.assertEqual(browserWindows.length, 1, "Only one window open");
 
   browserWindows.open({
-    url: "data:text/html;charset=utf-8,<title>" + title + "</title>",
+    url: "data:text/html;charset=utf-8,<title>windows API test</title>",
     onOpen: function(window) {
-      assert.equal(this, browserWindows, "The 'this' object is the windows object.");
-      assert.equal(window.tabs.length, 1, "Only one tab open");
-      assert.equal(browserWindows.length, 2, "Two windows open");
-
-      window.tabs.activeTab.once('ready', function onReady(tab) {
-        assert.equal(window.title, title, "URL correctly loaded");
+      test.assertEqual(this, browserWindows,
+                       "The 'this' object is the windows object.");
+      test.assertEqual(window.tabs.length, 1, "Only one tab open");
+      test.assertEqual(browserWindows.length, 2, "Two windows open");
+      window.tabs.activeTab.on('ready', function onReady(tab) {
+        tab.removeListener('ready', onReady);
+        test.assert(window.title.indexOf("windows API test") != -1,
+                    "URL correctly loaded");
         window.close();
       });
     },
     onClose: function(window) {
-      assert.equal(window.tabs.length, 0, "Tabs were cleared");
-      assert.equal(browserWindows.length, 1, "Only one window open");
-      done();
+      test.assertEqual(window.tabs.length, 0, "Tabs were cleared");
+      test.assertEqual(browserWindows.length, 1, "Only one window open");
+      test.done();
     }
   });
 };
 
-exports.testAutomaticDestroy = function(assert, done) {
+exports.testAutomaticDestroy = function(test) {
+  test.waitUntilDone();
+
   let windows = browserWindows;
 
   // Create a second windows instance that we will unload
   let called = false;
   let loader = Loader(module);
   let windows2 = loader.require("sdk/windows").browserWindows;
-
   windows2.on("open", function() {
     called = true;
   });
@@ -59,42 +63,44 @@ exports.testAutomaticDestroy = function(assert, done) {
     url: "data:text/html;charset=utf-8,foo",
     onOpen: function(window) {
       setTimeout(function () {
-        assert.ok(!called, "Unloaded windows instance is destroyed and inactive");
-
-        window.close(done);
+        test.assert(!called,
+          "Unloaded windows instance is destroyed and inactive");
+        window.close(function () {
+          test.done();
+        });
       });
     }
   });
 };
 
-exports.testWindowTabsObject = function(assert, done) {
-  let window, count = 0;
+exports.testWindowTabsObject = function(test) {
+  test.waitUntilDone();
+
+  let count = 0;
+  let window;
   function runTest() {
     if (++count != 2)
       return;
 
-    assert.equal(window.tabs.length, 1, "Only 1 tab open");
-    assert.equal(window.tabs.activeTab.title, "tab 1", "Correct active tab");
+    test.assertEqual(window.tabs.length, 1, "Only 1 tab open");
+    test.assertEqual(window.tabs.activeTab.title, "tab 1", "Correct active tab");
 
     window.tabs.open({
       url: "data:text/html;charset=utf-8,<title>tab 2</title>",
       inBackground: true,
       onReady: function onReady(newTab) {
-        assert.equal(window.tabs.length, 2, "New tab open");
-        assert.equal(newTab.title, "tab 2", "Correct new tab title");
-        assert.equal(window.tabs.activeTab.title, "tab 1", "Correct active tab");
+        test.assertEqual(window.tabs.length, 2, "New tab open");
+        test.assertEqual(newTab.title, "tab 2", "Correct new tab title");
+        test.assertEqual(window.tabs.activeTab.title, "tab 1", "Correct active tab");
 
         let i = 1;
         for each (let tab in window.tabs)
-          assert.equal(tab.title, "tab " + i++, "Correct title");
+          test.assertEqual(tab.title, "tab " + i++, "Correct title");
 
         window.close();
       }
     });
   }
-
-  tabs.once("ready", runTest);
-
   browserWindows.open({
     url: "data:text/html;charset=utf-8,<title>tab 1</title>",
     onActivate: function onActivate(win) {
@@ -102,16 +108,18 @@ exports.testWindowTabsObject = function(assert, done) {
       runTest();
     },
     onClose: function onClose(window) {
-      assert.equal(window.tabs.length, 0, "No more tabs on closed window");
-      done();
+      test.assertEqual(window.tabs.length, 0, "No more tabs on closed window");
+      test.done();
     }
   });
+  tabs.once("ready", runTest);
 };
 
-exports.testOnOpenOnCloseListeners = function(assert, done) {
+exports.testOnOpenOnCloseListeners = function(test) {
+  test.waitUntilDone();
   let windows = browserWindows;
 
-  assert.equal(browserWindows.length, 1, "Only one window open");
+  test.assertEqual(browserWindows.length, 1, "Only one window open");
 
   let received = {
     listener1: false,
@@ -120,30 +128,29 @@ exports.testOnOpenOnCloseListeners = function(assert, done) {
     listener4: false
   }
 
-  function listener1() {
-    assert.equal(this, windows, "The 'this' object is the windows object.");
-
+   function listener1() {
+    test.assertEqual(this, windows, "The 'this' object is the windows object.");
     if (received.listener1)
-      assert.fail("Event received twice");
+      test.fail("Event received twice");
     received.listener1 = true;
   }
 
   function listener2() {
     if (received.listener2)
-      assert.fail("Event received twice");
+      test.fail("Event received twice");
     received.listener2 = true;
   }
 
   function listener3() {
-    assert.equal(this, windows, "The 'this' object is the windows object.");
+    test.assertEqual(this, windows, "The 'this' object is the windows object.");
     if (received.listener3)
-      assert.fail("Event received twice");
+      test.fail("Event received twice");
     received.listener3 = true;
   }
 
   function listener4() {
     if (received.listener4)
-      assert.fail("Event received twice");
+      test.fail("Event received twice");
     received.listener4 = true;
   }
 
@@ -152,22 +159,24 @@ exports.testOnOpenOnCloseListeners = function(assert, done) {
   windows.on('close', listener3);
   windows.on('close', listener4);
 
+  function verify() {
+    test.assert(received.listener1, "onOpen handler called");
+    test.assert(received.listener2, "onOpen handler called");
+    test.assert(received.listener3, "onClose handler called");
+    test.assert(received.listener4, "onClose handler called");
+
+    windows.removeListener('open', listener1);
+    windows.removeListener('open', listener2);
+    windows.removeListener('close', listener3);
+    windows.removeListener('close', listener4);
+    test.done();
+  }
+
+
   windows.open({
     url: "data:text/html;charset=utf-8,foo",
     onOpen: function(window) {
-      window.close(function() {
-        assert.ok(received.listener1, "onOpen handler called");
-        assert.ok(received.listener2, "onOpen handler called");
-        assert.ok(received.listener3, "onClose handler called");
-        assert.ok(received.listener4, "onClose handler called");
-
-        windows.removeListener('open', listener1);
-        windows.removeListener('open', listener2);
-        windows.removeListener('close', listener3);
-        windows.removeListener('close', listener4);
-
-        done();
-      });
+      window.close(verify);
     }
   });
 };
@@ -272,7 +281,9 @@ exports.testActiveWindow = function(test) {
 };
 */
 
-exports.testTrackWindows = function(assert, done) {
+exports.testTrackWindows = function(test) {
+  test.waitUntilDone();
+
   let windows = [];
   let actions = [];
 
@@ -282,36 +293,14 @@ exports.testTrackWindows = function(assert, done) {
     "activate 2", "global activate 2"
   ];
 
-  // listen to global activate events
-  browserWindows.on("activate", function (window) {
-    let index = windows.indexOf(window);
-    // only concerned with windows opened for this test
-    if (index < 0)
-      return;
-
-    assert.equal(actions.join(), expects.slice(0, index*4 + 1).join(), expects[index*4 + 1]);
-    actions.push("global activate " + index)
-  })
-
-  // listen to global deactivate events
-  browserWindows.on("deactivate", function (window) {
-    let index = windows.indexOf(window);
-    // only concerned with windows opened for this test
-    if (index < 0)
-      return;
-
-    assert.equal(actions.join(), expects.slice(0, index*4 + 3).join(), expects[index*4 + 3]);
-    actions.push("global deactivate " + index)
-  })
-
-
   function openWindow() {
     windows.push(browserWindows.open({
       url: "data:text/html;charset=utf-8,<i>testTrackWindows</i>",
+
       onActivate: function(window) {
         let index = windows.indexOf(window);
 
-        assert.equal(actions.join(), expects.slice(0, index*4).join(), expects[index*4]);
+        test.assertEqual(actions.join(), expects.slice(0, index*4).join(), expects[index*4]);
         actions.push("activate " + index);
 
         if (windows.length < 3) {
@@ -320,39 +309,62 @@ exports.testTrackWindows = function(assert, done) {
         else {
           (function closeWindows(windows) {
             if (!windows.length)
-              return done();
+              return test.done();
 
             return windows.pop().close(function() {
-              assert.pass('window was closed');
+              test.pass('window was closed');
               closeWindows(windows);
             });
           })(windows)
         }
       },
+
       onDeactivate: function(window) {
         let index = windows.indexOf(window);
 
-        assert.equal(actions.join(), expects.slice(0, index*4 + 2).join(), expects[index*4 + 2]);
+        test.assertEqual(actions.join(), expects.slice(0, index*4 + 2).join(), expects[index*4 + 2]);
         actions.push("deactivate " + index)
       }
     }));
   }
+
+  browserWindows.on("activate", function (window) {
+    let index = windows.indexOf(window);
+    // only concerned with windows opened for this test
+    if (index < 0)
+      return;
+
+    test.assertEqual(actions.join(), expects.slice(0, index*4 + 1).join(), expects[index*4 + 1]);
+    actions.push("global activate " + index)
+  })
+
+  browserWindows.on("deactivate", function (window) {
+    let index = windows.indexOf(window);
+    // only concerned with windows opened for this test
+    if (index < 0)
+      return;
+
+    test.assertEqual(actions.join(), expects.slice(0, index*4 + 3).join(), expects[index*4 + 3]);
+    actions.push("global deactivate " + index)
+  })
+
   openWindow();
 }
 
 // test that it is not possible to open a private window by default
-exports.testWindowOpenPrivateDefault = function(assert, done) {
+exports.testWindowOpenPrivateDefault = function(test) {
+  test.waitUntilDone();
+
   browserWindows.open({
     url: 'about:mozilla',
     isPrivate: true,
     onOpen: function(window) {
       let tab = window.tabs[0];
-
       tab.once('ready', function() {
-        assert.equal(tab.url, 'about:mozilla', 'opened correct tab');
-        assert.equal(isPrivate(tab), false, 'tab is not private');
+        test.assertEqual(tab.url, 'about:mozilla', 'opened correct tab');
+        test.assertEqual(isPrivate(tab), false, 'tab is not private');
 
-        window.close(done);
+        window.close(test.done.bind(test));
       });
     }
   });
@@ -360,33 +372,39 @@ exports.testWindowOpenPrivateDefault = function(assert, done) {
 
 // test that it is not possible to find a private window in
 // windows module's iterator
-exports.testWindowIteratorPrivateDefault = function(assert, done) {
-  assert.equal(browserWindows.length, 1, 'only one window open');
+exports.testWindowIteratorPrivateDefault = function(test) {
+  test.waitUntilDone();
 
-  open(null, {
+  test.assertEqual(browserWindows.length, 1, 'only one window open');
+
+  open('chrome://browser/content/browser.xul', {
     features: {
       private: true,
       chrome: true
     }
-  }).then(focus).then(function(window) {
+  }).then(function(window) focus(window).then(function() {
     // test that there is a private window opened
-    assert.equal(isPrivate(window), isWindowPBSupported, 'there is a private window open');
-    assert.strictEqual(window, winUtils.activeWindow);
-    assert.strictEqual(window, getMostRecentWindow());
+    test.assertEqual(isPrivate(window), isWindowPBSupported, 'there is a private window open');
+    test.assertStrictEqual(window, winUtils.activeWindow);
+    test.assertStrictEqual(window, getMostRecentWindow());
 
-    assert.ok(!isPrivate(browserWindows.activeWindow));
+    test.assert(!isPrivate(browserWindows.activeWindow));
 
-    assert.equal(browserWindows.length, 1, 'only one window in browserWindows');
-    assert.equal(windows().length, 1, 'only one window in windows()');
+    if (isWindowPBSupported) {
+      test.assertEqual(browserWindows.length, 1, 'only one window in browserWindows');
+      test.assertEqual(windows().length, 1, 'only one window in windows()');
+    }
+    else {
+      test.assertEqual(browserWindows.length, 2, 'two windows open');
+      test.assertEqual(windows().length, 2, 'two windows in windows()');
+    }
+    test.assertEqual(windows(null, { includePrivate: true }).length, 2);
 
-    assert.equal(windows(null, { includePrivate: true }).length, 2);
+    for each(let window in browserWindows) {
+      // test that all windows in iterator are not private
+      test.assert(!isPrivate(window), 'no window in browserWindows is private');
+    }
 
-    // test that all windows in iterator are not private
-    for each(let window in browserWindows)
-      assert.ok(!isPrivate(window), 'no window in browserWindows is private');
-
-    close(window).then(done);
-  });
+    close(window).then(test.done.bind(test));
+  }));
 }
-
-require('sdk/test').run(exports);
