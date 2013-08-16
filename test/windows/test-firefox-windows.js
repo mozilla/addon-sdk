@@ -28,7 +28,7 @@ exports.testOpenAndCloseWindow = function(assert, done) {
       assert.equal(browserWindows.length, 2, "Two windows open");
 
       window.tabs.activeTab.once('ready', function onReady(tab) {
-        assert.equal(window.title, title, "URL correctly loaded");
+        assert.pass(RegExp(title).test(window.title), "URL correctly loaded");
         window.close();
       });
     },
