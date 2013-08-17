@@ -224,3 +224,7 @@ directory the first time you run
 
 </table>
 
+If you are porting your old-style add-on to the Add-on SDK, 
+you can use some 
+[aditional settings](dev-guide/guides/xul-migration.html#porting-preferences) 
+to ease the migration.

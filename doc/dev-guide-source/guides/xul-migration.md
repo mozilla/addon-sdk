@@ -27,7 +27,9 @@ using the SDK's low-level APIs</a>
     * <a href="dev-guide/guides/xul-migration.html#xpcom">
 getting direct access to XPCOM</a>
 
-Finally, we'll walk through a
+Finally, we'll look at 
+<a href="dev-guide/guides/xul-migration.html#porting-preferences">
+porting preferences</a>, and then walk through a
 <a href="dev-guide/guides/xul-migration.html#library-detector">
 simple example</a>.
 
@@ -365,6 +367,30 @@ increases the damage that a malicious web page could do if it were able to
 inject code into your add-ons context. This applies with even greater force
 to `require("chrome")`, since this gives full access to the browser's
 capabilities.
+
+## <a name="porting-preferences">Porting Preferences</a> ##
+
+Add-on SDK provides both high-level and low-level APIs for working 
+with preferences.
+
+If you kept all your preferences under a standard branch like 
+`extensions.{your-addon-id}`, you can access them using the 
+[`simple-prefs`](modules/sdk/simple-prefs.html) module, provided 
+you keep `{your-addon-id}` the same in the SDK ported version.
+
+If on the other hand, you used a different preferences branch name,
+like `extensions.human-readable`, you can still access them using 
+the same high-level module, but you must add a `preferences-branch` 
+key to your add-on's [`package.json`](dev-guide/package-spec.html) 
+file:
+
+    "preferences-branch": "human-readable", 
+
+And if all else fails, you can still access any preference branch 
+using the 
+[`preferences/service`](modules/sdk/preferences/service.html) 
+module, but that comes with the usual set of warnings as any other
+low-level module.
 
 ## <a name="library-detector">Example: Porting the Library Detector</a> ##
 
