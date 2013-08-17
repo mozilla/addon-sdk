@@ -85,7 +85,7 @@ exports.testWindowTabsObject = function(assert, done) {
         assert.equal(window.tabs.activeTab.title, "tab 1", "Correct active tab");
 
         let i = 1;
-        for each (let tab in window.tabs)
+        for (let tab of window.tabs)
           assert.equal(tab.title, "tab " + i++, "Correct title");
 
         window.close();
@@ -282,8 +282,7 @@ exports.testTrackWindows = function(assert, done) {
     "activate 2", "global activate 2"
   ];
 
-  // listen to global activate events
-  browserWindows.on("activate", function (window) {
+  function windowsActivation(window) {
     let index = windows.indexOf(window);
     // only concerned with windows opened for this test
     if (index < 0)
@@ -291,10 +290,9 @@ exports.testTrackWindows = function(assert, done) {
 
     assert.equal(actions.join(), expects.slice(0, index*4 + 1).join(), expects[index*4 + 1]);
     actions.push("global activate " + index)
-  })
+  }
 
-  // listen to global deactivate events
-  browserWindows.on("deactivate", function (window) {
+  function windowsDeactivation(window) {
     let index = windows.indexOf(window);
     // only concerned with windows opened for this test
     if (index < 0)
@@ -302,7 +300,13 @@ exports.testTrackWindows = function(assert, done) {
 
     assert.equal(actions.join(), expects.slice(0, index*4 + 3).join(), expects[index*4 + 3]);
     actions.push("global deactivate " + index)
-  })
+  }
+
+  // listen to global activate events
+  browserWindows.on("activate", windowsActivation);
+
+  // listen to global deactivate events
+  browserWindows.on("deactivate", windowsDeactivation);
 
 
   function openWindow() {
@@ -311,7 +315,9 @@ exports.testTrackWindows = function(assert, done) {
       onActivate: function(window) {
         let index = windows.indexOf(window);
 
-        assert.equal(actions.join(), expects.slice(0, index*4).join(), expects[index*4]);
+        assert.equal(actions.join(),
+                     expects.slice(0, index*4).join(),
+                     "expecting " + expects[index*4]);
         actions.push("activate " + index);
 
         if (windows.length < 3) {
@@ -319,8 +325,11 @@ exports.testTrackWindows = function(assert, done) {
         }
         else {
           (function closeWindows(windows) {
-            if (!windows.length)
+            if (!windows.length) {
+              browserWindows.removeListener("activate", windowsActivation);
+              browserWindows.removeListener("deactivate", windowsDeactivation);
               return done();
+            }
 
             return windows.pop().close(function() {
               assert.pass('window was closed');
@@ -332,7 +341,9 @@ exports.testTrackWindows = function(assert, done) {
       onDeactivate: function(window) {
         let index = windows.indexOf(window);
 
-        assert.equal(actions.join(), expects.slice(0, index*4 + 2).join(), expects[index*4 + 2]);
+        assert.equal(actions.join(),
+                     expects.slice(0, index*4 + 2).join(),
+                     "expecting " + expects[index*4 + 2]);
         actions.push("deactivate " + index)
       }
     }));
@@ -363,7 +374,7 @@ exports.testWindowOpenPrivateDefault = function(assert, done) {
 exports.testWindowIteratorPrivateDefault = function(assert, done) {
   assert.equal(browserWindows.length, 1, 'only one window open');
 
-  open(null, {
+  open('chrome://browser/content/browser.xul', {
     features: {
       private: true,
       chrome: true
@@ -382,7 +393,7 @@ exports.testWindowIteratorPrivateDefault = function(assert, done) {
     assert.equal(windows(null, { includePrivate: true }).length, 2);
 
     // test that all windows in iterator are not private
-    for each(let window in browserWindows)
+    for (let window of browserWindows)
       assert.ok(!isPrivate(window), 'no window in browserWindows is private');
 
     close(window).then(done);
