@@ -926,8 +926,10 @@ exports.testFaviconGetterDeprecation = function (assert, done) {
       let msg = messages[0].msg;
       assert.ok(msg.indexOf('tab.favicon is deprecated') !== -1,
         'message contains the given message');
-      tab.close(done);
-      loader.unload();
+      tab.close(function() {
+        loader.unload();
+        done();
+      });
     }
   });
 }
