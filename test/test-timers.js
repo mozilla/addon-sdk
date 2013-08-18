@@ -70,7 +70,8 @@ exports.testParamedSetInerval = function(assert, end) {
       assert.equal(arguments.length, params.length);
       for (let i = 0, ii = params.length; i < ii; i++)
         assert.equal(params[i], arguments[i]);
-    } else {
+    }
+    else {
       timer.clearInterval(id);
       end();
     }

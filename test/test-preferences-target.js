@@ -6,7 +6,6 @@
 const { PrefsTarget } = require('sdk/preferences/event-target');
 const { get, set, reset } = require('sdk/preferences/service');
 const { Loader } = require('sdk/test/loader');
-const { setTimeout } = require('sdk/timers');
 
 const root = PrefsTarget();
 

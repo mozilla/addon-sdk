@@ -9,7 +9,6 @@ module.metadata = {
   }
 };
 
-var timer = require("sdk/timers");
 var { Cc, Ci } = require("chrome");
 
 function onBrowserLoad(callback, event) {
@@ -17,7 +16,7 @@ function onBrowserLoad(callback, event) {
     this.removeEventListener("load", onBrowserLoad, true);
     let browsers = this.document.getElementsByTagName("tabbrowser");
     try {
-      timer.setTimeout(function (window) {
+      setTimeout(function (window) {
         callback(window, browsers[0]);
       }, 10, this);
     } catch (e) { console.exception(e); }
@@ -40,7 +39,7 @@ function openBrowserWindow(callback, url) {
 
 // Helper for calling code at window close
 function closeBrowserWindow(window, callback) {
-  timer.setTimeout(function() {
+  setTimeout(function() {
     window.addEventListener("unload", function onUnload() {
       window.removeEventListener("unload", onUnload, false);
       callback();
@@ -126,7 +125,7 @@ exports.testTrackerWithDelegate = function(test) {
       }
       else if (this.state == "waiting for browser window to open") {
         this.state = "waiting for browser window to close";
-        timer.setTimeout(function() {
+        setTimeout(function() {
           closeBrowserWindow(browser.ownerDocument.defaultView, function() {
             test.assertEqual(delegate.state, "deinitializing");
             tb.unload();
@@ -239,7 +238,7 @@ exports.testTabTracker = function(test) {
         test.assertEqual(delegate.tracked, tracked + 3, "delegate tracked tabs matched count");
         tabTracker.unload();
         closeBrowserWindow(browserWindow, function() {
-          timer.setTimeout(function() test.done(), 0);
+          setTimeout(function() test.done(), 0);
         });
       }
     }
@@ -373,7 +372,7 @@ exports.testTabModuleActiveTab_getterAndSetter = function(test) {
 
       tm1.onActivate = function onActivate() {
         tm1.onActivate.remove(onActivate);
-        timer.setTimeout(function() {
+        setTimeout(function() {
           test.assertEqual(tm1.activeTab.title, "window1,tab1",
                            "activeTab setter works (window 1)");
           test.assertEqual(tm2.activeTab.title, "window2,tab2",

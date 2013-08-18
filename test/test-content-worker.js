@@ -12,7 +12,6 @@ module.metadata = {
 };
 
 const { Cc, Ci } = require("chrome");
-const { setTimeout } = require("sdk/timers");
 const { LoaderWithHookedConsole } = require("sdk/test/loader");
 const { Worker } = require("sdk/content/worker");
 const { close } = require("sdk/window/helpers");

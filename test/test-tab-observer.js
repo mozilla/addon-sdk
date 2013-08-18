@@ -1,7 +1,6 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 "use strict";
 
 // TODO Fennec support in Bug #894525
@@ -13,7 +12,6 @@ module.metadata = {
 
 const { openTab, closeTab } = require("sdk/tabs/utils");
 const { Loader } = require("sdk/test/loader");
-const { setTimeout } = require("sdk/timers");
 
 exports["test unload tab observer"] = function(assert, done) {
   let loader = Loader(module);

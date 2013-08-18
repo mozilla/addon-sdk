@@ -12,7 +12,6 @@ module.metadata = {
 const { Cc, Ci } = require("chrome");
 const { Loader } = require('sdk/test/loader');
 const { LoaderWithHookedConsole } = require("sdk/test/loader");
-const timer = require("sdk/timers");
 const self = require('sdk/self');
 const { open, close, focus } = require('sdk/window/helpers');
 const { isPrivate } = require('sdk/private-browsing');
@@ -198,7 +197,7 @@ exports["test Parent Resize Hack"] = function(assert, done) {
     },
     onShow: function () {
       panel.postMessage('resize');
-      timer.setTimeout(function () {
+      setTimeout(function () {
         assert.equal(previousWidth,browserWindow.outerWidth,"Size doesn't change by calling resizeTo/By/...");
         assert.equal(previousHeight,browserWindow.outerHeight,"Size doesn't change by calling resizeTo/By/...");
         panel.destroy();
@@ -530,7 +529,7 @@ function makeEventOrderTest(options) {
       panel.on(event, function() {
         assert.equal(event, expectedEvents.shift());
         if (cb)
-          timer.setTimeout(cb, 1);
+          setTimeout(cb, 1);
       });
       return {then: expect};
     }

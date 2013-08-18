@@ -11,7 +11,6 @@ module.metadata = {
 
 const { Cc, Ci } = require('chrome');
 const { defer, all } = require('sdk/core/promise');
-const { setTimeout } = require('sdk/timers');
 const { newURI } = require('sdk/url/utils');
 const { send } = require('sdk/addon/events');
 const { set } = require('sdk/preferences/service');
@@ -46,7 +45,7 @@ exports.testBookmarksCreate = function (assert, done) {
     type: 'separator',
     group: bmsrv.unfiledBookmarksFolder
   }];
-  
+
   all(items.map(function (item) {
     return send('sdk-places-bookmarks-create', item).then(function (data) {
       compareWithHost(assert, data);
@@ -227,7 +226,7 @@ exports.testHostQuery = function (assert, done) {
     createBookmark({ url: 'http://thunderbird.com/testHostQuery/' })
   ]).then(data => {
     return send('sdk-places-query', {
-      queries: { tags: ['mozilla'] }, 
+      queries: { tags: ['mozilla'] },
       options: { sortingMode: 6, queryType: 1 } // sort by URI ascending, bookmarks only
     });
   }).then(results => {
@@ -235,7 +234,7 @@ exports.testHostQuery = function (assert, done) {
     assert.equal(results[0].url,
       'http://mozilla.com/testHostQuery/', 'is sorted by URI asc');
     return send('sdk-places-query', {
-      queries: { tags: ['mozilla'] }, 
+      queries: { tags: ['mozilla'] },
       options: { sortingMode: 5, queryType: 1 } // sort by URI descending, bookmarks only
     });
   }).then(results => {
@@ -279,7 +278,7 @@ exports.testHostMultiQuery = function (assert, done) {
 };
 
 exports.testGetAllBookmarks = function (assert, done) {
-  createBookmarkTree().then(() => { 
+  createBookmarkTree().then(() => {
     return send('sdk-places-bookmarks-get-all', {});
   }).then(res => {
     assert.equal(res.length, 8, 'all bookmarks returned');

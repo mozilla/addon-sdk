@@ -5,7 +5,6 @@
 
 const { Cc, Ci } = require('chrome');
 const { Loader } = require('sdk/test/loader');
-const timer = require('sdk/timers');
 const { getOwnerWindow } = require('sdk/private-browsing/window/utils');
 const { windows, onFocus, getMostRecentBrowserWindow } = require('sdk/window/utils');
 const { open, focus, close } = require('sdk/window/helpers');
@@ -83,7 +82,7 @@ exports.testAutomaticDestroy = function(assert, done) {
 
   // Fire a tab event and ensure that the destroyed tab is inactive
   tabs.once('open', function (tab) {
-    timer.setTimeout(function () {
+    setTimeout(function () {
       assert.ok(!called, "Unloaded tab module is destroyed and inactive");
       tab.close(done);
     });
@@ -959,7 +958,7 @@ function openBrowserWindow(callback, url) {
         window.removeEventListener("load", onLoad, true);
         let browsers = window.document.getElementsByTagName("tabbrowser");
         try {
-          timer.setTimeout(function () {
+          setTimeout(function () {
             callback(window, browsers[0]);
           }, 10);
         }

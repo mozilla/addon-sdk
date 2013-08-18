@@ -15,7 +15,6 @@ const tagsrv = Cc['@mozilla.org/browser/tagging-service;1'].
 const asyncHistory = Cc['@mozilla.org/browser/history;1'].
               getService(Ci.mozIAsyncHistory);
 const { send } = require('sdk/addon/events');
-const { setTimeout } = require('sdk/timers');
 const { newURI } = require('sdk/url/utils');
 const { defer, all } = require('sdk/core/promise');
 const { once } = require('sdk/system/events');

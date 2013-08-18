@@ -14,7 +14,6 @@ const { isTabOpen, activateTab, openTab,
         closeTab, getURI } = require('sdk/tabs/utils');
 const windows = require('sdk/deprecated/window-utils');
 const { LoaderWithHookedConsole } = require('sdk/test/loader');
-const { setTimeout } = require('sdk/timers');
 const { is } = require('sdk/system/xul-app');
 const tabs = require('sdk/tabs');
 const isAustralis = "gCustomizeMode" in windows.activeBrowserWindow;

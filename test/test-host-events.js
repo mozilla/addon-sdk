@@ -5,7 +5,6 @@
 
 const { Cc, Ci } = require('chrome');
 const { defer, all } = require('sdk/core/promise');
-const { setTimeout } = require('sdk/timers');
 const { request, response } = require('sdk/addon/host');
 const { send } = require('sdk/addon/events');
 const { filter } = require('sdk/event/utils');

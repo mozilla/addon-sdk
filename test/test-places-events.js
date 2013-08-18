@@ -14,7 +14,6 @@ const { defer, all } = require('sdk/core/promise');
 const { filter } = require('sdk/event/utils');
 const { on, off } = require('sdk/event/core');
 const { events } = require('sdk/places/events');
-const { setTimeout } = require('sdk/timers');
 const { before, after } = require('sdk/test/utils');
 const {
   search
@@ -202,7 +201,7 @@ exports['test history-start-batch, history-end-batch, history-start-clear'] = fu
     off(clearEvent, 'data', clearHandler);
     complete();
   }
- 
+
   on(startEvent, 'data', startHandler);
   on(clearEvent, 'data', clearHandler);
 
