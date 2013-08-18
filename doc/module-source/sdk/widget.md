@@ -410,7 +410,7 @@ information.
       content: "I'm getting longer.",
       width: 50,
     });
-    require("sdk/timers").setInterval(function() {
+    setInterval(function() {
       myWidget.width += 10;
     }, 1000);
 <br>

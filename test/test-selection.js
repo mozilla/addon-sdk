@@ -1,7 +1,6 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 'use strict';
 
 module.metadata = {
@@ -30,7 +29,6 @@ const { getActiveTab, getTabContentWindow, closeTab } = require("sdk/tabs/utils"
 const { getMostRecentBrowserWindow } = require("sdk/window/utils");
 const { open: openNewWindow } = require("sdk/window/helpers");
 const { Loader } = require("sdk/test/loader");
-const { setTimeout } = require("sdk/timers");
 const { Cu } = require("chrome");
 const { merge } = require("sdk/util/object");
 const { isPrivate } = require("sdk/private-browsing");

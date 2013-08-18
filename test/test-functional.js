@@ -3,7 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 
-const { setTimeout } = require('sdk/timers');
 const utils = require('sdk/lang/functional');
 const { invoke, defer, partial, compose, memoize, once, delay, wrap, curry, chain } = utils;
 const { LoaderWithHookedConsole } = require('sdk/test/loader');

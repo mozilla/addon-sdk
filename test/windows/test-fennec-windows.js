@@ -4,7 +4,6 @@
 'use strict';
 
 const { Cc, Ci } = require('chrome');
-const { setTimeout } = require('sdk/timers');
 const { Loader } = require('sdk/test/loader');
 const WM = Cc['@mozilla.org/appshell/window-mediator;1'].
            getService(Ci.nsIWindowMediator);

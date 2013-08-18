@@ -10,7 +10,6 @@ module.metadata = {
 };
 
 const { defer, all } = require('sdk/core/promise');
-const { setTimeout } = require('sdk/timers');
 const { TreeNode } = require('sdk/places/utils');
 
 exports['test construct tree'] = function (assert) {

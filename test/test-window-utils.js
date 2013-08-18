@@ -10,7 +10,6 @@ module.metadata = {
 };
 
 const windowUtils = require("sdk/deprecated/window-utils");
-const timer = require("sdk/timers");
 const { Cc, Ci } = require("chrome");
 const { Loader } = require("sdk/test/loader");
 const { open, getFrames, getWindowTitle, onFocus } = require('sdk/window/utils');
@@ -97,13 +96,13 @@ exports.testWindowTracker = function(assert, done) {
     onTrack: function(window) {
       if (window == myWindow) {
         assert.pass("onTrack() called with our test window");
-        timer.setTimeout(function() myWindow.close());
+        setTimeout(function() myWindow.close());
       }
     },
     onUntrack: function(window) {
       if (window == myWindow) {
         assert.pass("onUntrack() called with our test window");
-        timer.setTimeout(function() {
+        setTimeout(function() {
           if (!finished) {
            finished = true;
            myWindow = null;
@@ -133,7 +132,7 @@ exports['test window watcher untracker'] = function(assert, done) {
       tracks = tracks + 1;
       if (window == myWindow) {
         assert.pass("onTrack() called with our test window");
-        timer.setTimeout(function() {
+        setTimeout(function() {
           myWindow.close();
         }, 1);
       }
@@ -142,7 +141,7 @@ exports['test window watcher untracker'] = function(assert, done) {
       tracks = tracks - 1;
       if (window == myWindow && !unloadCalled) {
         unloadCalled = true;
-        timer.setTimeout(function() {
+        setTimeout(function() {
           wt.unload();
         }, 1);
       }
@@ -150,7 +149,7 @@ exports['test window watcher untracker'] = function(assert, done) {
         assert.fail("WindowTracker onUntrack was called more times than onTrack..");
       }
       else if (0 == tracks) {
-        timer.setTimeout(function() {
+        setTimeout(function() {
             myWindow = null;
             done();
         }, 1);

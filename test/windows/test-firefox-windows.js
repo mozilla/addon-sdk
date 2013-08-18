@@ -4,7 +4,6 @@
 'use strict';
 
 const { Cc, Ci } = require('chrome');
-const { setTimeout } = require('sdk/timers');
 const { Loader } = require('sdk/test/loader');
 const { onFocus, getMostRecentWindow, windows } = require('sdk/window/utils');
 const { open, close, focus } = require('sdk/window/helpers');

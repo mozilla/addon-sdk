@@ -9,7 +9,6 @@ const tabs = require('sdk/tabs');
 const { isPrivate } = require('sdk/private-browsing');
 const { openDialog } = require('sdk/window/utils');
 const { isWindowPrivate } = require('sdk/window/utils');
-const { setTimeout } = require('sdk/timers');
 const { openWebpage } = require('./private-browsing/helper');
 const { isTabPBSupported, isWindowPBSupported } = require('sdk/private-browsing/utils');
 const app = require("sdk/system/xul-app");
