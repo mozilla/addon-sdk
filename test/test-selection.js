@@ -693,31 +693,41 @@ exports["test for...of with selections"] = function(assert, done) {
 exports["test Selection Listener"] = function(assert, done) {
   let loader = Loader(module);
   let selection = loader.require("sdk/selection");
+  let selected = false;
 
   selection.once("select", function() {
-    assert.equal(selection.text, "fo");
-    done();
+    assert.equal(selection.text, "fo", "fo was selected");
+    selected = true;
   });
 
   open(URL).then(selectContentFirstDiv).
     then(dispatchSelectionEvent).
     then(close).
-    then(loader.unload, assert.fail);
+    then(loader.unload, assert.fail).
+    then(function() {
+      assert.ok(selected, "selection happened");
+    }, assert.fail).
+    then(done);
 };
 
 exports["test Textarea OnSelect Listener"] = function(assert, done) {
   let loader = Loader(module);
   let selection = loader.require("sdk/selection");
+  let selected = false;
 
   selection.once("select", function() {
     assert.equal(selection.text, "noodles");
-    done();
+    selected = true;
   });
 
   open(URL).then(selectTextarea).
     then(dispatchOnSelectEvent).
     then(close).
-    then(loader.unload, assert.fail);
+    then(loader.unload, assert.fail).
+    then(function() {
+      assert.ok(selected, "selection happened");
+    }, assert.fail).
+    then(done);
 };
 
 exports["test Selection listener removed on unload"] = function(assert, done) {
@@ -761,48 +771,59 @@ exports["test Textarea onSelect Listener removed on unload"] = function(assert, 
 
 exports["test Selection Listener on existing document"] = function(assert, done) {
   let loader = Loader(module);
+  let selected = false;
 
   open(URL).then(function(window){
     let selection = loader.require("sdk/selection");
 
     selection.once("select", function() {
       assert.equal(selection.text, "fo");
-      done();
+      selected = true;
     });
 
     return window;
   }).then(selectContentFirstDiv).
     then(dispatchSelectionEvent).
     then(close).
-    then(loader.unload, assert.fail);
+    then(loader.unload, assert.fail).
+    then(function() {
+      assert.ok(selected, "selection happened");
+    }, assert.fail).
+    then(done);
 };
 
 
 exports["test Textarea OnSelect Listener on existing document"] = function(assert, done) {
   let loader = Loader(module);
+  let selected = false;
 
   open(URL).then(function(window){
     let selection = loader.require("sdk/selection");
 
     selection.once("select", function() {
       assert.equal(selection.text, "noodles");
-      done();
+      selected = true;
     });
 
     return window;
   }).then(selectTextarea).
     then(dispatchOnSelectEvent).
     then(close).
-    then(loader.unload, assert.fail);
+    then(loader.unload, assert.fail).
+    then(function() {
+      assert.ok(selected, "selection happened");
+    }, assert.fail).
+    then(done);
 };
 
 exports["test Selection Listener on document reload"] = function(assert, done) {
   let loader = Loader(module);
   let selection = loader.require("sdk/selection");
+  let selected = false;
 
   selection.once("select", function() {
     assert.equal(selection.text, "fo");
-    done();
+    selected = true;
   });
 
   open(URL).
@@ -810,16 +831,21 @@ exports["test Selection Listener on document reload"] = function(assert, done) {
     then(selectContentFirstDiv).
     then(dispatchSelectionEvent).
     then(close).
-    then(loader.unload, assert.fail);
+    then(loader.unload, assert.fail).
+    then(function() {
+      assert.ok(selected, "selection happened");
+    }, assert.fail).
+    then(done);
 };
 
 exports["test Textarea OnSelect Listener on document reload"] = function(assert, done) {
   let loader = Loader(module);
   let selection = loader.require("sdk/selection");
+  let selected = false;
 
   selection.once("select", function() {
     assert.equal(selection.text, "noodles");
-    done();
+    selected = true;
   });
 
   open(URL).
@@ -827,7 +853,11 @@ exports["test Textarea OnSelect Listener on document reload"] = function(assert,
     then(selectTextarea).
     then(dispatchOnSelectEvent).
     then(close).
-    then(loader.unload, assert.fail);
+    then(loader.unload, assert.fail).
+    then(function() {
+      assert.ok(selected, "selection happened");
+    }, assert.fail).
+    then(done);
 };
 
 exports["test Selection Listener on frame"] = function(assert, done) {
