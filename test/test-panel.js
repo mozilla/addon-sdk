@@ -132,8 +132,8 @@ exports["test Document Reload"] = function(assert, done) {
   let url2 = "data:text/html;charset=utf-8,page2";
   let content =
     "<script>" +
-    "window.addEventListener('message', function() {"+
-    "  window.location = '" + url2 + "';" +
+    "window.addEventListener('message', function({ data }) {"+
+    "  if (data == 'move') window.location = '" + url2 + "';" +
     '}, false);' +
     "</script>";
   let messageCount = 0;
