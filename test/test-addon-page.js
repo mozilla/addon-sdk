@@ -4,6 +4,12 @@
 
 'use strict';
 
+module.metadata = {
+  engines: {
+    'Firefox': '*'
+  }
+};
+
 const { isTabOpen, activateTab, openTab,
         closeTab, getURI } = require('sdk/tabs/utils');
 const windows = require('sdk/deprecated/window-utils');
@@ -55,6 +61,7 @@ exports['test that add-on page has no chrome'] = function(assert, done) {
     closeTab(tab);
     assert.ok(isChromeVisible(window), 'chrome is visible again');
     loader.unload();
+    assert.ok(!isTabOpen(tab), 'add-on page tab is closed on unload');
     done();
   });
 };
@@ -79,6 +86,7 @@ exports['test that add-on page with hash has no chrome'] = function(assert, done
     closeTab(tab);
     assert.ok(isChromeVisible(window), 'chrome is visible again');
     loader.unload();
+    assert.ok(!isTabOpen(tab), 'add-on page tab is closed on unload');
     done();
   });
 };
@@ -103,6 +111,7 @@ exports['test that add-on page with querystring has no chrome'] = function(asser
     closeTab(tab);
     assert.ok(isChromeVisible(window), 'chrome is visible again');
     loader.unload();
+    assert.ok(!isTabOpen(tab), 'add-on page tab is closed on unload');
     done();
   });
 };
@@ -127,6 +136,7 @@ exports['test that add-on page with hash and querystring has no chrome'] = funct
     closeTab(tab);
     assert.ok(isChromeVisible(window), 'chrome is visible again');
     loader.unload();
+    assert.ok(!isTabOpen(tab), 'add-on page tab is closed on unload');
     done();
   });
 };
@@ -148,21 +158,6 @@ exports['test that malformed uri is not an addon-page'] = function(assert, done)
     closeTab(tab);
     loader.unload();
     done();
-  });
-};
-
-exports['test that add-on pages are closed on unload'] = function(assert, done) {
-  let { loader } = LoaderWithHookedConsole(module);
-  loader.require('sdk/addon-page');
-
-  tabs.open({
-    url: uri,
-    onReady: function listener(tab) {
-      loader.unload();
-      assert.ok(!isTabOpen(tab), 'add-on page tabs are closed on unload');
-
-      done();
-    }
   });
 };
 

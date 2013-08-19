@@ -3,9 +3,15 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
+module.metadata = {
+  'engines': {
+    'Firefox': '*'
+  }
+};
+
 const { defer, all } = require('sdk/core/promise');
-const { TreeNode } = require('sdk/places/utils');
 const { setTimeout } = require('sdk/timers');
+const { TreeNode } = require('sdk/places/utils');
 
 exports['test construct tree'] = function (assert) {
   let tree = TreeNode(1);
