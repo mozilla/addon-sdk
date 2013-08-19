@@ -14,7 +14,7 @@ const { setTimeout } = require('sdk/timers');
 const { openWebpage } = require('./private-browsing/helper');
 const { isTabPBSupported, isWindowPBSupported } = require('sdk/private-browsing/utils');
 const app = require("sdk/system/xul-app");
-const { getRawTab, getSDKTab } = require('sdk/tab/getters');
+const { getRawTab, getSDKTab } = require('sdk/tab/internals');
 const { rawTabNS, tabNS } = require('sdk/tabs/namespace');
 
 const URL = 'data:text/html;charset=utf-8,<html><head><title>#title#</title></head></html>';

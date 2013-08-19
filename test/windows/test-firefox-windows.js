@@ -14,7 +14,7 @@ const winUtils = require("sdk/deprecated/window-utils");
 const { WindowTracker } = winUtils;
 const { isPrivate } = require('sdk/private-browsing');
 const { isWindowPBSupported } = require('sdk/private-browsing/utils');
-const { getSDKWindow, getRawWindow } = require('sdk/window/getters');
+const { getSDKWindow, getRawWindow } = require('sdk/window/internals');
 
 // TEST: open & close window
 exports.testOpenAndCloseWindow = function(assert, done) {
