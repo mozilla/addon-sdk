@@ -70,7 +70,7 @@ exports['test onerror'] = function(assert, done) {
   let worker = new chrome.ChromeWorker(uri);
   worker.onerror = function(event) {
     assert.equal(event.filename, uri, 'event reports the correct uri');
-    assert.equal(event.lineno, 8, 'event reports the correct line number');
+    assert.equal(event.lineno, 6, 'event reports the correct line number');
     assert.equal(event.target, worker, 'event reports the correct worker');
     assert.ok(event.message.match(/ok/),
                 'event contains the exception message');
@@ -81,4 +81,4 @@ exports['test onerror'] = function(assert, done) {
   };
 };
 
-require('test').run(exports);
+require('sdk/test').run(exports);
