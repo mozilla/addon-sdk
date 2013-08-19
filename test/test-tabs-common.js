@@ -14,7 +14,7 @@ const { setTimeout } = require('sdk/timers');
 const { openWebpage } = require('./private-browsing/helper');
 const { isTabPBSupported, isWindowPBSupported } = require('sdk/private-browsing/utils');
 const app = require("sdk/system/xul-app");
-const { getRawTab, getSDKTab } = require('sdk/tab/internals');
+const { getDOMTab, getSDKTab } = require('sdk/tab/internals');
 const { rawTabNS, tabNS } = require('sdk/tabs/namespace');
 
 const URL = 'data:text/html;charset=utf-8,<html><head><title>#title#</title></head></html>';
@@ -68,10 +68,10 @@ exports.testActiveTab_getter = function(test) {
     test.assertStrictEqual(tabs.activeTab, tab, 'the active tab is the ready tab');
 
     // testing sdk/tab/getters here
-    test.assertEqual(!!getRawTab(tab), true, 'raw tab is truthy');
-    test.assertStrictEqual(getRawTab(tab), tabNS(tab).tab, 'raw tab was found in namespace');
-    test.assertStrictEqual(getSDKTab(getRawTab(tab)), tab, 'converting a tab to raw and back to a tab works');
-    test.assertStrictEqual(rawTabNS(getRawTab(tab)).tab, tab, 'tab was found in namespace');
+    test.assertEqual(!!getDOMTab(tab), true, 'raw tab is truthy');
+    test.assertStrictEqual(getDOMTab(tab), tabNS(tab).tab, 'raw tab was found in namespace');
+    test.assertStrictEqual(getSDKTab(getDOMTab(tab)), tab, 'converting a tab to raw and back to a tab works');
+    test.assertStrictEqual(rawTabNS(getDOMTab(tab)).tab, tab, 'tab was found in namespace');
 
     tab.close(function() {
       // end test
@@ -168,7 +168,7 @@ exports.testAttachOnOpen_alt = function (test) {
     url: "data:text/html;charset=utf-8,foobar",
     onOpen: function (tab) {
       // testing sdk/tab/getters here
-      let rawTab = getRawTab(tab);
+      let rawTab = getDOMTab(tab);
       test.assertEqual(!!rawTab, true, 'raw tab is truthy');
       test.assertStrictEqual(rawTab, tabNS(tab).tab, 'raw tab was found in namespace');
       test.assertStrictEqual(getSDKTab(rawTab), tab, 'converting a tab to raw and back to a tab works');

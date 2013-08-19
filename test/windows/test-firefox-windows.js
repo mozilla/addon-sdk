@@ -14,7 +14,7 @@ const winUtils = require("sdk/deprecated/window-utils");
 const { WindowTracker } = winUtils;
 const { isPrivate } = require('sdk/private-browsing');
 const { isWindowPBSupported } = require('sdk/private-browsing/utils');
-const { getSDKWindow, getRawWindow } = require('sdk/window/internals');
+const { getSDKWindow, getDOMWindow } = require('sdk/window/internals');
 
 // TEST: open & close window
 exports.testOpenAndCloseWindow = function(assert, done) {
@@ -405,13 +405,13 @@ exports.testWindowGetterHelpers = function(assert, done) {
   let testName = 'testWindowGetterHelpers';
 
   browserWindows.once('open', function(window) {
-    assert.equal(rawWindow, getRawWindow(window), 'getRawWindow works');
+    assert.equal(rawWindow, getDOMWindow(window), 'getDOMWindow works');
     assert.equal(window, getSDKWindow(rawWindow), 'getSDKWindow works');
 
     // end test
     window.close(function() {
       assert.equal(null, getSDKWindow(rawWindow), 'cannot get from raw window now');
-      assert.equal(null, getRawWindow(window), 'cannot get raw window now');
+      assert.equal(null, getDOMWindow(window), 'cannot get raw window now');
 
       done();
     });
