@@ -4,10 +4,9 @@
 
 'use strict';
 
-const { id } = require('sdk/self');
+const { id, preferencesBranch } = require('sdk/self');
 const simple = require('sdk/simple-prefs');
 const service = require('sdk/preferences/service');
-const { preferencesBranch } = require('@loader/options');
 const { AddonManager } = require('chrome').Cu.import('resource://gre/modules/AddonManager.jsm');
 
 exports.testPreferencesBranch = function(assert) {
@@ -17,7 +16,7 @@ exports.testPreferencesBranch = function(assert) {
 
   simple.prefs.test43 = 'movie';
   assert.equal(service.get('extensions.human-readable.test43'), 'movie', 'test43 is a movie');
-  
+
 }
 
 // from `/test/test-self.js`, adapted to `sdk/test/assert` API

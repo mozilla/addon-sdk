@@ -3,10 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
-const { id } = require('sdk/self');
+const { id, preferencesBranch } = require('sdk/self');
 const simple = require('sdk/simple-prefs');
 const service = require('sdk/preferences/service');
-const { preferencesBranch } = require('@loader/options');
 const { AddonManager } = require('chrome').Cu.import('resource://gre/modules/AddonManager.jsm', {});
 
 const expected_id = 'predefined-id@test';

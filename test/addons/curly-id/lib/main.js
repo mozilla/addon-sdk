@@ -7,7 +7,7 @@
 const { id } = require('sdk/self');
 const simple = require('sdk/simple-prefs');
 const service = require('sdk/preferences/service');
-const { preferencesBranch } = require('@loader/options');
+const { preferencesBranch } = require('sdk/self');
 const { AddonManager } = require('chrome').Cu.import('resource://gre/modules/AddonManager.jsm');
 
 exports.testCurlyID = function(assert) {
@@ -19,7 +19,7 @@ exports.testCurlyID = function(assert) {
   assert.equal(service.get('extensions.{34a1eae1-c20a-464f-9b0e-000000000000}.test14'), '15', 'test14 is 15');
 
   assert.equal(service.get('extensions.{34a1eae1-c20a-464f-9b0e-000000000000}.test14'), simple.prefs.test14, 'simple test14 also 15');
-  
+
 }
 
 exports.testInvalidPreferencesBranch = function(assert) {
