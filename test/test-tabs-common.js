@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
+const { Cu } = require('chrome');
 const { Loader, LoaderWithHookedConsole } = require("sdk/test/loader");
 const { browserWindows } = require('sdk/windows');
 const tabs = require('sdk/tabs');
@@ -13,6 +14,8 @@ const { setTimeout } = require('sdk/timers');
 const { openWebpage } = require('./private-browsing/helper');
 const { isTabPBSupported, isWindowPBSupported } = require('sdk/private-browsing/utils');
 const app = require("sdk/system/xul-app");
+const { getDOMTab, getSDKTab } = require('sdk/tab/internals');
+const { rawTabNS, tabNS } = require('sdk/tabs/namespace');
 
 const URL = 'data:text/html;charset=utf-8,<html><head><title>#title#</title></head></html>';
 
@@ -63,6 +66,12 @@ exports.testActiveTab_getter = function(test) {
 
     test.assertStrictEqual(activeTab, tab, 'the active tab is the ready tab');
     test.assertStrictEqual(tabs.activeTab, tab, 'the active tab is the ready tab');
+
+    // testing sdk/tab/getters here
+    test.assertEqual(!!getDOMTab(tab), true, 'raw tab is truthy');
+    test.assertStrictEqual(getDOMTab(tab), tabNS(tab).tab, 'raw tab was found in namespace');
+    test.assertStrictEqual(getSDKTab(getDOMTab(tab)), tab, 'converting a tab to raw and back to a tab works');
+    test.assertStrictEqual(rawTabNS(getDOMTab(tab)).tab, tab, 'tab was found in namespace');
 
     tab.close(function() {
       // end test
@@ -158,13 +167,24 @@ exports.testAttachOnOpen_alt = function (test) {
   tabs.open({
     url: "data:text/html;charset=utf-8,foobar",
     onOpen: function (tab) {
+      // testing sdk/tab/getters here
+      let rawTab = getDOMTab(tab);
+      test.assertEqual(!!rawTab, true, 'raw tab is truthy');
+      test.assertStrictEqual(rawTab, tabNS(tab).tab, 'raw tab was found in namespace');
+      test.assertStrictEqual(getSDKTab(rawTab), tab, 'converting a tab to raw and back to a tab works');
+      test.assertStrictEqual(rawTabNS(rawTab).tab, tab, 'tab was found in namespace');
+
       let worker = tab.attach({
         contentScript: 'self.postMessage(document.location.href); ',
         onMessage: function (msg) {
           test.assertEqual(msg, "about:blank",
             "Worker document url is about:blank on open");
           worker.destroy();
-          tab.close(function() test.done());
+          tab.close(function() {
+            test.assertStrictEqual(getSDKTab(rawTab), null, 'getters do not work when a tab has closed');
+
+            test.done();
+          });
         }
       });
     }
