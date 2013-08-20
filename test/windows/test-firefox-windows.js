@@ -172,9 +172,7 @@ exports.testOnOpenOnCloseListeners = function(assert, done) {
   });
 };
 
-/*
-Disabled due to all of the Win8 PGO bustage in bug 873007.
-exports.testActiveWindow = function(test) {
+exports.testActiveWindow = function(assert, done) {
   let windows = browserWindows;
 
   // API window objects
@@ -183,37 +181,34 @@ exports.testActiveWindow = function(test) {
   // Raw window objects
   let rawWindow2, rawWindow3;
 
-  test.waitUntilDone();
-
   let testSteps = [
     function() {
-      test.assertEqual(windows.length, 3, "Correct number of browser windows");
+      assert.equal(windows.length, 3, "Correct number of browser windows");
+
       let count = 0;
       for (let window in windows)
         count++;
-      test.assertEqual(count, 3, "Correct number of windows returned by iterator");
+      assert.equal(count, 3, "Correct number of windows returned by iterator");
 
-      test.assertEqual(windows.activeWindow.title, window3.title, "Correct active window - 3");
+      assert.equal(windows.activeWindow.title, window3.title, "Correct active window - 3");
 
       continueAfterFocus(rawWindow2);
       rawWindow2.focus();
     },
     function() {
-      nextStep();
-    },
-    function() {
-      test.assertEqual(windows.activeWindow.title, window2.title, "Correct active window - 2");
+      assert.equal(windows.activeWindow.title, window2.title, "Correct active window - 2");
 
       continueAfterFocus(rawWindow2);
       window2.activate();
     },
     function() {
-      test.assertEqual(windows.activeWindow.title, window2.title, "Correct active window - 2");
+      assert.equal(windows.activeWindow.title, window2.title, "Correct active window - 2");
+
       continueAfterFocus(rawWindow3);
       window3.activate();
     },
     function() {
-      test.assertEqual(windows.activeWindow.title, window3.title, "Correct active window - 3");
+      assert.equal(windows.activeWindow.title, window3.title, "Correct active window - 3");
       finishTest();
     }
   ];
@@ -228,24 +223,35 @@ exports.testActiveWindow = function(test) {
   windows.open({
     url: "data:text/html;charset=utf-8,<title>window 2</title>",
     onOpen: function(window) {
+      assert.pass('window 2 open');
+
       window.tabs.activeTab.on('ready', function() {
+        assert.pass('window 2 tab activated');
+
         window2 = window;
-        test.assert(newWindow, "A new window was opened");
+        assert.ok(newWindow, "A new window was opened");
         rawWindow2 = newWindow;
         newWindow = null;
-        test.assertEqual(rawWindow2.content.document.title, "window 2", "Got correct raw window 2");
-        test.assertEqual(rawWindow2.document.title, window2.title, "Saw correct title on window 2");
+
+        assert.equal(rawWindow2.content.document.title, "window 2", "Got correct raw window 2");
+        assert.equal(rawWindow2.document.title, window2.title, "Saw correct title on window 2");
 
         windows.open({
           url: "data:text/html;charset=utf-8,<title>window 3</title>",
           onOpen: function(window) {
+            assert.pass('window 3 open');
+
             window.tabs.activeTab.on('ready', function onReady() {
+              assert.pass('window 3 tab activated');
+
               window3 = window;
-              test.assert(newWindow, "A new window was opened");
+              assert.ok(newWindow, "A new window was opened");
               rawWindow3 = newWindow;
               tracker.unload();
-              test.assertEqual(rawWindow3.content.document.title, "window 3", "Got correct raw window 3");
-              test.assertEqual(rawWindow3.document.title, window3.title, "Saw correct title on window 3");
+
+              assert.equal(rawWindow3.content.document.title, "window 3", "Got correct raw window 3");
+              assert.equal(rawWindow3.document.title, window3.title, "Saw correct title on window 3");
+
               continueAfterFocus(rawWindow3);
               rawWindow3.focus();
             });
@@ -256,21 +262,25 @@ exports.testActiveWindow = function(test) {
   });
 
   function nextStep() {
-    if (testSteps.length)
-      testSteps.shift()();
+    if (testSteps.length) {
+      setTimeout(testSteps.shift())
+    }
   }
 
   let continueAfterFocus = function(w) onFocus(w).then(nextStep);
 
   function finishTest() {
-    window3.close(function() {
-      window2.close(function() {
-        test.done();
+    // close unactive window first to avoid unnecessary focus changing
+    window2.close(function() {
+      window3.close(function() {
+        assert.equal(rawWindow2.closed, true, 'window 2 is closed');
+        assert.equal(rawWindow3.closed, true, 'window 3 is closed');
+
+        done();
       });
     });
   }
 };
-*/
 
 exports.testTrackWindows = function(assert, done) {
   let windows = [];
