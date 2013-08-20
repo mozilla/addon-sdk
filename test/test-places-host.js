@@ -11,7 +11,6 @@ module.metadata = {
 
 const { Cc, Ci } = require('chrome');
 const { defer, all } = require('sdk/core/promise');
-const { setTimeout } = require('sdk/timers');
 const { newURI } = require('sdk/url/utils');
 const { send } = require('sdk/addon/events');
 const { set } = require('sdk/preferences/service');

@@ -6,7 +6,6 @@
 const { Loader } = require("sdk/test/loader");
 const { Class } = require("sdk/core/heritage");
 const { Cc, Ci, Cu } = require("chrome");
-const { setTimeout } = require("sdk/timers");
 
 exports["test disposables are desposed on unload"] = function(assert) {
   let loader = Loader(module);

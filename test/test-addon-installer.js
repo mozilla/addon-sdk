@@ -7,7 +7,6 @@
 const { Cc, Ci, Cu } = require("chrome");
 const AddonInstaller = require("sdk/addon/installer");
 const observers = require("sdk/deprecated/observer-service");
-const { setTimeout } = require("sdk/timers");
 const tmp = require("sdk/test/tmp-file");
 const system = require("sdk/system");
 

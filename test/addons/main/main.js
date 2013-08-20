@@ -3,8 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
-const { setTimeout } = require('sdk/timers');
-
 let mainStarted = false;
 
 exports.main = function main(options, callbacks) {

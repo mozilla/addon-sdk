@@ -9,8 +9,6 @@ var core = require('sdk/core/promise'),
     defer = core.defer, resolve = core.resolve, reject = core.reject, all = core.all,
     promised = core.promised;
 
-var { setTimeout } = require('sdk/timers');
-
 exports['test all observers are notified'] = function(assert, done) {
   var expected = 'Taram pam param!'
   var deferred = defer()

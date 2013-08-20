@@ -4,7 +4,6 @@
 "use strict";
 
 const { Loader } = require("sdk/test/loader");
-const { setTimeout } = require("sdk/timers");
 const { notify } = require("sdk/deprecated/observer-service");
 const { id } = require("sdk/self");
 const simplePrefs = require("sdk/simple-prefs");

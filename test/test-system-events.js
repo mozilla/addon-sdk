@@ -5,7 +5,6 @@
 const events = require("sdk/system/events");
 const self = require("sdk/self");
 const { Cc, Ci, Cu } = require("chrome");
-const { setTimeout } = require("sdk/timers");
 const { Loader, LoaderWithHookedConsole2 } = require("sdk/test/loader");
 const nsIObserverService = Cc["@mozilla.org/observer-service;1"].
                            getService(Ci.nsIObserverService);
@@ -220,7 +219,7 @@ exports["test emit to nsIObserverService observers"] = function(assert) {
   assert.equal(lastData, "data again", "event.data is notification data");
 
   nsIObserverService.removeObserver(nsIObserver, "*");
-  
+
   events.emit(topic, { data: "last data" });
   assert.equal(timesCalled, 3, "removed observers no longer invoked");
 }

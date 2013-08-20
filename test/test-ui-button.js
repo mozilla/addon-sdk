@@ -13,7 +13,6 @@ const { Cu } = require('chrome');
 const { Loader } = require('sdk/test/loader');
 const { data } = require('sdk/self');
 const { open, focus, close } = require('sdk/window/helpers');
-const { setTimeout } = require('sdk/timers');
 const { getMostRecentBrowserWindow } = require('sdk/window/utils');
 
 function getWidget(buttonId, window = getMostRecentBrowserWindow()) {

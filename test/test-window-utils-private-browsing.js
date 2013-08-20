@@ -150,7 +150,7 @@ exports.testSettingActiveWindowDoesNotIgnorePrivateWindow = function(assert, don
     function nextTest() {
       let args = arguments;
       if (testSteps.length) {
-        require('sdk/timers').setTimeout(function() {
+        setTimeout(function() {
           (testSteps.shift()).apply(null, args);
         }, 0);
       }
@@ -214,7 +214,7 @@ exports.testWindowIteratorIgnoresPrivateWindows = function(assert, done) {
     else {
       assert.equal(isWindowPrivate(window), false, "window is not private");
       assert.ok(toArray(windowUtils.windowIterator()).indexOf(window) > -1,
-                "window is in windowIterator()"); 
+                "window is in windowIterator()");
     }
 
     close(window).then(done);

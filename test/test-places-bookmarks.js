@@ -13,7 +13,6 @@ const { Cc, Ci } = require('chrome');
 const { request } = require('sdk/addon/host');
 const { filter } = require('sdk/event/utils');
 const { on, off } = require('sdk/event/core');
-const { setTimeout } = require('sdk/timers');
 const { newURI } = require('sdk/url/utils');
 const { defer, all } = require('sdk/core/promise');
 const { defer: async } = require('sdk/lang/functional');

@@ -12,11 +12,10 @@ module.metadata = {
 const { Cc, Ci } = require('chrome');
 const { defer, all } = require('sdk/core/promise');
 const { has } = require('sdk/util/array');
-const { setTimeout } = require('sdk/timers');
 const { before, after } = require('sdk/test/utils');
 const { set } = require('sdk/preferences/service');
 const {
-  search 
+  search
 } = require('sdk/places/history');
 const {
   invalidResolve, invalidReject, createTree,
@@ -236,7 +235,7 @@ exports.testEmitters = function (assert, done) {
 function toBeWithin (range) {
   range = range || 2000;
   var current = new Date() * 1000; // convert to microseconds
-  return compared => { 
+  return compared => {
     return compared - current < range;
   };
 }
