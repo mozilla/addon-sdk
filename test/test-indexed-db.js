@@ -8,9 +8,7 @@ let xulApp = require("sdk/system/xul-app");
 if (xulApp.versionInRange(xulApp.platformVersion, "16.0a1", "*")) {
 new function tests() {
 
-const { indexedDB, IDBKeyRange, DOMException, IDBCursor, IDBTransaction,
-        IDBOpenDBRequest, IDBVersionChangeEvent, IDBDatabase, IDBIndex, 
-        IDBObjectStore, IDBRequest
+const { indexedDB, IDBKeyRange, DOMException
       } = require("sdk/indexed-db");
 
 exports["test indexedDB is frozen"] = function(assert){
@@ -23,9 +21,7 @@ exports["test indexedDB is frozen"] = function(assert){
 };
 
 exports["test db variables"] = function(assert) {
-  [ indexedDB, IDBKeyRange, DOMException, IDBCursor, IDBTransaction,
-    IDBOpenDBRequest, IDBOpenDBRequest, IDBVersionChangeEvent,
-    IDBDatabase, IDBIndex, IDBObjectStore, IDBRequest
+  [ indexedDB, IDBKeyRange, DOMException
   ].forEach(function(value) {
     assert.notEqual(typeof(value), "undefined", "variable is defined");
   });

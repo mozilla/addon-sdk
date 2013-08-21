@@ -3,6 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
+
+const { LoaderWithHookedConsole } = require('sdk/test/loader');
+const { loader } = LoaderWithHookedConsole(module);
 const app = require("sdk/system/xul-app");
 
 // This test makes sure that require statements used by all AMO hosted
@@ -76,8 +79,10 @@ exports["test compatibility"] = function(assert) {
   assert.equal(require("hotkeys"),
                require("sdk/hotkeys"), "sdk/hotkeys -> hotkeys");
 
-  assert.equal(require("clipboard"),
-               require("sdk/clipboard"), "sdk/clipboard -> clipboard");
+  if (app.is("Firefox")) {
+    assert.equal(require("clipboard"),
+                 require("sdk/clipboard"), "sdk/clipboard -> clipboard");
+  }
 
   assert.equal(require("windows"),
                require("sdk/windows"), "sdk/windows -> windows");
@@ -104,7 +109,7 @@ exports["test compatibility"] = function(assert) {
                require("sdk/deprecated/events"), "sdk/deprecated/events -> events");
 
   assert.equal(require("match-pattern"),
-               require("sdk/page-mod/match-pattern"), "sdk/page-mod/match-pattern -> match-pattern");
+               require("sdk/util/match-pattern"), "sdk/util/match-pattern -> match-pattern");
 
   if (app.is("Firefox")) {
     assert.equal(require("tab-browser"),
@@ -141,8 +146,8 @@ exports["test compatibility"] = function(assert) {
   assert.equal(require("querystring"),
                require("sdk/querystring"), "sdk/querystring -> querystring");
 
-  assert.equal(require("addon-page"),
-               require("sdk/addon-page"), "sdk/addon-page -> addon-page");
+  assert.equal(loader.require("addon-page"),
+               loader.require("sdk/addon-page"), "sdk/addon-page -> addon-page");
 
   assert.equal(require("tabs/utils"),
                require("sdk/tabs/utils"), "sdk/tabs/utils -> tabs/utils");

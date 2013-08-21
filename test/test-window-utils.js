@@ -3,6 +3,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
+module.metadata = {
+  engines: {
+    'Firefox': '*'
+  }
+};
+
 const windowUtils = require("sdk/deprecated/window-utils");
 const timer = require("sdk/timers");
 const { Cc, Ci } = require("chrome");
@@ -208,30 +214,20 @@ exports['test window watcher unregs 4 loading wins'] = function(assert, done) {
 }
 
 exports['test window watcher without untracker'] = function(assert, done) {
-  var myWindow;
-  var finished = false;
-
-  var delegate = {
+  let myWindow;
+  let wt = new windowUtils.WindowTracker({
     onTrack: function(window) {
       if (window == myWindow) {
         assert.pass("onTrack() called with our test window");
-        timer.setTimeout(function() {
-          myWindow.close();
 
-          if (!finished) {
-              finished = true;
-              myWindow = null;
-              wt.unload();
-              done();
-            } else {
-              assert.fail("onTrack() called multiple times.");
-            }
-        }, 1);
+        close(myWindow).then(function() {
+          wt.unload();
+          done();
+        }, assert.fail);
       }
     }
-  };
+  });
 
-  var wt = new windowUtils.WindowTracker(delegate);
   myWindow = makeEmptyWindow();
 };
 
@@ -300,15 +296,5 @@ exports.testWindowIterator = function(assert, done) {
     close(window).then(done);
   }, false);
 };
-
-if (require("sdk/system/xul-app").is("Fennec")) {
-  module.exports = {
-    "test Unsupported Test": function UnsupportedTest (assert) {
-        assert.pass(
-          "Skipping this test until Fennec support is implemented." +
-          "See bug 809412");
-    }
-  }
-}
 
 require("test").run(exports);

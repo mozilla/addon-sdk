@@ -1,11 +1,9 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim:set ts=2 sw=2 sts=2 et: */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
-const { MatchPattern } = require("sdk/page-mod/match-pattern");
+const { MatchPattern } = require("sdk/util/match-pattern");
 
 exports.testMatchPatternTestTrue = function(test) {
   function ok(pattern, url) {
@@ -35,6 +33,8 @@ exports.testMatchPatternTestTrue = function(test) {
   ok(/https:.*zilla.*/, "https://bugzilla.redhat.com/show_bug.cgi?id=569753");
   ok('*.sample.com', 'http://ex.sample.com/foo.html');
   ok('*.amp.le.com', 'http://ex.amp.le.com');
+
+  ok('data:*', 'data:text/html;charset=utf-8,');
 };
 
 exports.testMatchPatternTestFalse = function(test) {

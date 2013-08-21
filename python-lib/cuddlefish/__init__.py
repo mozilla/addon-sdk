@@ -228,6 +228,16 @@ parser_groups = (
                                   metavar=None,
                                   default=False,
                                   cmds=['sdocs'])),
+        (("", "--check-memory",), dict(dest="check_memory",
+                                       help="attempts to detect leaked compartments after a test run",
+                                       action="store_true",
+                                       default=False,
+                                       cmds=['test', 'testpkgs', 'testaddons',
+                                             'testall'])),
+        (("", "--output-file",), dict(dest="output_file",
+                                      help="Where to put the finished .xpi",
+                                      default=None,
+                                      cmds=['xpi'])),
         ]
      ),
 
@@ -660,7 +670,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     # a Mozilla application (which includes running tests).
 
     use_main = False
-    inherited_options = ['verbose', 'enable_e10s', 'parseable']
+    inherited_options = ['verbose', 'enable_e10s', 'parseable', 'check_memory']
     enforce_timeouts = False
 
     if command == "xpi":
@@ -886,14 +896,20 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
             key,value = kv.split("=", 1)
             extra_harness_options[key] = value
         # Generate xpi filepath
-        xpi_path = XPI_FILENAME % target_cfg.name
+        if options.output_file:
+          xpi_path = options.output_file
+        else:
+          xpi_path = XPI_FILENAME % target_cfg.name
+
         print >>stdout, "Exporting extension to %s." % xpi_path
         build_xpi(template_root_dir=app_extension_dir,
                   manifest=manifest_rdf,
                   xpi_path=xpi_path,
                   harness_options=harness_options,
                   limit_to=used_files,
-                  extra_harness_options=extra_harness_options)
+                  extra_harness_options=extra_harness_options,
+                  bundle_sdk=True,
+                  pkgdir=options.pkgdir)
     else:
         from cuddlefish.runner import run_app
 
@@ -925,7 +941,8 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                              env_root=env_root,
                              is_running_tests=(command == "test"),
                              overload_modules=options.overload_modules,
-                             bundle_sdk=options.bundle_sdk)
+                             bundle_sdk=options.bundle_sdk,
+                             pkgdir=options.pkgdir)
         except ValueError, e:
             print ""
             print "A given cfx option has an inappropriate value:"

@@ -30,12 +30,12 @@ PARSEABLE_TEST_NAME = re.compile(r'TEST-START \| ([^\n]+)\n')
 # The purpose of this timeout is to recover from infinite loops.  It should be
 # longer than the amount of time any test run takes, including those on slow
 # machines running slow (debug) versions of Firefox.
-RUN_TIMEOUT = 30 * 60 # 30 minutes
+RUN_TIMEOUT = 1.5 * 60 * 60 # 1.5 Hour
 
 # Maximum time we'll wait for tests to emit output, in seconds.
 # The purpose of this timeout is to recover from hangs.  It should be longer
 # than the amount of time any test takes to report results.
-OUTPUT_TIMEOUT = 60 # one minute
+OUTPUT_TIMEOUT = 60 * 5 # five minutes
 
 def follow_file(filename):
     """
@@ -412,7 +412,8 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
             env_root=None,
             is_running_tests=False,
             overload_modules=False,
-            bundle_sdk=True):
+            bundle_sdk=True,
+            pkgdir=""):
     if binary:
         binary = os.path.expanduser(binary)
 
@@ -495,9 +496,6 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
     logfile = os.path.abspath(os.path.expanduser(logfile))
     maybe_remove_logfile()
 
-    if app_type != "fennec-on-device":
-        harness_options['logFile'] = logfile
-
     env = {}
     env.update(os.environ)
     env['MOZ_NO_REMOTE'] = '1'
@@ -516,7 +514,8 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
               xpi_path=xpi_path,
               harness_options=harness_options,
               limit_to=used_files,
-              bundle_sdk=bundle_sdk)
+              bundle_sdk=bundle_sdk,
+              pkgdir=pkgdir)
     addons.append(xpi_path)
 
     starttime = last_output_time = time.time()

@@ -12,6 +12,7 @@ const { isWindowPrivate } = require('sdk/window/utils');
 const { setTimeout } = require('sdk/timers');
 const { openWebpage } = require('./private-browsing/helper');
 const { isTabPBSupported, isWindowPBSupported } = require('sdk/private-browsing/utils');
+const app = require("sdk/system/xul-app");
 
 const URL = 'data:text/html;charset=utf-8,<html><head><title>#title#</title></head></html>';
 
@@ -41,11 +42,47 @@ exports.testTabCounts = function(test) {
   });
 };
 
+
+// TEST: tabs.activeTab getter
+exports.testActiveTab_getter = function(test) {
+  test.waitUntilDone();
+  let evtCount = 0;
+  let activeTab = null;
+
+  function endTest(type, tab) {
+    if (type == 'activate') {
+      test.assertStrictEqual(tabs.activeTab, tab, 'the active tab is the opened tab');
+      activeTab = tabs.activeTab;
+    }
+    else {
+      test.assertEqual(tab.url, url, 'the opened tab has the correct url');
+    }
+
+    if (++evtCount != 2)
+      return;
+
+    test.assertStrictEqual(activeTab, tab, 'the active tab is the ready tab');
+    test.assertStrictEqual(tabs.activeTab, tab, 'the active tab is the ready tab');
+
+    tab.close(function() {
+      // end test
+      test.done();
+    });
+  }
+
+  let url = URL.replace("#title#", "testActiveTab_getter");
+  tabs.open({
+    url: url,
+    onReady: endTest.bind(null, 'ready'),
+    onActivate: endTest.bind(null, 'activate')
+  });
+};
+
 // TEST: tab.activate()
-exports.testActiveTab_setter_alt = function(test) {
+exports.testActiveTab_setter = function(test) {
   test.waitUntilDone();
 
-  let url = URL.replace("#title#", "testActiveTab_setter_alt");
+  let url = URL.replace("#title#", "testActiveTab_setter");
   let tab1URL = URL.replace("#title#", "tab1");
 
   tabs.open({
@@ -354,20 +391,32 @@ exports.testPrivateAreNotListed = function (test) {
 // loader have a change to process the first TabOpen event!
 exports.testImmediateClosing = function (test) {
   test.waitUntilDone();
+
+  let tabURL = 'data:text/html,foo';
+
   let { loader, messages } = LoaderWithHookedConsole(module, onMessage);
   let concurrentTabs = loader.require("sdk/tabs");
-  concurrentTabs.on("open", function () {
-    test.fail("Concurrent loader manager receive a tabs `open` event");
-    // It shouldn't receive such event as the other loader will just open
-    // and destroy the tab without giving a change to other loader to even know
-    // about the existance of this tab.
+  concurrentTabs.on("open", function (tab) {
+    // On Firefox, It shouldn't receive such event as the other loader will just
+    // open and destroy the tab without giving a chance to other loader to even
+    // know about the existance of this tab.
+    if (app.is("Firefox")) {
+      test.fail("Concurrent loader received a tabs `open` event");
+    }
+    else {
+      // On mobile, we can still receive an open event,
+      // but not the related ready event
+      tab.on("ready", function () {
+        test.fail("Concurrent loader received a tabs `ready` event");
+      });
+    }
   });
   function onMessage(type, msg) {
     test.fail("Unexpected mesage on concurrent loader: " + msg);
   }
 
   tabs.open({
-    url: 'about:blank',
+    url: tabURL,
     onOpen: function(tab) {
       tab.close(function () {
         test.pass("Tab succesfully removed");
@@ -408,3 +457,100 @@ exports.testTabReload = function(test) {
     }
   });
 };
+
+exports.testOnPageShowEvent = function (test) {
+  test.waitUntilDone();
+
+  let events = [];
+  let firstUrl = 'data:text/html;charset=utf-8,First';
+  let secondUrl = 'data:text/html;charset=utf-8,Second';
+
+  let counter = 0;
+  function onPageShow (tab, persisted) {
+    events.push('pageshow');
+    counter++;
+    if (counter === 1) {
+      test.assertEqual(persisted, false, 'page should not be cached on initial load');
+      tab.url = secondUrl;
+    }
+    else if (counter === 2) {
+      test.assertEqual(persisted, false, 'second test page should not be cached either');
+      tab.attach({
+        contentScript: 'setTimeout(function () { window.history.back(); }, 0)'
+      });
+    }
+    else {
+      test.assertEqual(persisted, true, 'when we get back to the fist page, it has to' +
+                             'come from cache');
+      tabs.removeListener('pageshow', onPageShow);
+      tabs.removeListener('open', onOpen);
+      tabs.removeListener('ready', onReady);
+      tab.close(() => {
+        ['open', 'ready', 'pageshow', 'ready',
+            'pageshow', 'pageshow'].map((type, i) => {
+          test.assertEqual(type, events[i], 'correct ordering of events');
+        });
+        test.done()
+      });
+    }
+  }
+
+  function onOpen () events.push('open');
+  function onReady () events.push('ready');
+
+  tabs.on('pageshow', onPageShow);
+  tabs.on('open', onOpen);
+  tabs.on('ready', onReady);
+  tabs.open({
+    url: firstUrl
+  });
+};
+
+exports.testOnPageShowEventDeclarative = function (test) {
+  test.waitUntilDone();
+
+  let events = [];
+  let firstUrl = 'data:text/html;charset=utf-8,First';
+  let secondUrl = 'data:text/html;charset=utf-8,Second';
+
+  let counter = 0;
+  function onPageShow (tab, persisted) {
+    events.push('pageshow');
+    counter++;
+    if (counter === 1) {
+      test.assertEqual(persisted, false, 'page should not be cached on initial load');
+      tab.url = secondUrl;
+    }
+    else if (counter === 2) {
+      test.assertEqual(persisted, false, 'second test page should not be cached either');
+      tab.attach({
+        contentScript: 'setTimeout(function () { window.history.back(); }, 0)'
+      });
+    }
+    else {
+      test.assertEqual(persisted, true, 'when we get back to the fist page, it has to' +
+                             'come from cache');
+      tabs.removeListener('pageshow', onPageShow);
+      tabs.removeListener('open', onOpen);
+      tabs.removeListener('ready', onReady);
+      tab.close(() => {
+        ['open', 'ready', 'pageshow', 'ready',
+            'pageshow', 'pageshow'].map((type, i) => {
+          test.assertEqual(type, events[i], 'correct ordering of events');
+        });
+        test.done()
+      });
+    }
+  }
+
+  function onOpen () events.push('open');
+  function onReady () events.push('ready');
+
+  tabs.open({
+    url: firstUrl,
+    onPageShow: onPageShow,
+    onOpen: onOpen,
+    onReady: onReady
+  });
+};
+

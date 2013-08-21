@@ -1,5 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim:set ts=2 sw=2 sts=2 et: */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -7,8 +5,11 @@
 
 let { Cc, Ci } = require("chrome");
 
+require("sdk/context-menu");
+
 const { Loader } = require('sdk/test/loader');
 const timer = require("sdk/timers");
+const { merge } = require("sdk/util/object");
 
 // These should match the same constants in the module.
 const ITEM_CLASS = "addon-context-menu-item";
@@ -1944,6 +1945,7 @@ exports.testParentMenu = function (test) {
   });
 };
 
+
 // Existing context menu modifications should apply to new windows.
 exports.testNewWindow = function (test) {
   test = new TestHelper(test);
@@ -1974,6 +1976,73 @@ exports.testNewWindowMultipleModules = function (test) {
     test.withNewWindow(function () {
       test.showMenu(null, function (popup) {
         test.checkMenu([item], [], [item]);
+        test.done();
+      });
+    });
+  });
+};
+
+
+// Existing context menu modifications should not apply to new private windows.
+exports.testNewPrivateWindow = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let item = new loader.cm.Item({ label: "item" });
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([item], [], []);
+    popup.hidePopup();
+
+    test.withNewPrivateWindow(function () {
+      test.showMenu(null, function (popup) {
+        test.checkMenu([], [], []);
+        test.done();
+      });
+    });
+  });
+};
+
+
+// Existing context menu modifications should apply to new private windows when
+// private browsing support is enabled.
+exports.testNewPrivateEnabledWindow = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newPrivateLoader();
+
+  let item = new loader.cm.Item({ label: "item" });
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([item], [], []);
+    popup.hidePopup();
+
+    test.withNewPrivateWindow(function () {
+      test.showMenu(null, function (popup) {
+        test.checkMenu([item], [], []);
+        test.done();
+      });
+    });
+  });
+};
+
+
+// Existing context menu modifications should apply to new private windows when
+// private browsing support is enabled unless unloaded.
+exports.testNewPrivateEnabledWindowUnloaded = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newPrivateLoader();
+
+  let item = new loader.cm.Item({ label: "item" });
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([item], [], []);
+    popup.hidePopup();
+
+    loader.unload();
+
+    test.withNewPrivateWindow(function () {
+      test.showMenu(null, function (popup) {
+        test.checkMenu([], [], []);
         test.done();
       });
     });
@@ -2628,6 +2697,47 @@ exports.testItemImage = function (test) {
   });
 };
 
+// Test image URL validation.
+exports.testItemImageValidURL = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+ 
+  test.assertRaises(function(){
+      new loader.cm.Item({
+        label: "item 1",
+        image: "foo"
+      })
+    }, "Image URL validation failed"
+  );
+
+  test.assertRaises(function(){
+      new loader.cm.Item({
+        label: "item 2",
+        image: false
+      })
+    }, "Image URL validation failed"
+  );
+
+  test.assertRaises(function(){
+      new loader.cm.Item({
+        label: "item 3",
+        image: 0
+      })
+    }, "Image URL validation failed"
+  );
+   
+  let imageURL = require("sdk/self").data.url("moz_favicon.ico");
+  let item4 = new loader.cm.Item({ label: "item 4", image: imageURL });
+  let item5 = new loader.cm.Item({ label: "item 5", image: null });
+  let item6 = new loader.cm.Item({ label: "item 6", image: undefined });
+
+  test.assertEqual(item4.image, imageURL, "Should be proper image URL");
+  test.assertEqual(item5.image, null, "Should be null image");
+  test.assertEqual(item6.image, undefined, "Should be undefined image");
+
+  test.done();
+}
+
 
 // Menu.destroy should destroy the item tree rooted at that menu.
 exports.testMenuDestroy = function (test) {
@@ -3026,25 +3136,13 @@ exports.testSelectionInOuterFrameNoMatch = function (test) {
 
 // NO TESTS BELOW THIS LINE! ///////////////////////////////////////////////////
 
-// Run only a dummy test if context-menu doesn't support the host app.
-if (!require("sdk/system/xul-app").is("Firefox")) {
-  module.exports = {
-    testAppNotSupported: function (test) {
-      test.pass("context-menu does not support this application.");
-    }
-  };
-}
-
-
 // This makes it easier to run tests by handling things like opening the menu,
 // opening new windows, making assertions, etc.  Methods on |test| can be called
 // on instances of this class.  Don't forget to call done() to end the test!
 // WARNING: This looks up items in popups by comparing labels, so don't give two
 // items the same label.
 function TestHelper(test) {
-  // default waitUntilDone timeout is 10s, which is too short on the win7
-  // buildslave
-  test.waitUntilDone(30*1000);
+  test.waitUntilDone();
   this.test = test;
   this.loaders = [];
   this.browserWindow = Cc["@mozilla.org/appshell/window-mediator;1"].
@@ -3339,6 +3437,37 @@ TestHelper.prototype = {
     return wrapper;
   },
 
+  // As above but the loader has private-browsing support enabled.
+  newPrivateLoader: function() {
+    let base = require("@loader/options");
+
+    // Clone current loader's options adding the private-browsing permission
+    let options = merge({}, base, {
+      metadata: merge({}, base.metadata || {}, {
+        permissions: merge({}, base.metadata.permissions || {}, {
+          'private-browsing': true
+        })
+      })
+    });
+
+    const self = this;
+    let loader = Loader(module, null, options);
+    let wrapper = {
+      loader: loader,
+      cm: loader.require("sdk/context-menu"),
+      globalScope: loader.sandbox("sdk/context-menu"),
+      unload: function () {
+        loader.unload();
+        let idx = self.loaders.indexOf(wrapper);
+        if (idx < 0)
+          throw new Error("Test error: tried to unload nonexistent loader");
+        self.loaders.splice(idx, 1);
+      }
+    };
+    this.loaders.push(wrapper);
+    return wrapper;
+  },
+
   // Returns true if the count crosses the overflow threshold.
   shouldOverflow: function (count) {
     return count >
@@ -3400,6 +3529,15 @@ TestHelper.prototype = {
   // done() is called.
   withNewWindow: function (onloadCallback) {
     let win = this.browserWindow.OpenBrowserWindow();
+    this.delayedEventListener(win, "load", onloadCallback, true);
+    this.oldBrowserWindow = this.browserWindow;
+    this.browserWindow = win;
+  },
+
+  // Opens a new private browser window.  The window will be closed
+  // automatically when done() is called.
+  withNewPrivateWindow: function (onloadCallback) {
+    let win = this.browserWindow.OpenBrowserWindow({private: true});
     this.delayedEventListener(win, "load", onloadCallback, true);
     this.oldBrowserWindow = this.browserWindow;
     this.browserWindow = win;

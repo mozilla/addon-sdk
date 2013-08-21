@@ -20,33 +20,61 @@ commands (for example `--help`). `cfx` supports the following global options:
   -v, --verbose     - enable lots of output
 </pre>
 
-"Command-specific options" are only
-applicable to a subset of the commands.
+"Command-specific options" are documented alongside the commands.
 
-## Supported Commands ##
+There are four supported cfx commands:
 
-### cfx docs ###
+<table>
+  <colgroup>
+    <col width="10%">
+    <col width="90%">
+  </colgroup>
 
-This command displays the documentation for the SDK. The documentation is
-shipped with the SDK in [Markdown](http://daringfireball.net/projects/markdown/)
-format. The first time this command is executed, and any time after the
-Markdown files on disk have changed, `cfx docs` will generate a set of HTML
-pages from them and launch a web browser to display them. If the Markdown files
-haven't changed, `cfx docs` just launches a browser initialized to the set of
-generated pages.
+  <tr>
+    <td>
+      <a href="dev-guide/cfx-tool.html#cfx-init"><code>cfx init</code></a>
+    </td>
+    <td>
+      Create a skeleton add-on as a starting point for your own add-on.
+    </td>
+  </tr>
 
-To regenerate the documentation associated with a single file, you can
-specify the file as an argument. For example:
+  <tr>
+    <td>
+      <a href="dev-guide/cfx-tool.html#cfx-run"><code>cfx run</code></a>
+    </td>
+    <td>
+      Launch an instance of Firefox with your add-on installed.
+    </td>
+  </tr>
 
-<pre>
-  cfx docs doc/dev-guide-source/addon-development/cfx-tool.md 
-</pre>
+  <tr>
+    <td>
+      <a href="dev-guide/cfx-tool.html#cfx-test"><code>cfx test</code></a>
+    </td>
+    <td>
+      Runs your add-on's unit tests.
+    </td>
+  </tr>
 
-This command will regenerate only the HTML page you're reading.
-This is useful if you're iteratively editing a single file, and don't want to wait for cfx to
-regenerate the complete documentation tree.
+  <tr>
+    <td>
+      <a href="dev-guide/cfx-tool.html#cfx-xpi"><code>cfx xpi</code></a>
+    </td>
+    <td>
+      Package your add-on as an <a href="https://developer.mozilla.org/en/XPI">XPI</a>
+      file, which is the install file format for Firefox add-ons.
+    </td>
+  </tr>
 
-### cfx init ####
+</table>
+
+There are also a number of
+[internal commands](dev-guide/cfx-tool.html#internal-commands),
+which are more likely to be useful to SDK developers than to add-on developers.
+
+## <a name="cfx-init">cfx init</a> ##
+
 Create a new directory called "my-addon", change into it, and run `cfx init`.
 
 This command will create an skeleton add-on, as a starting point for your
@@ -73,14 +101,13 @@ own add-on development, with the following file structure:
 
 <div style="clear:both"></div>
 
-### cfx run ###
-
+## <a name="cfx-run">cfx run</a> ##
 This command is used to run the add-on. Called with no options it looks for a
 file called `package.json` in the current directory, loads the corresponding
 add-on, and runs it under the version of Firefox it finds in the platform's
 default install path.
 
-#### Supported Options #####
+### Supported Options ####
 
 You can point `cfx run` at a different `package.json` file using the
 `--pkgdir` option, and pass arguments to your add-on using the
@@ -190,7 +217,7 @@ See <a href="dev-guide/cfx-tool.html#profiledir">
 
 </table>
 
-#### Experimental Options ####
+### Experimental Options ###
 
 <table>
 <colgroup>
@@ -235,6 +262,25 @@ To launch the application, enter the following command:
 
 <tr>
   <td>
+    <code>-o, --overload-modules</code>
+  </td>
+  <td>
+    <p>In early versions of the SDK, the SDK modules used by an add-on
+    were themselves included in the add-on. The SDK modules now ship as
+    part of Firefox. From Firefox 21 onwards, SDK add-ons built with
+    SDK 1.14 or higher will use the SDK modules that are built into Firefox,
+    even if the add-on includes its own copies of the SDK modules.</p>
+    <p>Use this flag to reverse that behavior: if this flag is set and
+    the add-on includes its own copies of the SDK modules, then the add-on
+    will use the SDK modules in the add-on, not the ones built into Firefox.</p>
+    <p>This flag is particularly useful for SDK developers or people working with
+    the development version of the SDK, who may want to run an add-on using newer
+    versions of the modules than than those shipping in Firefox.</p>
+  </td>
+</tr>
+
+<tr>
+  <td>
     <code>--templatedir=TEMPLATEDIR</code>
   </td>
   <td>
@@ -249,7 +295,7 @@ To launch the application, enter the following command:
 
 </table>
 
-#### Internal Options ####
+### Internal Options ###
 
 <table>
 <colgroup>
@@ -291,8 +337,7 @@ To launch the application, enter the following command:
 
 </table>
 
-### cfx test ###
-
+## <a name="cfx-test">cfx test</a> ##
 Run available tests for the specified package.
 
 <span class="aside">Note the hyphen after "test" in the module name.
@@ -310,7 +355,7 @@ See the
 [reference documentation for the `assert` module](modules/sdk/test/assert.html)
 for details.
 
-#### Supported Options #####
+### Supported Options ###
 
 As with `cfx run` you can use options to control which host application binary
 version to use, and to select a profile.
@@ -416,7 +461,7 @@ times.
 
 </table>
 
-#### Experimental Options ####
+### Experimental Options ###
 
 <table>
 <colgroup>
@@ -461,16 +506,26 @@ To launch the application, enter the following command:
 
 <tr>
   <td>
-    <code>--use-server</code>
+    <code>-o, --overload-modules</code>
   </td>
   <td>
-    Run tests using a server previously started with <code>cfx develop</code>.
+    <p>In early versions of the SDK, the SDK modules used by an add-on
+    were themselves included in the add-on. The SDK modules now ship as
+    part of Firefox. From Firefox 21 onwards, SDK add-ons built with
+    SDK 1.14 or higher will use the SDK modules that are built into Firefox,
+    even if the add-on includes its own copies of the SDK modules.</p>
+    <p>Use this flag to reverse that behavior: if this flag is set and
+    the add-on includes its own copies of the SDK modules, then the add-on
+    will use the SDK modules in the add-on, not the ones built into Firefox.</p>
+    <p>This flag is particularly useful for SDK developers or people working with
+    the development version of the SDK, who may want to run an add-on using newer
+    versions of the modules than than those shipping in Firefox.</p>
   </td>
 </tr>
 
 </table>
 
-#### Internal Options ####
+### Internal Options ###
 
 <table>
 <colgroup>
@@ -545,8 +600,7 @@ To launch the application, enter the following command:
 
 </table>
 
-### cfx xpi ###
-
+## <a name="cfx-xpi">cfx xpi</a> ##
 This tool is used to package your add-on as an
 [XPI](https://developer.mozilla.org/en/XPI) file, which is the install file
 format for Mozilla add-ons.
@@ -557,7 +611,7 @@ the current directory and creates the corresponding XPI file.
 Once you have built an XPI file you can distribute your add-on by submitting
 it to [addons.mozilla.org](http://addons.mozilla.org).
 
-#### updateURL and updateLink ####
+### updateURL and updateLink ###
 
 If you choose to host the XPI yourself you should enable the host application
 to find new versions of your add-on.
@@ -586,18 +640,17 @@ and this usually involves using HTTPS for the links.
 So if we run the following command:
 
 <pre>
-  cfx xpi --update-link https://example.com/addon/latest
-          --update-url https://example.com/addon/update_rdf
+  cfx xpi --update-link https://example.com/addon/latest/pluginName.xpi --update-url https://example.com/addon/update_rdf/pluginName.update.rdf
 </pre>
 
 `cfx` will create two files:
 
 * an XPI file which embeds
-`https://example.com/addon/update_rdf` as the value of `updateURL`
-* an RDF file which embeds `https://example.com/addon/latest` as the value of
+`https://example.com/addon/update_rdf/pluginName.update.rdf` as the value of `updateURL`
+* an RDF file which embeds `https://example.com/addon/latest/pluginName.xpi` as the value of
 `updateLink`.
 
-#### Supported Options ####
+### Supported Options ###
 
 As with `cfx run` you can point `cfx` at a different `package.json` file using
 the `--pkgdir` option. You can also embed arguments in the XPI using the
@@ -675,7 +728,7 @@ add-on whenever it is run.
 
 </table>
 
-#### Experimental Options ####
+### Experimental Options ###
 
 <table>
 <colgroup>
@@ -699,7 +752,7 @@ add-on whenever it is run.
 
 </table>
 
-#### Internal Options ####
+### Internal Options ###
 
 <table>
 <colgroup>
@@ -721,41 +774,12 @@ add-on whenever it is run.
 
 </table>
 
-## Experimental Commands ##
-
-### cfx develop ###
-
-This initiates an instance of a host application in development mode,
-and allows you to pipe commands into it from another shell without
-having to constantly restart it. Aside from convenience, for SDK
-Platform developers this has the added benefit of making it easier to
-detect leaks.
-
-For example, in shell A, type:
-
-<pre>
-  cfx develop
-</pre>
-
-In shell B, type:
-
-<pre>
-  cfx test --use-server
-</pre>
-
-This will send `cfx test --use-server` output to shell A. If you repeat the
-command in shell B, `cfx test --use-server` output will appear again in shell A
-without restarting the host application.
-
-`cfx develop` doesn't take any options.
-
-## Internal Commands ##
+## <a name="internal-commands">Internal Commands</a> ##
 
 ### cfx sdocs ###
 
 Executing this command builds a static HTML version of the SDK documentation
-that can be hosted on a web server without the special application support
-required by `cfx docs`.
+that can be hosted on a web server.
 
 #### Options ####
 

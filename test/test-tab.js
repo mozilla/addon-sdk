@@ -7,6 +7,7 @@ const tabs = require("sdk/tabs");
 const windowUtils = require("sdk/deprecated/window-utils");
 const { getTabForWindow } = require('sdk/tabs/helpers');
 const windows = require("sdk/windows").browserWindows;
+const app = require("sdk/system/xul-app");
 
 // The primary test tab
 var primaryTab;
@@ -153,11 +154,11 @@ exports.testBehaviorOnCloseAfterReady = function(assert, done) {
 };
 
 exports.testBug844492 = function(assert, done) {
-  const activeWindowTabs  = require("sdk/windows").browserWindows.activeWindow.tabs;
-
+  const activeWindowTabs = windows.activeWindow.tabs;
   let openedTabs = 0;
+
   tabs.on('open', function onOpenTab(tab) {
-    ++openedTabs;
+    openedTabs++;
 
     let testTabFound = tabExistenceInTabs.bind(null, assert, true, tab);
     let testTabNotFound = tabExistenceInTabs.bind(null, assert, false, tab);
@@ -205,6 +206,13 @@ exports.testBehaviorOnCloseAfterOpen = function(assert, done) {
                      "After being closed, tab attributes are undefined (index)");
 
         tab.destroy();
+
+        if (app.is("Firefox")) {
+          // Ensure that we can call destroy multiple times without throwing;
+          // Fennec doesn't use this internal utility
+          tab.destroy();
+          tab.destroy();
+        }
 
         testTabNotFound(tabs);
         testTabNotFound(windows.activeWindow.tabs);
@@ -254,4 +262,4 @@ if (require("sdk/system/xul-app").is("Fennec")) {
   }
 }
 
-require("test").run(exports);
+require("sdk/test").run(exports);

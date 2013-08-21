@@ -19,6 +19,8 @@ const { openWebpage } = require('./private-browsing/helper');
 const { isTabPBSupported, isWindowPBSupported, isGlobalPBSupported } = require('sdk/private-browsing/utils');
 const promise = require("sdk/core/promise");
 const { pb } = require('./private-browsing/helper');
+const { URL } = require("sdk/url");
+const testPageURI = require("sdk/self").data.url("test.html");
 
 /* XXX This can be used to delay closing the test Firefox instance for interactive
  * testing or visual inspection. This test is registered first so that it runs
@@ -119,16 +121,16 @@ exports.testPageModIncludes = function(test) {
     };
   }
 
-  testPageMod(test, "about:buildconfig", [
+  testPageMod(test, testPageURI, [
       createPageModTest("*", false),
       createPageModTest("*.google.com", false),
-      createPageModTest("about:*", true),
-      createPageModTest("about:", false),
-      createPageModTest("about:buildconfig", true)
+      createPageModTest("resource:*", true),
+      createPageModTest("resource:", false),
+      createPageModTest(testPageURI, true)
     ],
     function (win, done) {
-      test.waitUntil(function () win.localStorage["about:buildconfig"],
-                     "about:buildconfig page-mod to be executed")
+      test.waitUntil(function () win.localStorage[testPageURI],
+                     testPageURI + " page-mod to be executed")
           .then(function () {
             asserts.forEach(function(fn) {
               fn(test, win);
@@ -143,7 +145,7 @@ exports.testPageModErrorHandling = function(test) {
   test.assertRaises(function() {
       new PageMod();
     },
-    'pattern is undefined',
+    'The `include` option must always contain atleast one rule',
     "PageMod() throws when 'include' option is not specified.");
 };
 
@@ -375,10 +377,11 @@ exports.testRelatedTabNoRequireTab = function(test) {
     include: url,
     onAttach: function(worker) {
       test.assertEqual(worker.tab.url, url, "Worker.tab.url is valid");
-      worker.tab.close();
-      pageMod.destroy();
-      loader.unload();
-      test.done();
+      worker.tab.close(function() {
+        pageMod.destroy();
+        loader.unload();
+        test.done();
+      });
     }
   });
 
@@ -426,8 +429,7 @@ exports.testWorksWithExistingTabs = function(test) {
           timer.setTimeout(function() {
             pageModOnExisting.destroy();
             pageModOffExisting.destroy();
-            tab.close();
-            test.done();
+            tab.close(test.done.bind(test));
           }, 0);
         }
       });
@@ -471,11 +473,13 @@ exports.testTabWorkerOnMessage = function(test) {
             }
             else if (this.tab.url === url2) {
               mod.destroy();
-              worker1.tab.close();
-              worker1.destroy();
-              worker.tab.close();
-              worker.destroy();
-              test.done();
+              worker1.tab.close(function() {
+                worker1.destroy();
+                worker.tab.close(function() {
+                  worker.destroy();
+                  test.done();
+                });
+              });
             }
           }
         });
@@ -507,11 +511,9 @@ exports.testAutomaticDestroy = function(test) {
     url: "about:",
     onReady: function onReady(tab) {
       test.pass("check automatic destroy");
-      tab.close();
-      test.done();
+      tab.close(test.done.bind(test));
     }
   });
-
 }
 
 exports.testAttachToTabsOnly = function(test) {
@@ -856,8 +858,7 @@ exports.testPageModCssAutomaticDestroy = function(test) {
         "PageMod contentStyle is removed after loader's unload"
       );
 
-      tab.close();
-      test.done();
+      tab.close(test.done.bind(test));
     }
   });
 };
@@ -882,10 +883,11 @@ exports.testPageModTimeout = function(test) {
         test.pass("timer was scheduled")
         worker.port.on("fired", function(data) {
           test.assertEqual(id, data, "timer was fired")
-          tab.close()
-          worker.destroy()
-          loader.unload()
-          test.done()
+          tab.close(function() {
+            worker.destroy()
+            loader.unload()
+            test.done()
+          });
         })
       })
     }
@@ -921,11 +923,12 @@ exports.testPageModcancelTimeout = function(test) {
       })
       worker.port.on("timeout", function(id) {
         test.pass("timer was scheduled")
-        tab.close();
-        worker.destroy();
-        mod.destroy();
-        loader.unload();
-        test.done();
+        tab.close(function() {
+          worker.destroy();
+          mod.destroy();
+          loader.unload();
+          test.done();
+        });
       })
     }
   });
@@ -1136,3 +1139,29 @@ exports["test page-mod on private tab in global pb"] = function (test) {
   });
   pb.activate();
 }
+
+// Bug 699450: Calling worker.tab.close() should not lead to exception
+exports.testWorkerTabClose = function(test) {
+  let callbackDone;
+  testPageMod(test, "about:", [{
+      include: "about:",
+      contentScript: '',
+      onAttach: function(worker) {
+        console.log("call close");
+        worker.tab.close(function () {
+          // On Fennec, tab is completely destroyed right after close event is
+          // dispatch, so we need to wait for the next event loop cycle to
+          // check for tab nulliness.
+          timer.setTimeout(function () {
+            test.assert(!worker.tab,
+                        "worker.tab should be null right after tab.close()");
+            callbackDone();
+          }, 0);
+        });
+      }
+    }],
+    function(win, done) {
+      callbackDone = done;
+    }
+  );
+};
