@@ -125,4 +125,11 @@ passed):
 @function
   Returns a number of event listeners registered for the given event `type`
   on the given event `target`.
+
+ @param target {Object}
+    Event target object.
+ @param type {String}
+    The type of event.
+ @returns {number}
+    The count of matched event listeners
 </api>
