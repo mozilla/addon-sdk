@@ -148,3 +148,10 @@ more about escaping characters in strings at
 @param path {string}
   The path of the directory to remove.
 </api>
+
+<api name="reveal">
+@function
+  Opens the folder containing the file or directory at the supplied path if the platform supports the ability to open a directory.  
+@param path {string}
+  The path of the file or directory to reveal.
+</api>
