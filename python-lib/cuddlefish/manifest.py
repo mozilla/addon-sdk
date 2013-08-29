@@ -606,7 +606,7 @@ class ManifestBuilder:
         filename = os.sep.join(name.split("/"))
         # normalize filename, make sure that we do not add .js if it already has
         # it.
-        if not filename.endswith(".js"):
+        if not filename.endswith(".js") and not filename.endswith(".json"):
           filename += ".js"
         basename = filename[:-3]
 
