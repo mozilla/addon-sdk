@@ -85,8 +85,9 @@ fi
 
 pyexe=python
 
-# Checks if there is python2 command available and if pyexe variable
-# has not been updated yet. 
+# If there is `python2` command available in the system use it and make
+# sure bin/cfx uses it too.
+
 if [ -n "$(command -v python2)"] ; then
     pyexe='python2'
     DIR=`realpath $(dirname ${BASH_SOURCE[0]})`
