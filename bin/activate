@@ -87,13 +87,11 @@ pyexe=python
 
 # Checks if there is python2 command available and if pyexe variable
 # has not been updated yet. 
-
-if [ -n "$(command -v python2)" -a "$pyexe" = "python" ] ; then
+if [ -n "$(command -v python2)"] ; then
+    pyexe='python2'
     DIR=`realpath $(dirname ${BASH_SOURCE[0]})`
     if [ -z "$(grep 'python2' $DIR/cfx)" ] ; then
-        pyexe='python2'
-        (cd $DIR/..; 
-          grep -Rl 'python' . | xargs sed -ri 's/([^!]|^)python(\s|$)/\1python2\2/g');
+        sed -ri '1 s/([^!]|^)python(\s|$)/\1python2\2/g'
     fi
 fi
 
