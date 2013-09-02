@@ -88,11 +88,11 @@ pyexe=python
 # If there is `python2` command available in the system use it and make
 # sure bin/cfx uses it too.
 
-if [ -n "$(command -v python2)"] ; then
+if [ -n "$(command -v python2)" ] ; then
     pyexe='python2'
     DIR=`realpath $(dirname ${BASH_SOURCE[0]})`
     if [ -z "$(grep 'python2' $DIR/cfx)" ] ; then
-        sed -ri '1 s/([^!]|^)python(\s|$)/\1python2\2/g'
+        sed -ri '1 s/([^!]|^)python(\s|$)/\1python2\2/g' "$DIR/cfx"
     fi
 fi
 
