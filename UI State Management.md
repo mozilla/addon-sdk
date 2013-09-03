@@ -49,10 +49,12 @@ observer service.
 
 ##### Topic:
 
-* `addon-broadcaster-request`: used by one component in a group to request
+* `addon-broadcaster-get`: used by one component in a group to request
 information about other components in the group (example: on setup).
-* `addon-broadcaster-response`: used to respond to requests.
-* `addon-broadcaster-update`: used to notify observes about state changes that are
+* `addon-broadcaster-set`: used by one component in a group to request
+information about other components in the group (example: on setup).
+* `addon-broadcaster-response`: used to respond to get/set requests.
+* `addon-broadcaster-notification`: used to notify observes about state changes that are
 made either by the user (example: toggling checked state), or by the system (example: add-on is
 unloaded and therefor the ui component group is removed/deteled)
 
@@ -70,7 +72,93 @@ This is the interesting stuff.
 
 ### Examples
 
+#### Retrieving a broadcaster's global state
 
+```` javascript
+const { get } = require('sdk/system/broadcaster');
+get({
+  id: broadcasterID,
+  scope: 'global'
+}).then(function(states) {
+  let globalState = states['global'];
+  // update something..
+})
+````
+
+Note: the scope id for the global state is `global`
+
+#### Retrieving a broadcaster's state for a specific window
+
+```` javascript
+const { get } = require('sdk/system/broadcaster');
+get({
+  id: broadcasterID,
+  scope: 'window-' + window.id
+}).then(function(states) {
+  let windowState = states['window-' + window.id];
+  // update something
+})
+````
+
+#### Setting the state for a tab
+
+```` javascript
+const { set } = require('sdk/system/broadcaster');
+set({
+  id: broadcasterID,
+  scope: 'tab-' + tab.id,
+  state: {
+    checked: true,
+    icon: undefined,
+    title: 'Thingy for Tab: ' + tab.title
+  }
+}).then(function(states) {
+  let tabState = states['tab-' + tab.id];
+  (tabState.checked === true) // is true
+  (tabState.icon === undefined) // is true
+  // ...
+})
+````
+
+#### Listening to a broadcaster's updates
+
+```` javascript
+const { on, off } = require('sdk/system/broadcaster');
+on('broadcaster-id', function broadcastListener(event) {
+  if (event.type == 'delete') {
+    off(broadcasterID, broadcastListener);
+  }
+  else if (event.type == 'update') {
+    let { states } = event;
+    let myNewTabState = states['tab-' + tab.id];
+    // update my UI for the new state
+  }
+})
+````
+
+#### Getting the broadcaster for a UI element
+
+```` javascript
+const { getMostRecentBrowserWindow } = require('sdk/window/utils');
+
+let sidebarMenuitem = getMostRecentBrowserWindow().document.getElementById(sidebarID);
+let broadcasterID = sidebarMenuitem.getAttribute('data-sdk-observes');
+````
+
+#### Creating a new broadcaster
+
+```` javascript
+const { Broadcaster } = require('sdk/system/broadcaster');
+
+let broadcaster = Broadcaster();
+
+
+````
+
+### Notes
+
+* When there are no longer any subscribers for a broadcaster then the
+broadcaster will be automatically deleted.
 
 ### Dependencies & Requirements
 
