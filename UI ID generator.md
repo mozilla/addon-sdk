@@ -21,7 +21,8 @@ a default generator will be used which will rely on
 #### Exports
 
 * `makeID(thing)`: Makes a unique ID for the input.
-* `getID(thing)`: Gets the ID assoicated with input
+* `setID`: Allows one to set and id for an object.
+* `getID(thing)`: Gets the ID assoicated with input.
 
 ### Examples
 
@@ -50,13 +51,17 @@ let thingID = getID(thing);
 #### Defining ID generator
 
 ```js
-const { makeID } = require('sdk/ui/id');
+const { makeID, setID } = require('sdk/ui/id');
 
 const Thingy = Class(/* ... */);
 
 makeID.define(Thingy, function(thing) {
   let id = makeID().split('-');
   id.splice(1, 0, 'thingy');
-  return id.join('-');
+  id = id.join('-');
+
+  setID(thing, id);
+
+  return id;
 });
 ```
