@@ -10,11 +10,15 @@ without the need to convert the jetpack code base to an old school extension cod
 # Use Cases
 
 * Running tests for a Jetpack via Command Line (using Firefox binary) and via the AOM user interface.
-* Test run an addon with a blank profile (or existing profile)
-*
+* Test run an addon with a blank profile (or existing profile) via cli
+* Creating a blank/skeleton jetpack add-on via user interface
+* Pointing AOM to WIP add-on for development purposes
+* Installing a Jetpack, zipped and renamed and a xpi, without the need to convert the Jetpack structure to
+  use the old school xpi structure (ie: no need for a install.rdf or bootstrap.js file)
 
-# Case for separating Jetpacks from old school extensions
+# Implementation
 
-* Jetpacks have permissions which old school extensions do not
-* Jetpacks have a test framework which will be usable through the user interface whcih old school extensions do not have.
-*
+## Adding CLI flags for the Firefox binary
+
+## Updating XPIProvider
+
