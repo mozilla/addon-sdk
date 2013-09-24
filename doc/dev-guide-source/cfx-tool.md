@@ -930,3 +930,37 @@ The `--static-args` option is recognized by two of the package-specific
 commands: `run` and `xpi`.  When used with the `xpi` command, the JSON is
 packaged with the XPI's harness options and will therefore be used whenever the
 program in the XPI is run.
+
+## Some Examples ##
+
+The following example is for OSX.
+
+<pre>
+cfx run -b "/Applications/FirefoxAurora.app/Contents/MacOS/firefox-bin" --binary-args '-url "www.mozilla.org" -no-remote' -p "/Users/yourUserName/Library/Application Support/Firefox/Profiles/fsmxe5xz.dev"
+</pre>
+
+Explanation:
+
+This bit uses the binary option (-b) to use Firefox Aurora instead of the default Firefox.
+
+<pre>
+-b "/Applications/FirefoxAurora.app/Contents/MacOS/firefox-bin"
+</pre>
+
+Then we use the --binary-args option to send command line options to the firefox executable. 
+
+<pre>
+--binary-args '-url "www.mozilla.org" -no-remote'
+</pre>
+
+-url tells Firefox to open the following url (in quotes) and -no-remote allows you to open your default Firefox profile while you are running your dev profile at the same time. More info here: [https://developer.mozilla.org/en/Command_Line_Options](https://developer.mozilla.org/en/Command_Line_Options)
+
+Then we specify the profile to be used - in this case, one that's called "dev" in the Firefox profiles folder.
+
+<pre>
+ -p "/Users/yourUserName/Library/Application Support/Firefox/Profiles/fsmxe5xz.dev"
+</pre>
+
+
+
+
