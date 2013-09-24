@@ -487,6 +487,22 @@ exports["test fs.writeFile (with large files)"] = function(assert, end) {
   async = true;
 };
 
+exports["test fs.writeFile error"] = function (assert, done) {
+  try {
+    fs.writeFile({}, 'content', function (err) {
+      assert.fail('Error thrown from TypeError should not be caught');
+    });
+  } catch (e) {
+    assert.ok(e,
+      'writeFile with a non-string error should not be caught');
+    assert.equal(e.name, 'TypeError', 'error should be TypeError');
+  }
+  fs.writeFile('not/a/valid/path', 'content', function (err) {
+    assert.ok(err, 'error caught and handled in callback');
+    done();
+  });
+};
+
 exports["test fs.chmod"] = function (assert, done) {
   let content = ["hej från sverige"];
 
