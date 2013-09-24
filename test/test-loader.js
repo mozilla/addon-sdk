@@ -31,7 +31,7 @@ exports['test syntax errors'] = function(assert) {
     assert.equal(error.name, "SyntaxError", "throws syntax error");
     assert.equal(error.fileName.split("/").pop(), "error.js",
               "Error contains filename");
-    assert.equal(error.lineNumber, 11, "error is on line 11")
+    assert.equal(error.lineNumber, 11, "error is on line 11");
     let stack = parseStack(error.stack);
 
     assert.equal(stack.pop().fileName, uri + "error.js",
@@ -142,6 +142,25 @@ exports['test early errors in module'] = function(assert) {
   } finally {
     unload(loader);
   }
-}
+};
+
+exports['test require json'] = function (assert) {
+  let data = require('./fixtures/loader/json/manifest.json');
+  assert.equal(data.name, 'Jetpack Loader Test', 'loads json with strings');
+  assert.equal(data.version, '1.0.1', 'loads json with strings');
+  assert.equal(data.dependencies.async, '*', 'loads json with objects');
+  assert.equal(data.dependencies.underscore, '*', 'loads json with objects');
+  assert.equal(data.contributors.length, 4, 'loads json with arrays');
+  assert.ok(Array.isArray(data.contributors), 'loads json with arrays');
+
+  try {
+    require('./fixtures/loader/json/invalid.json');
+    assert.fail('Error not thrown when loading invalid json');
+  } catch (err) {
+    assert.ok(err, 'error thrown when loading invalid json');
+    assert.ok(/JSON\.parse/.test(err.message),
+      'should thrown an error from JSON.parse');
+  }
+};
 
 require('test').run(exports);
