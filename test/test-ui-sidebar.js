@@ -15,7 +15,7 @@ const { show, hide } = require('sdk/ui/sidebar/actions');
 const { isShowing } = require('sdk/ui/sidebar/utils');
 const { getMostRecentBrowserWindow } = require('sdk/window/utils');
 const { open, close, focus, promise: windowPromise } = require('sdk/window/helpers');
-const { setTimeout } = require('sdk/timers');
+const { setTimeout, setImmediate } = require('sdk/timers');
 const { isPrivate } = require('sdk/private-browsing');
 const { data } = require('sdk/self');
 const { URL } = require('sdk/url');
@@ -1271,6 +1271,36 @@ exports.testEventListeners = function(assert, done) {
           ].join(), 'the event order was correct');
         sidebar.destroy();
       }).then(done, assert.fail);
+
+  sidebar.show();
+}
+
+// For more information see Bug 920780
+exports.testAttachDoesNotEmitWhenShown = function(assert, done) {
+  const { Sidebar } = require('sdk/ui/sidebar');
+  let testName = 'testSidebarLeakCheckUnloadAfterAttach';
+  let count = 0;
+
+  let sidebar = Sidebar({
+    id: testName,
+    title: testName,
+    url: 'data:text/html;charset=utf-8,'+testName,
+    onAttach: function() {
+      if (++count == 1) {
+        assert.pass('sidebar was attached ' + count + ' time(s)');
+        setImmediate(function() {
+          sidebar.show().then(function() sidebar.hide(), assert.fail);
+        });
+      }
+      else {
+        assert.fail('sidebar was attached again..');
+      }
+    },
+    onHide: function() {
+      sidebar.destroy();
+      done();
+    }
+  });
 
   sidebar.show();
 }
