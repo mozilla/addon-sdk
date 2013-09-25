@@ -356,7 +356,7 @@ exports.testRemoteContent = function(assert) {
     sidebar.destroy();
   }
   catch(e) {
-    assert.ok(/The option "url" must be a valid URI./.test(e), 'remote content is not acceptable');
+    assert.ok(/The option "url" must be a valid local URI\./.test(e), 'remote content is not acceptable');
   }
 }
 
@@ -373,7 +373,7 @@ exports.testInvalidURL = function(assert) {
     sidebar.destroy();
   }
   catch(e) {
-    assert.ok(/The option "url" must be a valid URI./.test(e), 'invalid URIs are not acceptable');
+    assert.ok(/The option "url" must be a valid local URI\./.test(e), 'invalid URIs are not acceptable');
   }
 }
 
@@ -389,7 +389,7 @@ exports.testInvalidURLType = function(assert) {
     sidebar.destroy();
   }
   catch(e) {
-    assert.ok(/The option "url" must be a valid URI./.test(e), 'invalid URIs are not acceptable');
+    assert.ok(/The option "url" must be a valid local URI\./.test(e), 'invalid URIs are not acceptable');
   }
 }
 
