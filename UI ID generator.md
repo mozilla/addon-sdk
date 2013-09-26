@@ -14,26 +14,24 @@ any other UI modules.
 Using the `method/core` module, it will be possible to define
 specific generators and getters for known types, otherwise
 a default generator will be used which will rely on
-`sdk/util/uuid` to generate ids with a `jetpack-` prefix.
+`sdk/util/uuid` to generate ids.
 
 ### API
 
 #### Exports
 
-* `makeID(thing)`: Makes a unique ID for the input.
-* `setID`: Allows one to set and id for an object.
-* `getID(thing)`: Gets the ID assoicated with input.
+* `identify(thing)`: makes and/or gets a unique ID for the input.
 
 ### Examples
 
 #### Making an ID
 
 ```js
-const { makeID } = require('sdk/ui/id');
+const { identify } = require('sdk/ui/id');
 
 const Thingy = Class({
   initialize: function(details) {
-    let id = makeID(this);
+    let id = identify(this);
   }
 });
 ```
@@ -41,27 +39,19 @@ const Thingy = Class({
 #### Getting an ID
 
 ```js
-const { getID } = require('sdk/ui/id');
+const { identify } = require('sdk/ui/id');
 const { Thingy } = require('./thingy');
 
 let thing = Thingy(/* ... */);
-let thingID = getID(thing);
+let thingID = identify(thing);
 ```
 
 #### Defining ID generator
 
 ```js
-const { makeID, setID } = require('sdk/ui/id');
+const { identify } = require('sdk/ui/id');
 
 const Thingy = Class(/* ... */);
 
-makeID.define(Thingy, function(thing) {
-  let id = makeID().split('-');
-  id.splice(1, 0, 'thingy');
-  id = id.join('-');
-
-  setID(thing, id);
-
-  return id;
-});
+identify.define(Thingy, thing => thing.guid);
 ```
