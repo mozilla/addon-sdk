@@ -560,11 +560,9 @@ exports["test Automatic Destroy"] = function(assert) {
 
   loader.unload();
 
-  panel.port.on("event-back", function () {
-    assert.fail("Panel should have been destroyed on module unload");
-  });
-  panel.port.emit("event");
-  assert.pass("check automatic destroy");
+  assert.throws(() => {
+    panel.port.emit("event");
+  }, /already have been unloaded/, "check automatic destroy");
 };
 
 exports["test Show Then Destroy"] = makeEventOrderTest({
