@@ -940,6 +940,30 @@ exports['test nested popups'] = function (assert, done) {
   panel.show();
 };
 
+exports['test emits on url changes'] = function (assert, done) {
+  let loader = Loader(module);
+  let { Panel } = loader.require('sdk/panel');
+  let uriA = 'data:text/html;charset=utf-8,A';
+  let uriB = 'data:text/html;charset=utf-8,B';
+
+  let panel = Panel({
+    contentURL: uriA,
+    contentScript: 'new ' + function() {
+      self.port.on('hi', function() {
+        self.port.emit('bye', document.URL);
+      });
+    }
+  });
+
+  panel.contentURL = uriB;
+  panel.port.emit('hi', 'hi')
+  panel.port.on('bye', function(uri) {
+    assert.equal(uri, uriB, 'message was delivered to new uri');
+    loader.unload();
+    done();
+  });
+};
+
 if (isWindowPBSupported) {
   exports.testGetWindow = function(assert, done) {
     let activeWindow = getMostRecentBrowserWindow();
