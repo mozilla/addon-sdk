@@ -8,7 +8,7 @@ const testPageMod = require("./pagemod-test-helpers").testPageMod;
 const { Loader } = require('sdk/test/loader');
 const tabs = require("sdk/tabs");
 const timer = require("sdk/timers");
-const { Cc, Ci } = require("chrome");
+const { Cc, Ci, Cu } = require("chrome");
 const { open, getFrames, getMostRecentBrowserWindow } = require('sdk/window/utils');
 const windowUtils = require('sdk/deprecated/window-utils');
 const { getTabContentWindow, getActiveTab, setTabURL, openTab, closeTab } = require('sdk/tabs/utils');
@@ -22,6 +22,11 @@ const { pb } = require('./private-browsing/helper');
 const { URL } = require("sdk/url");
 const testPageURI = require("sdk/self").data.url("test.html");
 const { waitUntil } = require("sdk/test/utils");
+
+// The following adds Debugger constructor to the global namespace.
+const { addDebuggerToGlobal } =
+  Cu.import('resource://gre/modules/jsdebugger.jsm', {});
+addDebuggerToGlobal(this);
 
 function Isolate(worker) {
   return "(" + worker + ")()";
@@ -1116,6 +1121,34 @@ exports.testWorkerTabClose = function(assert, done) {
     }],
     function(win, done) {
       callbackDone = done;
+    }
+  );
+};
+
+exports.testDebugMetadata = function(assert, done) {
+  let dbg = new Debugger;
+  let globalDebuggees = [];
+  dbg.onNewGlobalObject = function(global) {
+    globalDebuggees.push(global);
+  }
+
+  let mods = testPageMod(assert, done, "about:", [{
+      include: "about:",
+      contentScriptWhen: "start",
+      contentScript: "null;",
+    }],
+    function(win, done) {
+      assert.ok(globalDebuggees.some(function(global) {
+        try {
+          let metadata = Cu.getSandboxMetadata(global.unsafeDereference());
+          return metadata && metadata.addonID && metadata.SDKContentScript;
+        } catch(e) {
+          // Some of the globals might not be Sandbox instances and thus
+          // will cause getSandboxMetadata to fail.
+          return false;
+        }
+      }), "one of the globals is a content script");
+      done();
     }
   );
 };
