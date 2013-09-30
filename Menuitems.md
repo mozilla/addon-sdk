@@ -18,7 +18,7 @@ The design would closely match that for Context Menuitems, but leave out all of 
 
 * options
   * `String` label: the text displayed in the menuitem.
-  * `Array` context: describes menu which the menuitem will live under.  In the array, the most appriopriate parent in the array will be used (likely the first in the array).
+  * `Array` menu: describes menu which the menuitem will live under.  In the array, the most appriopriate parent in the array will be used (likely the first in the array).
   * `Boolean` [diabled]: this should be `false` if you want the menuitem to be displayed and unclickable.
   * `Boolean` [visible]: this should be `false` if you want the menuitem to be hidden, default is `true`.
 
@@ -42,11 +42,11 @@ The design would closely match that for Context Menuitems, but leave out all of 
 #### Using `Menuitem` constants for `attachTo`
 
 ```javascript
-var { Menuitem } = require('sdk/ui');
+var { Menuitem, FILE_MENU, APP_MENU } = require('sdk/ui');
 
 var menuitem = Menuitem({
   label: "Not Checked",
-  menu: [ Menuitem.FILE_MENU, Menuitem.APP_MENU ],
+  menu: [ FILE_MENU, APP_MENU ],
   onClick: function() {
     // do something..
   }
