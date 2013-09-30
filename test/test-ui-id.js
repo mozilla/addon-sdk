@@ -9,13 +9,13 @@ const { Class } = require('sdk/core/heritage');
 const signature = /{[0-9a-f\-]+}/;
 
 exports['test generate id'] = function(assert) {
-  let first = identify();
+  let first = identify({});
   let second = identify({});
 
   assert.ok(signature.test(first), 'first id has a correct signature');
   assert.ok(signature.test(second), 'second id has a correct signature');
 
-  assert.notEqual(first, identify(), 'identify generated new uuid [1]');
+  assert.notEqual(first, identify({}), 'identify generated new uuid [1]');
   assert.notEqual(first, second, 'identify generated new uuid [2]');
 };
 
