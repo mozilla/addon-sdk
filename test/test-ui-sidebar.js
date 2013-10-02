@@ -1286,19 +1286,41 @@ exports.testAttachDoesNotEmitWhenShown = function(assert, done) {
     title: testName,
     url: 'data:text/html;charset=utf-8,'+testName,
     onAttach: function() {
-      if (++count == 1) {
-        assert.pass('sidebar was attached ' + count + ' time(s)');
-        setImmediate(function() {
-          sidebar.show().then(function() sidebar.hide(), assert.fail);
-        });
-      }
-      else {
+      if (count > 2) {
         assert.fail('sidebar was attached again..');
       }
-    },
-    onHide: function() {
-      sidebar.destroy();
-      done();
+      else {
+        assert.pass('sidebar was attached ' + count + ' time(s)');
+      }
+
+      if (++count == 1) {
+        setTimeout(function() {
+          let shown = false;
+          let endShownTest = false;
+          sidebar.once('show', function() {
+            assert.pass('shown was emitted');
+            shown = !endShownTest && true;
+          });
+
+          sidebar.show().then(function() {
+            assert.pass('calling hide');
+            sidebar.hide();
+          }).then(function() {
+            endShownTest = true;
+
+            setTimeout(function() {
+              sidebar.show().then(function() {
+                assert.ok(!shown, 'show did not emit');
+
+                sidebar.hide().then(function() {
+                  sidebar.destroy();
+                  done();
+                }).then(null, assert.fail);
+              })
+            })
+          }).then(null, assert.fail);
+        });
+      }
     }
   });
 
