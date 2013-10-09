@@ -308,12 +308,17 @@ exports.testIgnoreClosingWindow = function(assert, done) {
   window.addEventListener("load", function onload() {
     window.addEventListener("load", onload, false);
 
-      assert.equal(windows().length, 2, "Two windows open");
+    assert.equal(windows().length, 2, "Two windows open");
 
     // Wait for the window unload before ending test
-    close(window).then(done);
+    let checked = false;
+
+    close(window).then(function() {
+      assert.ok(checked, 'the test is finished');
+    }).then(done, assert.fail)
 
     assert.equal(windows().length, 1, "Only one window open");
+    checked = true;
   }, false);
 };
 
