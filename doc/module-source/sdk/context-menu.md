@@ -125,6 +125,19 @@ exported by the `context-menu` module.
     </td>
   </tr>
   <tr>
+    <td><code>
+      PredicateContext(predicateFunction)
+    </code></td>
+    <td>
+      <code>predicateFunction</code> is called when the menu is
+      invoked, and the context occurs when the function returns a true
+      value. The function is passed one argument, <code>data</code>,
+      which is an object with properties describing the menu invocaton
+      context.  (The properties are listed in the table below this
+      one.)
+    </td>
+  </tr>
+  <tr>
     <td>
       array
     </td>
@@ -134,6 +147,101 @@ exported by the `context-menu` module.
     </td>
   </tr>
 </table>
+
+The <code>data</code> argument passed to the
+<code>PredicateContext</code> function has the following properties:
+
+<table>
+  <tr>
+    <th>Property</th>
+    <th>Description</th>
+  </tr>
+  <tr>
+    <td><code>
+      documentType
+    </code></td>
+    <td>
+      The MIME type of the document the menu was invoked in.
+      E.g. text/html for HTML pages, application/xhtml+xml for
+      XHTML, or image/jpeg when viewing a JPEG image directly.
+    </td>
+  </tr>
+  <tr>
+    <td><code>
+      documentURL
+    </code></td>
+    <td>
+      The URL of the document the menu was invoked in.
+    </td>
+  </tr>
+  <tr>
+    <td><code>
+      targetName
+    </code></td>
+    <td>
+      The name of the DOM element that the menu was invoked on, in lower-case.
+    </td>
+  </tr>
+  <tr>
+    <td><code>
+      targetID
+    </code></td>
+    <td>
+      The <code>id</code> attribute of the element that the menu was
+      invoked on, or <code>null</code> if not set.
+    </td>
+  </tr>
+  <tr>
+    <td><code>
+      isEditable
+    </code></td>
+    <td>
+      <code>true</code> if the menu was invoked in an editable
+      element, and that element isn't disabled or read-only.  This
+      includes non-input elements with the
+      <code>contenteditable</code> attribute set to <code>true</code>.
+    </td>
+  </tr>
+  <tr>
+    <td><code>
+      selectionText
+    </code></td>
+    <td>
+      The current selection as a text string, or <code>null</code>.
+      If the menu was invoked in an input text box or area, this is
+      the selection of that element, otherwise the selection in the
+      contents of the window. 
+    </td>
+  </tr>
+  <tr>
+    <td><code>
+      srcURL
+    </code></td>
+    <td>
+      The <code>src</code> URL of the element that the menu was
+      invoked on, or <code>null</code> if it doesn't have one.
+    </td>
+  </tr>
+  <tr>
+    <td><code>
+      linkURL
+    </code></td>
+    <td>
+      The <code>href</code> URL of the element that the menu was
+      invoked on, or <code>null</code> if it doesn't have one.
+    </td>
+  </tr>
+  <tr>
+    <td><code>
+      value
+    </code></td>
+    <td>
+      The current contents of a input text box or area if the menu was
+      invoked in one, <code>null</code> otherwise.
+    </td>
+  </tr>
+</table>
+
 
 Menu items also have a `context` property that can be used to add and remove
 declarative contexts after construction. For example:
