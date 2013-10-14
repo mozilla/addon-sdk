@@ -461,19 +461,24 @@ exports.testInvalidNullID = function(assert) {
   }
 }
 
-exports.testInvalidUndefinedID = function(assert) {
+exports.testUndefinedID = function(assert) {
   const { Sidebar } = require('sdk/ui/sidebar');
-  let testName = 'testInvalidBlankID';
+  let testName = 'testInvalidUndefinedID';
+
   try {
     let sidebar = Sidebar({
       title: testName,
-      url: 'data:text/html;charset=utf-8,'+testName
+      url: 'data:text/html;charset=utf-8,' + testName
     });
-    assert.fail('a bad sidebar was created..');
+
+    assert.ok(sidebar.id, 'an undefined id was accepted, id was creawted: ' + sidebar.id);
+    assert.ok(getMostRecentBrowserWindow().document.getElementById(makeID(sidebar.id)), 'the sidebar element was found');
+
     sidebar.destroy();
   }
   catch(e) {
-    assert.ok(/The option "id" must be a valid alphanumeric id/.test(e), 'invalid ids are not acceptable');
+    assert.fail('undefined ids are acceptable');
+    assert.fail(e.message);
   }
 }
 

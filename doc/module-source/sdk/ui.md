@@ -16,7 +16,7 @@ The screenshot below shows a sidebar whose content is built from tweets:
 <!-- add screen shot here -->
 
 Sidebars are useful for presenting temporary interfaces to users in a way that is
-easier for users to ignore and dismiss than a modal dialog 
+easier for users to ignore and dismiss than a modal dialog
 and easier for users to keep around than a Panel, since sidebars are
 displayed at the side of the browser until the user decides to close it.
 
@@ -113,8 +113,8 @@ removed/destructed using `destroy()`.
 Creates a sidebar.
 @param options {object}
   Options for the sidebar, with the following keys:
-  @prop id {string}
-    The `id` of the sidebar.
+  @prop [id] {string}
+    The `id` of the sidebar, a default id will be generated for sidebars if one is not provided.
   @prop title {string}
     A title for the sidebar.
   @prop icon {string, object}
@@ -146,7 +146,7 @@ The global icon for the sidebar.
 
 <api name="url">
 @property {string}
-The URL of content loaded into the sidebar. 
+The URL of content loaded into the sidebar.
 </api>
 
 <api name="destroy">
