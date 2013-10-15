@@ -19,4 +19,14 @@ exports.testReady = function(assert, done) {
   }).then(null, assert.fail);
 }
 
+exports.testDocumentBody = function(assert, done) {
+  let loader = Loader(module);
+  let { ready, window } = loader.require('sdk/addon/window');
+  ready.then(function() {
+    assert.ok(window.document.body, 'document.body exists');
+
+    loader.unload();
+  }).then(done, assert.fail);
+}
+
 require('sdk/test').run(exports);
