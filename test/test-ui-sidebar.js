@@ -897,6 +897,64 @@ exports.testGCdShowingSidebarsOnUnload = function(assert, done) {
   sidebar.show();
 }
 
+exports.testDetachEventOnWindowClose = function(assert, done) {
+  const loader = Loader(module);
+  const { Sidebar } = loader.require('sdk/ui/sidebar');
+  const window = getMostRecentBrowserWindow();
+
+  let testName = 'testDetachEventOnWindowClose';
+  let url = 'data:text/html;charset=utf-8,' + testName;
+
+
+  windowPromise(window.OpenBrowserWindow(), 'load').then(focus).then(function(window) {
+    let sidebar = Sidebar({
+      id: testName,
+      title: testName,
+      url: url,
+      onAttach: function() {
+        assert.pass('the attach event is fired');
+        window.close();
+      },
+      onDetach: function() {
+        assert.pass('the detach event is fired when the window showing it closes');
+        loader.unload();
+        done();
+      }
+    });
+
+    sidebar.show();
+  }).then(null, assert.fail);
+}
+
+exports.testHideEventOnWindowClose = function(assert, done) {
+  const loader = Loader(module);
+  const { Sidebar } = loader.require('sdk/ui/sidebar');
+  const window = getMostRecentBrowserWindow();
+
+  let testName = 'testDetachEventOnWindowClose';
+  let url = 'data:text/html;charset=utf-8,' + testName;
+
+
+  windowPromise(window.OpenBrowserWindow(), 'load').then(focus).then(function(window) {
+    let sidebar = Sidebar({
+      id: testName,
+      title: testName,
+      url: url,
+      onAttach: function() {
+        assert.pass('the attach event is fired');
+        window.close();
+      },
+      onHide: function() {
+        assert.pass('the hide event is fired when the window showing it closes');
+        loader.unload();
+        done();
+      }
+    });
+
+    sidebar.show();
+  }).then(null, assert.fail);
+}
+
 exports.testGCdHiddenSidebarsOnUnload = function(assert, done) {
   const loader = Loader(module);
   const { Sidebar } = loader.require('sdk/ui/sidebar');
