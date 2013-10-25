@@ -1,8 +1,9 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 "use strict";
+
+require("sdk/clipboard");
 
 const { Cc, Ci } = require("chrome");
 
@@ -217,17 +218,5 @@ exports["test Set Image Type Wrong Data"] = function(assert) {
     clip.set(wrongPNG, flavor);
   }, "Unable to decode data given in a valid image.");
 };
-
-// TODO: Test error cases.
-
-if (require("sdk/system/xul-app").is("Fennec")) {
-  module.exports = {
-    "test Unsupported Test": function UnsupportedTest (assert) {
-        assert.pass(
-          "Skipping this test until Fennec support is implemented." +
-          "See bug 789757");
-    }
-  }
-}
 
 require("test").run(exports)

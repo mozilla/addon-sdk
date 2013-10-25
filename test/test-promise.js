@@ -1,7 +1,6 @@
-/* vim:set ts=2 sw=2 sts=2 expandtab */
-/*jshint asi: true undef: true es5: true node: true devel: true
-         forin: true */
-/*global define: true */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 'use strict';
 
@@ -275,6 +274,21 @@ exports['test promised error handleing'] = function(assert, done) {
     assert.equal(actual, expected, 'rejected as expected')
     done()
   })
+}
+
+exports['test errors in promise resolution handlers are propagated'] = function(assert, done) {
+  var expected = Error('Boom');
+  var { promise, resolve } = defer();
+
+  promise.then(function() {
+    throw expected;
+  }).then(function() {
+    return undefined;
+  }).then(null, function(actual) {
+    assert.equal(actual, expected, 'rejected as expected');
+  }).then(done, assert.fail);
+
+  resolve({});
 }
 
 exports['test return promise form promised'] = function(assert, done) {

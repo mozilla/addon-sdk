@@ -3,6 +3,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
+// Opening new windows in Fennec causes issues
+module.metadata = {
+  engines: {
+    'Firefox': '*'
+  }
+};
+
 const { Loader } = require("sdk/test/loader");
 const { open, getMostRecentBrowserWindow, getOuterId } = require("sdk/window/utils");
 
@@ -14,9 +21,20 @@ exports["test browser events"] = function(assert, done) {
 
   on(events, "data", function handler(e) {
     actual.push(e);
-    if (e.type === "load") window.close();
-    if (e.type === "close") {
-      let [ open, ready, load, deactivate, activate, close ] = actual;
+
+    if (e.type === "open") {
+      assert.pass("window open has occured");
+    }
+    else if (e.type === "DOMContentLoaded") {
+      assert.pass("window DOMContentLoaded has occured");
+    }
+    else if (e.type === "load") {
+      assert.pass("window load has occured");
+      window.close();
+    }
+    else if (e.type === "close") {
+      // confirm the ordering of events
+      let [ open, ready, load, close ] = actual;
       assert.equal(open.type, "open")
       assert.equal(open.target, window, "window is open")
 
@@ -47,15 +65,5 @@ exports["test browser events"] = function(assert, done) {
   // Open window and close it to trigger observers.
   let window = open();
 };
-
-if (require("sdk/system/xul-app").is("Fennec")) {
-  module.exports = {
-    "test Unsupported Test": function UnsupportedTest (assert) {
-        assert.pass(
-          "Skipping this test until Fennec support is implemented." +
-          "See bug 793071");
-    }
-  }
-}
 
 require("sdk/test").run(exports);

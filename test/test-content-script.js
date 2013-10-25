@@ -7,7 +7,7 @@ const { create: makeFrame } = require("sdk/frame/utils");
 const { window } = require("sdk/addon/window");
 const { Loader } = require('sdk/test/loader');
 const { URL } = require("sdk/url");
-const testURI = require("sdk/self").data.url("test.html");
+const testURI = require("./fixtures").url("test.html");
 const testHost = URL(testURI).scheme + '://' + URL(testURI).host;
 
 /*
@@ -845,15 +845,5 @@ exports["test MutationObvserver"] = createProxyTest(html, function (helper) {
   );
 
 });
-
-if (require("sdk/system/xul-app").is("Fennec")) {
-  module.exports = {
-    "test Unsupported Test": function UnsupportedTest (assert) {
-        assert.pass(
-          "Skipping this test until Fennec support is implemented." +
-          "See bug 806813");
-    }
-  }
-}
 
 require("test").run(exports);

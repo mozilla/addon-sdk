@@ -3,6 +3,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
+// Opening new windows in Fennec causes issues
+module.metadata = {
+  engines: {
+    'Firefox': '*'
+  }
+};
+
 const { Ci } = require('chrome');
 const { open, backgroundify, windows, isBrowser,
         getXULWindow, getBaseWindow, getToplevelWindow, getMostRecentWindow,
