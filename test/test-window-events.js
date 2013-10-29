@@ -34,7 +34,7 @@ exports["test browser events"] = function(assert, done) {
     }
     else if (e.type === "close") {
       // confirm the ordering of events
-      let [ open, ready, load, close ] = actual;
+      let [ open, ready, load, deactivate, activate, close ] = actual;
       assert.equal(open.type, "open")
       assert.equal(open.target, window, "window is open")
 
