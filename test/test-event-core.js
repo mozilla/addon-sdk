@@ -241,4 +241,24 @@ exports['test emit.lazy'] = function(assert) {
   assert.deepEqual(errors, [ boom ], 'errors reporetd');
 };
 
+exports['test listen to all events'] = function(assert) {
+  let actual = [];
+  let target = {};
+
+  on(target, 'foo', message => actual.push(message));
+  on(target, '*', (type, ...message) => {
+    actual.push([type].concat(message));
+  });
+ 
+  emit(target, 'foo', 'hello');
+  assert.equal(actual[0], 'hello',
+    'non-wildcard listeners still work');
+  assert.deepEqual(actual[1], ['foo', 'hello'],
+    'wildcard listener called');
+
+  emit(target, 'bar', 'goodbye');
+  assert.deepEqual(actual[2], ['bar', 'goodbye'],
+    'wildcard listener called for unbound event name');
+};
+
 require('test').run(exports);
