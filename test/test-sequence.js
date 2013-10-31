@@ -5,7 +5,8 @@
 
 let { seq, iterate, filter, map, reductions, reduce, count,
       isEmpty, every, isEvery, some, take, takeWhile, drop,
-      dropWhile
+      dropWhile, concat, first, rest, nth, last, dropLast,
+      distinct, remove, mapcat
     } = require("sdk/util/sequence");
 let { fromIterator } = require("sdk/util/array");
 
@@ -300,6 +301,350 @@ exports["test takeWhile"] = assert => {
 
   assert.deepEqual(fromIterator(takeWhile(isNegative, zs)), [],
                    "took none");
+};
+
+exports["test drop"] = assert => {
+  let testDrop = xs => {
+    assert.deepEqual(fromIterator(drop(2, xs)),
+                     [3, 4],
+                     "dropped two elements");
+
+    assert.deepEqual(fromIterator(drop(1, xs)),
+                     [2, 3, 4],
+                     "dropped one");
+
+    assert.deepEqual(fromIterator(drop(0, xs)),
+                     [1, 2, 3, 4],
+                     "dropped 0");
+
+    assert.deepEqual(fromIterator(drop(-2, xs)),
+                     [1, 2, 3, 4],
+                     "dropped 0 on negative `n`");
+
+    assert.deepEqual(fromIterator(drop(5, xs)),
+                     [],
+                     "dropped all items")
+  }
+
+  testDrop([1, 2, 3, 4])
+  testDrop(seq(function*() {
+    yield 1;
+    yield 2;
+    yield 3;
+    yield 4;
+  }));
+};
+
+
+exports["test dropWhile"] = assert => {
+  let isNegative = x => x < 0
+  let True = _ => true
+  let False = _ => false
+
+  let test = xs => {
+    assert.deepEqual(fromIterator(dropWhile(isNegative, xs)),
+                     [0, 1, 2],
+                     "dropped negative");
+
+    assert.deepEqual(fromIterator(dropWhile(True, xs)),
+                     [],
+                     "drop all");
+
+    assert.deepEqual(fromIterator(dropWhile(False, xs)),
+                     [-2, -1, 0, 1, 2],
+                     "keep all");
+  }
+
+  test([-2, -1, 0, 1, 2]);
+  test(seq(function*() {
+    yield -2;
+    yield -1;
+    yield 0;
+    yield 1;
+    yield 2;
+  }));
+};
+
+
+exports["test concat"] = assert => {
+  let test = (a, b, c, d) => {
+    assert.deepEqual(fromIterator(concat()),
+                     [],
+                     "nothing to concat");
+    assert.deepEqual(fromIterator(concat(a)),
+                     [1, 2, 3],
+                     "concat with nothing returns same as first");
+    assert.deepEqual(fromIterator(concat(a, b)),
+                     [1, 2, 3, 4, 5],
+                     "concat items from both");
+    assert.deepEqual(fromIterator(concat(a, b, a)),
+                     [1, 2, 3, 4, 5, 1, 2, 3],
+                     "concat itself");
+    assert.deepEqual(fromIterator(concat(c)),
+                     [],
+                     "concat of empty is empty");
+    assert.deepEqual(fromIterator(concat(a, c)),
+                     [1, 2, 3],
+                     "concat with empty");
+    assert.deepEqual(fromIterator(concat(c, c, c)),
+                     [],
+                     "concat of empties is empty");
+    assert.deepEqual(fromIterator(concat(c, b)),
+                     [4, 5],
+                     "empty can be in front");
+    assert.deepEqual(fromIterator(concat(d)),
+                     [7],
+                     "concat singular");
+    assert.deepEqual(fromIterator(concat(d, d)),
+                     [7, 7],
+                     "concat singulars");
+
+    assert.deepEqual(fromIterator(concat(a, a, b, c, d, c, d, d)),
+                     [1, 2, 3, 1, 2, 3, 4, 5, 7, 7, 7],
+                     "many concats");
+
+    let ab = concat(a, b)
+    let abcd = concat(ab, concat(c, d))
+    let cdabcd = concat(c, d, abcd)
+
+    assert.deepEqual(fromIterator(cdabcd),
+                     [7, 1, 2, 3, 4, 5, 7],
+                     "nested concats")
+  };
+
+  test([1, 2, 3],
+       [4, 5],
+       [],
+       [7]);
+
+  test(seq(function*() { yield 1; yield 2; yield 3; }),
+       seq(function*() { yield 4; yield 5; }),
+       seq(function*() { }),
+       seq(function*() { yield 7; }));
+};
+
+
+exports["test first"] = assert => {
+  let test = (xs, empty) => {
+    assert.equal(first(xs), 1, "returns first")
+    assert.equal(first(empty), null, "returns null empty")
+  }
+
+  test("1234", "");
+  test([1, 2, 3], []);
+  test([1, 2, 3], null);
+  test([1, 2, 3], undefined);
+  test(seq(function*() { yield 1; yield 2; yield 3; }),
+       seq(function*() { }));
+};
+
+exports["test rest"] = assert => {
+  let test = (xs, x, nil) => {
+    assert.deepEqual(fromIterator(rest(xs)), ["b", "c"],
+                     "rest items");
+    assert.deepEqual(fromIterator(rest(x)), [],
+                     "empty when singular");
+    assert.deepEqual(fromIterator(rest(nil)), [],
+                     "empty when empty");
+  }
+
+  test("abc", "a", "");
+  test(["a", "b", "c"], ["d"], []);
+  test(seq(function*() { yield "a"; yield "b"; yield "c"; }),
+       seq(function*() { yield "d"; }),
+       seq(function*() {}));
+  test(["a", "b", "c"], ["d"], null);
+  test(["a", "b", "c"], ["d"], undefined);
+};
+
+
+exports["test nth"] = assert => {
+  let notFound = {}
+  let test = xs => {
+    assert.equal(nth(xs, 0), "h", "first");
+    assert.equal(nth(xs, 1), "e", "second");
+    assert.equal(nth(xs, 5), void(0), "out of bound");
+    assert.equal(nth(xs, 5, notFound), notFound, "out of bound");
+    assert.equal(nth(xs, -1), void(0), "out of bound");
+    assert.equal(nth(xs, -1, notFound), notFound, "out of bound");
+    assert.equal(nth(xs, 4), "o", "5th");
+  }
+
+  let testEmpty = xs => {
+    assert.equal(nth(xs, 0), void(0), "no first in empty")
+    assert.equal(nth(xs, 5), void(0), "no 5th in empty")
+    assert.equal(nth(xs, 0, notFound), notFound, "notFound on out of bound")
+  }
+
+  test("hello");
+  test(["h", "e", "l", "l", "o"]);
+  test(seq(function*() {
+    yield "h";
+    yield "e";
+    yield "l";
+    yield "l";
+    yield "o";
+  }));
+  testEmpty(null)
+  testEmpty(undefined)
+  testEmpty([])
+  testEmpty("")
+  testEmpty(seq(function*() {}))
+};
+
+
+exports["test last"] = assert => {
+  assert.equal(last(null), null, "no last in null");
+  assert.equal(last(void(0)), null, "no last in undefined");
+  assert.equal(last([]), null, "no last in []");
+  assert.equal(last(""), null, "no last in ''");
+  assert.equal(last(seq(function*() { })), null, "no last in empty");
+
+  assert.equal(last("hello"), "o", "last from string");
+  assert.equal(last([1, 2, 3]), 3, "last from array");
+  assert.equal(last([1]), 1, "last from singular");
+  assert.equal(last(seq(function*() {
+    yield 1;
+    yield 2;
+    yield 3;
+  })), 3, "last from sequence");
+};
+
+
+exports["test dropLast"] = assert => {
+  let test = xs => {
+    assert.deepEqual(fromIterator(dropLast(xs)),
+                     [1, 2, 3, 4],
+                     "dropped last");
+    assert.deepEqual(fromIterator(dropLast(0, xs)),
+                     [1, 2, 3, 4, 5],
+                     "dropped none on 0");
+    assert.deepEqual(fromIterator(dropLast(-3, xs)),
+                     [1, 2, 3, 4, 5],
+                     "drop none on negative");
+    assert.deepEqual(fromIterator(dropLast(3, xs)),
+                     [1, 2],
+                     "dropped given number");
+    assert.deepEqual(fromIterator(dropLast(5, xs)),
+                     [],
+                     "dropped all");
+  }
+
+  let testEmpty = xs => {
+    assert.deepEqual(fromIterator(dropLast(xs)),
+                     [],
+                     "nothing to drop");
+    assert.deepEqual(fromIterator(dropLast(0, xs)),
+                     [],
+                     "dropped none on 0");
+    assert.deepEqual(fromIterator(dropLast(-3, xs)),
+                     [],
+                     "drop none on negative");
+    assert.deepEqual(fromIterator(dropLast(3, xs)),
+                     [],
+                     "nothing to drop");
+  }
+
+  test([1, 2, 3, 4, 5]);
+  test(seq(function*() {
+    yield 1;
+    yield 2;
+    yield 3;
+    yield 4;
+    yield 5;
+  }));
+  testEmpty([]);
+  testEmpty("");
+  testEmpty(seq(function*() {}));
+};
+
+
+exports["test distinct"] = assert => {
+  let test = xs => {
+    assert.deepEqual(fromIterator(distinct(xs)),
+                     [1, 2, 3, 4, 5],
+                     "only unique items are present")
+  }
+
+  test([1, 2, 1, 3, 1, 4, 1, 5]);
+  test(seq(function*() {
+    yield 1;
+    yield 2;
+    yield 1;
+    yield 3;
+    yield 1;
+    yield 4;
+    yield 1;
+    yield 5;
+  }));
+};
+
+
+exports["test remove"] = assert => {
+  let isPositive = x => x > 0
+  let test = xs => {
+    assert.deepEqual(fromIterator(remove(isPositive, xs)),
+                     [-2, -1, 0],
+                     "removed positives");
+  }
+
+  test([1, -2, 2, -1, 3, 7, 0]);
+  test(seq(function*() {
+    yield 1;
+    yield -2;
+    yield 2;
+    yield -1;
+    yield 3;
+    yield 7;
+    yield 0;
+  }));
+};
+
+
+exports["test mapcat"] = assert => {
+  let upto = n => seq(function* () {
+    let index = 0;
+    while (index < n) {
+      yield index;
+      index = index + 1;
+    }
+  });
+
+  assert.deepEqual(fromIterator(mapcat(upto, [1, 2, 3, 4])),
+                   [0, 0, 1, 0, 1, 2, 0, 1, 2, 3],
+                   "expands given sequence");
+
+  assert.deepEqual(fromIterator(mapcat(upto, [0, 1, 2, 0])),
+                   [0, 0, 1],
+                   "expands given sequence");
+
+  assert.deepEqual(fromIterator(mapcat(upto, [0, 0, 0])),
+                   [],
+                   "expands given sequence");
+
+  assert.deepEqual(fromIterator(mapcat(upto, [])),
+                   [],
+                   "nothing to expand");
+
+  assert.deepEqual(fromIterator(mapcat(upto, null)),
+                   [],
+                   "nothing to expand");
+
+  assert.deepEqual(fromIterator(mapcat(upto, void(0))),
+                   [],
+                   "nothing to expand");
+
+  let xs = seq(function*() {
+    yield 0;
+    yield 1;
+    yield 0;
+    yield 2;
+    yield 0;
+  });
+
+  assert.deepEqual(fromIterator(mapcat(upto, xs)),
+                   [0, 0, 1],
+                   "expands given sequence");
 };
 
 require("sdk/test").run(exports);
