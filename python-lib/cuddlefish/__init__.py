@@ -554,7 +554,7 @@ def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
     jid = create_jid()
     print >>out, '* generated jID automatically:', jid
     open(os.path.join(path,'package.json'),'w').write(PACKAGE_JSON % {'name':addon.lower(),
-                                                   'fullName':addon,
+                                                   'title':addon,
                                                    'id':jid })
     print >>out, '* package.json written'
     open(os.path.join(path,'test','test-main.js'),'w').write(TEST_MAIN_JS)
