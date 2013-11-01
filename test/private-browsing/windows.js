@@ -10,6 +10,7 @@ const { isPrivate } = require('sdk/private-browsing');
 const { browserWindows: windows } = require('sdk/windows');
 const { defer } = require('sdk/core/promise');
 const tabs = require('sdk/tabs');
+const { first, count } = require('sdk/util/sequence');
 
 // test openDialog() from window/utils with private option
 // test isActive state in pwpb case
@@ -120,7 +121,7 @@ exports.testOpenTabWithPrivateWindow = function(assert, done) {
   }
 
   (function closeWindows() {
-    if (windows.length > 0) {
+    if (count(windows) > 0) {
       return windows.activeWindow.close(closeWindows);
     }
     assert.pass('all pre test windows have been closed');
