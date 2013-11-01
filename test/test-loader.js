@@ -157,6 +157,10 @@ exports['test require json'] = function (assert) {
   assert.equal(data.dependencies.underscore, '*', 'loads json with objects');
   assert.equal(data.contributors.length, 4, 'loads json with arrays');
   assert.ok(Array.isArray(data.contributors), 'loads json with arrays');
+  data.version = '2.0.0';
+  let newdata = require('./fixtures/loader/json/manifest.json');
+  assert.equal(newdata.version, '2.0.0',
+    'JSON objects returned should be cached and the same instance');
 
   try {
     require('./fixtures/loader/json/invalid.json');
@@ -164,7 +168,18 @@ exports['test require json'] = function (assert) {
   } catch (err) {
     assert.ok(err, 'error thrown when loading invalid json');
     assert.ok(/JSON\.parse/.test(err.message),
-      'should thrown an error from JSON.parse');
+      'should thrown an error from JSON.parse, not attempt to load .json.js');
+  }
+ 
+  // Try again to ensure an empty module isn't loaded from cache
+  try {
+    require('./fixtures/loader/json/invalid.json');
+    assert.fail('Error not thrown when loading invalid json a second time');
+  } catch (err) {
+    assert.ok(err,
+      'error thrown when loading invalid json a second time');
+    assert.ok(/JSON\.parse/.test(err.message),
+      'should thrown an error from JSON.parse a second time, not attempt to load .json.js');
   }
 };
 
@@ -184,6 +199,23 @@ exports['test setting metadata for newly created sandboxes'] = function(assert) 
   }
 
   let program = main(loader, 'main');
-}
+};
+
+exports['test require .json, .json.js'] = function (assert) {
+  let testjson = require('./fixtures/loader/json/test.json');
+  assert.equal(testjson.filename, 'test.json',
+    'require("./x.json") should load x.json, not x.json.js');
+
+  let nodotjson = require('./fixtures/loader/json/nodotjson.json');
+  assert.equal(nodotjson.filename, 'nodotjson.json.js',
+    'require("./x.json") should load x.json.js when x.json does not exist');
+  nodotjson.data.prop = 'hydralisk';
+
+  // require('nodotjson.json') and require('nodotjson.json.js')
+  // should resolve to the same file
+  let nodotjsonjs = require('./fixtures/loader/json/nodotjson.json.js');
+  assert.equal(nodotjsonjs.data.prop, 'hydralisk',
+    'js modules are cached whether access via .json.js or .json');
+};
 
 require('test').run(exports);
