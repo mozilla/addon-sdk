@@ -11,6 +11,8 @@ The loader change would be a change to how files are resolved when using Jetpack
 ## Requirements
 
 * **Load native node modules**: `require('fs')` --> `require('sdk/io/fs')`
+* **Reconsider node module placement**: Should these live as their own in the `sdk` tree, or should they be separate in their own dir, like `require('node/fs')`? Separating them may be more clear, but I think we would have redundancy, or it seems inadequate (like no file system API in our `sdk/io` directory). I think having `require('node/fs')` isn't a bad idea to start discussion, with mapping of `require('fs')` to the node directory if its a node module for dependency support.
+
 * **Load node dependencies**: `require('underscore')` -- this may be an issue for when there are multiple versions throughout, but handling it via Node's lookup algorithm should be sufficient
 
 * **Overload native node modules**: (Possibly phase 2?) The ability to define overloads for native node modules, so user's can provide their implementation from preference or because Jetpack does not yet have support. For example, the Jetpack `fs` implementation does not support some methods, yet a user could have created a module that does, or provide an implementation for `util`, which Jetpack does not currently have.
@@ -77,8 +79,9 @@ http://nodejs.org/api/modules.html#modules_all_together
 
 ### Project Dependencies
 
-In order for Firefox to correctly support overflow of add-on items in the
-navigation toolbar, we need to work with the Firefox's team to ensure that
-our work lines up well with changes they are making to how customization
-and overflow work as part of the Australis project.
+* Loader Changes
+* Node Module movement possibly (into `./lib/node/`)
+* Develop more node modules for more dependency support
+* Implement node globals (`process`, `module` properties, `__dirname`, etc)
+* Nail down how the AOM changes will affect add-ons, will they be packaged, how will they be structured
 
