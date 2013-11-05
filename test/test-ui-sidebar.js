@@ -251,6 +251,32 @@ exports.testAddonGlobalComplex = function(assert, done) {
   show(sidebar);
 }
 
+exports.testAddonReady = function(assert, done) {
+  const { Sidebar } = require('sdk/ui/sidebar');
+  let testName = 'testAddonReady';
+  let sidebar = Sidebar({
+    id: testName,
+    title: testName,
+    url: data.url('test-sidebar-addon-global.html'),
+    onReady: function(worker) {
+      assert.pass('sidebar was attached');
+      assert.ok(!!worker, 'attach event has worker');
+
+      worker.port.on('X', function(msg) {
+        assert.equal(msg, '123', 'the final message is correct');
+
+        sidebar.destroy();
+
+        done();
+      });
+
+      worker.port.emit('X', '12');
+    }
+  });
+
+  show(sidebar);
+}
+
 exports.testShowingOneSidebarAfterAnother = function(assert, done) {
   const { Sidebar } = require('sdk/ui/sidebar');
   let testName = 'testShowingOneSidebarAfterAnother';
@@ -1273,14 +1299,17 @@ exports.testEventListeners = function(assert, done) {
   let constructorOnShow = defer();
   let constructorOnHide = defer();
   let constructorOnAttach = defer();
+  let constructorOnReady = defer();
 
   let onShow = defer();
   let onHide = defer();
   let onAttach = defer();
+  let onReady = defer();
 
   let onceShow = defer();
   let onceHide = defer();
   let onceAttach = defer();
+  let onceReady = defer();
 
   function testThis() {
     assert(this, sidebar, '`this` is correct');
@@ -1300,6 +1329,11 @@ exports.testEventListeners = function(assert, done) {
       eventListenerOrder.push('onAttach');
       constructorOnAttach.resolve();
     },
+    onReady: function() {
+      assert.equal(this, sidebar, '`this` is correct in onReady');
+      eventListenerOrder.push('onReady');
+      constructorOnReady.resolve();
+    },
     onHide: function() {
       assert.equal(this, sidebar, '`this` is correct in onHide');
       eventListenerOrder.push('onHide');
@@ -1316,6 +1350,11 @@ exports.testEventListeners = function(assert, done) {
     assert.equal(this, sidebar, '`this` is correct in once attach');
     eventListenerOrder.push('once attach');
     onceAttach.resolve();
+  });
+  sidebar.once('ready', function() {
+    assert.equal(this, sidebar, '`this` is correct in once ready');
+    eventListenerOrder.push('once ready');
+    onceReady.resolve();
   });
   sidebar.once('hide', function() {
     assert.equal(this, sidebar, '`this` is correct in once hide');
@@ -1335,6 +1374,11 @@ exports.testEventListeners = function(assert, done) {
     eventListenerOrder.push('on attach');
     onAttach.resolve();
   });
+  sidebar.on('ready', function() {
+    assert.equal(this, sidebar, '`this` is correct in on ready');
+    eventListenerOrder.push('on ready');
+    onReady.resolve();
+  });
   sidebar.on('hide', function() {
     assert.equal(this, sidebar, '`this` is correct in on hide');
     eventListenerOrder.push('on hide');
@@ -1343,17 +1387,23 @@ exports.testEventListeners = function(assert, done) {
 
   all(constructorOnShow.promise,
       constructorOnAttach.promise,
+      constructorOnReady.promise,
       constructorOnHide.promise,
       onceShow.promise,
       onceAttach.promise,
+      onceReady.promise,
       onceHide.promise,
       onShow.promise,
       onAttach.promise,
+      onReady.promise,
       onHide.promise).then(function() {
         assert.equal(eventListenerOrder.join(), [
             'onAttach',
             'once attach',
             'on attach',
+            'onReady',
+            'once ready',
+            'on ready',
             'onShow',
             'once show',
             'on show',
