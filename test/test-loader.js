@@ -4,7 +4,12 @@
 
 'use strict';
 
-let { Loader, main, unload, parseStack } = require('toolkit/loader');
+let { Loader, main, unload, parseStack, getSandboxes } =
+  require('toolkit/loader');
+
+const { Cc, Ci, Cu } = require("chrome");
+const { notifyObservers, addObserver } =
+  Cc['@mozilla.org/observer-service;1'].getService(Ci.nsIObserverService);
 
 let root = module.uri.substr(0, module.uri.lastIndexOf('/'))
 
@@ -217,5 +222,44 @@ exports['test require .json, .json.js'] = function (assert) {
   assert.equal(nodotjsonjs.data.prop, 'hydralisk',
     'js modules are cached whether access via .json.js or .json');
 };
+
+exports['test getSandboxes'] = function(assert) {
+  let uri = root + '/fixtures/loader/cycles/';
+  let loader = Loader({ paths: { '': uri } });
+  let program = main(loader, 'main');
+  
+  let sandboxes = getSandboxes(loader);
+  assert.ok(Object.keys(sandboxes).every(function(uri) {
+    return uri.contains('cycles/main.js') ||
+      uri.contains('cycles/a.js') ||
+      uri.contains('cycles/b.js') ||
+      uri.contains('cycles/c.js');
+  }), "getSandboxes reports all, and only, modules from the addon");
+
+  unload(loader);
+}
+
+exports['test new sandbox notification'] = function(assert) {
+  let uri = root + '/fixtures/loader/sandbox-notification/';
+  let loader = Loader({ paths: { '': uri } });
+  let program = main(loader, 'main');
+  let loadedModules = [];
+
+  addObserver(function(eventData) {
+    let module = eventData.wrappedJSObject.module;
+    loadedModules.push(module.uri);
+  }, 'sdk:loader:new-sandbox', false);
+
+  // This notification is handled in main.js inside the fixture.
+  notifyObservers(null, 'test:test-loader:new-sandbox-notification:go-ahead',
+    null);
+
+  // This also ensures that the notification is issued before a module is
+  // evaluated.
+  assert.ok(loadedModules[0].contains('sandbox-notification/a.js'),
+    'modue a.js should be loaded');
+  assert.ok(loadedModules[1].contains('sandbox-notification/b.js'),
+    'modue b.js should be loaded');
+}
 
 require('test').run(exports);
