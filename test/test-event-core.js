@@ -222,25 +222,6 @@ exports['test count'] = function(assert) {
   assert.equal(count(target, 'foo'), 0, 'listeners unregistered');
 };
 
-exports['test emit.lazy'] = function(assert) {
-  let target = {}, boom = Error('boom!'), errors = [], actual = []
-
-  on(target, 'error', function error(e) errors.push(e))
-
-  on(target, 'a', function() 1);
-  on(target, 'a', function() {});
-  on(target, 'a', function() 2);
-  on(target, 'a', function() { throw boom });
-  on(target, 'a', function() 3);
-
-  for each (let value in emit.lazy(target, 'a'))
-    actual.push(value);
-
-  assert.deepEqual(actual, [ 1, undefined, 2, 3 ],
-                   'all results were collected');
-  assert.deepEqual(errors, [ boom ], 'errors reporetd');
-};
-
 exports['test listen to all events'] = function(assert) {
   let actual = [];
   let target = {};
