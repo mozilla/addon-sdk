@@ -396,8 +396,52 @@ exports["test:ensure console.xxx works in cs"] = WorkerTest(
   }
 );
 
+exports["test:setTimeout works with string argument"] = WorkerTest(
+  "data:text/html;charset=utf-8,<script>var docVal=5;</script>",
+  function(assert, browser, done) {
+    let worker = Worker({
+      window: browser.contentWindow,
+      contentScript: "new " + function ContentScriptScope() {
+        // must use "window.scVal" instead of "var csVal"
+        // since we are inside ContentScriptScope function.
+        // i'm NOT putting code-in-string inside code-in-string </YO DAWG>
+        window.csVal = 13;
+        setTimeout("self.postMessage([" + 
+                      "csVal, " + 
+                      "window.docVal, " + 
+                      "'ContentWorker' in window, " + 
+                      "'UNWRAP_ACCESS_KEY' in window, " + 
+                      "'getProxyForObject' in window, " + 
+                    "])", 1);
+      },
+      contentScriptWhen: "ready",
+      onMessage: function(vals) {
+        // test timer code is executed in the correct context
+        assert.equal(vals[0], 13, "accessing content-script values");
+        assert.notEqual(vals[1], 5, "can't access document values (directly)");
+        assert.ok(!vals[2] && !vals[3] && !vals[4], "nothing is leaked from chrome");
+        done();
+      }
+    });
+  }
+);
 
-exports["test:setTimeout can\"t be cancelled by content"] = WorkerTest(
+exports["test:setInterval works with string argument"] = WorkerTest(
+  DEFAULT_CONTENT_URL,
+  function(assert, browser, done) {
+    let worker = Worker({
+      window: browser.contentWindow,
+      contentScript: "setInterval('self.postMessage(1)', 50)",
+      contentScriptWhen: "ready",
+      onMessage: function(one) {
+        assert.equal(one, 1, "got a message from setInterval");
+        done();
+      }
+    });
+  }
+);
+
+exports["test:setTimeout can't be cancelled by content"] = WorkerTest(
   "data:text/html;charset=utf-8,<script>var documentValue=true;</script>",
   function(assert, browser, done) {
 
