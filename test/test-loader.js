@@ -5,6 +5,7 @@
 'use strict';
 
 let { Loader, main, unload, parseStack } = require('toolkit/loader');
+let { defer: async } = require('sdk/lang/functional');
 
 let root = module.uri.substr(0, module.uri.lastIndexOf('/'))
 
@@ -170,7 +171,7 @@ exports['test require json'] = function (assert) {
     assert.ok(/JSON\.parse/.test(err.message),
       'should thrown an error from JSON.parse, not attempt to load .json.js');
   }
- 
+
   // Try again to ensure an empty module isn't loaded from cache
   try {
     require('./fixtures/loader/json/invalid.json');
@@ -216,6 +217,58 @@ exports['test require .json, .json.js'] = function (assert) {
   let nodotjsonjs = require('./fixtures/loader/json/nodotjson.json.js');
   assert.equal(nodotjsonjs.data.prop, 'hydralisk',
     'js modules are cached whether access via .json.js or .json');
+};
+
+exports['test resource:// uris with JSM'] = function (assert, done) {
+  let { Promise } = require('resource://gre/modules/Promise.jsm');
+  let { defer } = require('resource://gre/modules/Promise.jsm').Promise;
+
+  assert.equal(Promise.defer, defer,
+    'JSM loaded via loader cache');
+
+  let { promise, resolve } = Promise.defer();
+
+  async(() => resolve(10))();
+
+  promise.then(val => {
+    assert.equal(val, 10,
+      'JSM loaded via resource url correctly');
+  }).then(done, console.error);
+};
+
+exports['test relative JSM loading'] = function (assert) {
+  let { Test } = require('./fixtures/loader/Test.jsm');
+  assert.equal(Test.square(16), 256,
+    'loader successfully loaded relative path .jsm');
+};
+
+exports['test `modules/` alias JSM loading, default path'] = function (assert, done) {
+  let { Promise } = require('modules/Promise.jsm');
+  let { promise, resolve } = Promise.defer();
+
+  async(() => resolve(10))();
+
+  promise.then(val => {
+    assert.equal(val, 10,
+      'JSM loaded via alias url correctly');
+  }).then(done, console.error);
+};
+
+exports['test resource:// uris with .js files'] = function (assert, done) {
+  let { defer } = require('resource://gre/modules/commonjs/sdk/core/promise.js');
+  let { defer: defer2 } = require('resource://gre/modules/commonjs/sdk/core/promise.js');
+
+  assert.equal(defer, defer2,
+    '.js loaded via loader cache');
+
+  let { promise, resolve } = defer();
+
+  async(() => resolve(10))();
+
+  promise.then(val => {
+    assert.equal(val, 10,
+      '.js loaded via resource url correctly');
+  }).then(done, console.error);
 };
 
 require('test').run(exports);
