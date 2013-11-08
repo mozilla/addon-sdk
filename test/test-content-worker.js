@@ -415,11 +415,11 @@ exports["test:setTimeout works with string argument"] = WorkerTest(
                     "])", 1);
       },
       contentScriptWhen: "ready",
-      onMessage: function(vals) {
+      onMessage: function([csVal, docVal, chrome1, chrome2, chrome3]) {
         // test timer code is executed in the correct context
-        assert.equal(vals[0], 13, "accessing content-script values");
-        assert.notEqual(vals[1], 5, "can't access document values (directly)");
-        assert.ok(!vals[2] && !vals[3] && !vals[4], "nothing is leaked from chrome");
+        assert.equal(csVal, 13, "accessing content-script values");
+        assert.notEqual(docVal, 5, "can't access document values (directly)");
+        assert.ok(!chrome1 && !chrome2 && !chrome3, "nothing is leaked from chrome");
         done();
       }
     });
@@ -429,13 +429,15 @@ exports["test:setTimeout works with string argument"] = WorkerTest(
 exports["test:setInterval works with string argument"] = WorkerTest(
   DEFAULT_CONTENT_URL,
   function(assert, browser, done) {
+    let count = 0;
     let worker = Worker({
       window: browser.contentWindow,
       contentScript: "setInterval('self.postMessage(1)', 50)",
       contentScriptWhen: "ready",
       onMessage: function(one) {
-        assert.equal(one, 1, "got a message from setInterval");
-        done();
+        count++;
+        assert.equal(one, 1, "got "+count+" message(s) from setInterval");
+        if (count >= 3) done();
       }
     });
   }
