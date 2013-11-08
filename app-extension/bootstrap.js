@@ -112,7 +112,6 @@ function startup(data, reasonCode) {
       // Relative modules resolve to add-on package lib
       './': prefixURI + name + '/lib/',
       './tests/': prefixURI + name + '/tests/',
-      'modules/': 'resource://gre/modules/',
       '': 'resource://gre/modules/commonjs/'
     };
 
