@@ -393,15 +393,9 @@ class ManifestBuilder:
         # traversal of the module graph
 
         for reqname in sorted(requires.keys()):
-
-            # If a resource:// URI or uses `modules/` alias (which maps to
-            # resource://gre/module/), just ignore and let loader load directly
-            # without bundling or verifying existence
-            if reqname.startswith("modules/") or reqname.startswith("resource://"):
-                continue
             # If requirement is chrome or a pseudo-module (starts with @) make
             # path a requirement name.
-            elif reqname == "chrome" or reqname.startswith("@"):
+            if reqname == "chrome" or reqname.startswith("@"):
                 me.add_requirement(reqname, reqname)
             else:
                 # when two modules require() the same name, do they get a
@@ -612,17 +606,13 @@ class ManifestBuilder:
         filename = os.sep.join(name.split("/"))
         # normalize filename, make sure that we do not add .js if it already has
         # it.
-        if (not filename.endswith(".js") and
-            not filename.endswith(".json") and
-            not filename.endswith(".jsm")):
+        if not filename.endswith(".js") and not filename.endswith(".json"):
           filename += ".js"
 
         if filename.endswith(".js"):
           basename = filename[:-3]
         if filename.endswith(".json"):
           basename = filename[:-5]
-        if filename.endswith(".jsm"):
-          basename = filename[:-4]
 
         pkg = self.pkg_cfg.packages[pkgname]
         if isinstance(sections, basestring):
