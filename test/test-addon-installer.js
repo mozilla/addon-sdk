@@ -10,6 +10,7 @@ const observers = require("sdk/deprecated/observer-service");
 const { setTimeout } = require("sdk/timers");
 const tmp = require("sdk/test/tmp-file");
 const system = require("sdk/system");
+const fixtures = require("./fixtures");
 
 const testFolderURL = module.uri.split('test-addon-installer.js')[0];
 const ADDON_URL = testFolderURL + "fixtures/addon-install-unit-test@mozilla.com.xpi";
@@ -48,7 +49,7 @@ exports["test Install"] = function (assert, done) {
       done();
     }
   );
-}
+};
 
 exports["test Failing Install With Invalid Path"] = function (assert, done) {
   AddonInstaller.install("invalid-path").then(
@@ -62,7 +63,7 @@ exports["test Failing Install With Invalid Path"] = function (assert, done) {
       done();
     }
   );
-}
+};
 
 exports["test Failing Install With Invalid File"] = function (assert, done) {
   let directory = system.pathFor("ProfD");
@@ -131,14 +132,51 @@ exports["test Update"] = function (assert, done) {
   }
 
   next();
-}
+};
 
-if (require("sdk/system/xul-app").is("Fennec")) {
-  module.exports = {
-    "test Unsupported Test": function UnsupportedTest (assert) {
-        assert.pass("Skipping this test until Fennec support is implemented.");
-    }
-  }
-}
+exports['test Uninstall failure'] = function (assert, done) {
+  AddonInstaller.uninstall('invalid-addon-path').then(
+    () => assert.fail('Addon uninstall should not resolve successfully'),
+    () => assert.pass('Addon correctly rejected invalid uninstall')
+  ).then(done, assert.fail);
+};
+
+exports['test Addon Disable and Enable'] = function (assert, done) {
+  let ensureActive = (addonId) => AddonInstaller.isActive(addonId).then(state => {
+    assert.equal(state, true, 'Addon should be enabled by default');
+    return addonId;
+  });
+  let ensureInactive = (addonId) => AddonInstaller.isActive(addonId).then(state => {
+    assert.equal(state, false, 'Addon should be disabled after disabling');
+    return addonId;
+  });
+
+  AddonInstaller.install(ADDON_PATH)
+    .then(ensureActive)
+    .then(AddonInstaller.enable) // should do nothing, yet not fail
+    .then(ensureActive)
+    .then(AddonInstaller.disable)
+    .then(ensureInactive)
+    .then(AddonInstaller.disable) // should do nothing, yet not fail
+    .then(ensureInactive)
+    .then(AddonInstaller.enable)
+    .then(ensureActive)
+    .then(AddonInstaller.uninstall)
+    .then(done, assert.fail);
+};
+
+exports['test Disable failure'] = function (assert, done) {
+  AddonInstaller.disable('not-an-id').then(
+    () => assert.fail('Addon disable should not resolve successfully'),
+    () => assert.pass('Addon correctly rejected invalid disable')
+  ).then(done, assert.fail);
+};
+
+exports['test Enable failure'] = function (assert, done) {
+  AddonInstaller.enable('not-an-id').then(
+    () => assert.fail('Addon enable should not resolve successfully'),
+    () => assert.pass('Addon correctly rejected invalid enable')
+  ).then(done, assert.fail);
+};
 
 require("test").run(exports);

@@ -8,6 +8,11 @@ let { Loader, main, unload, parseStack } = require('toolkit/loader');
 
 let root = module.uri.substr(0, module.uri.lastIndexOf('/'))
 
+// The following adds Debugger constructor to the global namespace.
+const { Cu } = require('chrome');
+const { addDebuggerToGlobal } = Cu.import('resource://gre/modules/jsdebugger.jsm', {});
+addDebuggerToGlobal(this);
+
 exports['test dependency cycles'] = function(assert) {
   let uri = root + '/fixtures/loader/cycles/';
   let loader = Loader({ paths: { '': uri } });
@@ -31,12 +36,15 @@ exports['test syntax errors'] = function(assert) {
     assert.equal(error.name, "SyntaxError", "throws syntax error");
     assert.equal(error.fileName.split("/").pop(), "error.js",
               "Error contains filename");
-    assert.equal(error.lineNumber, 7, "error is on line 7")
+    assert.equal(error.lineNumber, 11, "error is on line 11");
     let stack = parseStack(error.stack);
+
+    assert.equal(stack.pop().fileName, uri + "error.js",
+                 "last frame file containing syntax error");
     assert.equal(stack.pop().fileName, uri + "main.js",
-                 "loader stack is omitted");
+                 "previous frame is a requirer module");
     assert.equal(stack.pop().fileName, module.uri,
-                 "previous in the stack is test module");
+                 "previous to it is a test module");
 
   } finally {
     unload(loader);
@@ -139,6 +147,75 @@ exports['test early errors in module'] = function(assert) {
   } finally {
     unload(loader);
   }
-}
+};
+
+exports['test require json'] = function (assert) {
+  let data = require('./fixtures/loader/json/manifest.json');
+  assert.equal(data.name, 'Jetpack Loader Test', 'loads json with strings');
+  assert.equal(data.version, '1.0.1', 'loads json with strings');
+  assert.equal(data.dependencies.async, '*', 'loads json with objects');
+  assert.equal(data.dependencies.underscore, '*', 'loads json with objects');
+  assert.equal(data.contributors.length, 4, 'loads json with arrays');
+  assert.ok(Array.isArray(data.contributors), 'loads json with arrays');
+  data.version = '2.0.0';
+  let newdata = require('./fixtures/loader/json/manifest.json');
+  assert.equal(newdata.version, '2.0.0',
+    'JSON objects returned should be cached and the same instance');
+
+  try {
+    require('./fixtures/loader/json/invalid.json');
+    assert.fail('Error not thrown when loading invalid json');
+  } catch (err) {
+    assert.ok(err, 'error thrown when loading invalid json');
+    assert.ok(/JSON\.parse/.test(err.message),
+      'should thrown an error from JSON.parse, not attempt to load .json.js');
+  }
+ 
+  // Try again to ensure an empty module isn't loaded from cache
+  try {
+    require('./fixtures/loader/json/invalid.json');
+    assert.fail('Error not thrown when loading invalid json a second time');
+  } catch (err) {
+    assert.ok(err,
+      'error thrown when loading invalid json a second time');
+    assert.ok(/JSON\.parse/.test(err.message),
+      'should thrown an error from JSON.parse a second time, not attempt to load .json.js');
+  }
+};
+
+exports['test setting metadata for newly created sandboxes'] = function(assert) {
+  let addonID = 'random-addon-id';
+  let uri = root + '/fixtures/loader/cycles/';
+  let loader = Loader({ paths: { '': uri }, id: addonID });
+
+  let dbg = new Debugger();
+  dbg.onNewGlobalObject = function(global) {
+    dbg.onNewGlobalObject = undefined;
+
+    let metadata = Cu.getSandboxMetadata(global.unsafeDereference());
+    assert.ok(metadata, 'this global has attached metadata');
+    assert.equal(metadata.URI, uri + 'main.js', 'URI is set properly');
+    assert.equal(metadata.addonID, addonID, 'addon ID is set');
+  }
+
+  let program = main(loader, 'main');
+};
+
+exports['test require .json, .json.js'] = function (assert) {
+  let testjson = require('./fixtures/loader/json/test.json');
+  assert.equal(testjson.filename, 'test.json',
+    'require("./x.json") should load x.json, not x.json.js');
+
+  let nodotjson = require('./fixtures/loader/json/nodotjson.json');
+  assert.equal(nodotjson.filename, 'nodotjson.json.js',
+    'require("./x.json") should load x.json.js when x.json does not exist');
+  nodotjson.data.prop = 'hydralisk';
+
+  // require('nodotjson.json') and require('nodotjson.json.js')
+  // should resolve to the same file
+  let nodotjsonjs = require('./fixtures/loader/json/nodotjson.json.js');
+  assert.equal(nodotjsonjs.data.prop, 'hydralisk',
+    'js modules are cached whether access via .json.js or .json');
+};
 
 require('test').run(exports);

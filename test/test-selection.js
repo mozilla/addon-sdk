@@ -698,13 +698,13 @@ exports["test Selection Listener"] = function(assert, done) {
 
   selection.once("select", function() {
     assert.equal(selection.text, "fo");
-    close();
-    loader.unload();
     done();
   });
 
   open(URL).then(selectContentFirstDiv).
-    then(dispatchSelectionEvent, assert.fail);
+    then(dispatchSelectionEvent).
+    then(close).
+    then(loader.unload, assert.fail);
 };
 
 exports["test Textarea OnSelect Listener"] = function(assert, done) {
@@ -713,13 +713,13 @@ exports["test Textarea OnSelect Listener"] = function(assert, done) {
 
   selection.once("select", function() {
     assert.equal(selection.text, "noodles");
-    close();
-    loader.unload();
     done();
   });
 
   open(URL).then(selectTextarea).
-    then(dispatchOnSelectEvent, assert.fail);
+    then(dispatchOnSelectEvent).
+    then(close).
+    then(loader.unload, assert.fail);
 };
 
 exports["test Selection listener removed on unload"] = function(assert, done) {
@@ -769,14 +769,14 @@ exports["test Selection Listener on existing document"] = function(assert, done)
 
     selection.once("select", function() {
       assert.equal(selection.text, "fo");
-      close();
-      loader.unload();
       done();
     });
 
     return window;
   }).then(selectContentFirstDiv).
-    then(dispatchSelectionEvent, assert.fail);
+    then(dispatchSelectionEvent).
+    then(close).
+    then(loader.unload, assert.fail);
 };
 
 
@@ -788,14 +788,14 @@ exports["test Textarea OnSelect Listener on existing document"] = function(asser
 
     selection.once("select", function() {
       assert.equal(selection.text, "noodles");
-      close();
-      loader.unload();
       done();
     });
 
     return window;
   }).then(selectTextarea).
-    then(dispatchOnSelectEvent, assert.fail);
+    then(dispatchOnSelectEvent).
+    then(close).
+    then(loader.unload, assert.fail);
 };
 
 exports["test Selection Listener on document reload"] = function(assert, done) {
@@ -804,15 +804,15 @@ exports["test Selection Listener on document reload"] = function(assert, done) {
 
   selection.once("select", function() {
     assert.equal(selection.text, "fo");
-    close();
-    loader.unload();
     done();
   });
 
   open(URL).
     then(reload).
     then(selectContentFirstDiv).
-    then(dispatchSelectionEvent, assert.fail);
+    then(dispatchSelectionEvent).
+    then(close).
+    then(loader.unload, assert.fail);
 };
 
 exports["test Textarea OnSelect Listener on document reload"] = function(assert, done) {
@@ -821,15 +821,15 @@ exports["test Textarea OnSelect Listener on document reload"] = function(assert,
 
   selection.once("select", function() {
     assert.equal(selection.text, "noodles");
-    close();
-    loader.unload();
     done();
   });
 
   open(URL).
     then(reload).
     then(selectTextarea).
-    then(dispatchOnSelectEvent, assert.fail);
+    then(dispatchOnSelectEvent).
+    then(close).
+    then(loader.unload, assert.fail);
 };
 
 exports["test Selection Listener on frame"] = function(assert, done) {

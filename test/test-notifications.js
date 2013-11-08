@@ -1,19 +1,17 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim:set ts=2 sw=2 sts=2 et filetype=javascript
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const { Loader } = require('sdk/test/loader');
 
-exports.testOnClick = function (test) {
+exports.testOnClick = function (assert) {
   let [loader, mockAlertServ] = makeLoader(module);
   let notifs = loader.require("sdk/notifications");
   let data = "test data";
   let opts = {
     onClick: function (clickedData) {
-      test.assertEqual(this, notifs, "|this| should be notifications module");
-      test.assertEqual(clickedData, data,
+      assert.equal(this, notifs, "|this| should be notifications module");
+      assert.equal(clickedData, data,
                        "data passed to onClick should be correct");
     },
     data: data,
@@ -27,7 +25,7 @@ exports.testOnClick = function (test) {
 };
 
 // Returns [loader, mockAlertService].
-function makeLoader(test) {
+function makeLoader(module) {
   let loader = Loader(module);
   let mockAlertServ = {
     showAlertNotification: function (imageUrl, title, text, textClickable,
@@ -43,4 +41,6 @@ function makeLoader(test) {
   let scope = loader.sandbox("sdk/notifications");
   scope.notify = mockAlertServ.showAlertNotification.bind(mockAlertServ);
   return [loader, mockAlertServ];
-};
+}
+
+require('sdk/test').run(exports);

@@ -21,7 +21,7 @@ const {
 const {
   invalidResolve, invalidReject, createTree,
   compareWithHost, addVisits, resetPlaces
-} = require('./places-helper');
+} = require('../places-helper');
 const { promisedEmitter } = require('sdk/places/utils');
 
 exports.testEmptyQuery = function (assert, done) {
@@ -87,6 +87,9 @@ exports.testSearchURL = function (assert, done) {
   });
 };
 
+// Disabling due to intermittent Bug 892619
+// TODO solve this
+/*
 exports.testSearchTimeRange = function (assert, done) {
   let firstTime, secondTime;
   addVisits([
@@ -120,7 +123,7 @@ exports.testSearchTimeRange = function (assert, done) {
     done();
   });
 };
-
+*/
 exports.testSearchQuery = function (assert, done) {
   addVisits([
     'http://mozilla.com', 'http://webaud.io', 'http://mozilla.com/webfwd'
@@ -244,5 +247,3 @@ function searchP () {
 
 before(exports, (name, assert, done) => resetPlaces(done));
 after(exports, (name, assert, done) => resetPlaces(done));
-
-require('test').run(exports);
