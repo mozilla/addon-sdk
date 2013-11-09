@@ -11,9 +11,9 @@ The loader change would be a change to how files are resolved when using Jetpack
 ## Requirements
 
 * **Load native node modules**: `require('fs')` --> `require('sdk/io/fs')`
-* **Reconsider node module placement**: Should these live as their own in the `sdk` tree, or should they be separate in their own dir, like `require('node/fs')`? Separating them may be more clear, but I think we would have redundancy, or it seems inadequate (like no file system API in our `sdk/io` directory). I think having `require('node/fs')` isn't a bad idea to start discussion, with mapping of `require('fs')` to the node directory if its a node module for dependency support.
-
-* **Load node dependencies**: `require('underscore')` -- this may be an issue for when there are multiple versions throughout, but handling it via Node's lookup algorithm should be sufficient
+** Requires reorganizing node modules into `./lib/node/` ([Bug 919059](https://bugzilla.mozilla.org/show_bug.cgi?id=919059)) and implementing or including as many Node modules we feel is necessary ([Bug 935108](https://bugzilla.mozilla.org/show_bug.cgi?id=935108))
+** Also requires a SDK-specific alias map for top level requires to check the node directory so npm dependencies require it the same way
+* **Load node dependencies**: `require('underscore')` -- this may be an issue for when there are multiple versions throughout, but handling it via Node's lookup algorithm should be sufficient. [Bug 935109](https://bugzilla.mozilla.org/show_bug.cgi?id=935109)
 
 * **Overload native node modules**: (Possibly phase 2?) The ability to define overloads for native node modules, so user's can provide their implementation from preference or because Jetpack does not yet have support. For example, the Jetpack `fs` implementation does not support some methods, yet a user could have created a module that does, or provide an implementation for `util`, which Jetpack does not currently have.
 
@@ -74,10 +74,91 @@ NODE_MODULES_PATHS(START)
   6. return DIRS
 ```
 
-http://nodejs.org/api/modules.html#modules_all_together
+## Proposed API
 
+```
+const { Loader } = Cu.import('resource://gre/modules/commonjs/toolkit/loader.js', {});
 
-### Project Dependencies
+// Constructor
+Loader({
+  // A new optional for relative lookups
+  mapping: {
+    'resource://../index': {
+      './dir/a': 'resource://../dir/a',
+      'sdk/tabs': 'sdk/tabs'
+    },
+    'resource://../dir/a': {
+      '../utils': 'resource://../utils'
+    },
+    'resource://../utils': {}
+  },
+  // Set paths as aliases for lookup
+  // Checked in defined order?
+  paths: {
+    'modules/': 'resource://gre/modules/',
+    '': 'resource://gre/modules/commonjs'
+  },
+  // Define specific shortcuts for modules
+  // With path name to module itself
+  modules: {
+    'chrome': { Cc: Cc, Cu: Cu, /*...*/ }
+  },
+  // Globals defined in all modules
+  globals: {
+    'Components': Components
+  },
+  // A resolution function to map
+  // a require string (ex: `'../index.js'`, `'underscore'`, `'sdk/tabs'`) to
+  // a resolvable `resource://` uri. Currently for the SDK, this is where we
+  // reference the manifest's mapping information so we don't have to resolve
+  // paths in runtime
+  resolve: function (id, requirerUri) {
+
+  }
+});
+
+// Static Methods
+/*
+  Used as default `resolve` unless overloaded in `Loader` constructor.
+  Resolve's module paths from `requirerUri` when requiring `id`
+  ./a, resource://../index.js -> resource://../a.js
+  ../, resource://../dir/b.js -> resource://../index.js
+  underscore, resource://../index.js -> resource://../node_modules/underscore/index.js
+  sdk/tabs, resource://../index.js -> resource://gre/modules/commonjs/sdk/tabs.js
+*/
+
+let uri = Loader.resolve(id, requirerUri);
+
+/*
+  Recursively descends through the AST and finds all `require` statements,
+  generating a map to be used for non-runtime lookups
+*/
+
+let mapping = Loader.resolveAll(entryFile);
+```
+
+## Proposed Workflow
+
+### For Addons
+
+#### Bootstrap Logic moves into AOM
+
+```
+// Cached mapping object, stored in profile??
+let mappings = CACHED_MAPPINGS.get(addon);
+let Loader = Cu.import('resource://gre/modules/commonjs/toolkit/loader.js', {});
+
+// If no mappings exist, generate at install(?) time with Loader's static
+// `resolveAll`, returning a map
+if (!mappings) {
+  mappings = Loader.resolveAll(addon);
+}
+
+```
+
+### For DevTools
+
+## Proposed Roadmap
 
 * Loader Changes
 * Node Module movement possibly (into `./lib/node/`)
