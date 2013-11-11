@@ -80,8 +80,25 @@ NODE_MODULES_PATHS(START)
 const { Loader } = Cu.import('resource://gre/modules/commonjs/toolkit/loader.js', {});
 
 // Constructor
+/*
+  IF MAPPING defined
+    RESOLVE fn is skipped. Mapping does everything for us.
+  ELSE
+    # Generate MAPPING
+    IF RESOLVE defined
+      `Loader.resolveAll` with RESOLVE fn
+        WITH PATHS if defined
+    ELSE
+      `Loader.resolveAll` with `Loader.resolve`
+        WITH PATHS if defined
+        WITH NODE_MODULES if defined
+
+*/
 Loader({
-  // A new optional for relative lookups
+  // The manifest/package.json file for the item to load,
+  // for node dependencies
+  manifest: manifest,
+  // A new optional for lookups
   mapping: {
     'resource://../index': {
       './dir/a': 'resource://../dir/a',
@@ -107,14 +124,23 @@ Loader({
   globals: {
     'Components': Components
   },
+  // Whether or not the default `resolve` function does node_module look ups.
+  // If `resolve` option defined, this does nothing.
+  node_modules: { 'underscore': '*' },
   // A resolution function to map
   // a require string (ex: `'../index.js'`, `'underscore'`, `'sdk/tabs'`) to
   // a resolvable `resource://` uri. Currently for the SDK, this is where we
   // reference the manifest's mapping information so we don't have to resolve
   // paths in runtime
-  resolve: function (id, requirerUri) {
+  resolve: function (id, requirerUri, callback) {
 
-  }
+  },
+
+  // Fired when loader is finished loading (???)
+  // We should only be using async APIs here, but wonder if
+  // others need it in a sync way (devtools?)
+  // Receives `loader` instance as first param
+  onReady: function () {}
 });
 
 // Static Methods
@@ -123,18 +149,58 @@ Loader({
   Resolve's module paths from `requirerUri` when requiring `id`
   ./a, resource://../index.js -> resource://../a.js
   ../, resource://../dir/b.js -> resource://../index.js
-  underscore, resource://../index.js -> resource://../node_modules/underscore/index.js
+
+  If already a qualified URI:
+  resource://../mod.jsm, resource://../index.js -> resource://mod.jsm
+
+  If `paths` defined, attempt to find a match
   sdk/tabs, resource://../index.js -> resource://gre/modules/commonjs/sdk/tabs.js
+
+  If `node_modules` true, do node dep style look up if not relative path after exhausting other options
+  underscore, resource://../index.js -> resource://../node_modules/underscore/index.js
+
+  @param {string} id - The string name/path of the module required
+  @param {string} requirerUri - The resolved path of the module doing the requiring in `resource://` form
+  @param {object} options - Options object
+    @prop {object} paths - Mapping of aliases for URIs
+    @prop {object|array} node_modules - An object (keys) or array of module names that are to use node module-style lookups.
+  @param {function} callback - Callback to be fired with the URI passed in as the first parameter. If specified, lookup function is asynchronous.
+
+  @return {string} uri - If no `callback` is specified, then `resolve` returns the URI that `id` resolves to. If `callback` specified, returns `undefined`, and URI can be found in the callback.
 */
 
-let uri = Loader.resolve(id, requirerUri);
+Loader.resolve(id, requirerUri, {
+  // Allows aliasing via paths from static method
+  paths: { '': 'resource://gre/modules/commonjs/' },
+  // Whether or not node_module style lookups should occur,
+  // with a list of names of node modules
+  node_modules: { 'underscore': '*' }
+}, callback);
 
 /*
   Recursively descends through the AST and finds all `require` statements,
   generating a map to be used for non-runtime lookups
+  
+  @param {string} entryURI - The entry point of an app in `resource://` form
+  @param {object} options - Options object
+    @prop {object} paths - Mapping of aliases for URIs
+    @prop {object|array} node_modules - An object (keys) or array of module names that are to use node module-style lookups.
+    @prop {function} resolve - the function used to resolve individual modules. Uses `Loader.resolve` by default.
+  @param {function} callback - Callback to be fired with the mapping passed in as the first parameter. If specified, lookup function is asynchronous.
+
+  @return {object} mapping - If no `callback` is specified, then `resolveAll` returns the mapping for the entire app. If `callback` specified, returns `undefined`, and the mapping can be found in the callback.
 */
 
-let mapping = Loader.resolveAll(entryFile);
+Loader.resolveAll(entryURI, {
+  // Allows aliasing via paths from static method
+  paths: { '': 'resource://gre/modules/commonjs/' },
+  // Whether or not node_module style lookups should occur,
+  // with a list of names of node modules
+  node_modules: { 'underscore': '*' },
+  // A resolution function to be called on every file. Uses
+  // the static `Loader.resolve` by default
+  resolve: function () {}
+}, callback);
 ```
 
 ## Proposed Workflow
@@ -144,16 +210,46 @@ let mapping = Loader.resolveAll(entryFile);
 #### Bootstrap Logic moves into AOM
 
 ```
+// This is our SDK specific loader, replacing cuddelfish loader
+let { Loader: SDKLoader } = Cu.import('resource://gre/modules/commonjs/sdk/loader/loader.js', {});
 // Cached mapping object, stored in profile??
-let mappings = CACHED_MAPPINGS.get(addon);
+let mappings = CACHED_MAPPINGS.get(addonManifest);
+
+// We just pass in the addon manifest and mappings if they exist into our loader
+// so we can offload most of the customization and tweaking on our end
+// in the future, rather than in AOM
+SDKLoader(addonManifest, mappings);
+```
+
+#### Load SDK Loader (formerly CuddlefishLoader) with manifest and mappings
+
+```
 let Loader = Cu.import('resource://gre/modules/commonjs/toolkit/loader.js', {});
+let PATHS = {
+  '': 'resource://gre/modules/commonjs/',
+  'modules/': 'resource://gre/modules/',
+};
+exports.SDKLoader = function (manifest, mappings, callback) {
+  // If no mappings exist, generate at install(?) time with Loader's static
+  // `resolveAll`, returning a map
+  if (!mappings) {
+    Loader.resolveAll(manifest.entryURI, {
+      paths: PATHS
+      node_modules: manifest.dependencies,
+    }, createLoader);
+  } else { 
+    createLoader(mappings);
+  }
 
-// If no mappings exist, generate at install(?) time with Loader's static
-// `resolveAll`, returning a map
-if (!mappings) {
-  mappings = Loader.resolveAll(addon);
+  function createLoader (map) {
+    let loader = new Loader({
+      mappings: mappings,
+      modules: { ... },
+      globals: { ... },
+      onReady: callback
+    });
+  }
 }
-
 ```
 
 ### For DevTools
