@@ -17,6 +17,7 @@ const { LoaderWithHookedConsole } = require("sdk/test/loader");
 const { Worker } = require("sdk/content/worker");
 const { close } = require("sdk/window/helpers");
 const { set: setPref } = require("sdk/preferences/service");
+const { isArray } = require("sdk/lang/type");
 const DEPRECATE_PREF = "devtools.errorconsole.deprecation_warnings";
 
 const DEFAULT_CONTENT_URL = "data:text/html;charset=utf-8,foo";
@@ -436,8 +437,70 @@ exports["test:setInterval works with string argument"] = WorkerTest(
       contentScriptWhen: "ready",
       onMessage: function(one) {
         count++;
-        assert.equal(one, 1, "got "+count+" message(s) from setInterval");
+        assert.equal(one, 1, "got " + count + " message(s) from setInterval");
         if (count >= 3) done();
+      }
+    });
+  }
+);
+
+exports["test:setInterval async Errors passed to .onError"] = WorkerTest(
+  DEFAULT_CONTENT_URL,
+  function(assert, browser, done) {
+    let count = 0;
+    let worker = Worker({
+      window: browser.contentWindow,
+      contentScript: "setInterval(() => { throw Error('ubik') }, 50)",
+      contentScriptWhen: "ready",
+      onError: function(err) {
+        count++;
+        assert.equal(err.message, "ubik", 
+            "error (corectly) propagated  " + count + " time(s)");
+        if (count >= 3) done();
+      }
+    });
+  }
+);
+
+exports["test:setTimeout throws array, passed to .onError"] = WorkerTest(
+  DEFAULT_CONTENT_URL,
+  function(assert, browser, done) {
+    let worker = Worker({
+      window: browser.contentWindow,
+      contentScript: "setTimeout(function() { throw ['array', 42] }, 1)",
+      contentScriptWhen: "ready",
+      onError: function(arr) {
+        assert.ok(isArray(arr), 
+            "the type of thrown/propagated object is array");
+        assert.ok(arr.length==2, 
+            "the propagated thrown array is the right length");
+        assert.equal(arr[1], 42, 
+            "element inside the thrown array correctly propagated");
+        done();
+      }
+    });
+  }
+);
+
+exports["test:setTimeout string arg with SyntaxError to .onError"] = WorkerTest(
+  DEFAULT_CONTENT_URL,
+  function(assert, browser, done) {
+    let worker = Worker({
+      window: browser.contentWindow,
+      contentScript: "setTimeout('syntax 123 error', 1)",
+      contentScriptWhen: "ready",
+      onError: function(err) {
+        assert.equal(err.name, "SyntaxError", 
+            "received SyntaxError thrown from bad code in string argument to setTimeout");
+        assert.ok('fileName' in err, 
+            "propagated SyntaxError contains a fileName property");
+        assert.ok('stack' in err, 
+            "propagated SyntaxError contains a stack property");
+        assert.equal(err.message, "missing ; before statement", 
+            "propagated SyntaxError has the correct (helpful) message");
+        assert.equal(err.lineNumber, 1, 
+            "propagated SyntaxError was thrown on the right lineNumber");
+        done();
       }
     });
   }
