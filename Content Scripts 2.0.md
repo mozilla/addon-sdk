@@ -69,12 +69,21 @@ button.addEventListener("click", function() {
 
 If `button` is pressed user will see both greetings.
 
-Such setup allows different content script to make changes to its JavaScript environment without worrying about conflicting with the page or with other content scripts. For example, a content script could include JQuery v1 and the page could include JQuery v2, and they wouldn't conflict with each other.  
+Such setup allows different content script to make changes to its
+JavaScript environment without worrying about conflicting with the page
+or with other content scripts. For example, a content script could include
+JQuery v1 and the page could include JQuery v2, and they wouldn't conflict
+with each other.  
 
 In addition content script have additional capabilities, like
 cross domain XHR, message channel for communication with add-on host etc.
 
-It's worth noting what happens with JS objects that are shared by the page and the extension - for example, the `window.onload` event. Assigning to the object affects your independent copy of the object. For example, both the page and extension can assign to `window.onload`, but neither one can read the other's event handler. The event handlers are called in the order in which they were assigned.
+It's worth noting what happens with JS objects that are shared by the page
+and the extension - for example, the `window.onload` event. Assigning to the
+object affects your independent copy of the object. For example, both the page
+and extension can assign to `window.onload`, but neither one can read the
+other's event handler. The event handlers are called in the order in which
+they were assigned.
 
  
 ### Communication with the page
@@ -107,10 +116,11 @@ window.addEventListener("message", function(event) {
 
    if (event.data && event.data.from === "content-script") {
      console.log("received " + event.type + " message from: ",
-								 event.data.from,
-								 event.data.message);
-	 }
+		 event.data.from,
+		 event.data.message);
+   }
 });
+```
 
 In the example above content script establishes communication
 with a page through a `postMessage`. In a similar way page can
@@ -121,7 +131,8 @@ necessarily expose desired functionality through such a
 communication channel. Such pages can be dealt by injecting
 "page scripts" into them. *Page scripts* are scripts that are
 executed by an add-on. Unlike content scripts they are executed
-in the same page environment as rest of the page JS. Page scripts are no different from the regular page JS and they are
+in the same page environment as rest of the page JS. Page scripts
+are no different from the regular page JS and they are
 primarily use case is to establish communication with a page(s)
 that was not implemented with that in mind.
 
@@ -131,7 +142,8 @@ Sometimes add-on may want to expose additional capabilities to a
 specific page(s). While that is possible with a help of content
 scripts it's would be a lot better to avoid manually pumping
 messages back and forth through content scripts. To address this 
-use case add-on SDK let's add-ons to communicate directly with content page(s).
+use case add-on SDK let's add-ons to communicate directly with content
+page(s).
 
 For example consider following page:
 
@@ -171,17 +183,9 @@ const { notify } = require("sdk/notifications");
 
 const port = PagePort({ include: "*.mypage.com" });
 port.on("notify", ({ source, data }) => {
-  notify({
-		text: data.text,
-		onClick: () =>
-			source.postMessage("notifier-click", { id: data.id })
+  notify({ text: data.text,
+           onClick: () =>
+             source.postMessage("notifier-click", { id: data.id })
   });
 });
 ```
-
-
-
-
-	 
-
-
