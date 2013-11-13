@@ -117,19 +117,19 @@ NODE_MODULES_PATHS(START)
 * `globals`: An object of globals, i.e. `globals: { 'Components': Components }`
 * `resolve`: A function taking an `id` and `requirerURI` as arguments that is called when the loader's `require` is used. Currently, in Cuddlefish Loader, this is where the URI mapping occurs.
 
-### Loader.resolve(id, requirerURI, manifest)
+### exports.resolve(id, requirerURI, manifest)
 
 Used for resolving URIs from their referrer. Used by default in constructing `Loader` unless overloaded. Returns a string 
 
 ```
 // 'jetpack/a'
-Loader.resolve('../a', 'jetpack/dir/b');
+exports.resolve('../a', 'jetpack/dir/b');
 
 // 'sdk/tabs'
-Loader.resolve('sdk/tabs', 'jetpack/a');
+exports.resolve('sdk/tabs', 'jetpack/a');
 ```
 
-### Loader.resolveURI(id, mapping)
+### exports.resolveURI(id, mapping)
 
 Takes an `id` and resolves it to a URI via the `mapping` array. Returns a resource URI. Maps are in the form of:
 
@@ -139,16 +139,31 @@ let mapping = [
   ['sdk/': 'resource://gre/modules/commonjs/sdk']
 ]
 
-Loader.resolveURI('./a', mapping) // 'resource://jetpack-uri/a.js'
-Loader.resolveURI('sdk/tabs', mapping) // 'resource://gre/modules/commonjs/sdk/tabs.js'
+exports.resolveURI('./a', mapping) // 'resource://jetpack-uri/a.js'
+exports.resolveURI('sdk/tabs', mapping) // 'resource://gre/modules/commonjs/sdk/tabs.js'
 ```
 
-### Loader.generateMap({ manifest, paths, resolve }, callback);
+`resolveURI` also normalizes the URI, which involves appending `'.js'` if not already specified. **Also needs to ignore absolute resource:// URIs**
+
+### exports.generateMap({ manifest, paths, resolve }, callback);
+
+New static method for `Loader` module. Generates a map asynchronously that can be passed into the `Loader` constructor to eliminate runtime lookups during `require`. This map generator will also use similar internals as the runtime lookup.
 
 * `resolve`: resolution function, similar in `Loader` constructor
 * `path`: path object, similar in `Loader` constructor
-* `manifeset`: manifestURI, similar in `Loader` constructor
+* `manifest`: manifestURI, similar in `Loader` constructor, need for entry point URI and dependencies
 * `callback`: Callback fired upon completion with mapping in first argument
+
+
+### exports.Require(loader, requirer)
+
+Returns a `require` function to be used in a specific context to load additional modules.
+
+Currently works like:
+
+* If relative, use `loader.resolve || exports.resolve` to resolve. (Only attempts to resolve if a requirer exists; cuddlefish loader depends on this as it resolves non-relative links as well unfortunately)
+* Get the resource URI with the resolved id and `loader.mapping` with `resolveURI`. Takes care of normalization as well.
+* **New**: Need to do runtime look up if not found in the map
 
 ## Proposed Workflow
 
@@ -172,17 +187,19 @@ SDKLoader(addonManifest, mappings);
 
 ```
 let Loader = Cu.import('resource://gre/modules/commonjs/toolkit/loader.js', {});
+let { defer } = Cu.import('resource://gre/modules/Promise.jsm', {});
 let PATHS = {
   '': 'resource://gre/modules/commonjs/',
   'modules/': 'resource://gre/modules/',
 };
 exports.SDKLoader = function (manifest, mappings, callback) {
+  let { promise, resolve } = defer();
   // If no mappings exist, generate at install(?) time with Loader's static
   // `resolveAll`, returning a map
   if (!mappings) {
     Loader.resolveAll(manifest.entryURI, {
-      paths: PATHS
-      node_modules: manifest.dependencies,
+      paths: PATHS,
+      manifest: manifest
     }, createLoader);
   } else { 
     createLoader(mappings);
@@ -190,12 +207,16 @@ exports.SDKLoader = function (manifest, mappings, callback) {
 
   function createLoader (map) {
     let loader = new Loader({
-      mappings: mappings,
+      mapping: map,
       modules: { ... },
       globals: { ... },
-      onReady: callback
+      paths: PATHS,
+      manifest: manifest
     });
+    resolve(loader);
   }
+
+  return promise;
 }
 ```
 
