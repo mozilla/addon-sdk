@@ -79,18 +79,6 @@ NODE_MODULES_PATHS(START)
 
 ### Loader(options)
   
-  IF MAPPING defined
-    RESOLVE fn is skipped. Mapping does everything for us.
-  ELSE
-    IF RESOLVE defined
-      `Loader.resolveAll` with RESOLVE fn
-        WITH PATHS if defined
-    ELSE
-      `Loader.resolveAll` with `Loader.resolve`
-        WITH PATHS if defined
-        WITH NODE_MODULES if defined
-
-
 * `manifest`: package.json file resourceURI. Needed for entry point(?) and node dependencies **new**
 * `mapping`: An object representing resourceURIs for each module within a module **new**
 ```
