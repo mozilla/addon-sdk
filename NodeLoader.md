@@ -105,7 +105,7 @@ NODE_MODULES_PATHS(START)
 * `globals`: An object of globals, i.e. `globals: { 'Components': Components }`
 * `resolve`: A function taking an `id` and `requirerURI` as arguments that is called when the loader's `require` is used. Currently, in Cuddlefish Loader, this is where the URI mapping occurs.
 
-### exports.resolve(id, requirerURI, manifest)
+### exports.resolve(id, requirerURI)
 
 Used for resolving URIs from their referrer. Used by default in constructing `Loader` unless overloaded. Returns a string 
 
