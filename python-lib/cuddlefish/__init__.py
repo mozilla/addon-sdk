@@ -796,14 +796,6 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     harness_options.update(build)
 
-    # When cfx is run from sdk root directory, we will strip sdk modules and
-    # override them with local modules.
-    # So that integration tools will continue to work and use local modules
-    if os.getcwd() == env_root:
-        options.bundle_sdk = True
-        options.force_use_bundled_sdk = False
-        options.overload_modules = True
-
     extra_environment = {}
     if command == "test":
         # This should be contained in the test runner package.
