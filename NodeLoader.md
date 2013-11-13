@@ -76,15 +76,12 @@ NODE_MODULES_PATHS(START)
 
 ## Proposed API
 
-```
-const { Loader } = Cu.import('resource://gre/modules/commonjs/toolkit/loader.js', {});
 
-// Constructor
-/*
+### Loader(options)
+  
   IF MAPPING defined
     RESOLVE fn is skipped. Mapping does everything for us.
   ELSE
-    # Generate MAPPING
     IF RESOLVE defined
       `Loader.resolveAll` with RESOLVE fn
         WITH PATHS if defined
@@ -93,12 +90,10 @@ const { Loader } = Cu.import('resource://gre/modules/commonjs/toolkit/loader.js'
         WITH PATHS if defined
         WITH NODE_MODULES if defined
 
-*/
-Loader({
-  // The manifest/package.json file for the item to load,
-  // for node dependencies
-  manifest: manifest,
-  // A new optional for lookups
+
+* `manifest`: package.json file resourceURI. Needed for entry point(?) and node dependencies **new**
+* `mapping`: An object representing resourceURIs for each module within a module **new**
+```
   mapping: {
     'resource://../index': {
       './dir/a': 'resource://../dir/a',
@@ -109,99 +104,51 @@ Loader({
     },
     'resource://../utils': {}
   },
-  // Set paths as aliases for lookup
-  // Checked in defined order?
+```
+
+* `paths`: key-value pairing of aliases to their resourceURI 
+```
   paths: {
     'modules/': 'resource://gre/modules/',
     '': 'resource://gre/modules/commonjs'
   },
-  // Define specific shortcuts for modules
-  // With path name to module itself
-  modules: {
-    'chrome': { Cc: Cc, Cu: Cu, /*...*/ }
-  },
-  // Globals defined in all modules
-  globals: {
-    'Components': Components
-  },
-  // Whether or not the default `resolve` function does node_module look ups.
-  // If `resolve` option defined, this does nothing.
-  node_modules: { 'underscore': '*' },
-  // A resolution function to map
-  // a require string (ex: `'../index.js'`, `'underscore'`, `'sdk/tabs'`) to
-  // a resolvable `resource://` uri. Currently for the SDK, this is where we
-  // reference the manifest's mapping information so we don't have to resolve
-  // paths in runtime
-  resolve: function (id, requirerUri, callback) {
-
-  },
-
-  // Fired when loader is finished loading (???)
-  // We should only be using async APIs here, but wonder if
-  // others need it in a sync way (devtools?)
-  // Receives `loader` instance as first param
-  onReady: function () {}
-});
-
-// Static Methods
-/*
-  Used as default `resolve` unless overloaded in `Loader` constructor.
-  Resolve's module paths from `requirerUri` when requiring `id`
-  ./a, resource://../index.js -> resource://../a.js
-  ../, resource://../dir/b.js -> resource://../index.js
-
-  If already a qualified URI:
-  resource://../mod.jsm, resource://../index.js -> resource://mod.jsm
-
-  If `paths` defined, attempt to find a match
-  sdk/tabs, resource://../index.js -> resource://gre/modules/commonjs/sdk/tabs.js
-
-  If `node_modules` true, do node dep style look up if not relative path after exhausting other options
-  underscore, resource://../index.js -> resource://../node_modules/underscore/index.js
-
-  @param {string} id - The string name/path of the module required
-  @param {string} requirerUri - The resolved path of the module doing the requiring in `resource://` form
-  @param {object} options - Options object
-    @prop {object} paths - Mapping of aliases for URIs
-    @prop {object|array} node_modules - An object (keys) or array of module names that are to use node module-style lookups.
-  @param {function} callback - Callback to be fired with the URI passed in as the first parameter. If specified, lookup function is asynchronous.
-
-  @return {string} uri - If no `callback` is specified, then `resolve` returns the URI that `id` resolves to. If `callback` specified, returns `undefined`, and URI can be found in the callback.
-*/
-
-Loader.resolve(id, requirerUri, {
-  // Allows aliasing via paths from static method
-  paths: { '': 'resource://gre/modules/commonjs/' },
-  // Whether or not node_module style lookups should occur,
-  // with a list of names of node modules
-  node_modules: { 'underscore': '*' }
-}, callback);
-
-/*
-  Recursively descends through the AST and finds all `require` statements,
-  generating a map to be used for non-runtime lookups
-  
-  @param {string} entryURI - The entry point of an app in `resource://` form
-  @param {object} options - Options object
-    @prop {object} paths - Mapping of aliases for URIs
-    @prop {object|array} node_modules - An object (keys) or array of module names that are to use node module-style lookups.
-    @prop {function} resolve - the function used to resolve individual modules. Uses `Loader.resolve` by default.
-  @param {function} callback - Callback to be fired with the mapping passed in as the first parameter. If specified, lookup function is asynchronous.
-
-  @return {object} mapping - If no `callback` is specified, then `resolveAll` returns the mapping for the entire app. If `callback` specified, returns `undefined`, and the mapping can be found in the callback.
-*/
-
-Loader.resolveAll(entryURI, {
-  // Allows aliasing via paths from static method
-  paths: { '': 'resource://gre/modules/commonjs/' },
-  // Whether or not node_module style lookups should occur,
-  // with a list of names of node modules
-  node_modules: { 'underscore': '*' },
-  // A resolution function to be called on every file. Uses
-  // the static `Loader.resolve` by default
-  resolve: function () {}
-}, callback);
 ```
+* `modules`: An object of key-value pairs of aliases to specific objects, i.e. `'chrome': { Cc: Cc, Cu: Cu, /*...*/ }`
+* `globals`: An object of globals, i.e. `globals: { 'Components': Components }`
+* `resolve`: A function taking an `id` and `requirerURI` as arguments that is called when the loader's `require` is used. Currently, in Cuddlefish Loader, this is where the URI mapping occurs.
+
+### Loader.resolve(id, requirerURI, manifest)
+
+Used for resolving URIs from their referrer. Used by default in constructing `Loader` unless overloaded. Returns a string 
+
+```
+// 'jetpack/a'
+Loader.resolve('../a', 'jetpack/dir/b');
+
+// 'sdk/tabs'
+Loader.resolve('sdk/tabs', 'jetpack/a');
+```
+
+### Loader.resolveURI(id, mapping)
+
+Takes an `id` and resolves it to a URI via the `mapping` array. Returns a resource URI. Maps are in the form of:
+
+```
+let mapping = [
+  ['./': 'resource://jetpack-uri/'],
+  ['sdk/': 'resource://gre/modules/commonjs/sdk']
+]
+
+Loader.resolveURI('./a', mapping) // 'resource://jetpack-uri/a.js'
+Loader.resolveURI('sdk/tabs', mapping) // 'resource://gre/modules/commonjs/sdk/tabs.js'
+```
+
+### Loader.generateMap({ manifest, paths, resolve }, callback);
+
+* `resolve`: resolution function, similar in `Loader` constructor
+* `path`: path object, similar in `Loader` constructor
+* `manifeset`: manifestURI, similar in `Loader` constructor
+* `callback`: Callback fired upon completion with mapping in first argument
 
 ## Proposed Workflow
 
