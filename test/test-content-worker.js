@@ -18,6 +18,9 @@ const { Worker } = require("sdk/content/worker");
 const { close } = require("sdk/window/helpers");
 const { set: setPref } = require("sdk/preferences/service");
 const { isArray } = require("sdk/lang/type");
+const { URL } = require('sdk/url');
+const fixtures = require("./fixtures");
+
 const DEPRECATE_PREF = "devtools.errorconsole.deprecation_warnings";
 
 const DEFAULT_CONTENT_URL = "data:text/html;charset=utf-8,foo";
@@ -806,6 +809,23 @@ exports["test:global postMessage"] = WorkerTest(
     assert.equal(worker.url, window.location.href,
                      "worker.url works");
     worker.postMessage("hi!");
+  }
+);
+
+exports['test:conentScriptFile as URL instance'] = WorkerTest(
+  DEFAULT_CONTENT_URL,
+  function(assert, browser, done) {
+
+    let url = new URL(fixtures.url("test-contentScriptFile.js"));
+    let worker =  Worker({
+      window: browser.contentWindow,
+      contentScriptFile: url,
+      onMessage: function(msg) {
+        assert.equal(msg, "msg from contentScriptFile", 
+            "received a wrong message from contentScriptFile");
+        done();
+      }
+    });
   }
 );
 
