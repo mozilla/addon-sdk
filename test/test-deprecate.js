@@ -90,7 +90,7 @@ exports.testDeprecateEvent = function(assert, done) {
   assert.equal(messages[0].type, "error", "the console message is an error");
   let msg = messages[0].msg;
   assert.ok(msg.indexOf("BAD") !== -1, "message contains the given message");
-  assert.ok(msg.indexOf("deprecateEvent") !== -1,
+  assert.ok(msg.indexOf("deprecateUsage") !== -1,
             "message contains name of the caller function");
   assert.ok(msg.indexOf(module.uri) !== -1,
             "message contains URI of the caller module");
@@ -101,13 +101,13 @@ exports.testDeprecateEvent = function(assert, done) {
 exports.testDeprecateSettingToggle = function (assert, done) {
   let { loader, messages } = LoaderWithHookedConsole(module);
   let deprecate = loader.require("sdk/util/deprecate");
-  
+
   function fn () { deprecate.deprecateUsage("foo"); }
 
   set(PREFERENCE, false);
   fn();
   assert.equal(messages.length, 0, 'no deprecation warnings');
-  
+
   set(PREFERENCE, true);
   fn();
   assert.equal(messages.length, 1, 'deprecation warnings when toggled');

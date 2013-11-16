@@ -16,7 +16,7 @@ windows. With this module, you can:
 If your add-on has not opted into private browsing, then you won't see any
 private browser windows. Private browser windows won't appear in the
 [`browserWindows`](modules/sdk/windows.html#browserWindows) property, you
-won't receive any window events, and you won't be able to open private 
+won't receive any window events, and you won't be able to open private
 windows.
 
 To learn more about private windows, how to opt into private browsing, and how
@@ -24,16 +24,15 @@ to support private browsing, refer to the
 [documentation for the `private-browsing` module](modules/sdk/private-browsing.html).
 
 <api name="browserWindows">
-@property {List}
+@property {Iterator}
 `browserWindows` provides access to all the currently open browser windows as
 [BrowserWindow](modules/sdk/windows.html#BrowserWindow) objects.
 
     var windows = require("sdk/windows");
-    for each (var window in windows.browserWindows) {
+    for (let window of windows.browserWindows) {
       console.log(window.title);
     }
 
-    console.log(windows.browserWindows.length);
 
 This object emits all the events listed under the "Events" section:
 
@@ -162,7 +161,7 @@ retrieved from the `browserWindows` property exported by this module.
                 " tabs.");
 
     // Print the title of all browser windows
-    for each (var window in windows) {
+    for (let window of windows) {
       console.log(window.title);
     }
 
@@ -179,7 +178,7 @@ This property is read-only.
 </api>
 
 <api name="tabs">
-@property {TabList}
+@property {Iterator}
 A live list of tabs in this window. This object has the same interface as the
 [`tabs` API](modules/sdk/tabs.html), except it contains only the
 tabs in this window, not all tabs in all windows. This property is read-only.

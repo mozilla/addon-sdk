@@ -35,11 +35,11 @@ loading DOM content, or are made active or inactive:
 
 ### Access Tabs ###
 
-The module itself can be used as a list of all opened
+The module object itself can be used as iterator of open
 tabs across all windows. In particular, you can enumerate it:
 
     var tabs = require('sdk/tabs');
-    for each (var tab in tabs)
+    for (let tab of tabs)
       console.log(tab.title);
 
 You can also access individual tabs by index:
@@ -153,11 +153,6 @@ activate a `Tab` object, call its `activate` method.
     // Get the active tab's title.
     var tabs = require("sdk/tabs");
     console.log("title of active tab is " + tabs.activeTab.title);
-</api>
-
-<api name="length">
-@property {number}
-The number of open tabs across all windows.
 </api>
 
 <api name="open">
