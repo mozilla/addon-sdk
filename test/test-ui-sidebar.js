@@ -800,18 +800,20 @@ exports.testShowingInOneWindowDoesNotAffectOtherWindows = function(assert, done)
         assert.pass('setting the sidebar.url causes a new show event');
 
         // check state of the new window
-        assert.equal(isShowing(sidebar1), true, 'the sidebar is showing');
+        assert.equal(isShowing(sidebar1), true, 'the sidebar is showing 1');
         checkSidebarShowing(window, true);
 
         // check state of old window
         checkSidebarShowing(window1, false);
 
         // calling destroy() twice should not matter
+        assert.pass('calling sidebar1.destroy');
         sidebar1.destroy();
+        assert.pass('calling sidebar1.destroy twice');
         sidebar1.destroy();
 
         // check state of the new window
-        assert.equal(isShowing(sidebar1), false, 'the sidebar is not showing');
+        assert.equal(isShowing(sidebar1), false, 'the sidebar is not showing 2');
         checkSidebarShowing(window, undefined);
 
         // check state of old window
