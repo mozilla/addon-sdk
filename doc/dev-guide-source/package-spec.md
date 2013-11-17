@@ -214,6 +214,14 @@ directory the first time you run
 </tr>
 
 <tr>
+  <td id="developers"><code>developers</code></td>
+  <td><p>An array of strings listing developers of this add-on.</p>
+  <p>These values will be used as the add-on's
+  <a href="https://developer.mozilla.org/en-US/docs/Install_Manifests#developer"><code>em:developer</code></a>
+  elements in its "install.rdf".</p></td>
+</tr>
+
+<tr>
   <td id="version"><code>version</code></td>
   <td><p>String representing the version of the add-on. Defaults to
   <code>"0.1"</code>.</p>
