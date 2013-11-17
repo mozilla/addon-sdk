@@ -138,7 +138,7 @@ def gen_manifest(template_root_dir, target_cfg, jid,
         elem.appendChild(dom.createTextNode(translator))
         dom.documentElement.getElementsByTagName("Description")[0].appendChild(elem)
 
-    for translator in target_cfg.get("developers", [ ]):
+    for developer in target_cfg.get("developers", [ ]):
         elem = dom.createElement("em:developer");
         elem.appendChild(dom.createTextNode(developer))
         dom.documentElement.getElementsByTagName("Description")[0].appendChild(elem)
