@@ -24,6 +24,24 @@ exports.testOnClick = function (assert) {
   loader.unload();
 };
 
+exports['test:numbers and URLs in options'] = function(assert) {
+  let [loader] = makeLoader(module);
+  let notifs = loader.require('sdk/notifications');
+  let opts = {
+    title: 123,
+    text: 45678,
+    // must use in-loader `sdk/url` module for the validation type check to work
+    iconURL: loader.require('sdk/url').URL('data:image/png,blah')
+  };
+  try {
+    notifs.notify(opts);
+    assert.pass('using numbers and URLs in options works');
+  } catch (e) {
+    assert.fail('using numbers and URLs in options should not throw');
+  }
+  loader.unload();
+}
+
 // Returns [loader, mockAlertService].
 function makeLoader(module) {
   let loader = Loader(module);
