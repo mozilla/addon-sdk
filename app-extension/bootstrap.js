@@ -104,6 +104,7 @@ function startup(data, reasonCode) {
       replace(uuidRe, '$1');
 
     let prefixURI = 'resource://' + domain + '/';
+    const baseURI = prefixURI + name + '/';
     let resourcesURI = ioService.newURI(rootURI + '/resources/', null, null);
     resourceHandler.setSubstitution(domain, resourcesURI);
 
@@ -216,6 +217,10 @@ function startup(data, reasonCode) {
       prefixURI: prefixURI,
       // Add-on URI.
       rootURI: rootURI,
+      // This is what `rootURI` supposed to be, but since cfx re-arranges
+      // files in .xpi we need something else where files are actually stored,
+      // there for `baseURI` temporarily gonig to be it.
+      baseURI: baseURI,
       // options used by system module.
       // File to write 'OK' or 'FAIL' (exit code emulation).
       resultFile: options.resultFile,
