@@ -37,8 +37,37 @@ exports['test:numbers and URLs in options'] = function(assert) {
     notifs.notify(opts);
     assert.pass('using numbers and URLs in options works');
   } catch (e) {
-    assert.fail('using numbers and URLs in options should not throw');
+    assert.fail('using numbers and URLs in options must not throw');
   }
+  loader.unload();
+}
+
+exports['test:new tag, dir and lang options'] = function(assert) {
+  let [loader] = makeLoader(module);
+  let notifs = loader.require('sdk/notifications');
+  let opts = {
+    title: 'best',
+    tag: 'tagging',
+    lang: 'en'
+  };
+
+  try {
+    opts.dir = 'ttb';
+    notifs.notify(opts);
+    assert.fail('`dir` option must not accept TopToBottom direction.');
+  } catch (e) {
+    assert.equal(e.message, 
+      '`dir` option must be one of: "auto", "ltr" or "rtl".');
+  }
+
+  try {
+    opts.dir = 'rtl';
+    notifs.notify(opts);
+    assert.pass('`dir` option accepts "rtl" direction.');
+  } catch (e) {
+    assert.fail('`dir` option must accept "rtl" direction.');
+  }
+
   loader.unload();
 }
 
