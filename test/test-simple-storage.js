@@ -10,7 +10,7 @@ const WRITE_PERIOD_PREF = "extensions.addon-sdk.simple-storage.writePeriod";
 
 let {Cc,Ci} = require("chrome");
 
-const { Loader } = require("sdk/test/loader");
+const { Loader, LoaderWithHookedConsole } = require("sdk/test/loader");
 const { id } = require("sdk/self");
 
 let storeFile = Cc["@mozilla.org/file/directory_service;1"].
@@ -110,7 +110,7 @@ exports.testMalformed = function (assert) {
   let stream = file.open(storeFilename, "w");
   stream.write("i'm not json");
   stream.close();
-  let loader = Loader(module);
+  let { loader, messages } = LoaderWithHookedConsole(module);
   let ss = loader.require("sdk/simple-storage");
   let empty = true;
   for (let key in ss.storage) {
@@ -118,6 +118,12 @@ exports.testMalformed = function (assert) {
     break;
   }
   assert.ok(empty, "Malformed storage should cause root to be empty");
+
+  assert.equal(messages.length, 1, "Should have seen an console message");
+  assert.equal(messages[0].type, "error", "Should be an error");
+  assert.equal(String(messages[0].msg), "SyntaxError: JSON.parse: unexpected character",
+               "Should be a syntax error");
+
   loader.unload();
 };
 
