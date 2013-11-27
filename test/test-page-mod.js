@@ -474,6 +474,40 @@ exports.testExistingOnlyFrameMatchesInclude = function(assert, done) {
   });
 };
 
+exports.testAttachToBFCache = function(assert, done) {
+  let firstURL =  'data:text/html;charset=utf-8,UNIQUE-TEST-STRING-44';
+  let secondURL =  'data:text/html;charset=utf-8,UNIQUE-TEST-STRING-45';
+  let counter = 0;
+  tabs.open({
+    url: firstURL,
+    onPageShow: function pageshow(tab, persisted) {
+      counter++;
+      if (counter==1) {
+        tab.url = secondURL;
+      } 
+      if (counter==2) {
+        let pagemod = new PageMod({
+          include: firstURL,
+          attachTo: ['existing', 'top'],
+          onAttach: function(w) {
+            // if the assert(persisted) below has passed, 
+            // and this onAttach is called, we've made it!
+            pagemod.destroy();
+            tab.close(done);
+          }
+        });
+        tab.attach({
+          contentScript: 'setTimeout(function() history.back(), 1)'
+        });
+      }
+      if (counter==3) {
+        // make sure we are testing what we think we are testing: BFCache
+        assert.equal(persisted, true, "revisited page coming from BFCache");
+      }
+    }
+  });
+}
+
 exports.testTabWorkerOnMessage = function(assert, done) {
   let { browserWindows } = require("sdk/windows");
   let tabs = require("sdk/tabs");
