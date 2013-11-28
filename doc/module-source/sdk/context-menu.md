@@ -158,6 +158,16 @@ The <code>data</code> argument passed to the
   </tr>
   <tr>
     <td><code>
+      documentType
+    </code></td>
+    <td>
+      The MIME type of the document the menu was invoked in.
+      E.g. text/html for HTML pages, application/xhtml+xml for
+      XHTML, or image/jpeg when viewing a JPEG image directly.
+    </td>
+  </tr>
+  <tr>
+    <td><code>
       documentURL
     </code></td>
     <td>

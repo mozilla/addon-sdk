@@ -3157,6 +3157,27 @@ exports.testPredicateContextControl = function (assert, done) {
   });
 };
 
+// Test that the data object has the correct document type
+exports.testPredicateContextDocumentType = function (assert, done) {
+  let test = new TestHelper(assert, done);
+  let loader = test.newLoader();
+
+  let items = [loader.cm.Item({
+    label: "item",
+    context: loader.cm.PredicateContext(function (data) {
+      assert.equal(data.documentType, 'text/html');
+      return true;
+    })
+  })];
+
+  test.withTestDoc(function (window, doc) {
+    test.showMenu(null, function (popup) {
+      test.checkMenu(items, [], []);
+      test.done();
+    });
+  });
+};
+
 // Test that the data object has the correct document URL
 exports.testPredicateContextDocumentURL = function (assert, done) {
   let test = new TestHelper(assert, done);
