@@ -1,6 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+"use strict";
 
 
 const self = require("sdk/self");
@@ -8,119 +9,83 @@ const { Cc, Ci, Cu } = require("chrome");
 const { Loader, LoaderWithHookedConsole2 } = require("sdk/test/loader");
 const nsIObserverService = Cc["@mozilla.org/observer-service;1"].
                            getService(Ci.nsIObserverService);
-const { ObserverNotifications,
-        NotificationChannel } = require("sdk/input/observer-notification");
+const { InputPort } = require("sdk/input/system");
+const { OutputPort } = require("sdk/output/system");
 
 const { lift, start, stop, send, keepWhen } = require("sdk/input/signal");
 
 const isConsoleEvent = topic =>
   ["console-api-log-event",
-   "console-storage-cache-event"].indexOf(topic) >= 0
+   "console-storage-cache-event"].indexOf(topic) >= 0;
 
-exports["test receive messages"] = assert => {
-  const topic = Date.now().toString(32);
-  const input = new ObserverNotifications(topic, {
-    wrappedJSObject: { data: null }
-  });
+const message = x => ({wrappedJSObject: {data: x}});
 
-  const xs = lift(e => e.wrappedJSObject, input);
-  const ys = lift(x => x.data, xs);
-  const zs = lift(x => x.data + "!", xs);
+exports["test start / stop ports"] = assert => {
+  const input = new InputPort({ id: Date.now().toString(32), initial: {data:0} });
+  const topic = input.topic;
 
-  assert.deepEqual(xs.value, { data: null },
-                   "inherit initial value")
+  const xs = lift(({data}) => "x:" + data, input);
+  const ys = lift(({data}) => "y:" + data, input);
 
-  assert.deepEqual(ys.value, null,
-                  "inherit initial vaule")
+  assert.deepEqual(input.value, {data:0}, "initila value is set");
+  assert.deepEqual(xs.value, "x:0", "initial value is mapped");
+  assert.deepEqual(ys.value, "y:0", "initial value is mapped");
 
-  nsIObserverService.notifyObservers({
-    wrappedJSObject: { data: "???" }
-  }, topic, null);
+  nsIObserverService.notifyObservers(message(1), topic, null);
 
-  assert.deepEqual(xs.value, { data: null },
-                   "no message received since xs isn't started");
+  assert.deepEqual(input.value, {data:0}, "no message received on input port");
+  assert.deepEqual(xs.value, "x:0", "no message received on xs");
+  assert.deepEqual(ys.value, "y:0", "no message received on ys");
 
   start(xs);
 
 
-  nsIObserverService.notifyObservers({
-    wrappedJSObject: { data: "foo" }
-  }, topic, null);
+  nsIObserverService.notifyObservers(message(2), topic, null);
 
-
-  assert.deepEqual(xs.value, { data: "foo" },
-                   "message received");
-
-  assert.deepEqual(ys.value, null,
-                   "no message on ys since itsn't started");
+  assert.deepEqual(input.value, {data:2}, "message received on input port");
+  assert.deepEqual(xs.value, "x:2", "message received on xs");
+  assert.deepEqual(ys.value, "y:0", "no message received on (not started) ys");
 
   start(ys);
 
-  nsIObserverService.notifyObservers({
-    wrappedJSObject: { data: "bar" }
-  }, topic, null);
+  nsIObserverService.notifyObservers(message(3), topic, null);
 
-  assert.deepEqual(xs.value, { data: "bar" },
-                   "message received on xs");
 
-  assert.deepEqual(ys.value, "bar",
-                   "message received on ys");
+  assert.deepEqual(input.value, {data:3}, "message received on input port");
+  assert.deepEqual(xs.value, "x:3", "message received on xs");
+  assert.deepEqual(ys.value, "y:3", "message received on ys");
 
   stop(xs);
 
-  nsIObserverService.notifyObservers({
-    wrappedJSObject: { data: "baz" }
-  }, topic, null);
+  nsIObserverService.notifyObservers(message(4), topic, null);
 
-  assert.deepEqual(xs.value, { data: "bar" },
-                   "no message received on xs");
-
-  assert.deepEqual(ys.value, "bar",
-                   "no message received on ys since it derives from xs");
-
-  assert.deepEqual(input.value.wrappedJSObject, { data: "bar" },
-                   "observer was stopped as well");
+  assert.deepEqual(input.value, {data:4}, "message received on input port");
+  assert.deepEqual(xs.value, "x:3", "message not received on (stopped) xs");
+  assert.deepEqual(ys.value, "y:4", "message received on ys");
 
   start(xs);
 
-  nsIObserverService.notifyObservers({
-    wrappedJSObject: { data: "beep" }
-  }, topic, null);
+  nsIObserverService.notifyObservers(message(5), topic, null);
 
-  assert.deepEqual(xs.value, { data: "beep" },
-                   "message received on xs");
-
-  assert.deepEqual(ys.value, "beep",
-                   "message received on ys");
+  assert.deepEqual(input.value, {data:5}, "message received on input port");
+  assert.deepEqual(xs.value, "x:5", "message not received on xs");
+  assert.deepEqual(ys.value, "y:5", "message received on ys");
 
   stop(ys);
 
-  nsIObserverService.notifyObservers({
-    wrappedJSObject: { data: "bop" }
-  }, topic, null);
+  nsIObserverService.notifyObservers(message(6), topic, null);
 
-  assert.deepEqual(xs.value, { data: "beep" },
-                   "message isnt't received on xs since ys was only handler");
+  assert.deepEqual(input.value, {data:6}, "message received on input port");
+  assert.deepEqual(xs.value, "x:6", "message not received on xs");
+  assert.deepEqual(ys.value, "y:5", "message not received on (stopped) ys");
 
-  assert.deepEqual(ys.value, "beep",
-                   "message isn't received on ys");
+  stop(xs);
 
-  start(zs);
+  nsIObserverService.notifyObservers(message(7), topic, null);
 
-  nsIObserverService.notifyObservers({
-    wrappedJSObject: { data: "qux" }
-  }, topic, null);
-
-  assert.deepEqual(xs.value, { data: "qux" },
-                   "message received on xs");
-
-  assert.deepEqual(ys.value, "beep",
-                   "message isn't received on ys");
-
-  assert.deepEqual(zs.value, "qux!",
-                   "message received on zs");
-
-  stop(input);
+  assert.deepEqual(input.value, {data:6}, "message note received on input port");
+  assert.deepEqual(xs.value, "x:6", "message not received on (stopped) xs");
+  assert.deepEqual(ys.value, "y:5", "message not received on (stopped) ys");
 };
 
 exports["test send messages to nsIObserverService"] = assert => {
@@ -128,8 +93,9 @@ exports["test send messages to nsIObserverService"] = assert => {
 
   const { newURI } = Cc['@mozilla.org/network/io-service;1'].
                        getService(Ci.nsIIOService);
-  const topic = Date.now().toString(32);
-  const channel = new NotificationChannel(topic);
+
+  const output = new OutputPort({ id: Date.now().toString(32) });
+  const topic = output.topic;
 
   const observer = {
     QueryInterface: function() {
@@ -148,44 +114,66 @@ exports["test send messages to nsIObserverService"] = assert => {
 
   nsIObserverService.addObserver(observer, topic, false);
 
+  send(output, null);
+  assert.deepEqual(messages.shift(), { topic: topic, subject: null },
+                   "null message received");
+
+
   const uri = newURI("http://www.foo.com", null, null);
-  send(channel, uri);
+  send(output, uri);
 
   assert.deepEqual(messages.shift(), { topic: topic, subject: uri },
                    "message received");
 
 
   function customSubject() {}
-  send(channel, customSubject);
+  send(output, customSubject);
 
-  let message = messages.shift()
+  let message = messages.shift();
   assert.equal(message.topic, topic, "topic was received");
-  assert.equal(message.subject.wrappedJSObject.object, customSubject,
+  assert.equal(message.subject.wrappedJSObject, customSubject,
                "custom subject is received");
 
   nsIObserverService.removeObserver(observer, topic);
 
-  send(channel, { data: "more data" });
+  send(output, { data: "more data" });
 
   assert.deepEqual(messages, [],
                    "no more data received");
 
   nsIObserverService.addObserver(observer, "*", false);
 
-  send(channel, { data: "data again" });
+  send(output, { data: "data again" });
 
-  let message = messages.shift();
+  message = messages.shift();
   assert.equal(message.topic, topic, "topic was received");
-  assert.deepEqual(message.subject.wrappedJSObject.object,
+  assert.deepEqual(message.subject.wrappedJSObject,
                    { data: "data again" },
                    "wrapped message received");
 
   nsIObserverService.removeObserver(observer, "*");
 
-  send(channel, { data: "last data" });
+  send(output, { data: "last data" });
   assert.deepEqual(messages, [],
                    "no more data received");
+
+  assert.throws(() => send(output, "hi"),
+                /Unsupproted message type: `string`/,
+                "strings can't be send");
+
+  assert.throws(() => send(output, 4),
+                /Unsupproted message type: `number`/,
+                "numbers can't be send");
+
+  assert.throws(() => send(output, void(0)),
+                /Unsupproted message type: `undefined`/,
+                "undefineds can't be send");
+
+  assert.throws(() => send(output, true),
+                /Unsupproted message type: `boolean`/,
+                "booleans can't be send");
 };
+/*
 
 exports["test auto observer remove"] = assert => {
   const dataTopic = "data:" + Date.now().toString(32);
@@ -326,5 +314,6 @@ exports["test inputs are GC-ed"] = function(assert, done) {
     done();
   });
 };
+*/
 
 require("sdk/test").run(exports);
