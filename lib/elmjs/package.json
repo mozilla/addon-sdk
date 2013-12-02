@@ -1,0 +1,57 @@
+{
+  "name": "elmjs",
+  "id": "elmjs",
+  "version": "0.0.1",
+  "description": "Elm in JS",
+  "keywords": [ "elmjs" ],
+  "author": "Irakli Gozalishvili <rfobic@gmail.com> (http://jeditoolkit.com)",
+  "homepage": "https://github.com/Gozala/elmjs",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Gozala/elmjs.git",
+    "web": "https://github.com/Gozala/elmjs"
+  },
+  "bugs": {
+    "url": "http://github.com/Gozala/elmjs/issues/"
+  },
+  "devDependencies": {
+    "test": "~0.x.0",
+    "phantomify": "~0.x.0",
+    "retape": "~0.x.0",
+    "tape": "~0.1.5"
+  },
+  "main": "./index.js",
+  "scripts": {
+    "test": "npm run test-node && npm run test-browser",
+    "test-browser": "node ./node_modules/phantomify/bin/cmd.js ./test/common.js",
+    "test-node": "node ./test/common.js",
+    "test-tap": "node ./test/tap.js",
+    "postinstall": "npm dedup"
+  },
+  "testling": {
+    "files": "test/tap.js",
+    "browsers": {
+      "iexplore": [
+        "9.0"
+      ],
+      "chrome": [
+        "20.0"
+      ],
+      "firefox": [
+        "10.0",
+        "15.0"
+      ],
+      "safari": [
+        "5.1",
+        "6.0"
+      ],
+      "opera": [
+        "12.0"
+      ]
+    }
+  },
+  "licenses": [{
+    "type" : "MIT",
+    "url" : "https://github.com/Gozala/elmjs/License.md"
+  }]
+}
