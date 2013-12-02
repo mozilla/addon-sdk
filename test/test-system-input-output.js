@@ -14,7 +14,7 @@ const { removeObserver, addObserver,
         notifyObservers } = Cc["@mozilla.org/observer-service;1"].
                               getService(Ci.nsIObserverService);
 
-const { lift, start, stop, send, keepWhen } = require("sdk/input/signal");
+const { lift, start, stop, send, keepWhen } = require("elmjs/signal");
 
 const isConsoleEvent = topic =>
   ["console-api-log-event",
@@ -368,7 +368,7 @@ exports["test auto observer remove"] = assert => {
 
 exports["test error reporting"] = function(assert) {
   let { loader, messages } = LoaderWithHookedConsole2(module);
-  const { start, stop, lift } = loader.require("sdk/input/signal");
+  const { start, stop, lift } = loader.require("elmjs/signal");
   const { InputPort } = loader.require("sdk/input/system");
   const { OutputPort } = loader.require("sdk/output/system");
   const id = "error:" + Date.now().toString(32);
@@ -403,7 +403,7 @@ exports["test error reporting"] = function(assert) {
 
 exports["test unload ends input port"] = assert => {
   const loader = Loader(module);
-  const { start, stop, lift } = loader.require("sdk/input/signal");
+  const { start, stop, lift } = loader.require("elmjs/signal");
   const { InputPort } = loader.require("sdk/input/system");
 
   const id = "unload!" + Date.now().toString(32);
