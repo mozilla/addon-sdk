@@ -82,3 +82,46 @@ This is a more minor consideration, but if Jetpacks are treated as first class e
 proposed here, then the documentation should be available on MDN as all other extension documentation
 is, and there should no longer be a need to store the documentation with the cuddlefish CLI.
 
+## Phase 2 (2014 Q2 - ?)
+
+In the second phase we have a few remaining issues to consider.  First will be the AOM interface,
+and the second will be the cuddlefish (aka cfx) cli.
+
+### AOM Interface
+
+[Flightdeck](https://wiki.mozilla.org/AMO/FlightDeck) is a tool which which has the following functions/goals:
+
+1. Made extension development easy and rapid
+2. Made extension development collaborative
+3. Made submitting add-ons to AMO easy.
+
+The latter two functions will be difficult to support within Firefox itself, but not impossible.
+
+#### Rapid extension development within Firefox
+
+Once Firefox natively supports Jetpacks as first class extensions (see Phase 1) rapid developement will
+be free, making this functionality easy to discover and utilize for developers will however require
+interface changes to the AOM.  These are some suggested changes that may be useful:
+
+1. Some means for creating a new add-on skeleton (similar to the task which `cfx init` provided or
+creating a new add-on on Flightdeck).
+2. Some means for editing files in an add-on without the requirement for external tools or
+file editors (while still allowing external tools/editors to be used).  For example Scratchpad integration.
+3. Some means for creating files and adding files to the extension without the need to use external tools.
+It should be possible to add images and other media to an extension in development without the need to
+use the file system, it should also be possible to create new files for the extension in development without
+the need to use the file system or a file editor.
+
+#### Making extension development collaborative
+
+One of the most important features for Flightdeck was the ability to share and reuse third party modules.
+In the future this should be done through NPM, ideally it would be possible to use third package modules
+available on NPM through Firefox by some means.
+
+#### Submitting Add-ons to AMO
+
+Some sort of AMO integration or streamlined add-on submission process would be ideal.
+
+### Cuddlefish
+
+
