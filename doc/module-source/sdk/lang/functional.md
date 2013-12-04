@@ -471,7 +471,7 @@ with only `name` argument.
 @param target {object}
   Target to get a field by the given `name` from
 
-@returns
+@returns {object|function|string|number|boolean}
   Field value
 </api>
 
@@ -500,7 +500,7 @@ it with just a `path` argument.
 @param target {object}
   Target to get a field by the given `name` from
 
-@returns
+@returns {object|function|string|number|boolean}
   Field value
 </api>
 
