@@ -269,23 +269,34 @@ match lifetime of an add-on (from being loaded until being unloaded). This
 implies that that signals can have an end (good analogy is EOF), which is
 just a special finalizing value.
 
-#### Signals are lazy
+#### Defining signals
 
-Signals do any work only if being used/consumed otherwise they don't waste
-any resources. For example underlaynig signal implemntation may relay on
-observer service to update it's state. Signal should only register observer
-if it's being used.
+**Disclaimer:** If you think you need to define your custom signal, think
+twice, likely you don't.
 
-There for signals can be started or stopped, when started they will register
-observers when stopped they will unregister observers. There are `start(signal)`
-and `stop(signal)` functions provided by a signal library, but they are not
-supposed to be used by signal consumers. They are marily for implementing
-custom base signals that need to do something when signal is started or
-stopped.
+SDK will provide an `InputPort` API to represent observer notifications in
+form of signals. It is recommended to create signals using `InputPort`
+instead of defining one from scratch. In the following section we'll define
+naive implementation of `InputPort` for illustration purposes and to highlight
+how internals of signals work.
 
-SDK will provide an API to represent observer notifications in form of signals
-but for (start and stop) ilustration purposes we going to show how it can be
-defined:
+
+##### Laziness
+
+
+Laziness is a very important feauture of signals, which means that they won't
+do any work (waste any resources) unless used/consumed. In our example it
+means that `InputPort` should not even register observer, unless it's being
+used.
+
+To make such laziness possible, signals are designed such that they can be
+started or stopped. There for observer should be register when signal is
+started, which should be removed whon stopped. There are `start(signal)`
+and `stop(signal)` functions provided by a signal library, that would
+start / stop a signal, but again users should not ever do it, because
+that's will interfer to built-in atomated process (we'll get back to that
+later, now lets focus on implementation of signal itself):
+
 
 ```js
 const { Cc, Ci } = require("chrome")
@@ -294,160 +305,214 @@ const { Input, start, stop, receive } = require("elmjs/signal")
 const { addObserver, removeObserver } = Cc['@mozilla.org/observer-service;1'].
                                           getService(Ci.nsIObserverService);
 
-const InputPort = function(topic, initial) {
+const InputPort = function(topic, initial=null) {
   this.topic = topic
   this.value = initial
 }
+```
+
+Note: Since signal is representation of state it should have some initial
+state, that's what second argument stands for.
+
+
+Most of the signal bases are implemented by `Input` abstract class which
+we should inherit from:
+
+```js
 InputPort.prototype = new Input();
+```
+
+As already pointed out, to support laziness all the work should be initiated
+when signal starts. To do that `start` hook should be implemented by an
+instance (note that instance itself is passed as an argument):
+
+```js
 InputPort.prototype[start] = input => {
   addObserver(input, input.topic, false)
 }
+```
+
+Signals also maybe stopped, that happens once no more consumers are left.
+In less naive implementation we would end a signal like `end(input)` when
+add-on is unloaded, which would cause it to loose all custumers and there
+for `input` will be stopped.
+
+```js
 InputPort.prototype[stop] = input => {
   removeObserver(input, input.topic)
 }
+```
+
+On actual notifications we update a state by receiving a message (new state).
+`receive` takes care of propageting this change to all the derived signals
+and updating `this.value` to received one:
+
+```js
 InputPort.prototype.observe = function(subject, topic, data) {
   receive(this, subject)
 }
 ```
 
-Note: Function `recieve(signal, message)` updates value of the
-signal to a second argument and propagates changes to all the derived
-signals but we get to that later.
+#### Modeling state
 
-With the above helper function it's possible to create bunch of
-derived signals:
+Creating dictionaries from key value pairs will be common enoungh task that
+it makes sense to define utility function for this:
 
 ```js
-const LastOpenedWindow = InputPort("domwindowopened", null)
-const LastClosedWindow = InputPort("domwindowclosed", null)
-const LastWindowChange = merge(lift(x => [true, x], LastOpenedWindow),
-                               lift(x => [false, x], LastClosedWindow))
-const OpenedWindows = foldp((past, [isOpened, window]) => {
-  let current = new Set(past)
-  if (isOpened)
-    current.add(window)
-  else
-    current.delete(window)
+const dictionary = (...pairs) => {
+  let result = {}
+  let index = 0
+  const count = pairs.length
+  while (index < count)
+    result[pairs[index++]] = pairs[index++]
 
-  return current
-}, new Set(), LastWindowChange)
+  return result
+}
 ```
 
-Note: It may seem that above code does bunch of things, but realisticly
-it just declares logic of the data flow. This code won't cause any of
-the inlined functions to execute, even observers won't be registered,
-that is because no of the above signals have consumers.
+As already pointed out `InputPort` that will be provided by SDK should be enough
+to cover base inputs, rest, could/should be modeled using available control flow
+structures.
 
-In order to start signal network up one needs to commit to writing
-(maybe processing is a better term) every state change. Think of
-signals as inputs (user events, application events, etc..) that
-need to be written to a logical output, where output can be anything
-file system, network, model in the app, or screen.
 
 ```js
-const { write } = require("elmjs/signal")
+const LastOpenedWindow = new InputPort("domwindowopened", null)
+const LastClosedWindow = new InputPort("domwindowclosed", null)
 
-write({
-  start: initial => {
+const LastWindowChange = merge(lift(x => dictionary(getOuterId(x), x),
+                                    LastOpenedWindow),
+                               lift(x => dictionary(getOuterId(x), null),
+                                    LastClosedWindow))
+
+const OpenedWindows = foldp((state, update) => extend({}, state, update),
+                            {},
+                            LastWindowChange)
+```
+
+Note: It may seem that above code does bunch of things, but it isn't
+thanks to laziness, it just declares logic of the data flow. All the
+inlined functions will be executer only when signal gains consumers.
+
+#### Consuming signals
+
+In order to start network of signals one needs to consume it. This can
+be achieved using `Reactor`-s that will react to changes on a signal
+(Note that handler: `onStart`, `onNext` & `onEnd` are all optional):
+
+```js
+const { Reactor } = require("elmjs/signal")
+
+const reactor = new Reactor({
+  onStart: initial => {
     // do something with an initial state
   },
-  next: state => {
+  onNext: (current, previous) => {
     // do something every state changes
   },
-  end: state => {
+  onEnd: previous => {
     // do something with most recent state
   }
-}, OpenedWindows)
+})
+
+reactor.run(OpenedWindows)
 ```
 
-Write above will start `OpenedWindows` signal, which will start
-`LastWindowChange` since it derives from it, which will start
-`LastOpenedWindow` and `LastClosedWindow` and that's where actual
-observers will be added.
+Once reactor is `run` it will start given `OpenedWindows` signal, which
+subsequently will start `LastWindowChange` as it derives from it, that
+will cause `LastOpenedWindow` and `LastClosedWindow` to be started, finally
+invoking our `InputPort.prototype[start]` function that will register
+observers.
 
-Note: [Elm][] does not provides equivalent of write, instead
-`main` of the program is a signal which is implicitly written
-(rendered to be precise) on a screen.
+Note: [Elm][] does not provides equivalent of `Reactor`, because runtime
+takes care of this. Instead `main` of the program is a signal which is
+implicitly consumed by a renderer.
 
-It is important to have one write per component to eliminate all
-the timing issues and to reduce all the side effects to single
-place. This enables cool features like record / reply of a bug
-scenario very easily.
+It is important to have one `reactor.run` per component as that eliminate
+all the race conditions caused by timing. In addition all the side effects
+will happen in single place which avoids whole class of out of sync problems
+and makes tracking bugs easier. This also enables cool features like record
+/ reply of a bug scenario (which we'll hopefully build after :).
 
 
 #### Combining components
 
 In practice SDK often needs to track state of separate components
-and react to a changes in either one. At first glance it may
-require multiple `write` calls, although there are other ways:
+and react to a changes in either one of them. At first glance it
+may require multiple `Reactor` runs, although there are better ways
+to handle it.
+
+Next we will define some base signals using `InputPort`, assume that's where
+we're going to receive updates for menu items. Each update will be in a form
+of `{ id: "menuitem-1", label: "Some Text", ... }` always containing `id` and
+fields that were updated:
+
+```js
+const LastAddition = lift(x => dictionary(x.id, x),
+                          new InputPort("menu-item-add", null))
+
+const LastDeletion = lift(x => dictionary(x.id, null),
+                          new InputPort("menu-item-removed", null)
+
+const LastUpdate = new InputPort("menu-item-update", null)
+```
+
+Using above base inputs collective state of all menu items can be modeled by
+mergeing all updates starting form blank initial state:
 
 
 ```js
-const hashmap = (key, value) => {
-  let result = {}
-  result[key] = value
-  return result
-}
-
-const nullify = hashmap => {
-  let result = {}
-  for (let id of Object.keys(hashmap))
-    result[id] = null
-  return result
-}
-
-const LastAddition = lift(x => hashmap(x.id, x),
-                          InputPort("menu-item-add", null))
-
-const LastDeletion = lift(x => hashmap(x.id, null),
-                          InputPort("menu-item-removed", null)
-
-const LastUpdate = InputPort("menu-item-update", null)
-
-
-const MenuItems = foldp((past, change) => merge({}, past, change),
-                        {},
-                        merge(LastAddition, LastDeletion, LastUpdate))
-
-const WindowsWithMenuItems = combine(MenuItems, InteractiveWindows)
-
-const updateMenuItems = (items, windows) => {
-  for (let window of windows) {
-    for (let id of Object.keys(items)) {
-      let item = items[id]
-      if (item === null)
-        removeMenuItem(window, id)
-      else if (hasMenuItem(window, id))
-        updateMenuItem(window, item)
-      else
-        addMenuItem(window. item)
-    }
-  }
-}
-
-write({
-  start: ([items, windows]) => updateMenuItems(items, windows),
-  end: ([items, windows]) => updateMenuItem(nullify(items), windows),
-  next: ([items, windows], [pastItems, pastWindows]) => {
-    let itemsDelta = diff(pastItems, items)
-    let windowDelta = diff(pastWindows, items)
-    // Add all items to new windows
-    updateMenuItems(items, windowDelta)
-    // Add / remove items to all windows
-    updateMenuItem(itemsDelta, windows)
-  }
-}, WindowsWithMenuItems)
+const ItemsState = foldp((past, change) => extend({}, past, change),
+                         {},
+                         merge(LastAddition, LastDeletion, LastUpdate))
 ```
 
-Above code may seem like a lot but there are bunch of reusable parts that
-can be factored out and reused across common cases.
+Menu items can be owned by different windows, there state should contain that
+data too:
 
+```js
+const MenuItems = lift((items, windows) => {
+  return Object.keys(items).reduce((result, id) => {
+    const menuItem = menuItems[id]
+    result[id] = menuItem && extend({}, menuItems, { owners: windows })
+    return result
+  }, {})
+}, ItemsState, InteractiveWindows)
+```
 
-#### Signals cleanup after themself
+Now all is needed is a reactor that will reflect updates on menu item views / models:
 
-When signal looses all the consumers it atomaticall stops itself, which is
-similar to starting propagates through the whole chain.
-**NEED MORE DETAILS**
+```js
+const eachOwner = fn => item => Object.keys(items.owners).forEach(id => {
+  fn(owners[id], item)
+})
+
+const updateItem = eachOwner(updateMenuItemIn)
+const deleteItem = eachOwner(removeMenuItemFrom)
+
+const reactor = new Reactor({
+  // Note: onStart is obsolete since at start there will
+  // be no menu items.
+  onNext: (current, past) => {
+    Object.keys(current).forEach(id => {
+      const menuItem = current[id]
+      if (!menuItem) deleteItem(past[id])
+      else update(menuItem)
+    })
+  },
+  onEnd: past => {
+    Object.keys(past).forEach(id => deleteItem(past[id]))
+  }
+})
+reactor.start(MenuItems)
+```
+
+Above code may be simplified a lot more by factoring out common parts
+that deals with [diff][]ing & [patch][]ing hashes (for example see
+[diffpatcher] library).
+
+Reactor instance also seems to be hanling quite generic task of going
+through each change and reflecting appropriately. It would make sense
+to create a subclass that would reduce some boilerplate there as well.
 
 
 [Elm signal API]:http://docs.elm-lang.org/library/Signal.elm
@@ -456,3 +521,6 @@ similar to starting propagates through the whole chain.
 [Elm research paper]:http://www.testblogpleaseignore.com/wp-content/uploads/2012/04/thesis.pdf
 [RX]:http://msdn.microsoft.com/en-us/data/gg577609.aspx
 [Spreadsheet]:http://en.wikipedia.org/wiki/Microsoft_Excel
+[patch]:https://github.com/Gozala/diffpatcher#patch
+[diff]:https://github.com/Gozala/diffpatcher#diff
+[diffpatcher]:https://github.com/Gozala/diffpatcher
