@@ -97,10 +97,11 @@ Merge two signals into one, biased towards the first signal if both signals
 update at the same time.
 
 ```js
+const { merge } = require("elmjs/signal")
 const XY = merge(X, Y)
 // XS  x: --x1------x2--------x3-----
 // YS  y: -----y1-------y2----y3-----
-// XY  x: --x1-y1---x2--y2----y3-x3--
+// XY  x: --x1-y1---x2--y2----x3-y3--
 ```
 
 #### merges([xs, ys, ...etc])
@@ -109,6 +110,7 @@ Similar to `merge` but instead of taking signals as arguments it takes
 array of signals and merges them togather.
 
 ```js
+const { merges } = require("elmjs/signal")
 const XY = merges([X, Y])
 // X   x: --x1------x2--------x3-----
 // Y   y: -----y1-------y2----y3-----
@@ -121,6 +123,7 @@ Combine an array of signals into a signal of arrays. It more or less can
 be defined as `const combine = inputs => lift(Array, ...inputs)`:
 
 ```js
+const { combine } = require("elmjs/signal")
 const Point = combine([X, Y])
 // X         0: ---x1----------------------------x2-------
 // Y         1: -----------y1--------y2-------------------
@@ -136,6 +139,7 @@ will be accumulated, producing a new output value.
 
 
 ```js
+const { foldp } = require("elmjs/signal")
 const Y = foldp((past, x) => past + x, 5, X)
 // X    x: ---1-----2-------3-----4-------x----
 // Y    5: ---6-----8-------11----15------15+x-
@@ -146,6 +150,7 @@ const Y = foldp((past, x) => past + x, 5, X)
 Count the number of value changes that have occured.
 
 ```js
+const { count } = require("elmjs/signal")
 const N = count(X)
 // X    x: ---x-----x---x---x----x--
 // N    0: ---1-----2---3---4----5--
@@ -156,6 +161,7 @@ const N = count(X)
 Count the number of events that have occured that satisfy a given predicate.
 
 ```js
+const { countIf } = require("elmjs/signal")
 const N = countIf(isEven, X)
 // X    x: ---1-----2---3---4----5--
 // N    0: ---------1-------2-------
@@ -169,6 +175,7 @@ Keep only events that satisfy the given predicate. Since signal is time-varying
 value, a base case must be provided in case the predicate is never satisfied.
 
 ```js
+const { keepIf } = require("elmjs/signal")
 const Y = keepIf(isEven, 0, X)
 // X    1: ---2-----3---4---5----6--
 // F    0: ---2---------4--------6--
@@ -180,6 +187,7 @@ Drop events that satisfy the given predicate. Since signal is time-varying value
 a base case must be provided in case the predicate is never satisfied.
 
 ```js
+const { dropIf } = require("elmjs/signal")
 const Y = dropIf(isEven, 0, X)
 // X    1: ---2-----3---4---5----6--
 // F    1: ---------3-------5-------
@@ -194,6 +202,7 @@ Since signal is time-varying value, a `base` case must be provided in case
 the first signal is never `true`.
 
 ```js
+const { keepWhen } = require("elmjs/signal")
 const Y = keepWhen(Enabled, 0, X)
 // Enabled  1: -----------0----------1---------0------
 // X        x: --x1---x2-----x3--x4-------x5------x6--
@@ -209,6 +218,7 @@ will be propagated. Since signal is time-varying value, a `base` case
 must be provided in case the first signal is never `true`.
 
 ```js
+const { dropWhen } = require("elmjs/signal")
 const Y = dropWhen(Disabled, 0, X)
 // Disabled  1: -----------0----------1---------0------
 // X         x: --x1---x2-----x3--x4-------x5------x6--
@@ -222,6 +232,7 @@ the sequence [1,1,2,2,1], it becomes [1,2,1] by dropping the values
 that are the same as the previous value.
 
 ```js
+const { dropRepeats } = require("elmjs/signal")
 const Y = dropRepeats(X)
 // X   0: --1---1---2-----2---1--
 // Y   0: --1-------2---------1--
@@ -235,6 +246,7 @@ input. For example, `sampleOn(clicks, every(second))` will give the
 approximate time of the latest click.
 
 ```js
+const { sampleOn } = require("elmjs/signal")
 const Y = sampleOn(T, X)
 
 // X    x:-x1----x2---x3-----x4--x5-----x6-----
@@ -327,7 +339,10 @@ the inlined functions to execute, even observers won't be registered,
 that is because no of the above signals have consumers.
 
 In order to start signal network up one needs to commit to writing
-(maybe processing is a better term) every state change as follows:
+(maybe processing is a better term) every state change. Think of
+signals as inputs (user events, application events, etc..) that
+need to be written to a logical output, where output can be anything
+file system, network, model in the app, or screen.
 
 ```js
 const { write } = require("elmjs/signal")
