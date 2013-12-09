@@ -238,6 +238,10 @@ parser_groups = (
                                       help="Where to put the finished .xpi",
                                       default=None,
                                       cmds=['xpi'])),
+        (("", "--manifest-overload",), dict(dest="manifest_overload",
+                                      help="JSON file to overload package.json properties",
+                                      default=None,
+                                      cmds=['xpi'])),
         ]
      ),
 
@@ -665,6 +669,10 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
         target_cfg_json = os.path.join(options.pkgdir, 'package.json')
         target_cfg = packaging.get_config_in_dir(options.pkgdir)
+
+    if options.manifest_overload:
+        for k, v in packaging.load_json_file(options.manifest_overload).items():
+            target_cfg[k] = v
 
     # At this point, we're either building an XPI or running Jetpack code in
     # a Mozilla application (which includes running tests).
