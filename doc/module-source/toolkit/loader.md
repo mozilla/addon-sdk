@@ -11,7 +11,7 @@ can be loaded in several ways:
 [system principals][]:
 
     <pre class="brush: html">
-        &lt;script type='application/javascript' src='resource://gre/modules/toolkit/loader.js'&gt;&lt;/script&gt;
+        &lt;script type='application/javascript' src='resource://gre/modules/commonjs/toolkit/loader.js'&gt;&lt;/script&gt;
     </pre>
 
     This will expose a single `loader` object containing all of the
@@ -19,7 +19,7 @@ can be loaded in several ways:
 
 2. It can be loaded as a [JavaScript code module][]:
 
-        let { Loader, Require, unload } = Components.utils.import('resource://gre/modules/toolkit/loader.js');
+        let { Loader, Require, unload } = Components.utils.import('resource://gre/modules/commonjs/toolkit/loader.js');
 
 3. It can be required as a CommonJS module from a module loaded in
 the loader itself:
@@ -72,9 +72,9 @@ different possibilities, but the most common setup looks like this:
     let loader = Loader({
       paths: {
         // Resolve all modules starting with `toolkit/` as follows:
-        // toolkit/foo      ->  resource://gre/modules/toolkit/foo.js
-        // toolkit/foo/bar  ->  resource://gre/modules/toolkit/foo/bar.js
-        'toolkit/': 'resource://gre/modules/toolkit/',
+        // toolkit/foo      ->  resource://gre/modules/commonjs/toolkit/foo.js
+        // toolkit/foo/bar  ->  resource://gre/modules/commonjs/toolkit/foo/bar.js
+        'toolkit/': 'resource://gre/modules/commonjs/toolkit/',
         // Resolve all other non-relative module requirements as follows:
         // devtools/gcli    ->  resource:///modules/devtools/gcli.js
         // panel            ->  resource:///modules/panel.js
@@ -93,9 +93,9 @@ module is relative to and provide an appropriate mapping for it:
     let loader = Loader({
       paths: {
         // Resolve all modules starting with `toolkit/` as follows:
-        // toolkit/foo      ->  resource://gre/modules/toolkit/foo.js
-        // toolkit/foo/bar  ->  resource://gre/modules/toolkit/foo/bar.js
-        'toolkit/': 'resource://gre/modules/toolkit/',
+        // toolkit/foo      ->  resource://gre/modules/commonjs/toolkit/foo.js
+        // toolkit/foo/bar  ->  resource://gre/modules/commonjs/toolkit/foo/bar.js
+        'toolkit/': 'resource://gre/modules/commonjs/toolkit/',
         // Resolev all other non-relative module requirements as follows:
         // devtools/gcli    ->  resource:///modules/devtools/gcli.js
         // panel            ->  resource:///modules/panel.js
@@ -136,7 +136,7 @@ This feature may be used in a few different ways:
    but is then exposed as a pseudo-module to avoid the overhead of subsequent
    loads:
 
-        let loaderModule = Cu.import('resource://gre/modules/toolkit/loader.js');
+        let loaderModule = Cu.import('resource://gre/modules/commonjs/toolkit/loader.js');
         let loader = loaderModule.Loader({
           modules: {
             // Overlay `toolkit/loader` so that `require('toolkit/loader')`
@@ -258,8 +258,8 @@ SDK-compatible configuration, like this:
         '': 'resource:///modules/',
 
         // Reserve `toolkit/` prefix for generic, mozilla toolkit modules
-        // and resolve them to `resource://gre/modules/toolkit/` URI.
-        'toolkit/': 'resource://gre/modules/toolkit/'
+        // and resolve them to `resource://gre/modules/commonjs/toolkit/` URI.
+        'toolkit/': 'resource://gre/modules/commonjs/toolkit/'
       },
       // Please note: Both `globals` and `modules` are just for illustration
       // purposes we don't suggest populating them with these values.
@@ -493,13 +493,13 @@ It examines each element until it finds the prefix matching the supplied
 ID and replaces it with the location it maps to:
 
     let mapping = [
-      [ 'toolkit/', 'resource://gre/modules/toolkit/' ],
+      [ 'sdk/', 'resource://gre/modules/commonjs/sdk/' ],
       [ './',       'resource://my-addon/'    ], 
       [ '',         'resource:///modules/'    ]
     ];
     resolveURI('./main', mapping);           // => resource://my-addon/main.js
     resolveURI('devtools/gcli', mapping);    // => resource:///modules/devtools/gcli.js
-    resolveURI('toolkit/promise', mapping);  // => resource://gre/modules/toolkit/promise.js
+    resolveURI('sdk/core/promise', mapping);  // => resource://gre/modules/commonjs/sdk/core/promise.js
 
 ### override()
 
