@@ -1,88 +1,140 @@
-## Proposal
-
-It should be possible to create toolbars for browser windows 
-which can have widgets or xul elements added to it.
-
 ### Mockup
 
-<img src="http://people.mozilla.com/~shorlander/files/addons-in-toolbar-i01/images/04.png">
+![mockup][mockup]
 
 ### Use Cases
 
-Toolbars in general merely provide UI real estate for other UI 
-elements like widgets or buttons.  The main advantage over a 
-Panel is that multiple toolbars can be active at the same time, 
-and they don't overlap other UI elements.
+There are tons of popular [toolbar addons][] for firefox today,
+which clearly indicates there are lots of use cases. At the
+moment SDK only provides Widget and Panel API that could be
+used to address same problem space, although we would like
+to deprecate widgets to adress problems we learned from our
+experience and panels are not persistent UI real estate which
+may makes it not a a good fit for a specific cases.
 
-* Displaying a toolbar with no UI association.
-* Associating a Widget to a toolbar.
-* Associating a Button to a toolbar.
-* Adding Buttons to the toolbar.
-* Adding Widgets to the toolbar.
+### Goals
 
-## Implementation
+- Toolbars should provide persistent UI real estate for placing
+  other SDK provided components.
 
-The design would closely match that for Widgets, being 1-many, 
-in other words one instance of a `Toolbar` would control 
-multiple XUL elements which implement the toolbar on specific 
-windows.
+- Firefox users should be in control of which toolbars are
+  displayed and when. There for there should be a intuitive user
+  interface for hiding / showing them.
 
-### Dependencies & Requirements 
+- Toolbar state should be persistent across firefox sessions.
+
+### Non goals
+
+- Dynamically updating toolbar content is not a goal, in fact
+  that tends to provide a pretty unpleasent user experience.
+
+- Not all UI components provided by SDK will be compatible with
+  Toolbars although some maybe made over time.
+
+### Future maybe goals
+
+- Customizable toolbars should let users decide what they want
+  to keep in toolbar and what they want to disregard.
+
+- Window / tab specific toolbar states.
 
 ### API
 
-#### Constructors
+```js
+let toolbar = new Toolbar({
+  id: "my-toolbar",
+  title: "Addon Demo",
+  items: [frame],
+  hidden: false,
+  onShow: () => {
+    console.log("toolbar was shown");
+  },
+  onHide: () => {
+    console.log("toolbar was hidden");
+  }
+});
+```
 
-##### Toolbar
+Constructor takes mandatory `options.title` that will be displayed
+in the Firefox toolbars menu (which users can use to toogle toolbar).
 
-* options
-  * id: to define an id to be used for the underlying XUL
-	  elements
-  * position: to set the position to be top or bottom (possibly
- 		left and right?)
+All other options are optional, although toolbar is pretty useless
+without `items` in it. `options.items` can be an array or set of
+supported UI component instances that needs to be placed in the
+toolbar. Initially only [Frame][]s will be supported, but more
+components will be made compatible over time.
 
-###### Methods
+Optionally `options.hidden` can be provided to express desired initial
+state. If not provided newly installed add-on's toolbar will be shown.
+This option won't take any effect on subsequent loads of add-on as
+users choice will be respected.
 
-* appendChild: to add elements on all windows
-* on/once/off: for event listening on all windows
-* show/hide: to show hide the toolbar in all windows
-* destroy: erases the toolbar
+Two optional event handlers `onShow` and `onHide` can also be provided
+which will be invoked when toolbar is toggled on / off.
 
-###### Events
+#### Methods
 
-* destroy
-* show
-* hide
+- Toolbar instances implement `EventTarget` interface there for
+  `on`, `once`, `off` method that can be used to register / unregister
+  event handlers.
 
-#### Example with Widget
+- Toolbar instance implements `Disposable` interface there for it can be
+  destroyed by calling `destroy`. This will remove toolbar from the
+  firefox user interface. Toolbars will be destroyed on add-on unload.
 
-    const { Widget } = require('sdk/widget');
-    const { Toolbar } = require('sdk/ui/toolbar');
+#### Events
 
-    let toolbar = Toolbar({
-      id: 'yahoo-search-toolbar'
-    });
-    toolbar.appendChild(Widget({
-      contentURL: "https://yahoo.com/firefox/toolbar.html",
-      width: "100%"
-    }));
+- Event "show" will be dispatched whenever toolbar is toggled on. Note that
+  it won't be dispatched on toolbar creation as it's was not hidden prior
+  to that.
 
-    if (require('self').loadReason == 'install')
-      toolbar.show(); // shows the toolbar
+- Event "hide" will be dispatche whenevr toolbar is toggled off. Note that
+  it won't be dispatched on toolbar creation if `hidden` was `true` as it's
+  technically was not vilisible anyhow.
+
+#### Fields
+
+- Toolbar instances have a field `hidden` that is `true` if toolbar is hidden
+  and is `false` if toolbar is `shown`. It is `undefined` if toolbar is not
+  yet initialized or was already destroyed.
 
 
-#### Example with Button
+#### Example:
 
-    const { Button } = require('sdk/ui/button');
-    const { Toolbar } = require('sdk/ui/toolbar');
+```js
+const { Frame } = require("sdk/ui/frame");
+const { Toolbar } = require("sdk/ui/toolbar");
 
-    let toolbar = Toolbar({
-      id: 'yahoo-button-toolbar'
-    });
-    toolbar.appendChild(Button({
-      image: "https://yahoo.com/firefox/toolbar.png"
-    }));
+const frame = new Frame({
+  url: "./search-toolbar.html"
+  onAttach: (source) => {
+    console.log("Frame was attached to new browser window");
+  },
+  onReady: (source) => {
+    console.log("Frame document is interactive");
+    source.postMessage({ hi: "there" }, "*");
+  },
+  onLoad: (source) => {
+    console.log("Frame load is complete");
+  },
+  onMessage: ({source, data, origin}) => {
+    console.log("Received ping from frame");
+    source.postMessage("pong!", origin);
+  }
+});
 
-## Comments
+const toolbar = Toolbar({
+  id: "your-search-toolbar"
+  title: "Uber search",
+  items: [frame],
+  onShow: () => {
+    console.log("Yei they <3 my toolbar!");
+  },
+  onHide: () => {
+    console.log("Oh no! what happend between us ??");
+  }
+});
+```
 
-* [Discuss this JEP further on this etherpad page](https://etherpad.mozilla.org/jetpack-toolbar).
+[mockup]:https://people.mozilla.org/~shorlander/files/addons-in-toolbar-i01/images/04.png
+[toolbar addons]:https://addons.mozilla.org/En-us/firefox/search/?q=toolbar
