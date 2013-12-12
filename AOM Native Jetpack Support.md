@@ -2,7 +2,8 @@
 
 There should be a easy way to develop Jetpacks within the browser.  There should not be a need for external
 tools to develop Jetpack based add-ons, or tests.  All that one should need in order to build a Jetpack should be
-available to them with Firefox, in this way Jetpacks will become first class extensions.
+available to them with Firefox, in this way Jetpacks will become first class extensions and Firefox
+development tool.
 
 A fundamental step towards this goal will be to have Firefox understand Jetpack code natively,
 without the need to convert the jetpack's code base (using `package.json` etc) to a bootstrap extension code base
@@ -22,34 +23,38 @@ like [these current test add-ons](https://github.com/mozilla/addon-sdk/tree/1.15
 * XPIProvider = The part of the AOM which manages extensions for Firefox.
 * [Flightdeck](https://builder.addons.mozilla.org/) = Website used to make extensions development easy.
 * [AMO](https://addons.mozilla.org/) = Website used for sharing add-ons in the Mozilla community.
-* Scratchpad = A Firefox DevTool for text editing.
+* [Scratchpad](https://developer.mozilla.org/docs/Tools/Scratchpad) = A Firefox DevTool for text editing.
 * Third Party Modules = Modules made by extensions developers which are not part of the SDK.
 * [NPM](https://npmjs.org/) = Node Package Manager
+* [JPM]((https://github.com/jsantell/jpm)) = Jetpack Package Manager
 * CFX / Cuddlefish = The existing python command line tool to run, xpi, test, and do more for current Jetpack bootstrap extensions.
 
 # Use Cases
 
-* Running tests for a SDK extnesions via Command Line or via the AOM user interface.
-* Run an SDK extnesion with a blank profile (or existing profile) via cli
-* Pointing AOM to WIP unpacked bootstrap or SDK extensions for development purposes
+* Running tests for a SDK extensions via Command Line or via the AOM user interface.
+* Run an SDK extension with a blank profile (or existing profile) via cli
+* Pointing AOM to work in progress unpacked bootstrap or SDK extensions for development purposes
 * Add UI to the AOM to initialize & register blank add-ons (perhaps only SDK extensions).
 * Add support for SDK extensions to the AOM, that would use `package.json` and
 won't require presence of `install.rdf` or `boostrap.js`.
 * Allow SDK extensions to be written which are purely tests (see [bug 852538](https://bugzilla.mozilla.org/show_bug.cgi?id=852538)).
+* Opening an unpacked add-on in Scratchpad or something like it.
 
 ## Possibilities for the future
 
-* Running SDK extnesion tests via a Firefox binary command line options.
+* Running SDK extension tests via Firefox binary command line options.
 
 # Implementation
 
 ## Phase 1 (2013 Q4 - 2014 Q1)
 
-In the first phase there will not be any changes to the AOM interface nor to the Firefox CLI, all changes will be to the backend XPIProvider, the SDK cfx tool and the SDK addon startup related code.  These are the important first steps, from here many different directions can be taken,
+In the first phase there will not be any changes to the AOM interface nor to the Firefox CLI;
+all changes will be to the backend XPIProvider, the SDK cfx tool and the SDK `bootstrap.js`, loader, and various other modules.
+These are the important first steps, from here many different directions can be taken,
 and they can all be prototyped with extensions and be built in-house or by third parties.
 
 The vision here is not to remove the cfx command line tool just yet, but instead to offload or nullify large parts
-of the workload it handles while at the same time removing the necessity of using it at all.  There will still be a
+of the workload it handles.  There will still be a
 desire for a cli tool, so the goal here is to make the instructions so simple that this tool set we are familiar with
 (namely `cfx run`, `cfx xpi`, `cfx test`) will be possible for anyone to reproduce in any language
 that they desire, or integrate into their toolchain, or build upon to make userscript/userstyle/webapp to SDK extension converting
@@ -57,7 +62,9 @@ command line tools.
 
 ### The Future of Cuddlefish
 
-This will be the end of life for our cuddlefish/cfx command line tool (for reasons stated above).
+This will be the end of life for our cuddlefish/cfx command line tool (for reasons stated above)
+as a thing that is meant for community use, if it exists at all then it will be a small fragment of
+what it used to be.
 
 The new tool is [jpm](https://github.com/jsantell/jpm).
 
@@ -68,7 +75,7 @@ Here is what is happening to the old `cfx` commands:
 * `cfx run`: Will be handled by `jpm run`.
 * `cfx test` (if used when the current working directory is for an add-on): Will be handled by `jpm test`.
 * `cfx testall`: Will be handled by a simple script, my preference would be to use node, but this will probably need
-to be used by m-c to run their test suite so it should probably be done in python.
+to be used by m-c to run their test suite so it should probably be done in python and thus we may be able to use cfx here.
 * `cfx docs`: The docs have been migrated (see [bug 948606](https://bugzilla.mozilla.org/show_bug.cgi?id=948606))
 
 #### ON JPM
@@ -88,6 +95,8 @@ Note: `jpm run` could be simplified by adding a (or multiple) commaind line opti
 would create temporary blank profiles, and run a profile with a restartless add-on (and tear it out on shutdown), but
 I don't think this is fruitful path to explore intially because there are so many libraries that help
 us do these things already.
+
+[The JPM code base can be found here](https://github.com/jsantell/jpm).
 
 #### On Running SDK Tests
 
@@ -117,7 +126,7 @@ The `harness-options.json` file will no longer be used, instead it will be repla
 which would be generated by `jpm test` or some derivative and a `modules.json`
 file which can be generated by `jpm xpi` or at install time and cached (possibly in the Firefox profile someplace) if is not in the add-on root.
 
-There is also a parallel project to support node dependencies (see [bug 935109](https://bugzilla.mozilla.org/show_bug.cgi?id=935109)) which be integrated into this plan, since the changes are overlapping and
+There is also a parallel project to support node dependencies (see [bug 935109](https://bugzilla.mozilla.org/show_bug.cgi?id=935109)) which can be integrated into this plan, since the changes are overlapping and
 because this project is the solution to our legacy dependency handling which would bloat `jpm xpi`
 and which we've already decided should be replaced
 by leverging NPM's infrustructure which is more sane than building our own.
@@ -133,10 +142,10 @@ read the necessary information from there.  If the `package.json` file does not 
 key then it should assume that there is a `index.js` file in the add-on root.
 
 If the `package.json` file is not found, then the `XPIProvider` should check for an `install.rdf`.
-This way an add-on can be built to support Firefox 4 and the latest version of Firefox by
+This way an add-on can be built to support older versions of Firefox and the latest version by
 providing both an `install.rdf` and a `package.json` file.
 
-If a there is a `package.json` file found,
+If there is a `package.json` file found,
 then the add-on will be assumed to be a Jetpack.  Once
 this occurs the XPIProvider will automatically use [a bootstrap.js](https://github.com/mozilla/addon-sdk/blob/master/app-extension/bootstrap.js), which does the following:
 
@@ -144,14 +153,14 @@ this occurs the XPIProvider will automatically use [a bootstrap.js](https://gith
 * Do a check for required modules and build and cache a `modules.json` file, if one is not provided.
 * Creating a `Loader` instance will have to be created.
 * Load main module.
-* Emit events like `startup`, `shutdown`, and so on [listed here](https://developer.mozilla.org/en-US/docs/Extensions/Bootstrapped_extensions#Bootstrap_entry_points).
+* Emit events like `startup`, `shutdown`, and so on [listed here](https://developer.mozilla.org/docs/Extensions/Bootstrapped_extensions#Bootstrap_entry_points).
 
-Note: the XPIProvider will not handle any Jetpack module dependency work, and that work is conducted
+Note: the XPIProvider will not handle any Jetpack module dependency work, and that work will be conducted
 by the cached `JetpackBootstrap.js` (similar to the [SpellCheckDictionaryBootstrap.js](http://mxr.mozilla.org/mozilla-central/source/toolkit/mozapps/extensions/SpellCheckDictionaryBootstrap.js)).
 
 #### On The Differences Between package.json and install.rdf
 
-The [`package.json`](https://npmjs.org/doc/json.html) and [`install.rdf`](https://developer.mozilla.org/en-US/Add-ons/Install_Manifests)
+The [`package.json`](https://npmjs.org/doc/json.html) and [`install.rdf`](https://developer.mozilla.org/Add-ons/Install_Manifests)
 definitions have a lot of overlap, but there are differences.  Most of this differnces don't appear to matter much, for instance
 adding a `unpack` or `iconURL` key to the `package.json` spec seems trival, and many `install.rdf` elements can be ignored, like `bootstrap`,
 `type`, or `strictCompatibility`.  However, `targetApplication` and `updateURL` are more tricky.
@@ -160,10 +169,12 @@ The `package.json` spec has a `engines` key, so we could have `{ "engines" : { "
 `package.json`, but then how would work with an `update.rdf` when using a `updateURL`?  does the targetApplication information
 in the `install.rdf` get compared with the `update.rdf`?  even if so I think that we can have an `update.rdf` file used with
 a `package.json` file, and possibly offer this functionality via an `update.json` file in the future.  This is a feature
-that our current user base may be dependant on along with tools like [McCoy](https://developer.mozilla.org/en-US/docs/McCoy)
-that use `update.rdf` and would have to be udpated to use an alternative.
+that our current user base may be dependant on along with tools like [McCoy](https://developer.mozilla.org/docs/McCoy) and
+AMO that use `update.rdf` and would have to be udpated to use an alternative.
 
 So as far as I can tell we will have to ensure that it is possible to still use an `update.rdf` file.
+This may seem odd to new comers, and introducing an `update.json` might be worth considering if
+we find that to be the case.
 
 Also I think adding these keys to the `package.json` spec is not a problem.
 
@@ -171,13 +182,19 @@ The new keys would be:
 
 * `unpack`: optional, default is false
 * `updateURL`: optional
+* `updateKey`: optional
 * `icon`: optional, ex: `{ icon: { "64": "icon64.png" } }`
 * `aboutURL`: optional
+
+#### AMO
+
+The AMO website and validator will need updating to support this new format, that may affect our timeframe for
+releasing/announcing these updates.
 
 #### Simple Prefs (See [Bug 903039](https://bugzilla.mozilla.org/show_bug.cgi?id=903039))
 
 If no `options.xul` file is provided, then simple prefs will to be created dynamically when the
-[`addon-options-displayed` observer service event is fired](https://developer.mozilla.org/en-US/docs/Extensions/Inline_Options#Display_notifications).
+[`addon-options-displayed` observer service event is fired](https://developer.mozilla.org/docs/Extensions/Inline_Options#Display_notifications).
 If there is an `options.xul` file provided then it will be used.
 
 #### Localization ([Bug 935290](https://bugzilla.mozilla.org/show_bug.cgi?id=935290))
@@ -192,9 +209,9 @@ the extension documentation.
 
 #### On Test Suite portablity
 
-With the `jetpack-test-options.json` file it should be possible for anyone to create a test suite of SDK tests, they
+With the `jetpack-test-options.json` file it should be possible for anyone to create a test suite of SDK tests, for example they
 could be used for testing a website using page-mods, or for writing bug examples, which are either SDK extensions which
-reproduce a bug that can then be easily converted to an SDK test or are written as SDK tests from the start, attached
+reproduce a bug that can then be easily converted to an SDK test or written as SDK tests from the start, attached
 to new bugs, which when resolved are shipped with the community contributed SDK test. This is [bug 852538](https://bugzilla.mozilla.org/show_bug.cgi?id=852538).
 
 There are two options which I see where SDK tests can live anywhere in mozilla-central:
@@ -202,12 +219,12 @@ There are two options which I see where SDK tests can live anywhere in mozilla-c
 1. We build on top of Mochitests, using a simple header which installs an SDK test and pipes the assertions/failures to the Mochitest framework.
 2. We build our own Jetpack test harness using the cfx internals that we have, which are already being used for a Jetpack test suite which is currently limited to tests in the `addon-sdk` directory of mozilla-central.
 
-The former seems like it may be the quickest path to sucess, but I think that the latter should be the end goal, so I feel like the latter is the path to take because there probably isn't going to be much reusuable work in the two options.
+The former seems like it may be the quickest path to success, but I think that the latter should be the end goal, so I feel like the latter is the path to take because I'm not sure how much reusuable work is in the two options.
 
 ## Phase 2 (2014 Q2 - ?)
 
 In the second phase we have a few remaining very important issues to consider which address the end of life
-for Flightdeck.  There are many different options that can be taken here after Phase 1, and really
+for Flightdeck.  There are many different options that can be taken after Phase 1, and really
 no limitations, because it should be possible for the community to develop an infinite number of
 tools around the instruction set described for `jpm`, but Mozilla should provide a replacement
 for the functionality provided by Flightdeck, probably as an add-on first which could
@@ -241,27 +258,24 @@ the requiring an internet connection idea wasn't great.
 Flightdeck is also extremely hard for Mozilla staff to contribute to, let alone the Mozilla community,
 because the list of setup steps was far too complex.
 
-Finally, Flightdeck would be far too expensive to scale to large demands, especially when juxtaposed
-to developing add-ons with offline with some AOM tools (either built-in or provided by an add-on).
+Finally, Flightdeck would be far too expensive to scale to large demands, especially when compared
+to developing add-ons offline with some AOM tools (either built-in or provided by an add-on).
 
 So Flightdeck is ending and it is time to dream up some alternatives, and I doubt the add-on community
-will ever say it's done with that task, but Mozilla should implement a solution as an add-on first
-as soon as possible to cater to the existing Flightdeck community and target audience.
+will ever say it's done with that task, but Mozilla should implement a solution as an add-on
+as soon as possible to make sure we cater to the existing Flightdeck community, it's target audience,
+and all other Jetpack developers.
 
 #### Rapid extension development within Firefox
 
 Once Firefox natively supports Jetpacks as first class extensions (see Phase 1) rapid developement will
-be free, making this functionality easy to discover and utilize for developers will however require
+be free, making this functionality easy to discover for developers will however require
 interface changes to the AOM.  These are some suggested changes that may be useful:
 
 1. Some means for creating a new add-on skeleton (similar to the task which `cfx init` provided or
 creating a new add-on on Flightdeck).
 2. Some means for editing files in an add-on without the requirement for external tools or
 file editors (while still allowing external tools/editors to be used).  For example Scratchpad integration.
-3. Some means for creating files and adding files to the extension without the need to use external tools.
-It should be possible to add images and other media to an extension in development without the need to
-use the file system, it should also be possible to create new files for the extension in development without
-the need to use the file system or a file editor.
 
 #### Making extension development collaborative
 
