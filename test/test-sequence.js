@@ -7,7 +7,7 @@ let { seq, iterate, filter, map, reductions, reduce, count,
       isEmpty, every, isEvery, some, take, takeWhile, drop,
       dropWhile, concat, first, rest, nth, last, dropLast,
       distinct, remove, mapcat, fromEnumerator, string,
-      object, pairs
+      object, pairs, keys, values, each
     } = require("sdk/util/sequence");
 
 const boom = () => { throw new Error("Boom!"); };
@@ -23,12 +23,32 @@ exports["test seq"] = assert => {
     yield 3;
   });
 
+  assert.deepEqual([...seq(null)], [], "seq of null is empty");
+  assert.deepEqual([...seq(void(0))], [], "seq of void is empty");
   assert.deepEqual([...xs], [1, 2, 3], "seq of 1 2 3");
+  assert.deepEqual([...seq(xs)], [1, 2, 3], "seq of seq is seq");
 
-  [function(){}, new Set(), new Map(), [], 1, "foo", /bar/].forEach(x => {
-    assert.throws(() => seq(x),
-                  /Expected generator argument/,
-                  "can seq only generators");
+  assert.deepEqual([...seq([])], [], "seq of emtpy array is empty");
+  assert.deepEqual([...seq([1])], [1], "seq of lonly array is single element");
+  assert.deepEqual([...seq([1, 2, 3])], [1, 2, 3], "seq of array is it's elements");
+
+  assert.deepEqual([...seq("")], [], "seq of emtpy string is empty");
+  assert.deepEqual([...seq("o")], ["o"], "seq of char is single char seq");
+  assert.deepEqual([...seq("hello")], ["h", "e", "l", "l", "o"],
+                   "seq of string are chars");
+
+  assert.deepEqual([...seq(new Set())], [], "seq of emtpy set is empty");
+  assert.deepEqual([...seq(new Set([1]))], [1], "seq of lonely set is single");
+  assert.deepEqual([...seq(new Set([1, 2, 3]))], [1, 2, 3], "seq of lonely set is single");
+
+  assert.deepEqual([...seq(new Map())], [], "seq of emtpy map is empty");
+  assert.deepEqual([...seq(new Map([[1, 2]]))], [[1, 2]], "seq single mapping is that mapping");
+  assert.deepEqual([...seq(new Map([[1, 2], [3, 4], [5, 6]]))],
+                   [[1, 2], [3, 4], [5, 6]],
+                   "seq of map is key value mappings");
+
+  [function(){}, 1, /foo/, true].forEach(x => {
+    assert.throws(() => seq(x), "Type is not seq-able");
   });
 
   assert.throws(() => [...broken],
@@ -74,12 +94,13 @@ exports["test seq casting"] = assert => {
 };
 
 exports["test pairs"] = assert => {
+  assert.deepEqual([...pairs(null)], [], "pairs on null is empty");
+  assert.deepEqual([...pairs(void(0))], [], "pairs on void is empty");
   assert.deepEqual([...pairs({})], [], "empty sequence");
   assert.deepEqual([...pairs({a: 1})], [["a", 1]], "single pair");
-  assert.deepEqual([...pairs({a: 1, b: 2, c: 3})],
+  assert.deepEqual([...pairs({a: 1, b: 2, c: 3})].sort(),
                    [["a", 1], ["b", 2], ["c", 3]],
                    "creates pairs");
-
   let items = [];
   for (let [key, value] of pairs({a: 1, b: 2, c: 3}))
     items.push([key, value]);
@@ -87,6 +108,139 @@ exports["test pairs"] = assert => {
   assert.deepEqual(items.sort(),
                    [["a", 1], ["b", 2], ["c", 3]],
                    "for of works on pairs");
+
+
+  assert.deepEqual([...pairs([])], [], "pairs on empty array is empty");
+  assert.deepEqual([...pairs([1])], [[0, 1]], "pairs on array is [index, element]");
+  assert.deepEqual([...pairs([1, 2, 3])],
+                   [[0, 1], [1, 2], [2, 3]],
+                   "for arrays it pair of [index, element]");
+
+  assert.deepEqual([...pairs("")], [], "pairs on empty string is empty");
+  assert.deepEqual([...pairs("a")], [[0, "a"]], "pairs on char is [0, char]");
+  assert.deepEqual([...pairs("hello")],
+                   [[0, "h"], [1, "e"], [2, "l"], [3, "l"], [4, "o"]],
+                   "for strings it's pair of [index, char]");
+
+  assert.deepEqual([...pairs(new Map())],
+                   [],
+                   "pairs on empty map is empty");
+  assert.deepEqual([...pairs(new Map([[1, 3]]))],
+                   [[1, 3]],
+                   "pairs on single mapping single mapping");
+  assert.deepEqual([...pairs(new Map([[1, 2], [3, 4]]))],
+                   [[1, 2], [3, 4]],
+                   "pairs on map returs key vaule pairs");
+
+  assert.throws(() => pairs(new Set()),
+                "can't pair set");
+
+  assert.throws(() => pairs(4),
+                "can't pair number");
+
+  assert.throws(() => pairs(true),
+                "can't pair boolean");
+};
+
+exports["test keys"] = assert => {
+  assert.deepEqual([...keys(null)], [], "keys on null is empty");
+  assert.deepEqual([...keys(void(0))], [], "keys on void is empty");
+  assert.deepEqual([...keys({})], [], "empty sequence");
+  assert.deepEqual([...keys({a: 1})], ["a"], "single key");
+  assert.deepEqual([...keys({a: 1, b: 2, c: 3})].sort(),
+                   ["a", "b", "c"],
+                   "all keys");
+
+  let items = [];
+  for (let key of keys({a: 1, b: 2, c: 3}))
+    items.push(key);
+
+  assert.deepEqual(items.sort(),
+                   ["a", "b", "c"],
+                   "for of works on keys");
+
+
+  assert.deepEqual([...keys([])], [], "keys on empty array is empty");
+  assert.deepEqual([...keys([1])], [0], "keys on array is indexes");
+  assert.deepEqual([...keys([1, 2, 3])],
+                   [0, 1, 2],
+                   "keys on arrays returns indexes");
+
+  assert.deepEqual([...keys("")], [], "keys on empty string is empty");
+  assert.deepEqual([...keys("a")], [0], "keys on char is 0");
+  assert.deepEqual([...keys("hello")],
+                   [0, 1, 2, 3, 4],
+                   "keys on strings is char indexes");
+
+  assert.deepEqual([...keys(new Map())],
+                   [],
+                   "keys on empty map is empty");
+  assert.deepEqual([...keys(new Map([[1, 3]]))],
+                   [1],
+                   "keys on single mapping single mapping is single key");
+  assert.deepEqual([...keys(new Map([[1, 2], [3, 4]]))],
+                   [1, 3],
+                   "keys on map is keys from map");
+
+  assert.throws(() => keys(new Set()),
+                "can't keys set");
+
+  assert.throws(() => keys(4),
+                "can't keys number");
+
+  assert.throws(() => keys(true),
+                "can't keys boolean");
+};
+
+exports["test values"] = assert => {
+  assert.deepEqual([...values({})], [], "empty sequence");
+  assert.deepEqual([...values({a: 1})], [1], "single value");
+  assert.deepEqual([...values({a: 1, b: 2, c: 3})].sort(),
+                   [1, 2, 3],
+                   "all values");
+
+  let items = [];
+  for (let value of values({a: 1, b: 2, c: 3}))
+    items.push(value);
+
+  assert.deepEqual(items.sort(),
+                   [1, 2, 3],
+                   "for of works on values");
+
+  assert.deepEqual([...values([])], [], "values on empty array is empty");
+  assert.deepEqual([...values([1])], [1], "values on array elements");
+  assert.deepEqual([...values([1, 2, 3])],
+                   [1, 2, 3],
+                   "values on arrays returns elements");
+
+  assert.deepEqual([...values("")], [], "values on empty string is empty");
+  assert.deepEqual([...values("a")], ["a"], "values on char is char");
+  assert.deepEqual([...values("hello")],
+                   ["h", "e", "l", "l", "o"],
+                   "values on strings is chars");
+
+  assert.deepEqual([...values(new Map())],
+                   [],
+                   "values on empty map is empty");
+  assert.deepEqual([...values(new Map([[1, 3]]))],
+                   [3],
+                   "keys on single mapping single mapping is single key");
+  assert.deepEqual([...values(new Map([[1, 2], [3, 4]]))],
+                   [2, 4],
+                   "values on map is values from map");
+
+  assert.deepEqual([...values(new Set())], [], "values on empty set is empty");
+  assert.deepEqual([...values(new Set([1]))], [1], "values on set is it's items");
+  assert.deepEqual([...values(new Set([1, 2, 3]))],
+                   [1, 2, 3],
+                   "values on set is it's items");
+
+
+  assert.throws(() => values(4),
+                "can't values number");
+
+  assert.throws(() => values(true),
+                "can't values boolean");
 };
 
 exports["test fromEnumerator"] = assert => {
@@ -225,6 +379,10 @@ exports["test map"] = assert => {
   let ys = map(inc, xs);
 
   assert.deepEqual([...ys], [2, 3, 4], "incremented each item");
+
+  assert.deepEqual([...map(inc, null)], [], "mapping null is empty");
+  assert.deepEqual([...map(inc, void(0))], [], "mapping void is empty");
+  assert.deepEqual([...map(inc, new Set([1, 2, 3]))], [2, 3, 4], "maps set items");
 };
 
 exports["test map two inputs"] = assert => {
@@ -347,6 +505,53 @@ exports["test reduce"] = assert => {
   assert.throws(() => [...reduce(sum, 1, broken)],
                 /Boom/,
                 "sequence errors propagate");
+};
+
+exports["test each"] = assert => {
+  const collect = xs => {
+    let result = [];
+    each((...etc) => result.push(...etc), xs);
+    return result;
+  };
+
+  assert.deepEqual(collect(null), [], "each ignores null");
+  assert.deepEqual(collect(void(0)), [], "each ignores void");
+
+  assert.deepEqual(collect([]), [], "each ignores empty");
+  assert.deepEqual(collect([1]), [1], "each works on single item arrays");
+  assert.deepEqual(collect([1, 2, 3, 4, 5]),
+                   [1, 2, 3, 4, 5],
+                   "works with arrays");
+
+  assert.deepEqual(collect(seq(function*() {
+                     yield 1;
+                     yield 2;
+                     yield 3;
+                   })),
+                   [1, 2, 3],
+                   "works with sequences");
+
+  assert.deepEqual(collect(""), [], "ignores empty strings");
+  assert.deepEqual(collect("a"), ["a"], "works on chars");
+  assert.deepEqual(collect("hello"), ["h", "e", "l", "l", "o"],
+                   "works on strings");
+
+  assert.deepEqual(collect(new Set()), [], "ignores empty sets");
+  assert.deepEqual(collect(new Set(["a"])), ["a"],
+                   "works on single item sets");
+  assert.deepEqual(collect(new Set([1, 2, 3])), [1, 2, 3],
+                   "works on muti item tests");
+
+  assert.deepEqual(collect(new Map()), [], "ignores empty maps");
+  assert.deepEqual(collect(new Map([["a", 1]])), [["a", 1]],
+                   "works on single mapping maps");
+  assert.deepEqual(collect(new Map([[1, 2], [3, 4], [5, 6]])),
+                   [[1, 2], [3, 4], [5, 6]],
+                   "works on muti mapping maps");
+
+  assert.throws(() => collect({}), "objects arn't supported");
+  assert.throws(() => collect(1), "numbers arn't supported");
+  assert.throws(() => collect(true), "booleas arn't supported");
 };
 
 exports["test count"] = assert => {
