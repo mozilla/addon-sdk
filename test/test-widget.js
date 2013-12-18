@@ -11,7 +11,7 @@ module.metadata = {
 
 const widgets = require("sdk/widget");
 const { Cc, Ci } = require("chrome");
-const { Loader } = require('sdk/test/loader');
+const { Loader, LoaderWithHookedConsole } = require('sdk/test/loader');
 const url = require("sdk/url");
 const timer = require("sdk/timers");
 const self = require("sdk/self");
@@ -27,6 +27,20 @@ try {
 } catch(e) {}
 
 const australis = !!require("sdk/window/utils").getMostRecentBrowserWindow().CustomizableUI;
+
+exports.testDeprecationMessage = function(assert, done) {
+  let { loader } = LoaderWithHookedConsole(module, onMessage);
+
+  // Intercept all console method calls
+  let calls = [];
+  function onMessage(type, msg) {
+    assert.equal(type, 'error', 'the only message is an error');
+    assert.ok(/^DEPRECATED:/.test(msg), 'deprecated');
+    loader.unload();
+    done();
+  }
+  loader.require('sdk/widget');
+}
 
 exports.testConstructor = function(assert, done) {
   let browserWindow = windowUtils.activeBrowserWindow;
