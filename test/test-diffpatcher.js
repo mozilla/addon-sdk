@@ -4,8 +4,5 @@
 
 "use strict";
 
-module.metadata = {
-  "stability": "unstable"
-};
-
-module.exports = require("sdk/test");
+exports["test diffpatcher"] = require("diffpatcher/test/index");
+require("sdk/test").run(exports);
