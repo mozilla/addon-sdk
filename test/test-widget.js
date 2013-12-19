@@ -17,7 +17,9 @@ const timer = require("sdk/timers");
 const self = require("sdk/self");
 const windowUtils = require("sdk/deprecated/window-utils");
 const { getMostRecentBrowserWindow } = require('sdk/window/utils');
-const { close } = require("sdk/window/helpers");
+const { close, open, focus } = require("sdk/window/helpers");
+const tabs = require("sdk/tabs/utils");
+const { merge } = require("sdk/util/object");
 const unload = require("sdk/system/unload");
 const fixtures = require("./fixtures");
 
@@ -27,6 +29,21 @@ try {
 } catch(e) {}
 
 const australis = !!require("sdk/window/utils").getMostRecentBrowserWindow().CustomizableUI;
+
+function openNewWindowTab(url, options) {
+  return open('chrome://browser/content/browser.xul', {
+    features: {
+      chrome: true,
+      toolbar: true
+    }
+  }).then(focus).then(function(window) {
+    if (options.onLoad) {
+      options.onLoad({ target: { defaultView: window } })
+    }
+
+    return newTab;
+  });
+}
 
 exports.testConstructor = function(assert, done) {
   let browserWindow = windowUtils.activeBrowserWindow;
@@ -513,10 +530,10 @@ exports.testConstructor = function(assert, done) {
 
   // test multiple windows
   tests.push(function testMultipleWindows() {
-    const tabBrowser = require("sdk/deprecated/tab-browser");
-
-    tabBrowser.addTab("about:blank", { inNewWindow: true, onLoad: function(e) {
+    console.log('executing test multiple windows');
+    openNewWindowTab("about:blank", { inNewWindow: true, onLoad: function(e) {
       let browserWindow = e.target.defaultView;
+      assert.ok(browserWindow, 'window was opened');
       let doc = browserWindow.document;
       function container() australis ? doc.getElementById("nav-bar") : doc.getElementById("addon-bar");
       function widgetCount2() container() ? container().querySelectorAll('[id^="widget\:"]').length : 0;
@@ -598,15 +615,13 @@ exports.testConstructor = function(assert, done) {
 
   if (false) {
     tests.push(function testAddonBarHide() {
-      const tabBrowser = require("sdk/deprecated/tab-browser");
-
       // Hide the addon-bar
       browserWindow.setToolbarVisibility(container(), false);
       assert.ok(container().collapsed,
                 "1st window starts with an hidden addon-bar");
 
       // Then open a browser window and verify that the addon-bar remains hidden
-      tabBrowser.addTab("about:blank", { inNewWindow: true, onLoad: function(e) {
+      openNewWindowTab("about:blank", { inNewWindow: true, onLoad: function(e) {
         let browserWindow2 = e.target.defaultView;
         let doc2 = browserWindow2.document;
         function container2() doc2.getElementById("addon-bar");
@@ -1075,8 +1090,7 @@ exports.testReinsertion = function(assert, done) {
     container.ownerDocument.persist(container.id, "currentset");
   }
 
-  const tabBrowser = require("sdk/deprecated/tab-browser");
-  tabBrowser.addTab("about:blank", { inNewWindow: true, onLoad: function(e) {
+  openNewWindowTab("about:blank", { inNewWindow: true, onLoad: function(e) {
     assert.equal(e.target.defaultView.document.getElementById(realWidgetId), null);
     close(e.target.defaultView).then(done);
   }});
