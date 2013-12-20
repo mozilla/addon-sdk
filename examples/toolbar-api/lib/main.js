@@ -5,9 +5,9 @@
 
 const { Toolbar } = require("sdk/ui/toolbar");
 const { Frame } = require("sdk/ui/frame");
-const { Button } = require("sdk/ui/button");
+const { ActionButton } = require("sdk/ui/button/action");
 
-let button = new Button({
+let button = new ActionButton({
   id: "button",
   label: "send!",
   icon: "./favicon.ico",
