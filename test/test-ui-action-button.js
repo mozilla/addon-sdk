@@ -5,7 +5,7 @@
 
 module.metadata = {
   'engines': {
-    'Firefox': '> 24'
+    'Firefox': '> 28'
   }
 };
 
@@ -34,132 +34,90 @@ function getWidget(buttonId, window = getMostRecentBrowserWindow()) {
 
 exports['test basic constructor validation'] = function(assert) {
   let loader = Loader(module);
-  let { Button } = loader.require('sdk/ui');
+  let { ActionButton } = loader.require('sdk/ui');
 
   assert.throws(
-    () => Button({}),
+    () => ActionButton({}),
     /^The option/,
     'throws on no option given');
 
   // Test no label
   assert.throws(
-    () => Button({ id: 'my-button', icon: './icon.png'}),
+    () => ActionButton({ id: 'my-button', icon: './icon.png'}),
     /^The option "label"/,
     'throws on no label given');
 
   // Test no id
   assert.throws(
-    () => Button({ label: 'my button', icon: './icon.png' }),
+    () => ActionButton({ label: 'my button', icon: './icon.png' }),
     /^The option "id"/,
     'throws on no id given');
 
   // Test no icon
   assert.throws(
-    () => Button({ id: 'my-button', label: 'my button' }),
+    () => ActionButton({ id: 'my-button', label: 'my button' }),
     /^The option "icon"/,
     'throws on no icon given');
 
 
   // Test empty label
   assert.throws(
-    () => Button({ id: 'my-button', label: '', icon: './icon.png' }),
+    () => ActionButton({ id: 'my-button', label: '', icon: './icon.png' }),
     /^The option "label"/,
     'throws on no valid label given');
 
   // Test invalid id
   assert.throws(
-    () => Button({ id: 'my button', label: 'my button', icon: './icon.png' }),
+    () => ActionButton({ id: 'my button', label: 'my button', icon: './icon.png' }),
     /^The option "id"/,
     'throws on no valid id given');
 
   // Test empty id
   assert.throws(
-    () => Button({ id: '', label: 'my button', icon: './icon.png' }),
+    () => ActionButton({ id: '', label: 'my button', icon: './icon.png' }),
     /^The option "id"/,
     'throws on no valid id given');
 
   // Test remote icon
   assert.throws(
-    () => Button({ id: 'my-button', label: 'my button', icon: 'http://www.mozilla.org/favicon.ico'}),
+    () => ActionButton({ id: 'my-button', label: 'my button', icon: 'http://www.mozilla.org/favicon.ico'}),
     /^The option "icon"/,
     'throws on no valid icon given');
 
   // Test wrong icon: no absolute URI to local resource, neither relative './'
   assert.throws(
-    () => Button({ id: 'my-button', label: 'my button', icon: 'icon.png'}),
+    () => ActionButton({ id: 'my-button', label: 'my button', icon: 'icon.png'}),
     /^The option "icon"/,
     'throws on no valid icon given');
 
   // Test wrong icon: no absolute URI to local resource, neither relative './'
   assert.throws(
-    () => Button({ id: 'my-button', label: 'my button', icon: 'foo and bar'}),
+    () => ActionButton({ id: 'my-button', label: 'my button', icon: 'foo and bar'}),
     /^The option "icon"/,
     'throws on no valid icon given');
 
   // Test wrong icon: '../' is not allowed
   assert.throws(
-    () => Button({ id: 'my-button', label: 'my button', icon: '../icon.png'}),
+    () => ActionButton({ id: 'my-button', label: 'my button', icon: '../icon.png'}),
     /^The option "icon"/,
     'throws on no valid icon given');
-
-  // Test wrong size: number
-  assert.throws(
-    () => Button({
-      id:'my-button',
-      label: 'my button',
-      icon: './icon.png',
-      size: 32
-    }),
-    /^The option "size"/,
-    'throws on no valid size given');
-
-  // Test wrong size: string
-  assert.throws(
-    () => Button({
-      id:'my-button',
-      label: 'my button',
-      icon: './icon.png',
-      size: 'huge'
-    }),
-    /^The option "size"/,
-    'throws on no valid size given');
-
-  // Test wrong type
-  assert.throws(
-    () => Button({
-      id:'my-button',
-      label: 'my button',
-      icon: './icon.png',
-      type: 'custom'
-    }),
-    /^The option "type"/,
-    'throws on no valid type given');
 
   loader.unload();
 };
 
 exports['test button added'] = function(assert) {
   let loader = Loader(module);
-  let { Button } = loader.require('sdk/ui');
+  let { ActionButton } = loader.require('sdk/ui');
 
-  let button = Button({
+  let button = ActionButton({
     id: 'my-button-1',
     label: 'my button',
     icon: './icon.png'
   });
 
   // check defaults
-  assert.equal(button.size, 'small',
-    'size is set to default "small" value');
-
   assert.equal(button.disabled, false,
     'disabled is set to default `false` value');
-
-  assert.equal(button.checked, false,
-    'checked is set to default `false` value');
-
-  assert.equal(button.type, 'button',
-    'type is set to default "button" value');
 
   let { node } = getWidget(button.id);
 
@@ -174,20 +132,14 @@ exports['test button added'] = function(assert) {
   assert.equal(data.url(button.icon.substr(2)), node.getAttribute('image'),
     'icon is set');
 
-  assert.equal(button.type, node.getAttribute('type'),
-    'type is set to default');
-
-  assert.equal(16, node.getAttribute('width'),
-    'width is set to small');
-
   loader.unload();
 }
 
 exports['test button added with resource URI'] = function(assert) {
   let loader = Loader(module);
-  let { Button } = loader.require('sdk/ui');
+  let { ActionButton } = loader.require('sdk/ui');
 
-  let button = Button({
+  let button = ActionButton({
     id: 'my-button-1',
     label: 'my button',
     icon: data.url('icon.png')
@@ -206,16 +158,16 @@ exports['test button added with resource URI'] = function(assert) {
 
 exports['test button duplicate id'] = function(assert) {
   let loader = Loader(module);
-  let { Button } = loader.require('sdk/ui');
+  let { ActionButton } = loader.require('sdk/ui');
 
-  let button = Button({
+  let button = ActionButton({
     id: 'my-button-2',
     label: 'my button',
     icon: './icon.png'
   });
 
   assert.throws(() => {
-    let doppelganger = Button({
+    let doppelganger = ActionButton({
       id: 'my-button-2',
       label: 'my button',
       icon: './icon.png'
@@ -229,9 +181,9 @@ exports['test button duplicate id'] = function(assert) {
 
 exports['test button multiple destroy'] = function(assert) {
   let loader = Loader(module);
-  let { Button } = loader.require('sdk/ui');
+  let { ActionButton } = loader.require('sdk/ui');
 
-  let button = Button({
+  let button = ActionButton({
     id: 'my-button-2',
     label: 'my button',
     icon: './icon.png'
@@ -249,7 +201,7 @@ exports['test button multiple destroy'] = function(assert) {
 exports['test button removed on dispose'] = function(assert, done) {
   const { CustomizableUI } = Cu.import('resource:///modules/CustomizableUI.jsm', {});
   let loader = Loader(module);
-  let { Button } = loader.require('sdk/ui');
+  let { ActionButton } = loader.require('sdk/ui');
 
   let widgetId;
 
@@ -265,7 +217,7 @@ exports['test button removed on dispose'] = function(assert, done) {
     }
   });
 
-  let button = Button({
+  let button = ActionButton({
     id: 'my-button-3',
     label: 'my button',
     icon: './icon.png'
@@ -280,9 +232,9 @@ exports['test button removed on dispose'] = function(assert, done) {
 
 exports['test button global state updated'] = function(assert) {
   let loader = Loader(module);
-  let { Button } = loader.require('sdk/ui');
+  let { ActionButton } = loader.require('sdk/ui');
 
-  let button = Button({
+  let button = ActionButton({
     id: 'my-button-4',
     label: 'my button',
     icon: './icon.png'
@@ -303,24 +255,6 @@ exports['test button global state updated'] = function(assert) {
     'id is unchanged');
   assert.equal(node.id, widgetId,
     'node id is unchanged');
-
-  assert.throws(() => button.type = 'checkbox',
-    /^setting a property that has only a getter/,
-    'type cannot be set at runtime');
-
-  assert.equal(button.type, 'button',
-    'type is unchanged');
-  assert.equal(node.getAttribute('type'), button.type,
-    'node type is unchanged');
-
-  assert.throws(() => button.size = 'medium',
-    /^setting a property that has only a getter/,
-    'size cannot be set at runtime');
-
-  assert.equal(button.size, 'small',
-    'size is unchanged');
-  assert.equal(node.getAttribute('width'), 16,
-    'node width is unchanged');
 
   // check writable properties
 
@@ -351,9 +285,9 @@ exports['test button global state updated'] = function(assert) {
 
 exports['test button global state updated on multiple windows'] = function(assert, done) {
   let loader = Loader(module);
-  let { Button } = loader.require('sdk/ui');
+  let { ActionButton } = loader.require('sdk/ui');
 
-  let button = Button({
+  let button = ActionButton({
     id: 'my-button-5',
     label: 'my button',
     icon: './icon.png'
@@ -394,10 +328,10 @@ exports['test button global state updated on multiple windows'] = function(asser
 
 exports['test button window state'] = function(assert, done) {
   let loader = Loader(module);
-  let { Button } = loader.require('sdk/ui');
+  let { ActionButton } = loader.require('sdk/ui');
   let { browserWindows } = loader.require('sdk/windows');
 
-  let button = Button({
+  let button = ActionButton({
     id: 'my-button-6',
     label: 'my button',
     icon: './icon.png'
@@ -499,11 +433,11 @@ exports['test button window state'] = function(assert, done) {
 
 exports['test button tab state'] = function(assert, done) {
   let loader = Loader(module);
-  let { Button } = loader.require('sdk/ui');
+  let { ActionButton } = loader.require('sdk/ui');
   let { browserWindows } = loader.require('sdk/windows');
   let tabs = loader.require('sdk/tabs');
 
-  let button = Button({
+  let button = ActionButton({
     id: 'my-button-7',
     label: 'my button',
     icon: './icon.png'
@@ -627,12 +561,12 @@ exports['test button tab state'] = function(assert, done) {
 
 exports['test button click'] = function(assert, done) {
   let loader = Loader(module);
-  let { Button } = loader.require('sdk/ui');
+  let { ActionButton } = loader.require('sdk/ui');
   let { browserWindows } = loader.require('sdk/windows');
 
   let labels = [];
 
-  let button = Button({
+  let button = ActionButton({
     id: 'my-button-8',
     label: 'my button',
     icon: './icon.png',
@@ -662,65 +596,14 @@ exports['test button click'] = function(assert, done) {
   }).then(null, assert.fail);
 }
 
-exports['test button type checkbox'] = function(assert, done) {
-  let loader = Loader(module);
-  let { Button } = loader.require('sdk/ui');
-  let { browserWindows } = loader.require('sdk/windows');
-
-  let events = [];
-
-  let button = Button({
-    id: 'my-button-9',
-    label: 'my button',
-    icon: './icon.png',
-    type: 'checkbox',
-    onClick: ({label}) => events.push('clicked:' + label),
-    onChange: state => events.push('changed:' + state.label + ':' + state.checked)
-  });
-
-  let { node } = getWidget(button.id);
-
-  assert.equal(button.type, 'checkbox',
-    'button type is set');
-  assert.equal(node.getAttribute('type'), 'checkbox',
-    'node type is set');
-
-  let mainWindow = browserWindows.activeWindow;
-  let chromeWindow = getMostRecentBrowserWindow();
-
-  open(null, { features: { toolbar: true }}).then(focus).then(window => {
-    button.state(mainWindow, { label: 'nothing' });
-    button.state(mainWindow.tabs.activeTab, { label: 'foo'})
-    button.state(browserWindows.activeWindow, { label: 'bar' });
-
-    button.click();
-    button.click();
-
-    focus(chromeWindow).then(() => {
-      button.click();
-      button.click();
-
-      assert.deepEqual(events, [
-          'clicked:bar', 'changed:bar:true', 'clicked:bar', 'changed:bar:false',
-          'clicked:foo', 'changed:foo:true', 'clicked:foo', 'changed:foo:false'
-        ],
-        'button change events works');
-
-      close(window).
-        then(loader.unload).
-        then(done, assert.fail);
-    })
-  }).then(null, assert.fail);
-}
-
 exports['test button icon set'] = function(assert) {
   const { CustomizableUI } = Cu.import('resource:///modules/CustomizableUI.jsm', {});
   let loader = Loader(module);
-  let { Button } = loader.require('sdk/ui');
+  let { ActionButton } = loader.require('sdk/ui');
 
   // Test remote icon set
   assert.throws(
-    () => Button({
+    () => ActionButton({
       id: 'my-button-10',
       label: 'my button',
       icon: {
@@ -730,7 +613,7 @@ exports['test button icon set'] = function(assert) {
     /^The option "icon"/,
     'throws on no valid icon given');
 
-  let button = Button({
+  let button = ActionButton({
     id: 'my-button-11',
     label: 'my button',
     icon: {
@@ -769,11 +652,11 @@ exports['test button icon set'] = function(assert) {
 exports['test button icon se with only one option'] = function(assert) {
   const { CustomizableUI } = Cu.import('resource:///modules/CustomizableUI.jsm', {});
   let loader = Loader(module);
-  let { Button } = loader.require('sdk/ui');
+  let { ActionButton } = loader.require('sdk/ui');
 
   // Test remote icon set
   assert.throws(
-    () => Button({
+    () => ActionButton({
       id: 'my-button-10',
       label: 'my button',
       icon: {
@@ -783,7 +666,7 @@ exports['test button icon se with only one option'] = function(assert) {
     /^The option "icon"/,
     'throws on no valid icon given');
 
-  let button = Button({
+  let button = ActionButton({
     id: 'my-button-11',
     label: 'my button',
     icon: {
@@ -813,26 +696,16 @@ exports['test button icon se with only one option'] = function(assert) {
 
 exports['test button state validation'] = function(assert) {
   let loader = Loader(module);
-  let { Button } = loader.require('sdk/ui');
+  let { ActionButton } = loader.require('sdk/ui');
   let { browserWindows } = loader.require('sdk/windows');
 
-  let button = Button({
+  let button = ActionButton({
     id: 'my-button-12',
     label: 'my button',
     icon: './icon.png'
   })
 
-  button.state(button, {
-    size: 'large'
-  });
-
-  assert.equal(button.size, 'small',
-    'button.size is unchanged');
-
   let state = button.state(button);
-
-  assert.equal(button.size, 'small',
-    'button state is unchanged');
 
   assert.throws(
     () => button.state(button, { icon: 'http://www.mozilla.org/favicon.ico' }),
@@ -844,11 +717,11 @@ exports['test button state validation'] = function(assert) {
 
 exports['test button are not in private windows'] = function(assert, done) {
   let loader = Loader(module);
-  let { Button } = loader.require('sdk/ui');
+  let { ActionButton } = loader.require('sdk/ui');
   let{ isPrivate } = loader.require('sdk/private-browsing');
   let { browserWindows } = loader.require('sdk/windows');
 
-  let button = Button({
+  let button = ActionButton({
     id: 'my-button-13',
     label: 'my button',
     icon: './icon.png'
@@ -872,11 +745,11 @@ exports['test button are not in private windows'] = function(assert, done) {
 
 exports['test button state are snapshot'] = function(assert) {
   let loader = Loader(module);
-  let { Button } = loader.require('sdk/ui');
+  let { ActionButton } = loader.require('sdk/ui');
   let { browserWindows } = loader.require('sdk/windows');
   let tabs = loader.require('sdk/tabs');
 
-  let button = Button({
+  let button = ActionButton({
     id: 'my-button-14',
     label: 'my button',
     icon: './icon.png'
@@ -921,11 +794,11 @@ exports['test button state are snapshot'] = function(assert) {
 
 exports['test button after destroy'] = function(assert) {
   let loader = Loader(module);
-  let { Button } = loader.require('sdk/ui');
+  let { ActionButton } = loader.require('sdk/ui');
   let { browserWindows } = loader.require('sdk/windows');
   let { activeTab } = loader.require('sdk/tabs');
 
-  let button = Button({
+  let button = ActionButton({
     id: 'my-button-15',
     label: 'my button',
     icon: './icon.png',
@@ -984,7 +857,7 @@ exports['test button after destroy'] = function(assert) {
 // throw.  In that case, remove all tests above from exports, and add one dummy
 // test that passes.
 try {
-  require('sdk/ui/button');
+  require('sdk/ui/button/action');
 }
 catch (err) {
   if (!/^Unsupported Application/.test(err.message))
