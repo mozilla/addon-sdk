@@ -233,6 +233,12 @@ This is an optional property.
 @prop [onPageShow] {function}
 A callback function that will be registered for the 'pageshow' event.
 This is an optional property.
+@prop [onRename] {function}
+A callback function that will be registered for the 'rename' event.
+This is an optional property.
+@prop [onMove] {function}
+A callback function that will be registered for the 'move' event.
+This is an optional property.
 @prop [onActivate] {function}
 A callback function that will be registered for the 'activate' event.
 This is an optional property.
@@ -461,6 +467,26 @@ Listeners are passed the tab object.
 @argument {persisted}
 Listeners are passed a boolean value indicating whether or not the page
 was loaded from the [bfcache](https://developer.mozilla.org/en-US/docs/Working_with_BFCache).
+</api>
+
+<api name="rename">
+@event
+
+This event is emitted when the tab's title changes.
+
+@argument {Tab}
+Listeners are passed the tab object.
+@argument {lastTitle}
+Listeners are passed the string value of the tab's last title.
+</api>
+
+<api name="move">
+@event
+
+This event is emitted when the tab's index changes.
+
+@argument {Tab}
+Listeners are passed the tab object.
 </api>
 
 <api name="activate">

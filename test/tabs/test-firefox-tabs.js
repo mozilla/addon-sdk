@@ -927,6 +927,35 @@ exports.testFaviconGetterDeprecation = function (assert, done) {
   });
 }
 
+exports.testRename = function(assert, done) {
+  let loader = Loader(module);
+  let tabs = loader.require("sdk/tabs");
+
+  tabs.open({
+    url: "data:text/html;charset=utf-8,<script>document.title='hello world';</script>",
+    onRename: function (tab) {
+      assert.equal(tab.title, 'hello world', "The tab rename event was fired properly");
+      tab.close(done);
+      loader.unload();
+    }
+  });
+};
+
+exports.testMove = function(assert, done) {
+  let loader = Loader(module);
+  let tabs = loader.require("sdk/tabs");
+
+  tabs.open({
+    url: "data:text/html;charset=utf-8,foobar",
+    onReady: function (tab) { tab.index = 0; },
+    onMove: function (tab) {
+      assert.equal(tab.index, 0, "The tab move event was fired properly");
+      tab.close(done);
+      loader.unload();
+    }
+  });
+};
+
 /******************* helpers *********************/
 
 // Helper for getting the active window

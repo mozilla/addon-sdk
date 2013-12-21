@@ -541,6 +541,29 @@ exports.testPerTabEvents = function(assert, done) {
   });
 };
 
+// TEST: onRename event handler
+exports.testTabsEvent_onRename = function(assert, done) {
+  tabs.open({
+    url: "data:text/html;charset=utf-8,<script>document.title='hello world';</script>",
+    onRename: function (tab) {
+      assert.equal(tab.title, 'hello world', "The tab rename event was fired properly");
+      tab.close(done);
+    }
+  });
+};
+
+// TEST: onMove event handler
+exports.testTabsEvent_onMove = function(assert, done) {
+  tabs.open({
+    url: "data:text/html;charset=utf-8,foobar",
+    onReady: function (tab) { tab.index = 0; },
+    onMove: function (tab) {
+      assert.equal(tab.index, 0, "The tab move event was fired properly");
+      tab.close(done);
+    }
+  });
+};
+
 exports.testUniqueTabIds = function(assert, done) {
   var tabs = require('sdk/tabs');
   var tabIds = {};
