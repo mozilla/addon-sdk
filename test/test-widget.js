@@ -10,7 +10,7 @@ module.metadata = {
 };
 
 const widgets = require("sdk/widget");
-const { Cc, Ci } = require("chrome");
+const { Cc, Ci, Cu } = require("chrome");
 const { Loader } = require('sdk/test/loader');
 const url = require("sdk/url");
 const timer = require("sdk/timers");
@@ -711,7 +711,7 @@ exports.testWidgetWithValidPanel = function(assert, done) {
   const widgets = require("sdk/widget");
 
   let widget1 = widgets.Widget({
-    id: "panel1",
+    id: "testWidgetWithValidPanel",
     label: "panel widget 1",
     content: "<div id='me'>foo</div>",
     contentScript: "var evt = new MouseEvent('click', {button: 0});" +
@@ -774,6 +774,67 @@ exports.testPanelWidget3 = function testPanelWidget3(assert, done) {
       }
     })
   });
+};
+
+exports.testWidgetWithPanelInMenuPanel = function(assert, done) {
+  let CustomizableUI;
+
+  try {
+    ({CustomizableUI}) = Cu.import("resource:///modules/CustomizableUI.jsm", {});
+  }
+  catch (e) {
+    assert.pass("Test skipped: no CustomizableUI object found.");
+    done();
+    return;
+  }
+
+  const widgets = require("sdk/widget");
+
+  let widget1 = widgets.Widget({
+    id: "panel1",
+    label: "panel widget 1",
+    content: "<div id='me'>foo</div>",
+    contentScript: "new " + function() {
+      self.port.on('click', () => {
+        let evt = new MouseEvent('click', {button: 0});
+        document.body.dispatchEvent(evt);
+      });
+    },
+    contentScriptWhen: "end",
+    panel: require("sdk/panel").Panel({
+      contentURL: "data:text/html;charset=utf-8,<body>Look ma, a panel!</body>",
+      onShow: function() {
+        let { document } = getMostRecentBrowserWindow();
+        let { anchorNode } = document.getElementById('mainPopupSet').lastChild;
+        let panelButtonNode = document.getElementById("PanelUI-menu-button");
+
+        assert.strictEqual(anchorNode, panelButtonNode,
+          'the panel is anchored to the panel menu button instead of widget');
+
+        widget1.destroy();
+        done();
+      }
+    })
+  });
+
+  let widgetId = "widget:" + jetpackID + "-" + widget1.id;
+
+  CustomizableUI.addListener({
+    onWidgetAdded: function(id) {
+      if (id !== widgetId) return;
+
+      let { document, PanelUI } = getMostRecentBrowserWindow();
+
+      PanelUI.panel.addEventListener('popupshowing', function onshow({type}) {
+        this.removeEventListener(type, onshow);
+        widget1.port.emit('click');
+      });
+
+      document.getElementById("PanelUI-menu-button").click()
+    }
+  });
+
+  CustomizableUI.addWidgetToArea(widgetId, CustomizableUI.AREA_PANEL);
 };
 
 exports.testWidgetMessaging = function testWidgetMessaging(assert, done) {
