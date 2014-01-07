@@ -26,7 +26,7 @@ like [these current test add-ons](https://github.com/mozilla/addon-sdk/tree/1.15
 * [Scratchpad](https://developer.mozilla.org/docs/Tools/Scratchpad) = A Firefox DevTool for text editing.
 * Third Party Modules = Modules made by extensions developers which are not part of the SDK.
 * [NPM](https://npmjs.org/) = Node Package Manager
-* [JPM]((https://github.com/jsantell/jpm)) = Jetpack Package Manager
+* [JPM]((https://github.com/jsantell/jpm)) = Jetpack Manager
 * CFX / Cuddlefish = The existing python command line tool to run, xpi, test, and do more for current Jetpack bootstrap extensions.
 
 # Use Cases
@@ -150,7 +150,9 @@ then the add-on will be assumed to be a Jetpack.  Once
 this occurs the XPIProvider will automatically use [a bootstrap.js](https://github.com/mozilla/addon-sdk/blob/master/app-extension/bootstrap.js), which does the following:
 
 * Setting up a `resource:` uri for the add-on root, derived from the add-on's id.
-* Do a check for required modules and build and cache a `modules.json` file, if one is not provided.
+* Do a check for required modules and build and cache a `modules.json` file, if one is not provided (this
+  installation time generation of the `modules.json` could be controlled by a pref, which is off by default, in
+  order to optimize installations for non developers, if it is needed) caching could be done only if there is some preference).
 * Creating a `Loader` instance will have to be created.
 * Load main module.
 * Emit events like `startup`, `shutdown`, and so on [listed here](https://developer.mozilla.org/docs/Extensions/Bootstrapped_extensions#Bootstrap_entry_points).
@@ -166,15 +168,10 @@ adding a `unpack` or `iconURL` key to the `package.json` spec seems trival, and 
 `type`, or `strictCompatibility`.  However, `targetApplication` and `updateURL` are more tricky.
 
 The `package.json` spec has a `engines` key, so we could have `{ "engines" : { "firefox" : ">=25" } }` in the SDK extension's
-`package.json`, but then how would work with an `update.rdf` when using a `updateURL`?  does the targetApplication information
-in the `install.rdf` get compared with the `update.rdf`?  even if so I think that we can have an `update.rdf` file used with
-a `package.json` file, and possibly offer this functionality via an `update.json` file in the future.  This is a feature
-that our current user base may be dependant on along with tools like [McCoy](https://developer.mozilla.org/docs/McCoy) and
-AMO that use `update.rdf` and would have to be udpated to use an alternative.
+`package.json`, but then how would work with an `update.rdf` when using a `updateURL`?  I think it would be best to have an `update.rdf` file used with
+a `package.json` file in phase 1, and possibly offer the updating functionality via an `update.json` file in a future, completely separate, project.
 
 So as far as I can tell we will have to ensure that it is possible to still use an `update.rdf` file.
-This may seem odd to new comers, and introducing an `update.json` might be worth considering if
-we find that to be the case.
 
 Also I think adding these keys to the `package.json` spec is not a problem.
 
@@ -183,8 +180,19 @@ The new keys would be:
 * `unpack`: optional, default is false
 * `updateURL`: optional
 * `updateKey`: optional
-* `icon`: optional, ex: `{ icon: { "64": "icon64.png" } }`
 * `aboutURL`: optional
+* `strictCompatibility`: optional
+
+Note: We currently allow/support keys in [our package.json](https://addons.mozilla.org/en-US/developers/docs/sdk/latest/dev-guide/package-spec.html) which are not used in the [Node/NPM package.json]((https://npmjs.org/doc/json.html) and [`install.rdf`](https://developer.mozilla.org/Add-ons/Install_Manifests),
+which I am not listing a being "new keys" here, we will continue to support those keys.  Some of our
+currently supported keys will no longer be necessary, like the `harnessClassID` one.
+
+##### Localization
+
+Localizing `package.json` metadata will be done by using the [Before Gecko 1.9 method described here](https://developer.mozilla.org/docs/Mozilla/Localization/Localizing_extension_descriptions#Localizing_before_Gecko_1.9), but the
+steps referring to the default preferences file will be done automatically.  However, since it is currently
+possible to localize this information with the `cfx` tool I do not think this should be a blocker for Phase 1,
+and can be done at some point in the future.
 
 #### AMO
 
