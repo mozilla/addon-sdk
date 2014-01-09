@@ -4,14 +4,64 @@
 
 'use strict';
 
-let { Loader, main, unload, parseStack } = require('toolkit/loader');
+let {
+  Loader, main, unload, parseStack, generateMap, resolve, join
+} = require('toolkit/loader');
+let { readURI } = require('sdk/net/url');
 
 let root = module.uri.substr(0, module.uri.lastIndexOf('/'))
+
 
 // The following adds Debugger constructor to the global namespace.
 const { Cu } = require('chrome');
 const { addDebuggerToGlobal } = Cu.import('resource://gre/modules/jsdebugger.jsm', {});
 addDebuggerToGlobal(this);
+
+exports['test resolve'] = function (assert) {
+  let cuddlefish_id = 'sdk/loader/cuddlefish';
+  assert.equal(resolve('../index.js', './dir/c.js'), './index.js');
+  assert.equal(resolve('./index.js', './dir/c.js'), './dir/index.js');
+  assert.equal(resolve('./dir/c.js', './index.js'), './dir/c.js');
+  assert.equal(resolve('../utils/file.js', './dir/b.js'), './utils/file.js');
+
+  assert.equal(resolve('../utils/./file.js', './dir/b.js'), './utils/file.js');
+  assert.equal(resolve('../utils/file.js', './'), './../utils/file.js');
+  assert.equal(resolve('./utils/file.js', './'), './utils/file.js');
+  assert.equal(resolve('./utils/file.js', './index.js'), './utils/file.js');
+
+  assert.equal(resolve('../utils/./file.js', cuddlefish_id), 'sdk/utils/file.js');
+  assert.equal(resolve('../utils/file.js', cuddlefish_id), 'sdk/utils/file.js');
+  assert.equal(resolve('./utils/file.js', cuddlefish_id), 'sdk/loader/utils/file.js');
+
+  assert.equal(resolve('..//index.js', './dir/c.js'), './index.js');
+  assert.equal(resolve('../../gre/modules/XPCOMUtils.jsm', 'resource://thing/utils/file.js'), 'resource://gre/modules/XPCOMUtils.jsm');
+  assert.equal(resolve('../../gre/modules/XPCOMUtils.jsm', 'chrome://thing/utils/file.js'), 'chrome://gre/modules/XPCOMUtils.jsm');
+  assert.equal(resolve('../../a/b/c.json', 'file:///thing/utils/file.js'), 'file:///a/b/c.json');
+
+  // Does not change absolute paths
+  assert.equal(resolve('resource://gre/modules/file.js', './dir/b.js'),
+    'resource://gre/modules/file.js');
+  assert.equal(resolve('file:///gre/modules/file.js', './dir/b.js'),
+    'file:///gre/modules/file.js');
+  assert.equal(resolve('/root.js', './dir/b.js'),
+    '/root.js');
+};
+
+exports['test join'] = function (assert) {
+  assert.equal(join('a/path', '../../../module'), '../module');
+  assert.equal(join('a/path/to', '../module'), 'a/path/module');
+  assert.equal(join('a/path/to', './module'), 'a/path/to/module');
+  assert.equal(join('a/path/to', '././../module'), 'a/path/module');
+  assert.equal(join('resource://my/path/yeah/yuh', '../whoa'),
+    'resource://my/path/yeah/whoa');
+  assert.equal(join('resource://my/path/yeah/yuh', './whoa'),
+    'resource://my/path/yeah/yuh/whoa');
+  assert.equal(join('file:///my/path/yeah/yuh', '../whoa'),
+    'file:///my/path/yeah/whoa');
+  assert.equal(join('file:///my/path/yeah/yuh', './whoa'),
+    'file:///my/path/yeah/yuh/whoa');
+  assert.equal(join('a/path/to', '..//module'), 'a/path/module');
+};
 
 exports['test dependency cycles'] = function(assert) {
   let uri = root + '/fixtures/loader/cycles/';
@@ -170,7 +220,7 @@ exports['test require json'] = function (assert) {
     assert.ok(/JSON\.parse/.test(err.message),
       'should thrown an error from JSON.parse, not attempt to load .json.js');
   }
- 
+
   // Try again to ensure an empty module isn't loaded from cache
   try {
     require('./fixtures/loader/json/invalid.json');
