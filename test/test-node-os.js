@@ -10,7 +10,8 @@ exports["test os"] = function (assert) {
   assert.equal(os.tmpdir(), system.pathFor("TmpD"), "os.tmpdir() matches temp dir");
   assert.ok(os.endianness() === "BE" || os.endianness() === "LE", "os.endianness is BE or LE");
 
-  assert.ok(~["arm", "ia32", "x86", "x64"].indexOf(os.arch()), "os.arch() returns a proper architecture");
+  assert.ok(os.arch().length > 0, "os.arch() returns a value");
+  assert.equal(typeof os.arch(), "string", "os.arch() returns a string");
   assert.ok(os.type().length > 0, "os.type() returns a value");
   assert.equal(typeof os.type(), "string", "os.type() returns a string");
   assert.ok(os.platform().length > 0, "os.platform() returns a value");
