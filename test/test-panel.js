@@ -863,45 +863,34 @@ exports['test passing DOM node as first argument'] = function (assert, done) {
                   'feature that will be soon replaced. ' +
                   'See: https://bugzilla.mozilla.org/show_bug.cgi?id=878877';
 
-    assert.equal(type, 'warn',
-      'the message logged is a warning');
-
-    assert.equal(message, warning,
-      'the warning content is correct');
+    assert.equal(message, warning, 'the message logged is ok');
+    assert.equal(type, 'warn', 'the message type is a warning');
 
     warned.resolve();
   }
 
   let { loader } = LoaderWithHookedConsole(module, onMessage);
   let { Panel } = loader.require('sdk/panel');
-  let { Widget } = loader.require('sdk/widget');
   let { document } = getMostRecentBrowserWindow();
-  let widgetId = 'widget:' + self.id + '-panel-widget';
 
   let panel = Panel({
     onShow: function() {
       let panelNode = document.getElementById('mainPopupSet').lastChild;
 
-      assert.equal(panelNode.anchorNode, widgetNode,
+      assert.equal(panelNode.anchorNode, domNode,
         'the panel is properly anchored to the widget');
 
       shown.resolve();
     }
   });
 
-  let widget = Widget({
-    id: 'panel-widget',
-    label: 'panel widget',
-    content: '<i></i>',
-  });
-
-  let widgetNode = document.getElementById(widgetId);
+  let domNode = document.getElementById('urlbar-container');
 
   all(warned.promise, shown.promise).
     then(loader.unload).
     then(done, assert.fail)
 
-  panel.show(widgetNode);
+  panel.show(domNode);
 };
 
 // This test is checking that `onpupshowing` events emitted by panel's children
