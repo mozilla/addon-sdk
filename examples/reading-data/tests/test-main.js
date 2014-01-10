@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+// See Bug 958692 https://bugzilla.mozilla.org/show_bug.cgi?id=958692
+/*
 var m = require("main");
 var self = require("sdk/self");
 
@@ -22,3 +24,4 @@ exports.testID = function(test) {
   test.assertEqual(self.data.url("sample.html"),
                    "resource://reading-data-example-at-jetpack-dot-mozillalabs-dot-com/reading-data/data/sample.html");
 };
+*/

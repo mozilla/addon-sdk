@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+// See Bug 958692 https://bugzilla.mozilla.org/show_bug.cgi?id=958692
+/*
 var m = require("main");
 var self = require("sdk/self");
 
@@ -19,3 +21,4 @@ exports.testMain = function(test) {
 exports.testData = function(test) {
   test.assert(self.data.load("panel.js").length > 0);
 };
+*/
