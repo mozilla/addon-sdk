@@ -48,6 +48,7 @@ exports['test EventEmitter#once()'] = function (assert) {
   target.emit('message', 'a', 'b');
   target.emit('message', 'a', 'b');
   target.emit('message', 'a', 'b');
+  assert.equal(count, 1, 'listeners called only once');
 };
 
 exports['test EventEmitter#on()'] = function(assert) {
@@ -404,9 +405,7 @@ exports['test EventEmitter event "removeListener" with removeAllListener()'] = f
   let noop2 = () => {};
   let noop3 = () => {};
 
-  console.log('GOING');
   target1.on('removeListener', (name, listener) => {
-    console.log('removeListener!!!',name,listener);
     if (!count[name])
       count[name] = [];
     count[name].push(listener);
@@ -422,6 +421,15 @@ exports['test EventEmitter event "removeListener" with removeAllListener()'] = f
   assert.equal(count['twolistener'][0], noop2);
   assert.equal(count['onelistener'][0], noop1);
   assert.equal(count['onelistener'][1], noop3);
+};
+
+exports['test EventEmitter#setMaxListeners()'] = function (assert) {
+  let target = EventEmitter();
+
+  // Ensure it does not throw
+  target.setMaxListeners(2);
+  assert.pass('Does not throw when using a number as argument');
+  assert.throws(() => target.setMaxListeners(), /setMaxListener/, 'Throws when no arguments sent');
 };
 
 require('test').run(exports);
