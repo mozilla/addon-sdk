@@ -8,7 +8,8 @@ const { Loader } = require('sdk/test/loader');
 const Pages = require("sdk/page-worker");
 const Page = Pages.Page;
 const { URL } = require("sdk/url");
-const testURI = require("sdk/self").data.url("test.html");
+const fixtures = require("./fixtures");
+const testURI = fixtures.url("test.html");
 
 const ERR_DESTROYED =
   "Couldn't find the worker to receive this message. " +
@@ -244,15 +245,14 @@ exports.testMultipleOnMessageCallbacks = function(assert, done) {
   let page = Page({
     contentScript: "self.postMessage('')",
     contentScriptWhen: "end",
-    onMessage: function() count += 1
+    onMessage: () => count += 1
   });
-  page.on('message', function() count += 2);
-  page.on('message', function() count *= 3);
-  page.on('message', function()
+  page.on('message', () => count += 2);
+  page.on('message', () => count *= 3);
+  page.on('message', () =>
     assert.equal(count, 9, "All callbacks were called, in order."));
-  page.on('message', function() done());
-
-}
+  page.on('message', done);
+};
 
 exports.testLoadContentPage = function(assert, done) {
   let page = Page({
@@ -264,8 +264,8 @@ exports.testLoadContentPage = function(assert, done) {
         return done();
       assert[msg].apply(assert, message);
     },
-    contentURL: require("sdk/self").data.url("test-page-worker.html"),
-    contentScriptFile: require("sdk/self").data.url("test-page-worker.js"),
+    contentURL: fixtures.url("test-page-worker.html"),
+    contentScriptFile: fixtures.url("test-page-worker.js"),
     contentScriptWhen: "ready"
   });
 }

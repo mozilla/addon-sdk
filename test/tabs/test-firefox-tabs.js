@@ -12,6 +12,8 @@ const { open, focus, close } = require('sdk/window/helpers');
 const { StringBundle } = require('sdk/deprecated/app-strings');
 const tabs = require('sdk/tabs');
 const { browserWindows } = require('sdk/windows');
+const { set: setPref } = require("sdk/preferences/service");
+const DEPRECATE_PREF = "devtools.errorconsole.deprecation_warnings";
 
 const base64png = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQImWNgYGBgAA";
 
@@ -89,6 +91,17 @@ exports.testAutomaticDestroy = function(assert, done) {
 };
 
 exports.testTabPropertiesInNewWindow = function(assert, done) {
+  let warning = "DEPRECATED: tab.favicon is deprecated, please use require(\"sdk/places/favicon\").getFavicon instead.\n"
+  const { LoaderWithFilteredConsole } = require("sdk/test/loader");
+  let loader = LoaderWithFilteredConsole(module, function(type, message) {
+    if (type == "error" && message.substring(0, warning.length) == warning)
+      return false;
+    return true;
+  });
+
+  let tabs = loader.require('sdk/tabs');
+  let { getOwnerWindow } = loader.require('sdk/private-browsing/window/utils');
+
   let count = 0;
   function onReadyOrLoad (tab) {
     if (count++) {
@@ -126,6 +139,16 @@ exports.testTabPropertiesInNewWindow = function(assert, done) {
 };
 
 exports.testTabPropertiesInSameWindow = function(assert, done) {
+  let warning = "DEPRECATED: tab.favicon is deprecated, please use require(\"sdk/places/favicon\").getFavicon instead.\n"
+  const { LoaderWithFilteredConsole } = require("sdk/test/loader");
+  let loader = LoaderWithFilteredConsole(module, function(type, message) {
+    if (type == "error" && message.substring(0, warning.length) == warning)
+      return false;
+    return true;
+  });
+
+  let tabs = loader.require('sdk/tabs');
+
   // Get current count of tabs so we know the index of the
   // new tab, bug 893846
   let tabCount = tabs.length;
@@ -904,6 +927,7 @@ exports.testOnLoadEventWithImage = function(assert, done) {
 };
 
 exports.testFaviconGetterDeprecation = function (assert, done) {
+  setPref(DEPRECATE_PREF, true);
   const { LoaderWithHookedConsole } = require("sdk/test/loader");
   let { loader, messages } = LoaderWithHookedConsole(module);
   let tabs = loader.require('sdk/tabs');

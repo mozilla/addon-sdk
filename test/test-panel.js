@@ -14,7 +14,7 @@ const { Loader } = require('sdk/test/loader');
 const { LoaderWithHookedConsole } = require("sdk/test/loader");
 const timer = require("sdk/timers");
 const self = require('sdk/self');
-const { open, close, focus } = require('sdk/window/helpers');
+const { open, close, focus, ready } = require('sdk/window/helpers');
 const { isPrivate } = require('sdk/private-browsing');
 const { isWindowPBSupported, isGlobalPBSupported } = require('sdk/private-browsing/utils');
 const { defer, all } = require('sdk/core/promise');
@@ -22,8 +22,10 @@ const { getMostRecentBrowserWindow } = require('sdk/window/utils');
 const { getWindow } = require('sdk/panel/window');
 const { pb } = require('./private-browsing/helper');
 const { URL } = require('sdk/url');
+const fixtures = require('./fixtures')
 
-const SVG_URL = self.data.url('mofo_logo.SVG');
+const SVG_URL = fixtures.url('mofo_logo.SVG');
+const Isolate = fn => '(' + fn + ')()';
 
 function ignorePassingDOMNodeWarning(type, message) {
   if (type !== 'warn' || !message.startsWith('Passing a DOM node'))
@@ -163,53 +165,61 @@ exports["test Document Reload"] = function(assert, done) {
   assert.pass('Panel was created');
 };
 
+// Test disabled because of bug 910230
+/*
 exports["test Parent Resize Hack"] = function(assert, done) {
   const { Panel } = require('sdk/panel');
 
-  let browserWindow = Cc["@mozilla.org/appshell/window-mediator;1"].
-                      getService(Ci.nsIWindowMediator).
-                      getMostRecentWindow("navigator:browser");
-  let docShell = browserWindow.QueryInterface(Ci.nsIInterfaceRequestor)
-                  .getInterface(Ci.nsIWebNavigation)
-                  .QueryInterface(Ci.nsIDocShell);
-  if (!("allowWindowControl" in docShell)) {
-    // bug 635673 is not fixed in this firefox build
-    assert.pass("allowWindowControl attribute that allow to fix browser window " +
-              "resize is not available on this build.");
-    return;
-  }
+  let browserWindow = getMostRecentBrowserWindow();
 
-  let previousWidth = browserWindow.outerWidth, previousHeight = browserWindow.outerHeight;
+  let previousWidth = browserWindow.outerWidth;
+  let previousHeight = browserWindow.outerHeight;
 
   let content = "<script>" +
                 "function contentResize() {" +
                 "  resizeTo(200,200);" +
                 "  resizeBy(200,200);" +
+                "  window.postMessage('resize-attempt', '*');" +
                 "}" +
                 "</script>" +
                 "Try to resize browser window";
+
   let panel = Panel({
     contentURL: "data:text/html;charset=utf-8," + encodeURIComponent(content),
-    contentScript: "self.on('message', function(message){" +
-                   "  if (message=='resize') " +
-                   "    unsafeWindow.contentResize();" +
-                   "});",
     contentScriptWhen: "ready",
-    onMessage: function (message) {
+    contentScript: Isolate(() => {
+        self.on('message', message => {
+          if (message === 'resize') unsafeWindow.contentResize();
+        });
 
-    },
-    onShow: function () {
-      panel.postMessage('resize');
-      timer.setTimeout(function () {
-        assert.equal(previousWidth,browserWindow.outerWidth,"Size doesn't change by calling resizeTo/By/...");
-        assert.equal(previousHeight,browserWindow.outerHeight,"Size doesn't change by calling resizeTo/By/...");
+        window.addEventListener('message', ({ data }) => self.postMessage(data));
+      }),
+    onMessage: function (message) {
+      if (message !== "resize-attempt") return;
+
+      assert.equal(browserWindow, getMostRecentBrowserWindow(),
+        "The browser window is still the same");
+      assert.equal(previousWidth, browserWindow.outerWidth,
+        "Size doesn't change by calling resizeTo/By/...");
+      assert.equal(previousHeight, browserWindow.outerHeight,
+        "Size doesn't change by calling resizeTo/By/...");
+
+      try {
         panel.destroy();
-        done();
-      },0);
-    }
+      }
+      catch (e) {
+        assert.fail(e);
+        throw e;
+      }
+
+      done();
+    },
+    onShow: () => panel.postMessage('resize')
   });
+
   panel.show();
 }
+*/
 
 exports["test Resize Panel"] = function(assert, done) {
   const { Panel } = require('sdk/panel');
@@ -551,11 +561,9 @@ exports["test Automatic Destroy"] = function(assert) {
 
   loader.unload();
 
-  panel.port.on("event-back", function () {
-    assert.fail("Panel should have been destroyed on module unload");
-  });
-  panel.port.emit("event");
-  assert.pass("check automatic destroy");
+  assert.throws(() => {
+    panel.port.emit("event");
+  }, /already have been unloaded/, "check automatic destroy");
 };
 
 exports["test Show Then Destroy"] = makeEventOrderTest({
@@ -894,6 +902,67 @@ exports['test passing DOM node as first argument'] = function (assert, done) {
     then(done, assert.fail)
 
   panel.show(widgetNode);
+};
+
+// This test is checking that `onpupshowing` events emitted by panel's children
+// are not considered.
+// See Bug 886329
+exports['test nested popups'] = function (assert, done) {
+  let loader = Loader(module);
+  let { Panel } = loader.require('sdk/panel');
+  let { getActiveView } = loader.require('sdk/view/core');
+  let url = '<select><option>1<option>2<option>3</select>';
+
+  let getContentWindow = panel => {
+    return getActiveView(panel).querySelector('iframe').contentWindow;
+  }
+
+  let panel = Panel({
+    contentURL: 'data:text/html;charset=utf-8,' + encodeURIComponent(url),
+    onShow: () => {
+      ready(getContentWindow(panel)).then(({ window, document }) => {
+        let select = document.querySelector('select');
+        let event = document.createEvent('UIEvent');
+
+        event.initUIEvent('popupshowing', true, true, window, null);
+        select.dispatchEvent(event);
+
+        assert.equal(
+          select,
+          getContentWindow(panel).document.querySelector('select'),
+          'select is still loaded in panel'
+        );
+
+        done();
+      });
+    }
+  });
+
+  panel.show();
+};
+
+exports['test emits on url changes'] = function (assert, done) {
+  let loader = Loader(module);
+  let { Panel } = loader.require('sdk/panel');
+  let uriA = 'data:text/html;charset=utf-8,A';
+  let uriB = 'data:text/html;charset=utf-8,B';
+
+  let panel = Panel({
+    contentURL: uriA,
+    contentScript: 'new ' + function() {
+      self.port.on('hi', function() {
+        self.port.emit('bye', document.URL);
+      });
+    }
+  });
+
+  panel.contentURL = uriB;
+  panel.port.emit('hi', 'hi')
+  panel.port.on('bye', function(uri) {
+    assert.equal(uri, uriB, 'message was delivered to new uri');
+    loader.unload();
+    done();
+  });
 };
 
 if (isWindowPBSupported) {

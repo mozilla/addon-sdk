@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import os, unittest, shutil
+import zipfile
 from StringIO import StringIO
 from cuddlefish import initializer
 from cuddlefish.templates import TEST_MAIN_JS, PACKAGE_JSON
@@ -48,7 +49,7 @@ class TestInit(unittest.TestCase):
         self.assertEqual(open(main_js,"r").read(),"")
         self.assertEqual(open(package_json,"r").read() % {"id":"tmp_addon_id" },
                          PACKAGE_JSON % {"name":"tmp_addon_sample",
-                                         "fullName": "tmp_addon_SAMPLE",
+                                         "title": "tmp_addon_SAMPLE",
                                          "id":init_run["jid"] })
         self.assertEqual(open(test_main_js,"r").read(),TEST_MAIN_JS)
 
@@ -195,6 +196,21 @@ class TestCfxQuits(unittest.TestCase):
         self.assertEqual(rc, 0)
         self.assertIn("1 of 1 tests passed.", err)
         self.assertIn("Program terminated successfully.", err)
+
+    def test_cfx_xpi(self):
+        addon_path = os.path.join(tests_path,
+                                  "addons", "simplest-test")
+        rc, out, err = self.run_cfx(addon_path, \
+          ["xpi", "--manifest-overload", "manifest-overload.json"])
+        self.assertEqual(rc, 0)
+        # Ensure that the addon version from our manifest overload is used
+        # in install.rdf
+        xpi_path = os.path.join(addon_path, "simplest-test.xpi")
+        xpi = zipfile.ZipFile(xpi_path, "r")
+        manifest = xpi.read("install.rdf")
+        self.assertIn("<em:version>1.0-nightly</em:version>", manifest)
+        xpi.close()
+        os.remove(xpi_path)
 
     def test_cfx_init(self):
         # Create an empty test directory

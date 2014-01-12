@@ -10,14 +10,18 @@ module.metadata = {
 };
 
 const widgets = require("sdk/widget");
-const { Cc, Ci } = require("chrome");
+const { Cc, Ci, Cu } = require("chrome");
 const { Loader } = require('sdk/test/loader');
 const url = require("sdk/url");
 const timer = require("sdk/timers");
 const self = require("sdk/self");
 const windowUtils = require("sdk/deprecated/window-utils");
 const { getMostRecentBrowserWindow } = require('sdk/window/utils');
-const { close } = require("sdk/window/helpers");
+const { close, open, focus } = require("sdk/window/helpers");
+const tabs = require("sdk/tabs/utils");
+const { merge } = require("sdk/util/object");
+const unload = require("sdk/system/unload");
+const fixtures = require("./fixtures");
 
 let jetpackID = "testID";
 try {
@@ -25,6 +29,21 @@ try {
 } catch(e) {}
 
 const australis = !!require("sdk/window/utils").getMostRecentBrowserWindow().CustomizableUI;
+
+function openNewWindowTab(url, options) {
+  return open('chrome://browser/content/browser.xul', {
+    features: {
+      chrome: true,
+      toolbar: true
+    }
+  }).then(focus).then(function(window) {
+    if (options.onLoad) {
+      options.onLoad({ target: { defaultView: window } })
+    }
+
+    return newTab;
+  });
+}
 
 exports.testConstructor = function(assert, done) {
   let browserWindow = windowUtils.activeBrowserWindow;
@@ -50,7 +69,7 @@ exports.testConstructor = function(assert, done) {
 
   // Test basic construct/destroy
   AddonsMgrListener.onInstalling();
-  let w = widgets.Widget({ id: "fooID", label: "foo", content: "bar" });
+  let w = widgets.Widget({ id: "basic-construct-destroy", label: "foo", content: "bar" });
   AddonsMgrListener.onInstalled();
   assert.equal(widgetCount(), widgetStartCount + 1, "panel has correct number of child elements after widget construction");
 
@@ -68,7 +87,7 @@ exports.testConstructor = function(assert, done) {
   let loader = Loader(module);
   let widgetsFromLoader = loader.require("sdk/widget");
   let widgetStartCount = widgetCount();
-  let w = widgetsFromLoader.Widget({ id: "fooID", label: "foo", content: "bar" });
+  let w = widgetsFromLoader.Widget({ id: "destroy-on-unload", label: "foo", content: "bar" });
   assert.equal(widgetCount(), widgetStartCount + 1, "widget has been correctly added");
   loader.unload();
   assert.equal(widgetCount(), widgetStartCount, "widget has been destroyed on module unload");
@@ -93,25 +112,25 @@ exports.testConstructor = function(assert, done) {
 
   // Test no content or image
   assert.throws(
-    function() widgets.Widget({id: "fooID", label: "foo"}),
+    function() widgets.Widget({id: "no-content-throws", label: "foo"}),
     /^No content or contentURL property found\. Widgets must have one or the other\.$/,
     "throws on no content");
 
   // Test empty content, no image
   assert.throws(
-    function() widgets.Widget({id:"fooID", label: "foo", content: ""}),
+    function() widgets.Widget({id:"empty-content-throws", label: "foo", content: ""}),
     /^No content or contentURL property found\. Widgets must have one or the other\.$/,
     "throws on empty content");
 
   // Test empty image, no content
   assert.throws(
-    function() widgets.Widget({id:"fooID", label: "foo", image: ""}),
+    function() widgets.Widget({id:"empty-image-throws", label: "foo", image: ""}),
     /^No content or contentURL property found\. Widgets must have one or the other\.$/,
     "throws on empty content");
 
   // Test empty content, empty image
   assert.throws(
-    function() widgets.Widget({id:"fooID", label: "foo", content: "", image: ""}),
+    function() widgets.Widget({id:"empty-image-and-content-throws", label: "foo", content: "", image: ""}),
     /^No content or contentURL property found. Widgets must have one or the other\.$/,
     "throws on empty content");
 
@@ -137,14 +156,14 @@ exports.testConstructor = function(assert, done) {
 
   // Test position restore on create/destroy/create
   // Create 3 ordered widgets
-  let w1 = widgets.Widget({id: "first", label:"first", content: "bar"});
-  let w2 = widgets.Widget({id: "second", label:"second", content: "bar"});
-  let w3 = widgets.Widget({id: "third", label:"third", content: "bar"});
+  let w1 = widgets.Widget({id: "position-first", label:"first", content: "bar"});
+  let w2 = widgets.Widget({id: "position-second", label:"second", content: "bar"});
+  let w3 = widgets.Widget({id: "position-third", label:"third", content: "bar"});
   // Remove the middle widget
   assert.equal(widgetNode(1).getAttribute("label"), "second", "second widget is the second widget inserted");
   w2.destroy();
   assert.equal(widgetNode(1).getAttribute("label"), "third", "second widget is removed, so second widget is now the third one");
-  w2 = widgets.Widget({id: "second", label:"second", content: "bar"});
+  w2 = widgets.Widget({id: "position-second", label:"second", content: "bar"});
   assert.equal(widgetNode(1).getAttribute("label"), "second", "second widget is created again, at the same location");
   // Cleanup this testcase
   AddonsMgrListener.onUninstalling();
@@ -159,14 +178,14 @@ exports.testConstructor = function(assert, done) {
     let anotherWidgetsInstance = loader.require("sdk/widget");
     assert.ok(container().collapsed, "UI is hidden when no widgets");
     AddonsMgrListener.onInstalling();
-    let w1 = widgets.Widget({id: "foo", label: "foo", content: "bar"});
+    let w1 = widgets.Widget({id: "ui-unhide", label: "foo", content: "bar"});
     // Ideally we would let AddonsMgrListener display the addon bar
     // But, for now, addon bar is immediatly displayed by sdk code
     // https://bugzilla.mozilla.org/show_bug.cgi?id=627484
     assert.ok(!container().collapsed, "UI is already visible when we just added the widget");
     AddonsMgrListener.onInstalled();
     assert.ok(!container().collapsed, "UI become visible when we notify AddonsMgrListener about end of addon installation");
-    let w2 = anotherWidgetsInstance.Widget({id: "bar", label: "bar", content: "foo"});
+    let w2 = anotherWidgetsInstance.Widget({id: "ui-stay-open", label: "bar", content: "foo"});
     assert.ok(!container().collapsed, "UI still visible when we add a second widget");
     AddonsMgrListener.onUninstalling();
     w1.destroy();
@@ -213,7 +232,7 @@ exports.testConstructor = function(assert, done) {
 
   // text widget
   tests.push(function testTextWidget() testSingleWidget({
-    id: "text",
+    id: "text-single",
     label: "text widget",
     content: "oh yeah",
     contentScript: "self.postMessage(document.body.innerHTML);",
@@ -243,7 +262,7 @@ exports.testConstructor = function(assert, done) {
   tests.push(function testImageURLWidget() testSingleWidget({
     id: "image",
     label: "image url widget",
-    contentURL: require("sdk/self").data.url("test.html"),
+    contentURL: fixtures.url("test.html"),
     contentScript: "self.postMessage({title: document.title, " +
                    "tag: document.body.firstElementChild.tagName, " +
                    "content: document.body.firstElementChild.innerHTML});",
@@ -261,7 +280,7 @@ exports.testConstructor = function(assert, done) {
   tests.push(function testWebURIWidget() testSingleWidget({
     id: "web",
     label: "web uri widget",
-    contentURL: require("sdk/self").data.url("test.html"),
+    contentURL: fixtures.url("test.html"),
     contentScript: "self.postMessage({title: document.title, " +
                    "tag: document.body.firstElementChild.tagName, " +
                    "content: document.body.firstElementChild.innerHTML});",
@@ -277,7 +296,7 @@ exports.testConstructor = function(assert, done) {
 
   // event: onclick + content
   tests.push(function testOnclickEventContent() testSingleWidget({
-    id: "click",
+    id: "click-content",
     label: "click test widget - content",
     content: "<div id='me'>foo</div>",
     contentScript: "var evt = new MouseEvent('click', {button: 0});" +
@@ -292,7 +311,7 @@ exports.testConstructor = function(assert, done) {
 
   // event: onmouseover + content
   tests.push(function testOnmouseoverEventContent() testSingleWidget({
-    id: "mouseover",
+    id: "mouseover-content",
     label: "mouseover test widget - content",
     content: "<div id='me'>foo</div>",
     contentScript: "var evt = new MouseEvent('mouseover'); " +
@@ -307,7 +326,7 @@ exports.testConstructor = function(assert, done) {
 
   // event: onmouseout + content
   tests.push(function testOnmouseoutEventContent() testSingleWidget({
-    id: "mouseout",
+    id: "mouseout-content",
     label: "mouseout test widget - content",
     content: "<div id='me'>foo</div>",
     contentScript: "var evt = new MouseEvent('mouseout');" +
@@ -322,9 +341,9 @@ exports.testConstructor = function(assert, done) {
 
   // event: onclick + image
   tests.push(function testOnclickEventImage() testSingleWidget({
-    id: "click",
+    id: "click-image",
     label: "click test widget - image",
-    contentURL: require("sdk/self").data.url("moz_favicon.ico"),
+    contentURL: fixtures.url("moz_favicon.ico"),
     contentScript: "var evt = new MouseEvent('click'); " +
                    "document.body.firstElementChild.dispatchEvent(evt);",
     contentScriptWhen: "end",
@@ -337,9 +356,9 @@ exports.testConstructor = function(assert, done) {
 
   // event: onmouseover + image
   tests.push(function testOnmouseoverEventImage() testSingleWidget({
-    id: "mouseover",
+    id: "mouseover-image",
     label: "mouseover test widget - image",
-    contentURL: require("sdk/self").data.url("moz_favicon.ico"),
+    contentURL: fixtures.url("moz_favicon.ico"),
     contentScript: "var evt = new MouseEvent('mouseover');" +
                    "document.body.firstElementChild.dispatchEvent(evt);",
     contentScriptWhen: "end",
@@ -352,9 +371,9 @@ exports.testConstructor = function(assert, done) {
 
   // event: onmouseout + image
   tests.push(function testOnmouseoutEventImage() testSingleWidget({
-    id: "mouseout",
+    id: "mouseout-image",
     label: "mouseout test widget - image",
-    contentURL: require("sdk/self").data.url("moz_favicon.ico"),
+    contentURL: fixtures.url("moz_favicon.ico"),
     contentScript: "var evt = new MouseEvent('mouseout'); " +
                    "document.body.firstElementChild.dispatchEvent(evt);",
     contentScriptWhen: "end",
@@ -379,7 +398,7 @@ exports.testConstructor = function(assert, done) {
   // test updating widget content
   let loads = 0;
   tests.push(function testUpdatingWidgetContent() testSingleWidget({
-    id: "content",
+    id: "content-updating",
     label: "content update test widget",
     content: "<div id='me'>foo</div>",
     contentScript: "self.postMessage(1)",
@@ -402,7 +421,7 @@ exports.testConstructor = function(assert, done) {
   let url2 = "data:text/html;charset=utf-8,<body>nistel</body>";
 
   tests.push(function testUpdatingContentURL() testSingleWidget({
-    id: "content",
+    id: "content-url-updating",
     label: "content update test widget",
     contentURL: url1,
     contentScript: "self.postMessage(document.location.href);",
@@ -425,7 +444,7 @@ exports.testConstructor = function(assert, done) {
 
   // test tooltip
   tests.push(function testTooltip() testSingleWidget({
-    id: "text",
+    id: "text-with-tooltip",
     label: "text widget",
     content: "oh yeah",
     tooltip: "foo",
@@ -455,7 +474,7 @@ exports.testConstructor = function(assert, done) {
   // test updating widget tooltip
   let updated = false;
   tests.push(function testUpdatingTooltip() testSingleWidget({
-    id: "tooltip",
+    id: "tooltip-updating",
     label: "tooltip update test widget",
     tooltip: "foo",
     content: "<div id='me'>foo</div>",
@@ -471,7 +490,7 @@ exports.testConstructor = function(assert, done) {
 
   // test allow attribute
   tests.push(function testDefaultAllow() testSingleWidget({
-    id: "allow",
+    id: "allow-default",
     label: "allow.script attribute",
     content: "<script>document.title = 'ok';</script>",
     contentScript: "self.postMessage(document.title)",
@@ -483,7 +502,7 @@ exports.testConstructor = function(assert, done) {
   }));
 
   tests.push(function testExplicitAllow() testSingleWidget({
-    id: "allow",
+    id: "allow-explicit",
     label: "allow.script attribute",
     allow: {script: true},
     content: "<script>document.title = 'ok';</script>",
@@ -496,7 +515,7 @@ exports.testConstructor = function(assert, done) {
   }));
 
   tests.push(function testExplicitDisallow() testSingleWidget({
-    id: "allow",
+    id: "allow-explicit-disallow",
     label: "allow.script attribute",
     content: "<script>document.title = 'ok';</script>",
     allow: {script: false},
@@ -511,20 +530,20 @@ exports.testConstructor = function(assert, done) {
 
   // test multiple windows
   tests.push(function testMultipleWindows() {
-    const tabBrowser = require("sdk/deprecated/tab-browser");
-
-    tabBrowser.addTab("about:blank", { inNewWindow: true, onLoad: function(e) {
+    console.log('executing test multiple windows');
+    openNewWindowTab("about:blank", { inNewWindow: true, onLoad: function(e) {
       let browserWindow = e.target.defaultView;
+      assert.ok(browserWindow, 'window was opened');
       let doc = browserWindow.document;
       function container() australis ? doc.getElementById("nav-bar") : doc.getElementById("addon-bar");
       function widgetCount2() container() ? container().querySelectorAll('[id^="widget\:"]').length : 0;
       let widgetStartCount2 = widgetCount2();
 
-      let w1Opts = {id:"first", label: "first widget", content: "first content"};
+      let w1Opts = {id:"first-multi-window", label: "first widget", content: "first content"};
       let w1 = testSingleWidget(w1Opts);
       assert.equal(widgetCount2(), widgetStartCount2 + 1, "2nd window has correct number of child elements after first widget");
 
-      let w2Opts = {id:"second", label: "second widget", content: "second content"};
+      let w2Opts = {id:"second-multi-window", label: "second widget", content: "second content"};
       let w2 = testSingleWidget(w2Opts);
       assert.equal(widgetCount2(), widgetStartCount2 + 2, "2nd window has correct number of child elements after second widget");
 
@@ -541,7 +560,7 @@ exports.testConstructor = function(assert, done) {
   tests.push(function testWindowClosing() {
     // 1/ Create a new widget
     let w1Opts = {
-      id:"first",
+      id:"first-win-closing",
       label: "first widget",
       content: "first content",
       contentScript: "self.port.on('event', function () self.port.emit('event'))"
@@ -594,17 +613,15 @@ exports.testConstructor = function(assert, done) {
     });
   });
 
-  if (!australis) {
+  if (false) {
     tests.push(function testAddonBarHide() {
-      const tabBrowser = require("sdk/deprecated/tab-browser");
-
       // Hide the addon-bar
       browserWindow.setToolbarVisibility(container(), false);
       assert.ok(container().collapsed,
                 "1st window starts with an hidden addon-bar");
 
       // Then open a browser window and verify that the addon-bar remains hidden
-      tabBrowser.addTab("about:blank", { inNewWindow: true, onLoad: function(e) {
+      openNewWindowTab("about:blank", { inNewWindow: true, onLoad: function(e) {
         let browserWindow2 = e.target.defaultView;
         let doc2 = browserWindow2.document;
         function container2() doc2.getElementById("addon-bar");
@@ -613,11 +630,13 @@ exports.testConstructor = function(assert, done) {
         assert.ok(container2().collapsed,
                   "2nd window starts with an hidden addon-bar");
 
-        let w1Opts = {id:"first", label: "first widget", content: "first content"};
+        let w1Opts = {id:"first-addonbar-hide", label: "first widget", content: "first content"};
         let w1 = testSingleWidget(w1Opts);
         assert.equal(widgetCount2(), widgetStartCount2 + 1,
                      "2nd window has correct number of child elements after" +
                      "widget creation");
+        assert.ok(!container().collapsed, "1st window has a visible addon-bar");
+        assert.ok(!container2().collapsed, "2nd window has a visible addon-bar");
         w1.destroy();
         assert.equal(widgetCount2(), widgetStartCount2,
                      "2nd window has correct number of child elements after" +
@@ -636,7 +655,7 @@ exports.testConstructor = function(assert, done) {
 
   // test widget.width
   tests.push(function testWidgetWidth() testSingleWidget({
-    id: "text",
+    id: "text-test-width",
     label: "test widget.width",
     content: "test width",
     width: 200,
@@ -660,7 +679,7 @@ exports.testConstructor = function(assert, done) {
   // test click handler not respond to right-click
   let clickCount = 0;
   tests.push(function testNoRightClick() testSingleWidget({
-    id: "click-content",
+    id: "right-click-content",
     label: "click test widget - content",
     content: "<div id='me'>foo</div>",
     contentScript: // Left click
@@ -692,7 +711,7 @@ exports.testWidgetWithValidPanel = function(assert, done) {
   const widgets = require("sdk/widget");
 
   let widget1 = widgets.Widget({
-    id: "panel1",
+    id: "testWidgetWithValidPanel",
     label: "panel widget 1",
     content: "<div id='me'>foo</div>",
     contentScript: "var evt = new MouseEvent('click', {button: 0});" +
@@ -757,11 +776,72 @@ exports.testPanelWidget3 = function testPanelWidget3(assert, done) {
   });
 };
 
+exports.testWidgetWithPanelInMenuPanel = function(assert, done) {
+  let CustomizableUI;
+
+  try {
+    ({CustomizableUI}) = Cu.import("resource:///modules/CustomizableUI.jsm", {});
+  }
+  catch (e) {
+    assert.pass("Test skipped: no CustomizableUI object found.");
+    done();
+    return;
+  }
+
+  const widgets = require("sdk/widget");
+
+  let widget1 = widgets.Widget({
+    id: "panel1",
+    label: "panel widget 1",
+    content: "<div id='me'>foo</div>",
+    contentScript: "new " + function() {
+      self.port.on('click', () => {
+        let evt = new MouseEvent('click', {button: 0});
+        document.body.dispatchEvent(evt);
+      });
+    },
+    contentScriptWhen: "end",
+    panel: require("sdk/panel").Panel({
+      contentURL: "data:text/html;charset=utf-8,<body>Look ma, a panel!</body>",
+      onShow: function() {
+        let { document } = getMostRecentBrowserWindow();
+        let { anchorNode } = document.getElementById('mainPopupSet').lastChild;
+        let panelButtonNode = document.getElementById("PanelUI-menu-button");
+
+        assert.strictEqual(anchorNode, panelButtonNode,
+          'the panel is anchored to the panel menu button instead of widget');
+
+        widget1.destroy();
+        done();
+      }
+    })
+  });
+
+  let widgetId = "widget:" + jetpackID + "-" + widget1.id;
+
+  CustomizableUI.addListener({
+    onWidgetAdded: function(id) {
+      if (id !== widgetId) return;
+
+      let { document, PanelUI } = getMostRecentBrowserWindow();
+
+      PanelUI.panel.addEventListener('popupshowing', function onshow({type}) {
+        this.removeEventListener(type, onshow);
+        widget1.port.emit('click');
+      });
+
+      document.getElementById("PanelUI-menu-button").click()
+    }
+  });
+
+  CustomizableUI.addWidgetToArea(widgetId, CustomizableUI.AREA_PANEL);
+};
+
 exports.testWidgetMessaging = function testWidgetMessaging(assert, done) {
   let origMessage = "foo";
   const widgets = require("sdk/widget");
   let widget = widgets.Widget({
-    id: "foo",
+    id: "widget-messaging",
     label: "foo",
     content: "<bar>baz</bar>",
     contentScriptWhen: "end",
@@ -781,7 +861,7 @@ exports.testWidgetMessaging = function testWidgetMessaging(assert, done) {
 exports.testWidgetViews = function testWidgetViews(assert, done) {
   const widgets = require("sdk/widget");
   let widget = widgets.Widget({
-    id: "foo",
+    id: "widget-views",
     label: "foo",
     content: "<bar>baz</bar>",
     contentScriptWhen: "ready",
@@ -804,7 +884,7 @@ exports.testWidgetViewsUIEvents = function testWidgetViewsUIEvents(assert, done)
   const widgets = require("sdk/widget");
   let view = null;
   let widget = widgets.Widget({
-    id: "foo",
+    id: "widget-view-ui-events",
     label: "foo",
     content: "<div id='me'>foo</div>",
     contentScript: "var evt = new MouseEvent('click', {button: 0});" +
@@ -829,7 +909,7 @@ exports.testWidgetViewsUIEvents = function testWidgetViewsUIEvents(assert, done)
 exports.testWidgetViewsCustomEvents = function testWidgetViewsCustomEvents(assert, done) {
   const widgets = require("sdk/widget");
   let widget = widgets.Widget({
-    id: "foo",
+    id: "widget-view-custom-events",
     label: "foo",
     content: "<div id='me'>foo</div>",
     contentScript: "self.port.emit('event', 'ok');",
@@ -852,7 +932,7 @@ exports.testWidgetViewsTooltip = function testWidgetViewsTooltip(assert, done) {
   const widgets = require("sdk/widget");
 
   let widget = new widgets.Widget({
-    id: "foo",
+    id: "widget-views-tooltip",
     label: "foo",
     content: "foo"
   });
@@ -878,7 +958,7 @@ exports.testWidgetMove = function testWidgetMove(assert, done) {
   let gotFirstReady = false;
 
   let widget = widgets.Widget({
-    id: "foo",
+    id: "widget-move",
     label: label,
     content: "<bar>baz</bar>",
     contentScriptWhen: "ready",
@@ -946,7 +1026,7 @@ exports.testWidgetWithPound = function testWidgetWithPound(assert, done) {
 
 exports.testContentScriptOptionsOption = function(assert, done) {
   let widget = require("sdk/widget").Widget({
-      id: "fooz",
+      id: "widget-script-options",
       label: "fooz",
       content: "fooz",
       contentScript: "self.postMessage( [typeof self.options.d, self.options] );",
@@ -1034,7 +1114,7 @@ exports.testPostMessageOnLocationChange = function(assert, done) {
 
 exports.testSVGWidget = function(assert, done) {
   // use of capital SVG here is intended, that was failing..
-  let SVG_URL = self.data.url("mofo_logo.SVG");
+  let SVG_URL = fixtures.url("mofo_logo.SVG");
 
   let widget = require("sdk/widget").Widget({
     id: "mozilla-svg-logo",
@@ -1048,6 +1128,33 @@ exports.testSVGWidget = function(assert, done) {
       done();
     }
   });
+};
+
+exports.testReinsertion = function(assert, done) {
+  const WIDGETID = "test-reinsertion";
+  let windowUtils = require("sdk/deprecated/window-utils");
+  let browserWindow = windowUtils.activeBrowserWindow;
+  let widget = require("sdk/widget").Widget({
+    id: "test-reinsertion",
+    label: "test reinsertion",
+    content: "Test",
+  });
+  let realWidgetId = "widget:" + jetpackID + "-" + WIDGETID;
+  // Remove the widget:
+  if (australis) {
+    browserWindow.CustomizableUI.removeWidgetFromArea(realWidgetId);
+  } else {
+    let widget = browserWindow.document.getElementById(realWidgetId);
+    let container = widget.parentNode;
+    container.currentSet = container.currentSet.replace("," + realWidgetId, "");
+    container.setAttribute("currentset", container.currentSet);
+    container.ownerDocument.persist(container.id, "currentset");
+  }
+
+  openNewWindowTab("about:blank", { inNewWindow: true, onLoad: function(e) {
+    assert.equal(e.target.defaultView.document.getElementById(realWidgetId), null);
+    close(e.target.defaultView).then(done);
+  }});
 };
 
 if (!australis) {
