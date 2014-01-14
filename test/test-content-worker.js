@@ -117,6 +117,8 @@ exports["test:sample"] = WorkerTest(
 
     assert.equal(worker.url, window.location.href,
                      "worker.url works");
+    assert.equal(worker.contentURL, window.location.href,
+                     "worker.contentURL works");
     worker.postMessage("hi!");
   }
 );
