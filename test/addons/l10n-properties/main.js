@@ -87,7 +87,6 @@ exports.testExactMatching = createTest("fr-FR", function(assert, loader, done) {
 });
 
 exports.testHtmlLocalization = createTest("en-GB", function(assert, loader, done) {
-
   // Ensure initing html component that watch document creations
   // Note that this module is automatically initialized in
   // cuddlefish.js:Loader.main in regular addons. But it isn't for unit tests.
@@ -121,10 +120,9 @@ exports.testHtmlLocalization = createTest("en-GB", function(assert, loader, done
       done();
     }
   });
-
 });
 
-exports.testEnUsLocaleName = createTest("en-US", function(assert, loader, done) {
+exports.testEnUsLocaleName = createTest("en-GB", function(assert, loader, done) {
   let _ = loader.require("sdk/l10n").get;
 
   assert.equal(_("Not translated"), "Not translated",
@@ -169,7 +167,7 @@ exports.testEnUsLocaleName = createTest("en-US", function(assert, loader, done) 
 });
 
 exports.testUsingJSON = function(assert) {
-  assert.equal(usingJSON, true, 'using json');
+  assert.equal(usingJSON, false, 'not using json');
 }
 
 exports.testShortLocaleName = createTest("eo", function(assert, loader, done) {
