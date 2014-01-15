@@ -22,6 +22,8 @@ const { getMostRecentBrowserWindow } = require('sdk/window/utils');
 const { getWindow } = require('sdk/panel/window');
 const { pb } = require('./private-browsing/helper');
 const { URL } = require('sdk/url');
+const winUtils = require("sdk/deprecated/window-utils");
+const { keyDown } = require("sdk/dom/events/keys");
 const fixtures = require('./fixtures')
 
 const SVG_URL = fixtures.url('mofo_logo.SVG');
@@ -963,6 +965,27 @@ exports['test emits on url changes'] = function (assert, done) {
     loader.unload();
     done();
   });
+};
+
+exports['test ESC closes panel'] = function (assert, done) {
+  let element = winUtils.activeBrowserWindow.document.documentElement;
+  let loader = Loader(module);
+  let { Panel } = loader.require('sdk/panel');
+  let uri = 'data:text/html;charset=utf-8,';
+
+  let panel = Panel({
+    contentURL: uri,
+    onShow: function () {
+      keyDown(element, 'escape');
+    },
+    onHide: function () {
+      assert.pass('The panel was hidden on ESC.');
+      assert.equal(this.isShowing, false, 'panel.isShowing is false after ESC.');
+      done();
+    }
+  });
+
+  panel.show();
 };
 
 if (isWindowPBSupported) {
