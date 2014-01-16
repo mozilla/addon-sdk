@@ -22,6 +22,7 @@ const { getMostRecentBrowserWindow } = require('sdk/window/utils');
 const { getWindow } = require('sdk/panel/window');
 const { pb } = require('./private-browsing/helper');
 const { URL } = require('sdk/url');
+const { keyDown } = require("sdk/dom/events/keys");
 const fixtures = require('./fixtures')
 
 const SVG_URL = fixtures.url('mofo_logo.SVG');
@@ -963,6 +964,58 @@ exports['test emits on url changes'] = function (assert, done) {
     loader.unload();
     done();
   });
+};
+
+exports['test ESC closes panel with browser window focus'] = function (assert, done) {
+  let element = getMostRecentBrowserWindow().document.documentElement;
+  let loader = Loader(module);
+  let { Panel } = loader.require('sdk/panel');
+  let uri = 'data:text/html;charset=utf-8,';
+
+  let panel = Panel({
+    contentURL: uri,
+    onShow: function () {
+      keyDown(element, 'escape');
+    },
+    onHide: function () {
+      assert.pass('The panel was hidden on ESC.');
+      assert.equal(this.isShowing, false, 'panel.isShowing is false after ESC.');
+      done();
+    }
+  });
+
+  panel.show();
+};
+
+exports['test ESC closes panel with panel focus'] = function (assert, done) {
+  let loader = Loader(module);
+  let { Panel } = loader.require('sdk/panel');
+  let { getActiveView } = loader.require('sdk/view/core');
+  let uri = 'data:text/html;charset=utf-8,';
+
+  let getContentWindow = panel => {
+    return getActiveView(panel).querySelector('iframe').contentWindow;
+  };
+
+  let panel = Panel({
+    contentURL: uri,
+    onShow: function () {
+      ready(getContentWindow(panel)).then(({window, document}) => {
+        let ev = document.createEvent('KeyboardEvent');
+        ev.initKeyEvent('keypress', true, true, null,
+                        0, 0, 0, 0,
+                        0, 27); // Keycode for ESC
+        window.dispatchEvent(ev);
+      });
+    },
+    onHide: function () {
+      assert.pass('The panel was hidden on ESC.');
+      assert.equal(this.isShowing, false, 'panel.isShowing is false after ESC.');
+      done();
+    }
+  });
+
+  panel.show();
 };
 
 if (isWindowPBSupported) {
