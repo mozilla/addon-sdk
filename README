@@ -6,8 +6,8 @@ Before proceeding, please make sure you've installed Python 2.5,
 
   http://python.org/download/
 
-Note that Python 3 is not supported, and Python 2.7.6 on Windows 
-currently doesn't work due to Bug 958609. 
+Note that Python 3 is not supported on any platform, and Python 2.7.6 
+is not supported on Windows.
 
 For Windows users, MozillaBuild (https://wiki.mozilla.org/MozillaBuild)
 will install the correct version of Python and the MSYS package, which
@@ -23,7 +23,7 @@ Windows users using cmd.exe should instead run:
 
   bin\activate.bat
 
-Then go to https://developer.mozilla.org/en-US/Add-ons/SDK/Guides 
+Then go to https://developer.mozilla.org/en-US/Add-ons/SDK/
 to browse the SDK documentation.
 
 If you get an error when running cfx or have any other problems getting
