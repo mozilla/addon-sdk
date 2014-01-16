@@ -145,7 +145,7 @@ exports["test invalid module not cached and throws everytime"] = function(assert
   assert.equal(firstError.lineNumber, 8, "first error is on line 7");
   assert.equal(secondError.message, "Module `not-found` is not found at " +
     uri + "not-found.js", "throws on second invalid require");
-  assert.equal(secondError.lineNumber, 13, "second error is on line 7");
+  assert.equal(secondError.lineNumber, 14, "second error is on line 14");
 
   assert.equal(invalidJSON1.message,
     "JSON.parse: unexpected character at line 1 column 1 of the JSON data",
