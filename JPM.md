@@ -1,11 +1,11 @@
 # JPM JEP
 ## Proposal
 
-The current CFX tool used to assist development in addons is a great utility for developing addons, but over the years, several pain points and short-comings have surfaced. With the changes to [Addon Manager](https://github.com/mozilla/addon-sdk/pull/1241) to not require a transpile step and the new `isNative` option added to [toolkit/loader](https://github.com/mozilla/addon-sdk/pull/1279) having backwards-incompatable changes, now is a good time to investigate new options for a Jetpack developing utility.
+The current CFX tool used to assist development in addons is a great utility for developing addons, but over the years, several pain points and short-comings have surfaced. With the changes to [Addon Manager](https://github.com/mozilla/addon-sdk/pull/1241) to not require a transpile step and the new `isNative` option added to [toolkit/loader](https://github.com/mozilla/addon-sdk/pull/1279) having backwards-incompatable changes, now is a good time to investigate new options for a new Jetpack tool.
 
 ### Benefits of Change
 
-* **JavaScript**: JPM is written in JavaScript as opposed to Python, hopefully increasing contributions. Also assumed that developers are more likely to have a node environment set up rather than Python already.
+* **JavaScript**: JPM is written in JavaScript as opposed to Python, hopefully increasing contributions. Also assumed that developers are more likely to have a node environment set up rather than Python already. Additionally, node seems to offer much smoother installation and maintenance. We think this combination of familiarity and ease-of-use is a win for Add-on Developers.
 * **npm**: JPM will be in a separate repository and served over npm, being in an ecosystem familiar with many JavaScript developers.
 * **Remove Legacy Code** CFX has been around for awhile with a lot of fallbacks to support all the SDK changes throughout the years. This makes fixing some issues difficult, or impossible in the cases of having to support every option available. For example, we can get rid of the aliased modules (`require('tabs') === require('sdk/tabs')`).
 * **Support new native Loader**: The changes in `toolkit/loader` provides node-style lookup and dynamic module requires. This is currently not compatable with how CFX checks dependencies before running.
@@ -18,7 +18,7 @@ The current CFX tool used to assist development in addons is a great utility for
 
 ### New Features
 
-* `--retro`: If the `retro` flag is set to true, JPM will add a `install.rdf` and `bootstrap.js` to the addon when bundling up the addon. This allows us to test and configure JPM while AOM changes are under development, and to be used if the target version of Firefox does not yet have the AOM changes to support new native jetpacks. This should only be a temporary option until AOM changes have landed and after a reasonable time after.
+* `--retro`: If the `retro` flag is set to true, JPM will add a `install.rdf` and `bootstrap.js` to the addon when bundling up the addon. This allows us to test and configure JPM while AOM changes are under development, and to be used if the target version of Firefox does not yet have the AOM changes to support new native jetpacks. This will be a temporary option that will be deprecated once the AOM changes have landed, and removed perhaps 2-3 Firefox releases afterward.
 
 ### Will be Supported
 
@@ -27,7 +27,7 @@ The current CFX tool used to assist development in addons is a great utility for
 * **run/test**: Installs and runs Firefox with the current add-on installed.
   * `-b/--binary <BINARY>`: Sets the binary of Firefox to use
   * `--binary-args <CMDARGS>`: Passes additional binary arguments to Firefox
-  * `-p/--profile-dir <PROFILE>`: Start Firefox up with this profile
+  * `-p/--profile-dir <PROFILE>`: Start Firefox up with this profile (Should be able to take either a name or a directory)
   * `-o/--overload/--overload-modules`: Bake the SDK add-ons into the addon itself so it uses the local repo SDK rather than the ones built into Firefox. Should be able to consume a PATH to the SDK or use a global ENV var.
 * **test**: Runs tests for the current add-on or the SDK
   * `-f/--filter <FILENAMES>:<TESTNAMES>`: Filter tests to be run by the expression. Maybe a better interface for this?
@@ -43,7 +43,7 @@ The current CFX tool used to assist development in addons is a great utility for
 * `test --times`: Runs tests x number of times.
 * `test --logfile`: Dumps a logfile of test results.
 * `test --profile-memory`: Dumps a log of memory tests.
-* `test --test-runner-package`: Name of package containing test-runner program. Defaults to `test-harness`. Probably should not implement this into we can run tests with any harness.
+* `test --test-runner-package`: Name of package containing test-runner program. Defaults to `test-harness`. Probably should not implement this until we can run tests with any harness.
 
 ### Will NOT be Supported
 
