@@ -475,34 +475,96 @@ exports.testExistingOnlyFrameMatchesInclude = function(assert, done) {
 };
 
 exports.testAttachToBFCache = function(assert, done) {
-  let firstURL =  'data:text/html;charset=utf-8,UNIQUE-TEST-STRING-44';
-  let secondURL =  'data:text/html;charset=utf-8,UNIQUE-TEST-STRING-45';
+  let firstURL = 'data:text/html;charset=utf-8,UNIQUE-TEST-STRING-61';
+  let secondURL = 'data:text/html;charset=utf-8,UNIQUE-TEST-STRING-62';
   let counter = 0;
+
+  // open a new tab, and navigate to the first url
   tabs.open({
     url: firstURL,
     onPageShow: function pageshow(tab, persisted) {
       counter++;
-      if (counter==1) {
+
+      // on first PageShow (at first url), navigate to the second url
+      if (counter===1 && tab.url===firstURL) {
         tab.url = secondURL;
-      } 
-      if (counter==2) {
+      }
+
+      // on the second PageShow (at second url), create a PageMod 
+      // that should attach to a (first url) page from BFCache, 
+      // and then navigate back to it (the first url)
+      if (counter===2 && tab.url===secondURL) {
         let pagemod = new PageMod({
           include: firstURL,
           attachTo: ['existing', 'top'],
-          onAttach: function(w) {
-            // if the assert(persisted) below has passed, 
-            // and this onAttach is called, we've made it!
-            pagemod.destroy();
-            tab.close(done);
-          }
+          onAttach: () => attachedToFirstURL(pagemod)
         });
         tab.attach({
           contentScript: 'setTimeout(function() history.back(), 1)'
         });
       }
-      if (counter==3) {
-        // make sure we are testing what we think we are testing: BFCache
+
+      // on the third PageShow (at first url, again), confirm
+      // that the page is coming from BFCache (persisted)
+      if (counter===3 && tab.url===firstURL) {
         assert.equal(persisted, true, "revisited page coming from BFCache");
+      }
+
+      // if the assert(persisted) above has passed, 
+      // and this onAttach is called, we've made it!
+      function attachedToFirstURL(pagemod) {
+        pagemod.destroy();
+        tab.close(done);
+      }
+    }
+  });
+}
+
+// exports.testAttachToIFrameBFCache  // TBD after above is discussed, because similar
+
+// also, what kind of additional tests did you have in mind? like attaching, 
+// going forward and then back (using bfcache) to test pageMod didn't re-attach?
+exports.testNotReAttachedBFCache = function(assert, done) {
+  let firstURL = 'data:text/html;charset=utf-8,UNIQUE-TEST-STRING-67';
+  let secondURL = 'data:text/html;charset=utf-8,UNIQUE-TEST-STRING-68';
+  let attached = false;
+  let counter = 0;
+
+  let pagemod = new PageMod({
+    include: firstURL,
+    attachTo: ['existing', 'top'],
+    onAttach: function() {
+      assert.equal(attached, false, "PageMod attached for the first (and only) time");
+      attached = true;
+    }
+  });
+
+  // open a new tab, and navigate to the first url
+  tabs.open({
+    url: firstURL,
+    onPageShow: function pageshow(tab, persisted) {
+      counter++;
+
+      // on first PageShow (at first url), navigate to the second url
+      if (counter===1 && tab.url===firstURL) {
+        tab.url = secondURL;
+      }
+
+      // on the second PageShow (at second url), navigate back to first url
+      if (counter===2 && tab.url===secondURL) {
+        tab.url = firstURL;
+      }
+
+      // on the third PageShow (at first url, again), confirm
+      // that the page is coming from BFCache (persisted)
+      if (counter===3 && tab.url===firstURL) {
+        assert.equal(persisted, true, "revisited page coming from BFCache");
+
+        // wait some time to check PageMod isn't attached the second time
+        timer.setTimeout(function() {
+          pagemod.destroy();
+          tab.close(done);
+        }, 250);
       }
     }
   });
