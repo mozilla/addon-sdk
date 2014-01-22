@@ -70,4 +70,4 @@ Bugs must be worked out of toolkit/loader since using the new style of native je
 
 ## Comments
 
-* [Discuss this JEP further in the Groups page]()
+* [Discuss this JEP further in the Groups page](https://groups.google.com/forum/#!topic/mozilla-labs-jetpack/3ggiCNk0I9g)
