@@ -173,6 +173,12 @@ parser_groups = (
                                     default=False,
                                     cmds=['run', 'test', 'testex', 'testpkgs',
                                           'testall', 'xpi'])),
+        (("", "--native",), dict(dest="is_native",
+                                 help=(""),
+                                 action="store_true",
+                                 default=False,
+                                 cmds=['run', 'test', 'testex', 'testpkgs',
+                                        'testall', 'testaddons', 'xpi'])),
         (("", "--force-use-bundled-sdk",), dict(dest="force_use_bundled_sdk",
                                     help=("When --strip-sdk isn't passed, "
                                           "force using sdk modules shipped in "
@@ -381,7 +387,7 @@ def test_all(env_root, defaults):
         sys.stderr.flush()
 
         try:
-            test_all_testaddons(env_root, defaults)
+            test_all_testaddons(env_root, defaults, options)
         except SystemExit, e:
             fail = (e.code != 0) or fail
 
@@ -414,7 +420,7 @@ def test_cfx(env_root, verbose):
     sys.stdout.flush(); sys.stderr.flush()
     return retval
 
-def test_all_testaddons(env_root, defaults):
+def test_all_testaddons(env_root, defaults, options):
     addons_dir = os.path.join(env_root, "test", "addons")
     addons = [dirname for dirname in os.listdir(addons_dir)
                 if os.path.isdir(os.path.join(addons_dir, dirname))]
@@ -423,10 +429,19 @@ def test_all_testaddons(env_root, defaults):
     for dirname in addons:
         print >>sys.stderr, "Testing %s..." % dirname
         sys.stderr.flush()
+
+        if options.is_native:
+          argvs = ["run",
+                   "--native",
+                   "--pkgdir",
+                   os.path.join(addons_dir, dirname)]
+        else:
+          argvs = ["run",
+                   "--pkgdir",
+                   os.path.join(addons_dir, dirname)]
+
         try:
-            run(arguments=["run",
-                           "--pkgdir",
-                           os.path.join(addons_dir, dirname)],
+            run(arguments=argvs,
                 defaults=defaults,
                 env_root=env_root)
         except SystemExit, e:
@@ -603,7 +618,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         test_all_packages(env_root, defaults=options.__dict__)
         return
     elif command == "testaddons":
-        test_all_testaddons(env_root, defaults=options.__dict__)
+        test_all_testaddons(env_root, defaults=options.__dict__, options=options)
         return
     elif command == "testex":
         test_all_examples(env_root, defaults=options.__dict__)
@@ -869,7 +884,6 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         used_files = None # disables the filter, includes all files
 
     if command == 'xpi':
-        from cuddlefish.xpi import build_xpi
         # Generate extra options
         extra_harness_options = {}
         for kv in options.extra_harness_option_args:
@@ -882,6 +896,11 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
           xpi_path = XPI_FILENAME % target_cfg.name
 
         print >>stdout, "Exporting extension to %s." % xpi_path
+        if options.is_native:
+          from cuddlefish.native import build_xpi
+        else:
+          from cuddlefish.xpi import build_xpi
+
         build_xpi(template_root_dir=app_extension_dir,
                   manifest=manifest_rdf,
                   xpi_path=xpi_path,
@@ -890,6 +909,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                   extra_harness_options=extra_harness_options,
                   bundle_sdk=True,
                   pkgdir=options.pkgdir)
+
     else:
         from cuddlefish.runner import run_app
 
@@ -922,7 +942,8 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                              is_running_tests=(command == "test"),
                              overload_modules=options.overload_modules,
                              bundle_sdk=options.bundle_sdk,
-                             pkgdir=options.pkgdir)
+                             pkgdir=options.pkgdir,
+                             is_native=options.is_native)
         except ValueError, e:
             print ""
             print "A given cfx option has an inappropriate value:"
