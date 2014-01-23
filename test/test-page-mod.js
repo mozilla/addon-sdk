@@ -520,56 +520,6 @@ exports.testAttachToBFCache = function(assert, done) {
   });
 }
 
-// exports.testAttachToIFrameBFCache  // TBD after above is discussed, because similar
-
-// also, what kind of additional tests did you have in mind? like attaching, 
-// going forward and then back (using bfcache) to test pageMod didn't re-attach?
-exports.testNotReAttachedBFCache = function(assert, done) {
-  let firstURL = 'data:text/html;charset=utf-8,UNIQUE-TEST-STRING-67';
-  let secondURL = 'data:text/html;charset=utf-8,UNIQUE-TEST-STRING-68';
-  let attached = false;
-  let counter = 0;
-
-  let pagemod = new PageMod({
-    include: firstURL,
-    attachTo: ['existing', 'top'],
-    onAttach: function() {
-      assert.equal(attached, false, "PageMod attached for the first (and only) time");
-      attached = true;
-    }
-  });
-
-  // open a new tab, and navigate to the first url
-  tabs.open({
-    url: firstURL,
-    onPageShow: function pageshow(tab, persisted) {
-      counter++;
-
-      // on first PageShow (at first url), navigate to the second url
-      if (counter===1 && tab.url===firstURL) {
-        tab.url = secondURL;
-      }
-
-      // on the second PageShow (at second url), navigate back to first url
-      if (counter===2 && tab.url===secondURL) {
-        tab.url = firstURL;
-      }
-
-      // on the third PageShow (at first url, again), confirm
-      // that the page is coming from BFCache (persisted)
-      if (counter===3 && tab.url===firstURL) {
-        assert.equal(persisted, true, "revisited page coming from BFCache");
-
-        // wait some time to check PageMod isn't attached the second time
-        timer.setTimeout(function() {
-          pagemod.destroy();
-          tab.close(done);
-        }, 250);
-      }
-    }
-  });
-}
-
 exports.testTabWorkerOnMessage = function(assert, done) {
   let { browserWindows } = require("sdk/windows");
   let tabs = require("sdk/tabs");
