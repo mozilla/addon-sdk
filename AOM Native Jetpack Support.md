@@ -98,6 +98,23 @@ us do these things already.
 
 [The JPM code base can be found here](https://github.com/jsantell/jpm).
 
+##### The Structure Of `jetpack-test-options.json`
+
+The `jetpack-test-options.json` file will be used for when one want to run tests.  It will
+also be used in cases like `jpm run`, which should be considered a test as well, since using
+`jpm run` can be considered as testing manually.
+
+The values stored within the `jetpack-test-options.json` will be the same as those currently
+use in the `harness-options.json` file, with the following differences:
+
+* Overloaded SDK modules will be overloaded using properties from the `jetpack-test-options.json`
+  file instead pulling these overloads from preferences (which can be done at a later time if
+  it is desirable)
+* All properties that were redundant copies of data from the package.json file will no longer
+  be used.
+* The `manifest` key will no longer be used, which stored information about the packages
+  used.
+
 #### On Running SDK Tests
 
 The SDK has these current `cfx` test suites:
