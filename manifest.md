@@ -2,7 +2,7 @@
 
 Below is a table of fields supported by the current cfx, node.js package.json format, and plans for support in the new jpm.
 
-* :white-check-mark: this property is supported
+* :white_check_mark: this property is supported
 * :x: this is not supported
 * :o: this property will be supported as a fallback and should be considered deprecated
 * :warning: this property works differently than other or previous implementations, noted in detail below.
@@ -12,30 +12,30 @@ There are also additional fields used in node.js that can be helpful for those w
 
 | field        | cfx              | node             | jpm             |
 |--------------|------------------|------------------|-----------------|
-|name          |:white-check-mark:|:white-check-mark:|:white-check-mark:
-|fullName      |:white-check-mark:|:x:               |:o:             
-|title         |:white-check-mark:|:x:               |:white-check-mark:
-|description   |:white-check-mark:|:white-check-mark:|:white-check-mark:
-|main          |:white-check-mark:|:white-check-mark:|:white-check-mark:
-|version       |:white-check-mark:|:white-check-mark:|:white-check-mark:
-|author        |:white-check-mark:|:white-check-mark:|:white-check-mark:
-|contributors  |:white-check-mark:|:white-check-mark:|:white-check-mark:
-|translators   |:white-check-mark:|:x:               |:white-check-mark:
-|license       |:white-check-mark:|:white-check-mark:|:white-check-mark:
-|homepage      |:white-check-mark:|:white-check-mark:|:white-check-mark:
-|dependencies  |:warning:         |:white-check-mark:|:white-check-mark:
-|packages      |:white-check-mark:|:x:               |:x:
-|harnessClassID|:white-check-mark:|:x:               |:x:
-|icon          |:white-check-mark:|:x:               |:white-check-mark:
-|icon64        |:white-check-mark:|:x:               |:white-check-mark:
-|id            |:white-check-mark:|:x:               |:white-check-mark:
-|lib           |:white-check-mark:|:x:               |:x:
-|engines       |:x:               |:white-check-mark:|:white-check-mark:
-|[engineStrict](https://npmjs.org/doc/json.html#engineStrict)  |:x:               |:white-check-mark:|:grey_question:
-|permissions   |:white-check-mark:|:x:               |:white-check-mark:
-|preferences   |:white-check-mark:|:x:               |:white-check-mark:
-|tests         |:white-check-mark:|:x:               |:white-check-mark: :grey_question
-|aliases       |:x:               |:x:               |:white-check-mark:
+|name          |:white_check_mark:|:white_check_mark:|:white_check_mark:
+|fullName      |:white_check_mark:|:x:               |:o:             
+|title         |:white_check_mark:|:x:               |:white_check_mark:
+|description   |:white_check_mark:|:white_check_mark:|:white_check_mark:
+|main          |:white_check_mark:|:white_check_mark:|:white_check_mark:
+|version       |:white_check_mark:|:white_check_mark:|:white_check_mark:
+|author        |:white_check_mark:|:white_check_mark:|:white_check_mark:
+|contributors  |:white_check_mark:|:white_check_mark:|:white_check_mark:
+|translators   |:white_check_mark:|:x:               |:white_check_mark:
+|license       |:white_check_mark:|:white_check_mark:|:white_check_mark:
+|homepage      |:white_check_mark:|:white_check_mark:|:white_check_mark:
+|dependencies  |:warning:         |:white_check_mark:|:white_check_mark:
+|packages      |:white_check_mark:|:x:               |:x:
+|harnessClassID|:white_check_mark:|:x:               |:x:
+|icon          |:white_check_mark:|:x:               |:white_check_mark:
+|icon64        |:white_check_mark:|:x:               |:white_check_mark:
+|id            |:white_check_mark:|:x:               |:white_check_mark:
+|lib           |:white_check_mark:|:x:               |:x:
+|engines       |:x:               |:white_check_mark:|:white_check_mark:
+|[engineStrict](https://npmjs.org/doc/json.html#engineStrict)  |:x:               |:white_check_mark:|:grey_question:
+|permissions   |:white_check_mark:|:x:               |:white_check_mark:
+|preferences   |:white_check_mark:|:x:               |:white_check_mark:
+|tests         |:white_check_mark:|:x:               |:white_check_mark: :grey_question
+|aliases       |:x:               |:x:               |:white_check_mark:
 
 ### `author`, `contributors`, `translators`
 
