@@ -34,7 +34,7 @@ There are also additional fields used in node.js that can be helpful for those w
 |[engineStrict](https://npmjs.org/doc/json.html#engineStrict)  |:x:               |:white_check_mark:|:grey_question:
 |permissions   |:white_check_mark:|:x:               |:white_check_mark:
 |preferences   |:white_check_mark:|:x:               |:white_check_mark:
-|tests         |:white_check_mark:|:x:               |:white_check_mark: :grey_question
+|tests         |:white_check_mark:|:x:               |:white_check_mark: :grey_question:
 |aliases       |:x:               |:x:               |:white_check_mark:
 
 ### `author`, `contributors`, `translators`
