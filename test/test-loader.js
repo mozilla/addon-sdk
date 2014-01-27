@@ -8,8 +8,10 @@ let {
   Loader, main, unload, parseStack, generateMap, resolve, join
 } = require('toolkit/loader');
 let { readURI } = require('sdk/net/url');
-
+let loaderOptions = require('@loader/options');
 let root = module.uri.substr(0, module.uri.lastIndexOf('/'))
+// Uses development SDK modules if overloaded in loader
+let sdkPaths = loaderOptions.paths ? loaderOptions.paths[''] : 'resource://gre/modules/commonjs/';
 
 
 // The following adds Debugger constructor to the global namespace.
@@ -341,6 +343,16 @@ exports['test console global by default'] = function (assert) {
   assert.equal(program2.console, fakeConsole,
     'global console can be overridden with Loader options');
   function fakeConsole () {};
+};
+
+exports['test loader can load itself'] = function (assert) {
+  let uri = root + '/fixtures/loader/selfload/';
+  let loader = Loader({ paths: { '': sdkPaths }});
+  let program = main(loader, uri + 'main');
+  assert.equal(program.Loader.sourceURI("a -> b -> c"), "c",
+    "Loader can directly load itself");
+  assert.equal(program.Traceback.sourceURI("a -> b -> c"), "c",
+    "Loader indirectly loads itself through SDK dependencies");
 };
 
 require('test').run(exports);
