@@ -36,6 +36,11 @@ There are also additional fields used in node.js that can be helpful for those w
 |preferences   |:white_check_mark:|:x:               |:white_check_mark:
 |tests         |:white_check_mark:|:x:               |:white_check_mark: :grey_question:
 |aliases       |:x:               |:x:               |:white_check_mark:
+|unpack        |:white_check_mark:|:x:               |:white_check_mark:
+|updateURL     |:white_check_mark:|:x:               |:white_check_mark:
+|updateKey     |:white_check_mark:|:x:               |:white_check_mark:
+|aboutURL      |:white_check_mark:|:x:               |:white_check_mark:
+|strictCompatability|:white_check_mark:|:x:               |:white_check_mark:
 
 ### `author`, `contributors`, `translators`
 
