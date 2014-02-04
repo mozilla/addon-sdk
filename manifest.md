@@ -10,8 +10,11 @@ Below is a table of fields supported by the current cfx, node.js package.json fo
 
 There are also additional fields used in node.js that can be helpful for those who share addon code, but not something we necessarily have to account for ("bugs", "repository") in AOM, so these will not be listed, and node-only fields will also not be listed.
 
-| field        | cfx              | node             | jpm             |
-|--------------|------------------|------------------|-----------------|
+Also listed are [chrome's manifest](http://developer.chrome.com/extensions/manifest.html) fields.
+
+
+| field        | cfx              | node             | jpm             | chrome |
+|--------------|------------------|------------------|-----------------|--------|
 |name          |:white_check_mark:|:white_check_mark:|:white_check_mark:
 |fullName      |:white_check_mark:|:x:               |:o:             
 |title         |:white_check_mark:|:x:               |:white_check_mark:
