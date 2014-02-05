@@ -18,7 +18,7 @@ The current CFX tool used to assist development in addons is a great utility for
 
 ### New Features
 
-* `--retro`: If the `retro` flag is set to true, JPM will add a `install.rdf` and `bootstrap.js` to the addon when bundling up the addon. This allows us to test and configure JPM while AOM changes are under development, and to be used if the target version of Firefox does not yet have the AOM changes to support new native jetpacks. This will be a temporary option that will be deprecated once the AOM changes have landed, and removed perhaps 2-3 Firefox releases afterward. This will always show a warning message.
+* Currently, any addon with unspecified engines, or engines supporting versions of Firefox where AOM support for native jetpacks does not exist, jpm will add a install.rdf and bootstrap.js file for backwards compatability. This can be overridden with the --force-aom flag, which will not build with these additional files. This is mainly for testing AOM support while still in development.
 
 ### Will be Supported
 
