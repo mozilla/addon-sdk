@@ -143,6 +143,11 @@ parser_groups = (
                                     default=False,
                                     cmds=['run', 'test', 'testex', 'testpkgs',
                                           'testaddons', 'testall'])),
+        (("", "--l10n",), dict(dest="l10n",
+                                    help="generate localization files from template",
+                                    action="store_true",
+                                    default=False,
+                                    cmds=['init'])),
         ]
      ),
 
@@ -516,7 +521,7 @@ def get_config_args(name, env_root):
         sys.exit(1)
     return config
 
-def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
+def initializer(env_root, args, options, out=sys.stdout, err=sys.stderr):
     from templates import PACKAGE_JSON, TEST_MAIN_JS
     from preflight import create_jid
     path = os.getcwd()
@@ -540,6 +545,12 @@ def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
     for d in ['lib','data','test','doc']:
         os.mkdir(os.path.join(path,d))
         print >>out, '*', d, 'directory created'
+    # Add locale directory and blank en.properties file if --l10n flag is passed
+    if options.l10n:
+        os.mkdir(os.path.join(path,'locale'))
+        open(os.path.join(path,'locale','en.properties'),'w').write('')
+        print >>out, '* locale directory created'
+        print >>out, '* locale/en.properties written'
     open(os.path.join(path,'README.md'),'w').write('')
     print >>out, '* README.md written'
     jid = create_jid()
@@ -595,9 +606,8 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         (options, args) = parse_args(**parser_kwargs)
 
     command = args[0]
-
     if command == "init":
-        initializer(env_root, args)
+        initializer(env_root, args, options)
         return
     if command == "testpkgs":
         test_all_packages(env_root, defaults=options.__dict__)
@@ -909,6 +919,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                              profiledir=options.profiledir,
                              verbose=options.verbose,
                              parseable=options.parseable,
+                             l10n=options.l10n,
                              enforce_timeouts=enforce_timeouts,
                              logfile=options.logfile,
                              addons=options.addons,
