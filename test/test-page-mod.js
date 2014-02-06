@@ -474,6 +474,52 @@ exports.testExistingOnlyFrameMatchesInclude = function(assert, done) {
   });
 };
 
+exports.testAttachToBFCache = function(assert, done) {
+  let firstURL = 'data:text/html;charset=utf-8,UNIQUE-TEST-STRING-61';
+  let secondURL = 'data:text/html;charset=utf-8,UNIQUE-TEST-STRING-62';
+  let counter = 0;
+
+  // open a new tab, and navigate to the first url
+  tabs.open({
+    url: firstURL,
+    onPageShow: function pageshow(tab, persisted) {
+      counter++;
+
+      // on first PageShow (at first url), navigate to the second url
+      if (counter===1 && tab.url===firstURL) {
+        tab.url = secondURL;
+      }
+
+      // on the second PageShow (at second url), create a PageMod 
+      // that should attach to a (first url) page from BFCache, 
+      // and then navigate back to it (the first url)
+      if (counter===2 && tab.url===secondURL) {
+        let pagemod = new PageMod({
+          include: firstURL,
+          attachTo: ['existing', 'top'],
+          onAttach: () => attachedToFirstURL(pagemod)
+        });
+        tab.attach({
+          contentScript: 'setTimeout(function() history.back(), 1)'
+        });
+      }
+
+      // on the third PageShow (at first url, again), confirm
+      // that the page is coming from BFCache (persisted)
+      if (counter===3 && tab.url===firstURL) {
+        assert.equal(persisted, true, "revisited page coming from BFCache");
+      }
+
+      // if the assert(persisted) above has passed, 
+      // and this onAttach is called, we've made it!
+      function attachedToFirstURL(pagemod) {
+        pagemod.destroy();
+        tab.close(done);
+      }
+    }
+  });
+}
+
 exports.testTabWorkerOnMessage = function(assert, done) {
   let { browserWindows } = require("sdk/windows");
   let tabs = require("sdk/tabs");
