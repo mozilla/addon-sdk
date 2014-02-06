@@ -9,11 +9,7 @@ let {
 } = require('toolkit/loader');
 let { readURI } = require('sdk/net/url');
 let { all } = require('sdk/core/promise');
-let loaderOptions = require('@loader/options');
-// Uses development SDK modules if overloaded in loader
-let sdkPaths = loaderOptions.paths ? loaderOptions.paths[''] : 'resource://gre/modules/commonjs/';
-
-
+let testOptions = require('@test/options');
 
 let root = module.uri.substr(0, module.uri.lastIndexOf('/'))
 // The following adds Debugger constructor to the global namespace.
@@ -209,6 +205,8 @@ function getJSON (uri) {
 }
 
 function makePaths (uri) {
+  // Uses development SDK modules if overloaded in loader
+  let sdkPaths = testOptions.paths ? testOptions.paths[''] : 'resource://gre/modules/commonjs/';
   return {
     './': uri,
     'sdk/': sdkPaths + 'sdk/',
