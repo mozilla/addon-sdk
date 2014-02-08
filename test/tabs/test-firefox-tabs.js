@@ -5,7 +5,7 @@
 
 const { Cc, Ci } = require('chrome');
 const { Loader } = require('sdk/test/loader');
-const timer = require('sdk/timers');
+const { setTimeout } = require('sdk/timers');
 const { getOwnerWindow } = require('sdk/private-browsing/window/utils');
 const { windows, onFocus, getMostRecentBrowserWindow } = require('sdk/window/utils');
 const { open, focus, close } = require('sdk/window/helpers');
@@ -71,26 +71,89 @@ exports.testBrowserWindowCreationOnActivate = function(assert, done) {
 }
 
 // TEST: tab unloader
-exports.testAutomaticDestroy = function(assert, done) {
-  // Create a second tab instance that we will destroy
+exports.testAutomaticDestroyEventOpen = function(assert, done) {
   let called = false;
-
   let loader = Loader(module);
   let tabs2 = loader.require("sdk/tabs");
-  tabs2.on('open', function onOpen(tab) {
-    called = true;
-  });
-
-  loader.unload();
+  tabs2.on('open', _ => called = true);
 
   // Fire a tab event and ensure that the destroyed tab is inactive
-  tabs.once('open', function (tab) {
-    timer.setTimeout(function () {
+  tabs.once('open', tab => {
+    setTimeout(_ => {
       assert.ok(!called, "Unloaded tab module is destroyed and inactive");
       tab.close(done);
     });
   });
-  tabs.open("data:text/html;charset=utf-8,foo");
+
+  loader.unload();
+  tabs.open("data:text/html;charset=utf-8,testAutomaticDestroyEventOpen");
+};
+
+exports.testAutomaticDestroyEventActivate = function(assert, done) {
+  let called = false;
+  let loader = Loader(module);
+  let tabs2 = loader.require("sdk/tabs");
+  tabs2.on('activate', _ => called = true);
+
+  // Fire a tab event and ensure that the destroyed tab is inactive
+  tabs.once('activate', tab => {
+    setTimeout(_ => {
+      assert.ok(!called, "Unloaded tab module is destroyed and inactive");
+      tab.close(done);
+    });
+  });
+
+  loader.unload();
+  tabs.open("data:text/html;charset=utf-8,testAutomaticDestroyEventActivate");
+};
+
+exports.testAutomaticDestroyEventDeactivate = function(assert, done) {
+  let called = false;
+  let currentTab = tabs.activeTab;
+  let loader = Loader(module);
+  let tabs2 = loader.require("sdk/tabs");
+
+  tabs.open({
+    url: "data:text/html;charset=utf-8,testAutomaticDestroyEventDeactivate",
+    onActivate: _ => setTimeout(_ => {
+      tabs2.on('deactivate', _ => called = true);
+
+      // Fire a tab event and ensure that the destroyed tab is inactive
+      tabs.once('deactivate', tab => {
+        setTimeout(_ => {
+          assert.ok(!called, "Unloaded tab module is destroyed and inactive");
+          tab.close(done);
+        });
+      });
+
+      loader.unload();
+      currentTab.activate();
+    })
+  });
+};
+
+exports.testAutomaticDestroyEventClose = function(assert, done) {
+  let called = false;
+  let loader = Loader(module);
+  let tabs2 = loader.require("sdk/tabs");
+
+  tabs.open({
+    url: "data:text/html;charset=utf-8,testAutomaticDestroyEventClose",
+    onReady: tab => {
+      tabs2.on('close', _ => called = true);
+
+      // Fire a tab event and ensure that the destroyed tab is inactive
+      tabs.once('close', tab => {
+        setTimeout(_ => {
+          assert.ok(!called, "Unloaded tab module is destroyed and inactive");
+          done();
+        });
+      });
+
+      loader.unload();
+      tab.close();
+    }
+  });
 };
 
 exports.testTabPropertiesInNewWindow = function(assert, done) {
@@ -977,7 +1040,7 @@ function openBrowserWindow(callback, url) {
         window.removeEventListener("load", onLoad, true);
         let browsers = window.document.getElementsByTagName("tabbrowser");
         try {
-          timer.setTimeout(function () {
+          setTimeout(function () {
             callback(window, browsers[0]);
           }, 10);
         }
