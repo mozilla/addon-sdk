@@ -464,7 +464,7 @@ exports.testExistingOnlyFrameMatchesInclude = function(assert, done) {
         include: iframeURL,
         attachTo: ['existing', 'frame'],
         onAttach: function(worker) {
-          assert.equal(iframeURL, worker.url, 
+          assert.equal(iframeURL, worker.url,
               "PageMod attached to existing iframe when only it matches include rules");
           pagemod.destroy();
           tab.close(done);
@@ -544,7 +544,6 @@ exports.testAutomaticDestroy = function(assert, done) {
 };
 
 exports.testAttachToTabsOnly = function(assert, done) {
-
   let { PageMod } = require('sdk/page-mod');
   let openedTab = null; // Tab opened in openTabWithIframe()
   let workerCount = 0;
@@ -569,7 +568,7 @@ exports.testAttachToTabsOnly = function(assert, done) {
   });
 
   function openHiddenFrame() {
-    console.info('Open iframe in hidden window');
+    assert.pass('Open iframe in hidden window');
     let hiddenFrames = require('sdk/frame/hidden-frame');
     let hiddenFrame = hiddenFrames.add(hiddenFrames.HiddenFrame({
       onReady: function () {
@@ -591,7 +590,7 @@ exports.testAttachToTabsOnly = function(assert, done) {
   }
 
   function openToplevelWindow() {
-    console.info('Open toplevel window');
+    assert.pass('Open toplevel window');
     let win = open('data:text/html;charset=utf-8,bar');
     win.addEventListener('DOMContentLoaded', function onload() {
       win.removeEventListener('DOMContentLoaded', onload, false);
@@ -601,7 +600,7 @@ exports.testAttachToTabsOnly = function(assert, done) {
   }
 
   function openBrowserIframe() {
-    console.info('Open iframe in browser window');
+    assert.pass('Open iframe in browser window');
     let window = require('sdk/deprecated/window-utils').activeBrowserWindow;
     let document = window.document;
     let iframe = document.createElement('iframe');
@@ -617,7 +616,7 @@ exports.testAttachToTabsOnly = function(assert, done) {
 
   // Only these three documents will be accepted by the page-mod
   function openTabWithIframes() {
-    console.info('Open iframes in a tab');
+    assert.pass('Open iframes in a tab');
     let subContent = '<iframe src="data:text/html;charset=utf-8,sub frame" />'
     let content = '<iframe src="data:text/html;charset=utf-8,' +
                   encodeURIComponent(subContent) + '" />';
@@ -1152,7 +1151,8 @@ exports.testWorkerTabClose = function(assert, done) {
       include: "about:",
       contentScript: '',
       onAttach: function(worker) {
-        console.log("call close");
+        assert.pass("The page-mod was attached");
+
         worker.tab.close(function () {
           // On Fennec, tab is completely destroyed right after close event is
           // dispatch, so we need to wait for the next event loop cycle to
