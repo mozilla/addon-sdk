@@ -7,7 +7,7 @@ const { PageMod } = require("sdk/page-mod");
 const testPageMod = require("./pagemod-test-helpers").testPageMod;
 const { Loader } = require('sdk/test/loader');
 const tabs = require("sdk/tabs");
-const timer = require("sdk/timers");
+const { setTimeout } = require("sdk/timers");
 const { Cc, Ci, Cu } = require("chrome");
 const { open, getFrames, getMostRecentBrowserWindow } = require('sdk/window/utils');
 const windowUtils = require('sdk/deprecated/window-utils');
@@ -412,7 +412,7 @@ exports.testWorksWithExistingTabs = function(assert, done) {
           assert.ok(!!worker.tab, "Worker.tab exists");
           assert.equal(tab, worker.tab, "A worker has been created on this existing tab");
 
-          timer.setTimeout(function() {
+          setTimeout(function() {
             pageModOnExisting.destroy();
             pageModOffExisting.destroy();
             tab.close(done);
@@ -444,7 +444,7 @@ exports.testExistingFrameDoesntMatchInclude = function(assert, done) {
           assert.fail("Existing iframe URL doesn't match include, must not attach to anything");
         }
       });
-      timer.setTimeout(function() {
+      setTimeout(function() {
         assert.pass("PageMod didn't attach to anything")
         pagemod.destroy();
         tab.close(done);
@@ -464,7 +464,7 @@ exports.testExistingOnlyFrameMatchesInclude = function(assert, done) {
         include: iframeURL,
         attachTo: ['existing', 'frame'],
         onAttach: function(worker) {
-          assert.equal(iframeURL, worker.url, 
+          assert.equal(iframeURL, worker.url,
               "PageMod attached to existing iframe when only it matches include rules");
           pagemod.destroy();
           tab.close(done);
@@ -995,7 +995,7 @@ exports.testExistingOnFrames = function(assert, done) {
         else {
           assert.equal(subFrameURL, worker.url, '2nd attach is for sub frame');
           // need timeout because onAttach is called before the constructor returns
-          timer.setTimeout(function() {
+          setTimeout(function() {
             pagemodOnExisting.destroy();
             pagemodOffExisting.destroy();
             closeTab(tab);
@@ -1157,7 +1157,7 @@ exports.testWorkerTabClose = function(assert, done) {
           // On Fennec, tab is completely destroyed right after close event is
           // dispatch, so we need to wait for the next event loop cycle to
           // check for tab nulliness.
-          timer.setTimeout(function () {
+          setTimeout(function () {
             assert.ok(!worker.tab,
                         "worker.tab should be null right after tab.close()");
             callbackDone();
@@ -1198,5 +1198,105 @@ exports.testDebugMetadata = function(assert, done) {
     }
   );
 };
+
+exports.testDetachOnDestroy = function(assert, done) {
+  let tab;
+  const TEST_URL = 'data:text/html;charset=utf-8,detach';
+  const loader = Loader(module);
+  const { PageMod } = loader.require('sdk/page-mod');
+
+  let mod1 = PageMod({
+    include: TEST_URL,
+    contentScript: Isolate(function() {
+      self.port.on('detach', function(reason) {
+        window.document.body.innerHTML += '!' + reason;
+      });
+    }),
+    onAttach: worker => {
+      assert.pass('attach[1] happened');
+
+      worker.on('detach', _ => setTimeout(_ => {
+        assert.pass('detach happened');
+
+        let mod2 = PageMod({
+          attachTo: [ 'existing', 'top' ],
+          include: TEST_URL,
+          contentScript: Isolate(function() {
+            self.port.on('test', _ => {
+              self.port.emit('result', { result: window.document.body.innerHTML});
+            });
+          }),
+          onAttach: worker => {
+            assert.pass('attach[2] happened');
+            worker.port.once('result', ({ result }) => {
+              assert.equal(result, 'detach!', 'the body.innerHTML is as expected');
+              mod1.destroy();
+              mod2.destroy();
+              loader.unload();
+              tab.close(done);
+            });
+            worker.port.emit('test');
+          }
+        });
+      }));
+
+      worker.destroy();
+    }
+  });
+
+  tabs.open({
+    url: TEST_URL,
+    onOpen: t => tab = t
+  })
+}
+
+exports.testDetachOnUnload = function(assert, done) {
+  let tab;
+  const TEST_URL = 'data:text/html;charset=utf-8,detach';
+  const loader = Loader(module);
+  const { PageMod } = loader.require('sdk/page-mod');
+
+  let mod1 = PageMod({
+    include: TEST_URL,
+    contentScript: Isolate(function() {
+      self.port.on('detach', function(reason) {
+        window.document.body.innerHTML += '!' + reason;
+      });
+    }),
+    onAttach: worker => {
+      assert.pass('attach[1] happened');
+
+      worker.on('detach', _ => setTimeout(_ => {
+        assert.pass('detach happened');
+
+        let mod2 = require('sdk/page-mod').PageMod({
+          attachTo: [ 'existing', 'top' ],
+          include: TEST_URL,
+          contentScript: Isolate(function() {
+            self.port.on('test', _ => {
+              self.port.emit('result', { result: window.document.body.innerHTML});
+            });
+          }),
+          onAttach: worker => {
+            assert.pass('attach[2] happened');
+            worker.port.once('result', ({ result }) => {
+              assert.equal(result, 'detach!shutdown', 'the body.innerHTML is as expected');
+              mod2.destroy();
+              tab.close(done);
+            });
+            worker.port.emit('test');
+          }
+        });
+      }));
+
+      loader.unload('shutdown');
+    }
+  });
+
+  tabs.open({
+    url: TEST_URL,
+    onOpen: t => tab = t
+  })
+}
 
 require('sdk/test').run(exports);
