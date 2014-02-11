@@ -135,4 +135,4 @@ exports.testDefaultPreferencesBranch = function(assert) {
   assert.equal(preferencesBranch, self.id, 'preferencesBranch default the same as self.id');
 }
 
-require('sdk/test/runner').runTestsFromModule(module);
+//require('sdk/test/runner').runTestsFromModule(module);
