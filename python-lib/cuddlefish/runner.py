@@ -413,7 +413,8 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
             is_running_tests=False,
             overload_modules=False,
             bundle_sdk=True,
-            pkgdir=""):
+            pkgdir="",
+            is_native=False):
     if binary:
         binary = os.path.expanduser(binary)
 
@@ -505,17 +506,27 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
     if norun:
         cmdargs.append("-no-remote")
 
+    xpi_path = tempfile.mktemp(suffix='cfx-tmp.xpi')
     # Create the addon XPI so mozrunner will copy it to the profile it creates.
     # We delete it below after getting mozrunner to create the profile.
-    from cuddlefish.xpi import build_xpi
-    xpi_path = tempfile.mktemp(suffix='cfx-tmp.xpi')
-    build_xpi(template_root_dir=harness_root_dir,
-              manifest=manifest_rdf,
-              xpi_path=xpi_path,
-              harness_options=harness_options,
-              limit_to=used_files,
-              bundle_sdk=bundle_sdk,
-              pkgdir=pkgdir)
+    if is_native:
+      from cuddlefish.native import build_xpi
+      build_xpi(template_root_dir=harness_root_dir,
+                manifest=manifest_rdf,
+                xpi_path=xpi_path,
+                harness_options=harness_options,
+                limit_to=used_files,
+                bundle_sdk=bundle_sdk,
+                pkgdir=pkgdir)
+    else:
+      from cuddlefish.xpi import build_xpi
+      build_xpi(template_root_dir=harness_root_dir,
+                manifest=manifest_rdf,
+                xpi_path=xpi_path,
+                harness_options=harness_options,
+                limit_to=used_files,
+                bundle_sdk=bundle_sdk,
+                pkgdir=pkgdir)
     addons.append(xpi_path)
 
     starttime = last_output_time = time.time()
