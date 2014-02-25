@@ -4,7 +4,7 @@
 "use strict";
 
 const { PageMod } = require("sdk/page-mod");
-const testPageMod = require("./pagemod-test-helpers").testPageMod;
+const { testPageMod, handleReadyState } = require("./pagemod-test-helpers");
 const { Loader } = require('sdk/test/loader');
 const tabs = require("sdk/tabs");
 const { setTimeout } = require("sdk/timers");
@@ -473,6 +473,185 @@ exports.testExistingOnlyFrameMatchesInclude = function(assert, done) {
     }
   });
 };
+
+exports.testContentScriptWhenDefault = function(assert) {
+  let pagemod = PageMod({include: '*'});
+
+  assert.equal(pagemod.contentScriptWhen, 'end', "Default contentScriptWhen is 'end'");
+  pagemod.destroy();
+}
+
+// test timing for all 3 contentScriptWhen options (start, ready, end)
+// for new pages, or tabs opened after PageMod is created
+exports.testContentScriptWhenForNewTabs = function(assert, done) {
+  const url = "data:text/html;charset=utf-8,testContentScriptWhenForNewTabs";
+
+  let count = 0;
+
+  handleReadyState(url, 'start', {
+    onLoading: (tab) => {
+      assert.pass("PageMod is attached while document is loading");
+      if (++count === 3) 
+        tab.close(done);
+    },
+    onInteractive: () => assert.fail("onInteractive should not be called with 'start'."),
+    onComplete: () => assert.fail("onComplete should not be called with 'start'."),
+  });
+
+  handleReadyState(url, 'ready', {
+    onInteractive: (tab) => {
+      assert.pass("PageMod is attached while document is interactive");
+      if (++count === 3) 
+        tab.close(done);
+    },
+    onLoading: () => assert.fail("onLoading should not be called with 'ready'."),
+    onComplete: () => assert.fail("onComplete should not be called with 'ready'."),
+  });
+
+  handleReadyState(url, 'end', {
+    onComplete: (tab) => {
+      assert.pass("PageMod is attached when document is complete");
+      if (++count === 3) 
+        tab.close(done);
+    },
+    onLoading: () => assert.fail("onLoading should not be called with 'end'."),
+    onInteractive: () => assert.fail("onInteractive should not be called with 'end'."),
+  });
+
+  tabs.open(url);
+}
+
+// test timing for all 3 contentScriptWhen options (start, ready, end)
+// for PageMods created right as the tab is created (in tab.onOpen)
+exports.testContentScriptWhenOnTabOpen = function(assert, done) {
+  const url = "data:text/html;charset=utf-8,testContentScriptWhenOnTabOpen";
+
+  tabs.open({
+    url: url,
+    onOpen: function(tab) {
+      let count = 0;
+
+      handleReadyState(url, 'start', {
+        onLoading: () => {
+          assert.pass("PageMod is attached while document is loading");
+          if (++count === 3) 
+            tab.close(done);
+        },
+        onInteractive: () => assert.fail("onInteractive should not be called with 'start'."),
+        onComplete: () => assert.fail("onComplete should not be called with 'start'."),
+      });
+
+      handleReadyState(url, 'ready', {
+        onInteractive: () => {
+          assert.pass("PageMod is attached while document is interactive");
+          if (++count === 3) 
+            tab.close(done);
+        },
+        onLoading: () => assert.fail("onLoading should not be called with 'ready'."),
+        onComplete: () => assert.fail("onComplete should not be called with 'ready'."),
+      });
+
+      handleReadyState(url, 'end', {
+        onComplete: () => {
+          assert.pass("PageMod is attached when document is complete");
+          if (++count === 3) 
+            tab.close(done);
+        },
+        onLoading: () => assert.fail("onLoading should not be called with 'end'."),
+        onInteractive: () => assert.fail("onInteractive should not be called with 'end'."),
+      });
+
+    }
+  });
+}
+
+// test timing for all 3 contentScriptWhen options (start, ready, end)
+// for PageMods created while the tab is interactive (in tab.onReady)
+exports.testContentScriptWhenOnTabReady = function(assert, done) {
+  const url = "data:text/html;charset=utf-8,testContentScriptWhenOnTabReady";
+
+  tabs.open({
+    url: url,
+    onReady: function(tab) {
+      let count = 0;
+
+      handleReadyState(url, 'start', {
+        onInteractive: () => {
+          assert.pass("PageMod is attached while document is interactive");
+          if (++count === 3) 
+            tab.close(done);
+        },
+        onLoading: () => assert.fail("onLoading should not be called with 'start'."),
+        onComplete: () => assert.fail("onComplete should not be called with 'start'."),
+      });
+
+      handleReadyState(url, 'ready', {
+        onInteractive: () => {
+          assert.pass("PageMod is attached while document is interactive");
+          if (++count === 3) 
+            tab.close(done);
+        },
+        onLoading: () => assert.fail("onLoading should not be called with 'ready'."),
+        onComplete: () => assert.fail("onComplete should not be called with 'ready'."),
+      });
+
+      handleReadyState(url, 'end', {
+        onComplete: () => {
+          assert.pass("PageMod is attached when document is complete");
+          if (++count === 3) 
+            tab.close(done);
+        },
+        onLoading: () => assert.fail("onLoading should not be called with 'end'."),
+        onInteractive: () => assert.fail("onInteractive should not be called with 'end'."),
+      });
+
+    }
+  });
+}
+
+// test timing for all 3 contentScriptWhen options (start, ready, end)
+// for PageMods created after a tab has completed loading (in tab.onLoad)
+exports.testContentScriptWhenOnTabLoad = function(assert, done) {
+  const url = "data:text/html;charset=utf-8,testContentScriptWhenOnTabLoad";
+
+  tabs.open({
+    url: url,
+    onLoad: function(tab) {
+      let count = 0;
+
+      handleReadyState(url, 'start', {
+        onComplete: () => {
+          assert.pass("PageMod is attached when document is complete");
+          if (++count === 3) 
+            tab.close(done);
+        },
+        onLoading: () => assert.fail("onLoading should not be called with 'start'."),
+        onInteractive: () => assert.fail("onInteractive should not be called with 'start'."),
+      });
+
+      handleReadyState(url, 'ready', {
+        onComplete: () => {
+          assert.pass("PageMod is attached when document is complete");
+          if (++count === 3) 
+            tab.close(done);
+        },
+        onLoading: () => assert.fail("onLoading should not be called with 'ready'."),
+        onInteractive: () => assert.fail("onInteractive should not be called with 'ready'."),
+      });
+
+      handleReadyState(url, 'end', {
+        onComplete: () => {
+          assert.pass("PageMod is attached when document is complete");
+          if (++count === 3) 
+            tab.close(done);
+        },
+        onLoading: () => assert.fail("onLoading should not be called with 'end'."),
+        onInteractive: () => assert.fail("onInteractive should not be called with 'end'."),
+      });
+
+    }
+  });
+}
 
 exports.testTabWorkerOnMessage = function(assert, done) {
   let { browserWindows } = require("sdk/windows");
