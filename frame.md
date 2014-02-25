@@ -45,16 +45,16 @@ communicate with those iframes.
 
 ```js
 let frame = new Frame({
-  id: "my-iframe",
+  name: "my-iframe",
   url: "./index.html",
-  onAttach: (source) => {
+  onAttach: ({source, origin}) => {
     console.log("Frame was attached to new browser window");
   },
-  onReady: (source) => {
+  onReady: ({source, origin}) => {
     console.log("Frame document is interactive");
-    source.postMessage({ hi: "there" }, "*");
+    source.postMessage({ hi: "there" }, origin);
   },
-  onLoad: (source) => {
+  onLoad: ({source, origin}) => {
     console.log("Frame load is complete");
   },
   onMessage: ({source, data, origin}) => {
@@ -68,11 +68,11 @@ Constructor takes mandatory `options.url` that is relative uri to
 an add-on bundled html document (which will be loaded into every
 viewport).
 
-All other options are optional. Optional `options.id` can be provided
-that must be unique per add-on. If `options.id` is not provided one
-is generated from the `options.url`. Since `id` is required to be
-unique attempt to create two frames with a same `url` and no id
-will fail.
+All other options are optional. Optional `options.name` can be provided
+that must be unique per add-on. Unique frame `id` will be generated
+either from `options.name` or if not provided from the `options.url`.
+Since frame `id` is required to be unique attempt to create two frames
+with a same `url` and no `name` or with same `name` will fail.
 
 Optional event handlers `onAttach`, `onReady`, `onLoad`, `onMessage`,
 more details on that will be covered in the events section of the
@@ -98,32 +98,32 @@ document.
 
 #### Events
 
-Most event handlers are passed an event `source` argument represeting a window
-proxy from which event came. Event `source` implements `source.postMessage`
-method defined by HTML [posting messages][] specification, which can be used
-to send messages back to a `window` from which event occured.
+Most event handlers are passed an `event` that has a `source` field
+represeting a window proxy from which event came. `event.source` implements
+`source.postMessage` method defined by HTML [posting messages][] specification,
+which can be used to send messages back to a `window` from which event occured.
 
 - Event "attach" is dispatched whenever new underlaynig view port `iframe`
   is created and `frame.url` is staretd to load into it. Note that by the
   time event is received document may already be loaded. Event handler is
-  given event `source` object. Note that sending message to just attached
-  document is not guaranteed to be recieved as JS in the document may not
-  be loaded yet.
+  given `event` object with a `source` field for the given view port. Note
+  that sending message to just attached document is not guaranteed to be recieved
+  as JS in the document may not be loaded yet.
 
 - Event "ready" is dispatched whenever document in any of the viewport
   `iframe` becomes `interactive` (`document.readyState === "interactive"`).
-  Event hanhler is passed an event `source` object.
+  Event hanhler is passed an `event` object.
 
 - Event "load" is is dispatched whenever document in any of the viewport
   `iframes` is fully loaded (`document.readySate === "complete"`). Event
-  handler is pasesd an event `source` object.
+  handler is pasesd an `event` object.
 
 - Event "message" is dispateched whenever document in any of the viewport
   `iframes` sends a message to a parent.
   (`window.parent.postMessage(data, "*"))`). Event handler is passed object
   implementing interface in HTML [event definition][] specification. Which
   includes `event.data`, `event.origin`, `event.source` (event `source`
-  object),
+  object).
 
 
 #### Fields
@@ -140,16 +140,16 @@ const { Toolbar } = require("sdk/ui/toolbar");
 
 const frame = new Frame({
   url: "./index.html"
-  onAttach: (source) => {
+  onAttach: ({source, origin}) => {
     console.log("Frame was attached to new browser window");
-    source.postMessage("hi there", "*");
+    source.postMessage("hi there", origin);
   },
-  onReady: (source) => {
+  onReady: ({source, origin}) => {
     console.log("Frame document is interactive");
     // post current state for document to render.
-    source.postMessage(state, "*");
+    source.postMessage(state, origin);
   },
-  onLoad: (source) => {
+  onLoad: ({source}) => {
     console.log("Frame load is complete");
   },
   onMessage: ({source, data, origin}) => {
@@ -162,9 +162,6 @@ const frame = new Frame({
 ```
 
 #### Open questions
-
-- Maybe we other event handlers should also be passed `event` objects
-  with `source` property rather than `event.source` directly.
 
 - Should `frame` also dispatch `detach` events.
 

@@ -42,7 +42,6 @@ may makes it not a a good fit for a specific cases.
 
 ```js
 let toolbar = new Toolbar({
-  id: "my-toolbar",
   title: "Addon Demo",
   items: [frame],
   hidden: false,
@@ -107,14 +106,14 @@ const { Toolbar } = require("sdk/ui/toolbar");
 
 const frame = new Frame({
   url: "./search-toolbar.html"
-  onAttach: (source) => {
+  onAttach: ({source}) => {
     console.log("Frame was attached to new browser window");
   },
-  onReady: (source) => {
+  onReady: ({source, origin}) => {
     console.log("Frame document is interactive");
-    source.postMessage({ hi: "there" }, "*");
+    source.postMessage({ hi: "there" }, origin);
   },
-  onLoad: (source) => {
+  onLoad: ({source}) => {
     console.log("Frame load is complete");
   },
   onMessage: ({source, data, origin}) => {
@@ -124,7 +123,6 @@ const frame = new Frame({
 });
 
 const toolbar = Toolbar({
-  id: "your-search-toolbar"
   title: "Uber search",
   items: [frame],
   onShow: () => {
