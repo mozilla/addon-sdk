@@ -19,9 +19,9 @@ let scripts = {
   'check-env.bat': 'echo %CHILD_PROCESS_ENV_TEST%',
   'check-pwd.sh': 'echo $PWD',
   'check-pwd.bat': 'cd',
-  'large-err.sh': 'for ((i=0; i<$1; i=i+1)); do echo "E" 1>&2; done',
+  'large-err.sh': 'for n in `seq 0 $1` ; do echo "E" 1>&2; done',
   'large-err.bat': 'FOR /l %%i in (0,1,%1) DO echo "E" 1>&2',
-  'large-out.sh': 'for ((i=0; i<$1; i=i+1)); do echo "O"; done',
+  'large-out.sh': 'for n in `seq 0 $1` ; do echo "O"; done',
   'large-out.bat': 'FOR /l %%i in (0,1,%1) DO echo "O"',
   'stdin.sh': 'input=$(< /dev/stdin);\n' +
               'echo "$input";',
