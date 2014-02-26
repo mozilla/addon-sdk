@@ -137,12 +137,47 @@ exports.testPageModIncludes = function(assert, done) {
     );
 };
 
-exports.testPageModErrorHandling = function(assert) {
-  assert.throws(function() {
-      new PageMod();
-    },
-    /The `include` option must always contain atleast one rule/,
-    "PageMod() throws when 'include' option is not specified.");
+exports.testPageModValidationAttachTo = function(assert) {
+  [{ val: 'top', type: 'string "top"' },
+   { val: 'frame', type: 'string "frame"' },
+   { val: ['top', 'existing'], type: 'array with "top" and "existing"' },
+   { val: ['frame', 'existing'], type: 'array with "frame" and "existing"' },
+   { val: ['top'], type: 'array with "top"' },
+   { val: ['frame'], type: 'array with "frame"' },
+   { val: undefined, type: 'undefined' }].forEach((attachTo) => {
+    new PageMod({ attachTo: attachTo.val, include: '*.validation111' });
+    assert.pass("PageMod() does not throw when attachTo is " + attachTo.type);
+  });
+
+  [{ val: 'existing', type: 'string "existing"' },
+   { val: ['existing'], type: 'array with "existing"' },
+   { val: 'not-legit', type: 'string with "not-legit"' },
+   { val: ['not-legit'], type: 'array with "not-legit"' },
+   { val: {}, type: 'object' }].forEach((attachTo) => {
+    assert.throws(() =>
+      new PageMod({ attachTo: attachTo.val, include: '*.validation111' }),
+      /The `attachTo` option/,
+      "PageMod() throws when 'attachTo' option is " + attachTo.type + ".");
+  });
+};
+
+exports.testPageModValidationInclude = function(assert) {
+  [{ val: undefined, type: 'undefined' },
+   { val: {}, type: 'object' },
+   { val: [], type: 'empty array'},
+   { val: [/regexp/, 1], type: 'array with non string/regexp' },
+   { val: 1, type: 'number' }].forEach((include) => {
+    assert.throws(() => new PageMod({ include: include.val }),
+      /The `include` option must always contain atleast one rule/,
+      "PageMod() throws when 'include' option is " + include.type + ".");
+  });
+
+  [{ val: '*.validation111', type: 'string' },
+   { val: /validation111/, type: 'regexp' },
+   { val: ['*.validation111'], type: 'array with length > 0'}].forEach((include) => {
+    new PageMod({ include: include.val });
+    assert.pass("PageMod() does not throw when include option is " + include.type);
+  });
 };
 
 /* Tests for internal functions. */
@@ -748,7 +783,6 @@ exports.testAttachToTabsOnly = function(assert, done) {
   });
 
   function openHiddenFrame() {
-    console.info('Open iframe in hidden window');
     let hiddenFrames = require('sdk/frame/hidden-frame');
     let hiddenFrame = hiddenFrames.add(hiddenFrames.HiddenFrame({
       onReady: function () {
@@ -770,7 +804,6 @@ exports.testAttachToTabsOnly = function(assert, done) {
   }
 
   function openToplevelWindow() {
-    console.info('Open toplevel window');
     let win = open('data:text/html;charset=utf-8,bar');
     win.addEventListener('DOMContentLoaded', function onload() {
       win.removeEventListener('DOMContentLoaded', onload, false);
@@ -780,7 +813,6 @@ exports.testAttachToTabsOnly = function(assert, done) {
   }
 
   function openBrowserIframe() {
-    console.info('Open iframe in browser window');
     let window = require('sdk/deprecated/window-utils').activeBrowserWindow;
     let document = window.document;
     let iframe = document.createElement('iframe');
@@ -796,7 +828,6 @@ exports.testAttachToTabsOnly = function(assert, done) {
 
   // Only these three documents will be accepted by the page-mod
   function openTabWithIframes() {
-    console.info('Open iframes in a tab');
     let subContent = '<iframe src="data:text/html;charset=utf-8,sub frame" />'
     let content = '<iframe src="data:text/html;charset=utf-8,' +
                   encodeURIComponent(subContent) + '" />';
@@ -1331,7 +1362,6 @@ exports.testWorkerTabClose = function(assert, done) {
       include: "about:",
       contentScript: '',
       onAttach: function(worker) {
-        console.log("call close");
         worker.tab.close(function () {
           // On Fennec, tab is completely destroyed right after close event is
           // dispatch, so we need to wait for the next event loop cycle to
