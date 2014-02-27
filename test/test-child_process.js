@@ -13,6 +13,10 @@ const PROFILE_DIR= pathFor('ProfD');
 const isWindows = platform.toLowerCase().indexOf('win') === 0;
 const { getScript, cleanUp } = require('./fixtures/child-process-scripts');
 
+// We use direct paths to these utilities as we currently cannot
+// call non-absolute paths to utilities in subprocess.jsm
+const CAT_PATH = isWindows ? 'C:\\Windows\\System32\\more.com' : '/bin/cat';
+
 exports.testExecCallbackSuccess = function (assert, done) {
   exec(isWindows ? 'DIR /A-D' : 'ls -al', {
     cwd: PROFILE_DIR
@@ -20,7 +24,7 @@ exports.testExecCallbackSuccess = function (assert, done) {
     assert.ok(!err, 'no errors found');
     assert.equal(stderr, '', 'stderr is empty');
     assert.ok(/extensions\.ini/.test(stdout), 'stdout output of `ls -al` finds files');
-    
+
     if (isWindows) {
       // `DIR /A-D` does not display directories on WIN
       assert.ok(!/<DIR>/.test(stdout),
@@ -393,22 +397,17 @@ exports.testChildProperties = function (assert, done) {
 exports.testChildStdinStreamLarge = function (assert, done) {
   let REPEAT = 2000;
   let allData = '';
-  let child;
-  getScript('stdin').then(script => {
-    child = spawn(script, {
-      env: {
-        CHILD_PROCESS_ENV_TEST: 'my-value-test'
-      }
-    });
+  // Use direct paths to more/cat, as we do not currently support calling non-files
+  // from subprocess.jsm
+  let child = spawn(CAT_PATH);
 
-    child.stdout.on('data', onData);
-    child.on('close', onClose);
+  child.stdout.on('data', onData);
+  child.on('close', onClose);
 
-    for (let i = 0; i < REPEAT; i++)
-      emit(child.stdin, 'data', '12345\n');
+  for (let i = 0; i < REPEAT; i++)
+    emit(child.stdin, 'data', '12345\n');
 
-    emit(child.stdin, 'end');
-  });
+  emit(child.stdin, 'end');
 
   function onData (data) {
     allData += data;
@@ -427,19 +426,12 @@ exports.testChildStdinStreamLarge = function (assert, done) {
 
 exports.testChildStdinStreamSmall = function (assert, done) {
   let allData = '';
-  let child;
-  getScript('stdin').then(script => {
-    child = spawn(script, {
-      env: {
-        CHILD_PROCESS_ENV_TEST: 'my-value-test'
-      }
-    });
-    child.stdout.on('data', onData);
-    child.on('close', onClose);
+  let child = spawn(CAT_PATH);
+  child.stdout.on('data', onData);
+  child.on('close', onClose);
 
-    emit(child.stdin, 'data', '12345');
-    emit(child.stdin, 'end');
-  });
+  emit(child.stdin, 'data', '12345');
+  emit(child.stdin, 'end');
 
   function onData (data) {
     allData += data;

@@ -23,12 +23,6 @@ let scripts = {
   'large-err.bat': 'FOR /l %%i in (0,1,%1) DO echo "E" 1>&2',
   'large-out.sh': 'for n in `seq 0 $1` ; do echo "O"; done',
   'large-out.bat': 'FOR /l %%i in (0,1,%1) DO echo "O"',
-  'stdin.sh': 'input=$(< /dev/stdin);\n' +
-              'echo "$input";',
-  'stdin.bat': 'setlocal\n' +
-               'for /F "tokens=*" %%a in (\'C:\\Windows\\System32\\more.com\') do (\n' +
-               '  echo %%a\n' +
-               ')\n',
   'wait.sh': 'sleep 2',
   // Use `ping` to an invalid IP address because `timeout` isn't
   // on all environments? http://stackoverflow.com/a/1672349/1785755
