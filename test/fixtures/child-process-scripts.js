@@ -11,6 +11,7 @@ const { join } = require('sdk/fs/path');
 const { writeFile, unlinkSync, existsSync } = require('sdk/io/fs');
 const PROFILE_DIR= pathFor('ProfD');
 const isWindows = platform.toLowerCase().indexOf('win') === 0;
+const isOSX = platform.toLowerCase().indexOf('darwin') === 0;
 
 let scripts = {
   'args.sh': 'echo $1 $2 $3 $4',
@@ -20,8 +21,10 @@ let scripts = {
   'check-pwd.sh': 'echo $PWD',
   'check-pwd.bat': 'cd',
   'large-err.sh': 'for n in `seq 0 $1` ; do echo "E" 1>&2; done',
+  'large-err-mac.sh': 'for ((i=0; i<$1; i=i+1)); do echo "E" 1>&2; done',
   'large-err.bat': 'FOR /l %%i in (0,1,%1) DO echo "E" 1>&2',
   'large-out.sh': 'for n in `seq 0 $1` ; do echo "O"; done',
+  'large-out-mac.sh': 'for ((i=0; i<$1; i=i+1)); do echo "O"; done',
   'large-out.bat': 'FOR /l %%i in (0,1,%1) DO echo "O"',
   'wait.sh': 'sleep 2',
   // Use `ping` to an invalid IP address because `timeout` isn't
@@ -37,6 +40,9 @@ Object.keys(scripts).forEach(filename => {
 });
 
 function getScript (name) {
+  // Use specific OSX script if exists
+  if (isOSX && scripts[name + '-mac.sh'])
+    name = name + '-mac';
   let fileName = name + (isWindows ? '.bat' : '.sh');
   return createFile(fileName, scripts[fileName]);
 }
