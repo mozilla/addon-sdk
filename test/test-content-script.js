@@ -260,8 +260,7 @@ exports["test Object Listener 2"] = createProxyTest("", function (helper) {
 let html = '<input id="input" type="text" /><input id="input3" type="checkbox" />' +
              '<input id="input2" type="checkbox" />';
 
-/* Disable test to keep tree green until Bug 756214 is fixed.
-exports.testStringOverload = createProxyTest(html, function (helper, test) {
+exports.testStringOverload = createProxyTest(html, function (helper, assert) {
   // Proxy - toString error
   let originalString = "string";
   let p = Proxy.create({
@@ -271,10 +270,10 @@ exports.testStringOverload = createProxyTest(html, function (helper, test) {
       return originalString[name];
     }
   });
-  assert.okRaises(function () {
+  assert.throws(function () {
     p.toString();
   },
-  /String.prototype.toString called on incompatible Proxy/,
+  /toString method called on incompatible Proxy/,
   "toString can't be called with this being the proxy");
   assert.equal(p.binded(), "string", "but it works if we bind this to the original string");
 
@@ -296,7 +295,6 @@ exports.testStringOverload = createProxyTest(html, function (helper, test) {
     }
   );
 });
-*/
 
 exports["test MozMatchedSelector"] = createProxyTest("", function (helper) {
   helper.createWorker(
