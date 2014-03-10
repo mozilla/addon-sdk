@@ -3,12 +3,18 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
+module.metadata = {
+  engines: {
+    'Firefox': '*'
+  }
+};
+
 const { isTabOpen, activateTab, openTab,
         closeTab, getTabURL, getWindowHoldingTab } = require('sdk/tabs/utils');
 const windows = require('sdk/deprecated/window-utils');
 const { LoaderWithHookedConsole } = require('sdk/test/loader');
 const { setTimeout } = require('sdk/timers');
-const app = require("sdk/system/xul-app");
+const { is } = require('sdk/system/xul-app');
 const tabs = require('sdk/tabs');
 const isAustralis = "gCustomizeMode" in windows.activeBrowserWindow;
 const { set: setPref } = require("sdk/preferences/service");
@@ -37,10 +43,6 @@ function isChromeVisible(window) {
   let x = window.document.documentElement.getAttribute('disablechrome')
   return x !== 'true';
 }
-
-// Once Bug 903018 is resolved, just move the application testing to
-// module.metadata.engines
-if (app.is('Firefox')) {
 
 exports['test add-on page deprecation message'] = function(assert) {
   let { loader, messages } = LoaderWithHookedConsole(module);
@@ -182,9 +184,5 @@ exports['test that malformed uri is not an addon-page'] = function(assert, done)
     }).then(null, assert.fail);
   });
 };
-
-} else {
-  exports['test unsupported'] = (assert) => assert.pass('This application is unsupported.');
-}
 
 require('sdk/test/runner').runTestsFromModule(module);
