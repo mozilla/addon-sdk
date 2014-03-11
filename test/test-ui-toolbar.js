@@ -425,7 +425,52 @@ exports["test toolbar is not customizable"] = function*(assert, done) {
 
   assert.equal(window.getComputedStyle(inner).visibility, "visible",
     "The inner toolbar is visible.");
-  
+
+  toolbar.destroy();
+};
+
+exports["test button are attached to toolbar"] = function*(assert) {
+  const { document } = getMostRecentBrowserWindow();
+  const { ActionButton, ToggleButton } = require("sdk/ui");
+  const { identify } = require("sdk/ui/id");
+
+  let action = ActionButton({
+    id: "btn-1",
+    label: "action",
+    icon: "./placeholder.png"
+  });
+
+  let toggle = ToggleButton({
+    id: "btn-2",
+    label: "toggle",
+    icon: "./placeholder.png"
+  });
+
+  const toolbar = new Toolbar({
+    title: "foo",
+    items: [action, toggle]
+  });
+
+  yield wait(toolbar, "attach");
+
+  let actionNode = document.getElementById(identify(action));
+  let toggleNode = document.getElementById(identify(toggle));
+
+  assert.notEqual(actionNode, null,
+    "action button exists in the document");
+
+  assert.notEqual(actionNode, null,
+    "action button exists in the document");
+
+  assert.notEqual(toggleNode, null,
+    "toggle button exists in the document");
+
+  assert.equal(actionNode.nextElementSibling, toggleNode,
+    "action button is placed before toggle button");
+
+  assert.equal(actionNode.parentNode.parentNode.id, toolbar.id,
+    "buttons are placed in the correct toolbar");
+
   toolbar.destroy();
 };
 
