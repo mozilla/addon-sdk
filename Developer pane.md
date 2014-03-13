@@ -108,28 +108,28 @@ section of the document.
 
 #### Events
 
-Most event handlers are passed an event `source` argument represeting a window
+Most event handlers are passed an event `source` argument representing a window
 proxy from which event came. Event `source` implements `source.postMessage`
 method defined by HTML [posting messages][] specification, which can be used
 to send messages back to a `window` from which event occured. Event `target`
 is a pane viewport that implements same API as pane, but is bound to a specific
 viewport.
 
-- Event "attach" is dispatched whenever new underlaynig view port is created and
-  `pane.url` is staretd to load into it. Note that by the time event is received
+- Event "attach" is dispatched whenever new underlaying view port is created and
+  `pane.url` is started to load into it. Note that by the time event is received
   document may already be loaded. Event handler is given event `source` object.
-  Message send from attach event handler is not guaranteed to be recieved on
+  Message send from attach event handler is not guaranteed to be received on
   the other end as JS in the receiver document may not be loaded yet.
 
 - Event "ready" is dispatched whenever document in any of the viewports
   becomes `interactive` (`document.readyState === "interactive"`).
-  Event hanhler is passed an event `source` object.
+  Event handler is passed an event `source` object.
 
-- Event "load" is is dispatched whenever document in any of the viewport
-  is fully loaded (`document.readySate === "complete"`). Event handler is pasesd
+- Event "load" is dispatched whenever document in any of the viewport
+  is fully loaded (`document.readySate === "complete"`). Event handler is passed
   an event `source` object.
 
-- Event "message" is dispateched whenever document in any of the viewport
+- Event "message" is dispatched whenever document in any of the viewport
   sends a message to a parent (`window.parent.postMessage(data, "*"))`). Event
   handler is passed object implementing interface from HTML [event definition][]
   specification. Which includes `event.data`, `event.origin`, `event.source`
@@ -137,12 +137,12 @@ viewport.
 
 #### Fields
 
-- Pane instances have a read-only `url` field represeting `url` provided
+- Pane instances have a read-only `url` field representing `url` provided
   to a constructor.
-- Pane instances have a read-only `title` field represeting it's title.
-- Pane instances have a read-only `tooltip` field represeting a text displayed
+- Pane instances have a read-only `title` field representing it's title.
+- Pane instances have a read-only `tooltip` field representing a text displayed
   in a tootip when hovering a pane title.
-- Pane instances have a read-only `id` field represeting unique identifier
+- Pane instances have a read-only `id` field representing unique identifier
   for the instance.
 
 ### Example
@@ -150,7 +150,7 @@ viewport.
 
 #### Pane Document
 
-Document in the pain is an HTML document that has expanded
+Document in the pane is an HTML document that has expanded
 principal. Expanded principals allow document to overcome
 cross-domain limitations. Document scripts will be able to
 interact with a domains that were provided in `package.json`.
@@ -204,12 +204,12 @@ const pane = new Pane({
 
 ### Inspect target
 
-Pane viewports are bound to a specific target (tab) beind inspected.
+Pane viewports are bound to a specific target (tab) being inspected.
 Pane viewports passed in as `event.target` have an `inspectTarget`
-field that implement same API as `event.source` but reperesent a message
-port to a DOM window that is beind inspected.
+field that implement same API as `event.source` but represent a message
+port to a DOM window that is being inspected.
 
-While there is no direct communiaction channel between inspect target
+While there is no direct communication channel between inspect target
 and pane document it's easy enough to setup one:
 
 ```js
