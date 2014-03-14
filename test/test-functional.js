@@ -6,7 +6,8 @@
 const { setTimeout } = require('sdk/timers');
 const utils = require('sdk/lang/functional');
 const { invoke, defer, partial, compose, memoize, once, is, isnt,
-        delay, wrap, curry, chainable, field, query, isInstance } = utils;
+  delay, wrap, curry, chainable, field, query, isInstance, debounce, throttle
+} = utils;
 const { LoaderWithHookedConsole } = require('sdk/test/loader');
 
 exports['test forwardApply'] = function(assert) {
@@ -417,6 +418,45 @@ exports["test isnt"] = assert => {
   assert.ok(isnt({}, {}));
   assert.ok(!isnt()(1)()(1));
   assert.ok(isnt()(1)()(2));
+};
+
+exports["test debounce"] = (assert, done) => {
+  let counter = 0;
+  let fn = debounce(() => counter++, 100);
+
+  new Array(10).join(0).split("").forEach(fn);
+
+  assert.equal(counter, 0, "debounce does not fire immediately");
+  setTimeout(() => {
+    assert.equal(counter, 1, "function called after wait time");
+    fn();
+    setTimeout(() => {
+      assert.equal(counter, 2, "function able to be called again after wait");
+      done();
+    }, 150);
+  }, 200);
+};
+
+exports["test throttle"] = (assert, done) => {
+  let called = 0;
+  let attempt = 0;
+  let throttledFn = throttle(() => called++, 100);
+  let fn = () => ++attempt && throttledFn();
+
+  new Array(11).join(0).split("").forEach((_, i) => {
+    setTimeout(fn, 20 * (i+1));
+  });
+
+  setTimeout(() => {
+    assert.equal(called, 1, "function called atleast once during first throttle period");
+    assert.ok(attempt >= 2, "function attempted to be called several times during first period");
+  }, 50);
+
+  setTimeout(() => {
+    assert.equal(called, 3, "function called again during second throttle period");
+    assert.equal(attempt, 10, "function attempted to be called several times during second period");
+    done();
+  }, 300);
 };
 
 require('test').run(exports);
