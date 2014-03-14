@@ -11,8 +11,9 @@ const pane = new Pane({
   url: "./index.html",
   onMessage: event => {
     const { id, packet } = event.data;
-    event.inspectTarget._target.client.request(packet, response => {
-      event.source.postMessage({ id: id, packet: response }, event.origin)
-    });
+    const respond = response =>
+      event.source.postMessage({ id: id, packet: response }, event.origin);
+
+    event.inspectionTarget.write(packet).then(respond, respond);
   }
 });
