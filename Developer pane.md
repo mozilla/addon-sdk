@@ -7,8 +7,8 @@
 ### Use cases
 
 There are growing number addons that extend devtools capabilities
-one way or another. This clearly indicates there is a need for
-a APIs to make this task easier.
+one way or another. This clearly indicates there is a need for a
+APIs to make this task easier.
 
 Panes in the developer tools are the primary UI estate for built-in
 tools. Add-on's can be provided an API to add their own panes.
@@ -19,7 +19,8 @@ tools. Add-on's can be provided an API to add their own panes.
   it can render add-on specific UI.
 
 - Pane API should let users load a bundled HTML document,
-  that can interacted in a way iframes of different origin
+  that would have two way communication with an add-on in
+  a an API that ressables how iframes of different origin
   can communicate with each other.
 
 - API should not be constrained with 1 to 1 relation, meaning
@@ -38,8 +39,8 @@ tools. Add-on's can be provided an API to add their own panes.
 ### Future maybe goals
 
 - Once `MessageChannel` API is available it should be possible
-  send message ports to the viewports to enable direct communication
-  between debug page and pane page.
+  send message ports to the viewports to enable more direct
+  and standard communication.
 
 - Once E10S compatible `WindowProxy` is implemented as defined
   by [HTML WebMessaging][] it may be exposed directly.
@@ -51,7 +52,7 @@ tools. Add-on's can be provided an API to add their own panes.
 ```js
 const { Pane } = require("dev/tool")
 const pane = new Pane({
-  id: "addon-pane",
+  name: "addon-pane",
   title: "Addon pad",
   icon: "./icon.png",
   url: "./index.html",
@@ -59,14 +60,14 @@ const pane = new Pane({
   onAttach: ({source, target}) => {
     console.log("pane was attached to new developer toolbox");
   },
-  onReady: ({source, target}) => {
+  onReady: ({source, origin}) => {
     console.log("pane document is interactive");
-    source.postMessage({ hi: "there" }, "*");
+    source.postMessage({ hi: "there" }, origin);
   },
-  onLoad: ({source, target}) => {
+  onLoad: ({source}) => {
     console.log("pane document load is complete");
   },
-  onMessage: ({source, data, origin, target}) => {
+  onMessage: ({source, data, origin}) => {
     console.log("Received ping from pane document");
     source.postMessage("pong!", origin);
   }
@@ -79,11 +80,10 @@ over the pane (which users can use to toogle it).
 Mandatory `options.url` is relative uri, to an add-on bundled html
 document (which will be loaded into every pane viewport).
 
-All other options are optional. Optional `options.id` can be provided,
-but it must be unique per add-on. If `options.id` is not provided, one
-will be generated from the `options.url`. Since `id` is required to be
-unique attempt to create two frames with a same `url` and no `id`
-will fail.
+All other options are optional. Add-on can multiple Panes but creating
+multiple panes with same `url` will fail. In order to create multiple
+panes with same `url` optional `options.name` can be provided that must
+be unique.
 
 Optional event handlers `onAttach`, `onReady`, `onLoad`, `onMessage`
 may be provided. More details on them will be covered in the events
@@ -202,30 +202,76 @@ const pane = new Pane({
 });
 ```
 
-### Inspect target
+### Inspection target
 
 Pane viewports are bound to a specific target (tab) being inspected.
-Pane viewports passed in as `event.target` have an `inspectTarget`
-field that implement same API as `event.source` but represent a message
-port to a DOM window that is being inspected.
-
-While there is no direct communication channel between inspect target
-and pane document it's easy enough to setup one:
+Pane viewports are passed an `event.target` that are instances of
+`[MessagePort][]` and represent [remote debugging protocol][] connection
+to an inspection target. This means that messages posted on the `target`
+are send as packets of [remote debugging protocol][] to a debuggee,
+responses are also delivered back to a `target` via message events.
 
 ```js
 const pane = new Pane({
   title: "Addon pad",
   url: "./index.html",
+  onReady: ({source, target, origin}) => {
+    target.addEventListener("message", function({data}) {
+      console.log("Received packet from the inspection target", packet)
+    });
+    target.start();
+  },
   onMessage: ({source, data, origin, target}) => {
-    console.log("Forward pane message to an inspect target", data);
-    target.inspectTarget.postMessage(data, target.inspectTarget.origin);
+    console.log("Forward pane message to an inspection target", data);
+    target.postMessage(data);
   }
 });
 ```
 
-Note: Above example sets only one way communication, but it's expected that
-in practice [MessageChannel][] ports will be forwarded to both documents to
-let them communicate directly.
+Above example sets up one way pane document to inspection target communication.
+Although in practice two way communication is more interesting. Given that
+ports are transfarable it's very easy to set up two way communication between
+pane document & inspection target:
+
+
+```js
+const pane = new Pane({
+  title: "Addon pad",
+  url: "./index.html",
+  onReady: ({source, target, origin}) => {
+    // Transfer inspection target port to pane document once it's ready.
+    source.postMessage({ type: "inspection-target" }, origin, [target]);
+  }
+});
+```
+
+Now communication with a debuggee through raw [remote debugging protocol][]
+maybe too low level for most use cases. Although given raw communication port
+it is possible to generate easier to use APIs on the fly, either dinamycally
+(see [Bug 983928]) or statically. We could expose certain scripts to pane
+document via resource URIs to allow exactly that.
+
+
+### Inspection target instrumentation
+
+While firefox debugging protocol may provide some build-in instrumentation
+code in form of actors that may not necessarily address cover everything
+that developer tool add-on may want to accomplish. There for add-on should
+be able to provide own custom instrumentation for a debugee. In most
+browsers this is accomplished via code evaluation on the inpsection target,
+but that's pretty limited. We could leverage work done to build firefox
+devtools itself and build on top of actors. Add-on should be able to provide
+custom actor definition in form of a module (with limited access, so that
+we won't have to send all of the add-on modules to debuggee which maybe
+on mobile phone). Add-on actors would be loaded when developer toolbox is
+activated & there for it will be able to instrument debuggee. It also could
+provide high level API that can be consumed from the toolbox panel or
+add-on itself.
+
+As a side effect community could implement actor providing chrome API &
+a script for pane document as a clinet to it, essentially providing polyfill
+that would bridge differences between browsers.
+
 
 
 [addon-pane]:http://f.cl.ly/items/162M1P2I100y1M0y0R22/Screen%20Shot%202013-11-18%20at%2010.23.33%20.png
@@ -235,3 +281,6 @@ let them communicate directly.
 [Web Messaging]:http://www.w3.org/TR/webmessaging/
 [posting messages]:http://www.w3.org/TR/webmessaging/#posting-messages
 [Event definition]:http://www.w3.org/TR/webmessaging/#event-definitions
+[Remote Debugging Protocol]:https://wiki.mozilla.org/Remote_Debugging_Protocol
+[MessagePort]:http://www.w3.org/TR/webmessaging/#messageport
+[Bug 983928]:https://bugzilla.mozilla.org/show_bug.cgi?id=983928
