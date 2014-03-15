@@ -203,7 +203,7 @@ exports.testConstructor = function(assert, done) {
     // We have to display which test is being run, because here we do not
     // use the regular test framework but rather a custom one that iterates
     // the `tests` array.
-    console.info("executing: " + widgetOptions.id);
+    assert.pass("executing: " + widgetOptions.id);
 
     let startCount = widgetCount();
     let widget = widgets.Widget(widgetOptions);
@@ -530,7 +530,7 @@ exports.testConstructor = function(assert, done) {
 
   // test multiple windows
   tests.push(function testMultipleWindows() {
-    console.log('executing test multiple windows');
+    assert.pass('executing test multiple windows');
     openNewWindowTab("about:blank", { inNewWindow: true, onLoad: function(e) {
       let browserWindow = e.target.defaultView;
       assert.ok(browserWindow, 'window was opened');
