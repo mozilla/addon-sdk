@@ -16,43 +16,85 @@
   </body>
   <script>
       function debounce(fn, ms) {
-        var id
+        var id;
         return function(...args) {
-          clearTimeout(id)
-          id = setTimeout(fn, ms, ...args)
-        }
+          clearTimeout(id);
+          id = setTimeout(fn, ms, ...args);
+        };
       }
 
       function Try(fn) {
         return function(...args) {
-          try { return fn(...args) }
-          catch (error) { return null }
-        }
+          try { return fn(...args); }
+          catch (error) { return null; }
+        };
       }
 
       var parse = Try(JSON.parse)
 
+      var CommandHistory = {
+        init: function() {
+          this._state = {};
+          this._state.els = document.querySelectorAll(".request"),
+          this._state.idx = this._state.els.length;
+        },
+        get prev() {
+          if (this._state && this._state.idx > 0) {
+            this._state.idx--;
+            return this._state.els[this._state.idx].textContent;
+          }
+
+          return null;
+        },
+        get next() {
+          if (this._state && this._state.idx < this._state.els.length-1) {
+            this._state.idx++;
+            return this._state.els[this._state.idx].textContent;
+          }
+
+          return null;
+        }
+      }
+      CommandHistory.init();
+
+      function cmdHistoryBack(editor) {
+        var prevCmd = CommandHistory.prev;
+        console.log("PREV", prevCmd);
+        if (prevCmd) {
+          editor.setValue(prevCmd);
+        }
+      }
+
+      function cmdHistoryNext(editor) {
+        var nextCmd = CommandHistory.next;
+        console.log("NEXT", nextCmd);
+        if (nextCmd) {
+          editor.setValue(nextCmd);
+        }
+      }
+
       function send(editor) {
-          var input = editor.getWrapperElement().parentNode
-          var code = editor.getValue().trim()
-          var packet = parse(code)
+          var input = editor.getWrapperElement().parentNode;
+          var code = editor.getValue().trim();
+          var packet = parse(code);
           if (packet) {
-            var task = input.previousElementSibling
-            var request = task.querySelector(".request")
-            var response = task.querySelector(".response")
+            CommandHistory.init();
+            var task = input.previousElementSibling;
+            var request = task.querySelector(".request");
+            var response = task.querySelector(".response");
 
             var index = parseInt(task.id.replace("task-", "")) + 1;
-            var newTask = task.cloneNode(true)
-            newTask.id = "task-" + index
-            task.parentNode.insertBefore(newTask, input)
+            var newTask = task.cloneNode(true);
+            newTask.id = "task-" + index;
+            task.parentNode.insertBefore(newTask, input);
 
             CodeMirror.runMode(JSON.stringify(packet, 2, 2),
                                "application/json",
-                               request)
-            response.classList.add("pending")
+                               request);
+            response.classList.add("pending");
 
-            editor.setValue("")
-            document.activeElement.scrollIntoView()
+            editor.setValue("");
+            document.activeElement.scrollIntoView();
 
             window.parent.postMessage({ id: task.id, packet: packet }, "*");
           }
@@ -64,7 +106,11 @@
         matchBrackets: true,
         value: '{"to": "root", "type": "requestTypes"}',
         extraKeys: {"Cmd-Enter": send,
-                    "Ctrl-Enter": send}
+                    "Ctrl-Enter": send,
+                    "Cmd-Down": cmdHistoryNext,
+                    "Ctrl-Down": cmdHistoryNext,
+                    "Cmd-Up": cmdHistoryBack,
+                    "Ctrl-Up": cmdHistoryBack}
       });
       editor.on("change", debounce(function(editor) {
           var input = editor.getWrapperElement().parentNode;
@@ -72,7 +118,7 @@
             input.classList.remove("invalid")
           else
             input.classList.add("invalid")
-      }, 800))
+      }, 800));
   </script>
   <script>
     window.addEventListener("message", event => {
