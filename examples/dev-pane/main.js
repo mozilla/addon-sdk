@@ -16,7 +16,7 @@ const pane = new Pane({
       event.source.postMessage("pong", event.origin);
 
 
-    event.inspectTarget.postMessage(event.data, event.inspectTarget.location.origin);
+    event.inspectionTarget.postMessage(event.data, event.inspectionTarget.location.origin);
   }
 });
 
