@@ -5,9 +5,7 @@
 
 const { Loader } = require('sdk/test/loader');
 const { browserWindows } = require('sdk/windows');
-const { viewFor } = require('sdk/view/core');
 const { Ci } = require("chrome");
-const { isBrowser, getWindowTitle } = require("sdk/window/utils");
 
 // TEST: browserWindows Iterator
 exports.testBrowserWindowsIterator = function(assert) {
@@ -29,6 +27,7 @@ exports.testBrowserWindowsIterator = function(assert) {
     assert.equal(j, i++, 'for (x in browserWindows) works');
   }
 };
+
 
 exports.testWindowTabsObject_alt = function(assert, done) {
   let window = browserWindows.activeWindow;
@@ -56,25 +55,6 @@ exports.testWindowActivateMethod_simple = function(assert) {
                'Active window is active after window.activate() call');
   assert.equal(window.tabs.activeTab, tab,
                'Active tab is active after window.activate() call');
-};
-
-exports["test getView(window)"] = function(assert, done) {
-  browserWindows.once("open", window => {
-    const view = viewFor(window);
-
-    assert.ok(view instanceof Ci.nsIDOMWindow, "view is a window");
-    assert.ok(isBrowser(view), "view is a browser window");
-    assert.equal(getWindowTitle(view), window.title,
-                 "window has a right title");
-
-    window.close();
-    window.destroy();
-    assert.equal(viewFor(window), null, "window view is gone");
-    done();
-  });
-
-
-  browserWindows.open({ url: "data:text/html,<title>yo</title>" });
 };
 
 require('sdk/test').run(exports);

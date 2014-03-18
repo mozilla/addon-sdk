@@ -12,6 +12,7 @@ module.metadata = {
 };
 
 const { Cc, Ci } = require("chrome");
+const { on } = require("sdk/event/core");
 const { setTimeout } = require("sdk/timers");
 const { LoaderWithHookedConsole } = require("sdk/test/loader");
 const { Worker } = require("sdk/content/worker");
@@ -116,6 +117,8 @@ exports["test:sample"] = WorkerTest(
 
     assert.equal(worker.url, window.location.href,
                      "worker.url works");
+    assert.equal(worker.contentURL, window.location.href,
+                     "worker.contentURL works");
     worker.postMessage("hi!");
   }
 );
@@ -226,7 +229,7 @@ exports["test:post-json-values-only"] = WorkerTest(
             self.postMessage([ message.fun === undefined,
                                typeof message.w,
                                message.w && "port" in message.w,
-                               message.w.url,
+                               message.w._url,
                                Array.isArray(message.array),
                                JSON.stringify(message.array)]);
           });
@@ -247,6 +250,10 @@ exports["test:post-json-values-only"] = WorkerTest(
                        "Array is correctly serialized");
       done();
     });
+    // Add a new url property sa the Class function used by
+    // Worker doesn't set enumerables to true for non-functions
+    worker._url = DEFAULT_CONTENT_URL;
+
     worker.postMessage({ fun: function () {}, w: worker, array: array });
   }
 );
@@ -264,7 +271,7 @@ exports["test:emit-json-values-only"] = WorkerTest(
                             fun === null,
                             typeof w,
                             "port" in w,
-                            w.url,
+                            w._url,
                             "fun" in obj,
                             Object.keys(obj.dom).length,
                             Array.isArray(array),
@@ -295,6 +302,9 @@ exports["test:emit-json-values-only"] = WorkerTest(
       fun: function () {},
       dom: browser.contentWindow.document.createElement("div")
     };
+    // Add a new url property sa the Class function used by
+    // Worker doesn't set enumerables to true for non-functions
+    worker._url = DEFAULT_CONTENT_URL;
     worker.port.emit("addon-to-content", function () {}, worker, obj, array);
   }
 );
@@ -410,12 +420,12 @@ exports["test:setTimeout works with string argument"] = WorkerTest(
         // since we are inside ContentScriptScope function.
         // i'm NOT putting code-in-string inside code-in-string </YO DAWG>
         window.csVal = 13;
-        setTimeout("self.postMessage([" + 
-                      "csVal, " + 
-                      "window.docVal, " + 
-                      "'ContentWorker' in window, " + 
-                      "'UNWRAP_ACCESS_KEY' in window, " + 
-                      "'getProxyForObject' in window, " + 
+        setTimeout("self.postMessage([" +
+                      "csVal, " +
+                      "window.docVal, " +
+                      "'ContentWorker' in window, " +
+                      "'UNWRAP_ACCESS_KEY' in window, " +
+                      "'getProxyForObject' in window, " +
                     "])", 1);
       },
       contentScriptWhen: "ready",
@@ -457,7 +467,7 @@ exports["test:setInterval async Errors passed to .onError"] = WorkerTest(
       contentScriptWhen: "ready",
       onError: function(err) {
         count++;
-        assert.equal(err.message, "ubik", 
+        assert.equal(err.message, "ubik",
             "error (corectly) propagated  " + count + " time(s)");
         if (count >= 3) done();
       }
@@ -473,11 +483,11 @@ exports["test:setTimeout throws array, passed to .onError"] = WorkerTest(
       contentScript: "setTimeout(function() { throw ['array', 42] }, 1)",
       contentScriptWhen: "ready",
       onError: function(arr) {
-        assert.ok(isArray(arr), 
+        assert.ok(isArray(arr),
             "the type of thrown/propagated object is array");
-        assert.ok(arr.length==2, 
+        assert.ok(arr.length==2,
             "the propagated thrown array is the right length");
-        assert.equal(arr[1], 42, 
+        assert.equal(arr[1], 42,
             "element inside the thrown array correctly propagated");
         done();
       }
@@ -493,15 +503,15 @@ exports["test:setTimeout string arg with SyntaxError to .onError"] = WorkerTest(
       contentScript: "setTimeout('syntax 123 error', 1)",
       contentScriptWhen: "ready",
       onError: function(err) {
-        assert.equal(err.name, "SyntaxError", 
+        assert.equal(err.name, "SyntaxError",
             "received SyntaxError thrown from bad code in string argument to setTimeout");
-        assert.ok('fileName' in err, 
+        assert.ok('fileName' in err,
             "propagated SyntaxError contains a fileName property");
-        assert.ok('stack' in err, 
+        assert.ok('stack' in err,
             "propagated SyntaxError contains a stack property");
-        assert.equal(err.message, "missing ; before statement", 
+        assert.equal(err.message, "missing ; before statement",
             "propagated SyntaxError has the correct (helpful) message");
-        assert.equal(err.lineNumber, 1, 
+        assert.equal(err.lineNumber, 1,
             "propagated SyntaxError was thrown on the right lineNumber");
         done();
       }
@@ -821,8 +831,119 @@ exports['test:conentScriptFile as URL instance'] = WorkerTest(
       window: browser.contentWindow,
       contentScriptFile: url,
       onMessage: function(msg) {
-        assert.equal(msg, "msg from contentScriptFile", 
+        assert.equal(msg, "msg from contentScriptFile",
             "received a wrong message from contentScriptFile");
+        done();
+      }
+    });
+  }
+);
+
+exports["test:worker events"] = WorkerTest(
+  DEFAULT_CONTENT_URL,
+  function (assert, browser, done) {
+    let window = browser.contentWindow;
+    let events = [];
+    let worker = Worker({
+      window: window,
+      contentScript: 'new ' + function WorkerScope() {
+        self.postMessage('start');
+      },
+      onAttach: win => {
+        events.push('attach');
+        assert.pass('attach event called when attached');
+        assert.equal(window, win, 'attach event passes in attached window');
+      },
+      onError: err => {
+        assert.equal(err.message, 'Custom',
+          'Error passed into error event');
+        worker.detach();
+      },
+      onMessage: msg => {
+        assert.pass('`onMessage` handles postMessage')
+        throw new Error('Custom');
+      },
+      onDetach: _ => {
+        assert.pass('`onDetach` called when worker detached');
+        done();
+      }
+    });
+    // `attach` event is called synchronously during instantiation,
+    // so we can't listen to that, TODO FIX?
+    //  worker.on('attach', obj => console.log('attach', obj));
+  }
+);
+
+exports["test:onDetach in contentScript on destroy"] = WorkerTest(
+  "data:text/html;charset=utf-8,foo#detach",
+  function(assert, browser, done) {
+    let worker = Worker({
+      window: browser.contentWindow,
+      contentScript: 'new ' + function WorkerScope() {
+        self.port.on('detach', function(reason) {
+          window.location.hash += '!' + reason;
+        })
+      },
+    });
+    browser.contentWindow.addEventListener('hashchange', _ => { 
+      assert.equal(browser.contentWindow.location.hash, '#detach!', 
+                   "location.href is as expected");
+      done();
+    })
+    worker.destroy();
+  }
+);
+
+exports["test:onDetach in contentScript on unload"] = WorkerTest(
+  "data:text/html;charset=utf-8,foo#detach",
+  function(assert, browser, done) {
+    let { loader } = LoaderWithHookedConsole(module);
+    let worker = loader.require("sdk/content/worker").Worker({
+      window: browser.contentWindow,
+      contentScript: 'new ' + function WorkerScope() {
+        self.port.on('detach', function(reason) {
+          window.location.hash += '!' + reason;
+        })
+      },
+    });
+    browser.contentWindow.addEventListener('hashchange', _ => { 
+      assert.equal(browser.contentWindow.location.hash, '#detach!shutdown', 
+                   "location.href is as expected");
+      done();
+    })
+    loader.unload('shutdown');
+  }
+);
+
+exports["test:console method log functions properly"] = WorkerTest(
+  DEFAULT_CONTENT_URL,
+  function(assert, browser, done) {
+    let logs = [];
+
+    let clean = message =>
+          message.trim().
+          replace(/[\r\n]/g, " ").
+          replace(/ +/g, " ");
+
+    let onMessage = (type, message) => logs.push(clean(message));
+    let { loader } = LoaderWithHookedConsole(module, onMessage);
+
+    let worker =  loader.require("sdk/content/worker").Worker({
+      window: browser.contentWindow,
+      contentScript: "new " + function WorkerScope() {
+        console.log(Function);
+        console.log((foo) => foo * foo);
+        console.log(function foo(bar) { return bar + bar });
+
+        self.postMessage();
+      },
+      onMessage: () => {
+        assert.deepEqual(logs, [
+          "function Function() { [native code] }",
+          "(foo) => foo * foo",
+          "function foo(bar) { \"use strict\"; return bar + bar }"
+        ]);
+
         done();
       }
     });

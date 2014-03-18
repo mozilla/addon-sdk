@@ -8,7 +8,6 @@ DEFAULT_COMMON_PREFS = {
     # sets this preference)
     'browser.dom.window.dump.enabled': True,
     # warn about possibly incorrect code
-    'javascript.options.strict': True,
     'javascript.options.showInConsole': True,
 
     # Allow remote connections to the debugger
@@ -62,7 +61,6 @@ DEFAULT_FIREFOX_PREFS = {
     'urlclassifier.updateinterval' : 172800,
     # Point the url-classifier to a nonexistent local URL for fast failures.
     'browser.safebrowsing.provider.0.gethashURL' : 'http://localhost/safebrowsing-dummy/gethash',
-    'browser.safebrowsing.provider.0.keyURL' : 'http://localhost/safebrowsing-dummy/newkey',
     'browser.safebrowsing.provider.0.updateURL' : 'http://localhost/safebrowsing-dummy/update',
     }
 
