@@ -1064,35 +1064,62 @@ exports['test buttons can have anchored panels'] = function(assert, done) {
   let { identify } = loader.require('sdk/ui/id');
   let { getActiveView } = loader.require('sdk/view/core');
 
-  let button = ToggleButton({
+  let b1 = ToggleButton({
     id: 'my-button-22',
     label: 'my button',
     icon: './icon.png',
-    onChange: ({checked}) => checked && panel.show({position: button})
+    onChange: ({checked}) => checked && panel.show()
   });
 
-  let panel = Panel();
+  let b2 = ToggleButton({
+    id: 'my-button-23',
+    label: 'my button',
+    icon: './icon.png',
+    onChange: ({checked}) => checked && panel.show({position: b2})
+  });
+
+  let panel = Panel({
+    position: b1
+  });
+
+  let { document } = getMostRecentBrowserWindow();
+  let b1Node = document.getElementById(identify(b1));
+  let b2Node = document.getElementById(identify(b2));
+  let panelNode = getActiveView(panel);
 
   panel.once('show', () => {
-    let { document } = getMostRecentBrowserWindow();
-    let buttonNode = document.getElementById(identify(button));
-    let panelNode = getActiveView(panel);
-
-    assert.ok(button.state('window').checked,
+    assert.ok(b1.state('window').checked,
       'button is checked');
 
     assert.equal(panelNode.getAttribute('type'), 'arrow',
       'the panel is a arrow type');
 
-    assert.strictEqual(buttonNode, panelNode.anchorNode,
-      'the panel is anchored properly to the button');
+    assert.strictEqual(b1Node, panelNode.anchorNode,
+      'the panel is anchored properly to the button given in costructor');
 
-    loader.unload();
+    panel.hide();
 
-    done();
+    panel.once('show', () => {
+      assert.ok(b2.state('window').checked,
+        'button is checked');
+
+      assert.equal(panelNode.getAttribute('type'), 'arrow',
+        'the panel is a arrow type');
+
+      // test also that the button passed in `show` method, takes the precedence
+      // over the button set in panel's constructor.
+      assert.strictEqual(b2Node, panelNode.anchorNode,
+        'the panel is anchored properly to the button passed to show method');
+
+      loader.unload();
+
+      done();
+    });
+
+    b2.click();
   });
 
-  button.click();
+  b1.click();
 }
 
 require('sdk/test').run(exports);
