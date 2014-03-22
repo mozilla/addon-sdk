@@ -6,12 +6,14 @@
       <link rel="stylesheet" href="./codemirror.css">
       <link rel="stylesheet" href="./main.css">
       <script src="./codemirror-compressed.js"></script>
+      <views>
+          <section class="task cm-s-default">
+            <pre class="request "></pre>
+            <pre class="response"><span class="one"></span><span class="two"></span><span class="three"></span></pre>
+          </section>
+       </views>
   </head>
   <body>
-      <section id="task-1" class="cm-s-default">
-        <pre class="request "></pre>
-        <pre class="response"><span class="one"></span><span class="two"></span><span class="three"></span></pre>
-      </section>
       <pre class="input"></pre>
   </body>
   <script>
@@ -37,14 +39,11 @@
           var code = editor.getValue().trim()
           var packet = parse(code)
           if (packet) {
-            var task = input.previousElementSibling
+            var task = document.querySelector("views .task").cloneNode(true)
             var request = task.querySelector(".request")
             var response = task.querySelector(".response")
 
-            var index = parseInt(task.id.replace("task-", "")) + 1;
-            var newTask = task.cloneNode(true)
-            newTask.id = "task-" + index
-            task.parentNode.insertBefore(newTask, input)
+            input.parentNode.insertBefore(task, input)
 
             CodeMirror.runMode(JSON.stringify(packet, 2, 2),
                                "application/json",
@@ -54,7 +53,7 @@
             editor.setValue("")
             document.activeElement.scrollIntoView()
 
-            window.parent.postMessage({ id: task.id, packet: packet }, "*");
+            port.postMessage(packet);
           }
       }
 
@@ -76,18 +75,34 @@
   </script>
   <script>
     window.addEventListener("message", event => {
-      const { id, packet } = event.data
-      const code = JSON.stringify(packet, 2, 2)
-      const response = document.getElementById(id).querySelector(".response")
+      console.log("REPL", event);
+      window.port = event.ports[0];
+      port.onmessage = onMessage;
+    });
 
-      console.log(event.data)
+    var onMessage = (event) => {
+      var packet = event.data;
+      var code = JSON.stringify(packet, 2, 2);
+
+      var input = editor.getWrapperElement().parentNode;
+      var response = document.querySelector(".task .response.pending")
+
+      if (!response) {
+        message = document.querySelector("views .task").cloneNode(true)
+        response = message.querySelector(".response")
+        response.classList.add("message")
+
+        input.parentNode.insertBefore(message, input);
+      }
 
       if (packet.error)
-        response.classList.add("error")
+        response.classList.add("error");
 
-      CodeMirror.runMode(code, "application/json", response)
+
+      CodeMirror.runMode(code, "application/json", response);
+      response.classList.remove("pending");
 
       document.activeElement.scrollIntoView()
-    });
+    };
   </script>
 </html>

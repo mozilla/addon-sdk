@@ -9,11 +9,7 @@ const pane = new Pane({
   tooltip: "Firefox debugging protocol REPL",
   icon: "./robot.png",
   url: "./index.html",
-  onMessage: event => {
-    const { id, packet } = event.data;
-    const respond = response =>
-      event.source.postMessage({ id: id, packet: response }, event.origin);
-
-    event.inspectionTarget.write(packet).then(respond, respond);
+  onAttach: event => {
+    event.source.postMessage("RDP", event.origin, event.ports);
   }
 });

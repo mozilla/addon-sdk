@@ -43,7 +43,7 @@ section
 .input
 {
   padding-left: 6px;
-  border-color: green;
+  border-color: lightgreen;
 }
 .input.invalid
 {
@@ -52,16 +52,21 @@ section
 
 .request
 {
-  border-color: #DDD;
+  border-color: lightgrey;
 }
 
 .response
 {
-  border-color: #999;
+  border-color: grey;
 }
 .response.error
 {
   border-color: red;
+}
+
+.response.message
+{
+    border-color: lightblue;
 }
 
 .response .one,
