@@ -643,16 +643,16 @@ exports.testConstructor = function(assert, done) {
     id: "text-test-width",
     label: "test widget.width",
     content: "test width",
-    width: 200,
+    width: 64,
     contentScript: "self.postMessage(1)",
     contentScriptWhen: "ready",
     onMessage: function(message) {
-      assert.equal(this.width, 200, 'width is 200');
+      assert.equal(this.width, 64, 'width is 64');
 
       let node = widgetNode(0);
       assert.equal(this.width, node.style.minWidth.replace("px", ""));
       assert.equal(this.width, node.firstElementChild.style.width.replace("px", ""));
-      this.width = 300;
+      this.width = 48;
       assert.equal(this.width, node.style.minWidth.replace("px", ""));
       assert.equal(this.width, node.firstElementChild.style.width.replace("px", ""));
 
@@ -1180,6 +1180,34 @@ exports.testReinsertion = function(assert, done) {
       done();
     });
   }});
+};
+
+exports.testWideWidget = function testWideWidget(assert) {
+  let { loader } = LoaderWithHookedConsole(module);
+  const widgets = loader.require("sdk/widget");
+  const { document, CustomizableUI, gCustomizeMode, setTimeout } = getMostRecentBrowserWindow();
+
+  let wideWidget = widgets.Widget({
+    id: "my-wide-widget",
+    label: "wide-wdgt",
+    content: "foo",
+    width: 200
+  });
+
+  let widget = widgets.Widget({
+    id: "my-regular-widget",
+    label: "reg-wdgt",
+    content: "foo"
+  });
+
+  let wideWidgetNode = document.querySelector("toolbaritem[label=wide-wdgt]");
+  let widgetNode = document.querySelector("toolbaritem[label=reg-wdgt]");
+
+  assert.equal(wideWidgetNode, null,
+    "Wide Widget are not added to UI");
+
+  assert.notEqual(widgetNode, null,
+    "regular size widget are in the UI");
 };
 
 require("sdk/test").run(exports);
