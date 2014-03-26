@@ -515,8 +515,6 @@ exports["test Window Frames"] = createProxyTest(html, function (helper) {
       let iframe = document.getElementById("iframe");
       //assert(window.frames.length == 1, "The iframe is reported in window.frames check1");
       //assert(window.frames[0] == iframe.contentWindow, "The iframe is reported in window.frames check2");
-      //console.log(window.test+ "-"+iframe.contentWindow);
-      //console.log(window);
       assert(window.test == iframe.contentWindow, "window[frameName] is valid");
       done();
     }

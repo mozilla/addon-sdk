@@ -288,6 +288,43 @@ exports['test button global state updated'] = function(assert) {
   loader.unload();
 }
 
+exports['test button global state set and get with state method'] = function(assert) {
+  let loader = Loader(module);
+  let { ActionButton } = loader.require('sdk/ui');
+
+  let button = ActionButton({
+    id: 'my-button-16',
+    label: 'my button',
+    icon: './icon.png'
+  });
+
+  // read the button's state
+  let state = button.state(button);
+
+  assert.equal(state.label, 'my button',
+    'label is correct');
+  assert.equal(state.icon, './icon.png',
+    'icon is correct');
+  assert.equal(state.disabled, false,
+    'disabled is correct');
+
+  // set the new button's state
+  button.state(button, {
+    label: 'New label',
+    icon: './new-icon.png',
+    disabled: true
+  });
+
+  assert.equal(button.label, 'New label',
+    'label is updated');
+  assert.equal(button.icon, './new-icon.png',
+    'icon is updated');
+  assert.equal(button.disabled, true,
+    'disabled is updated');
+
+  loader.unload();
+}
+
 exports['test button global state updated on multiple windows'] = function(assert, done) {
   let loader = Loader(module);
   let { ActionButton } = loader.require('sdk/ui');
@@ -858,20 +895,5 @@ exports['test button after destroy'] = function(assert) {
 
   loader.unload();
 };
-
-// If the module doesn't support the app we're being run in, require() will
-// throw.  In that case, remove all tests above from exports, and add one dummy
-// test that passes.
-try {
-  require('sdk/ui/button/action');
-}
-catch (err) {
-  if (!/^Unsupported Application/.test(err.message))
-    throw err;
-
-  module.exports = {
-    'test Unsupported Application': assert => assert.pass(err.message)
-  }
-}
 
 require('sdk/test').run(exports);
