@@ -957,7 +957,7 @@ exports.testPageModCss = function(assert, done) {
     'data:text/html;charset=utf-8,<div style="background: silver">css test</div>', [{
       include: ["*", "data:*"],
       contentStyle: "div { height: 100px; }",
-      contentStyleFile: data.url("pagemod-css-include-file.css")
+      contentStyleFile: data.url("css-include-file.css")
     }],
     function(win, done) {
       let div = win.document.querySelector("div");
