@@ -1531,4 +1531,32 @@ exports.testDetachOnUnload = function(assert, done) {
   })
 }
 
+exports.testSyntaxErrorInContentScript = function(assert, done) {
+  const url = "data:text/html;charset=utf-8,testSyntaxErrorInContentScript";
+  let hitError = null;
+  let attached = false;
+
+  testPageMod(assert, done, url, [{
+      include: url,
+      contentScript: 'console.log(23',
+
+      onAttach: function() {
+        attached = true;
+      },
+
+      onError: function(e) {
+        hitError = e;
+      }
+    }],
+
+    function(win, done) {
+      assert.ok(attached, "The worker was attached.");
+      assert.notStrictEqual(hitError, null, "The syntax error was reported.");
+      if (hitError)
+        assert.equal(hitError.name, "SyntaxError", "The error thrown should be a SyntaxError");
+      done();
+    }
+  );
+};
+
 require('sdk/test').run(exports);
