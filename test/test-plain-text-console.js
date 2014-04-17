@@ -7,7 +7,6 @@ const { id, name } = require("sdk/self");
 const { Cc, Cu, Ci } = require("chrome");
 const { loadSubScript } = Cc['@mozilla.org/moz/jssubscript-loader;1'].
                      getService(Ci.mozIJSSubScriptLoader);
-const system = require("sdk/system/events");
 
 const ADDON_LOG_LEVEL_PREF = "extensions." + id + ".sdk.console.logLevel";
 const SDK_LOG_LEVEL_PREF = "extensions.sdk.console.logLevel";
@@ -241,6 +240,7 @@ exports.testConsoleInnerID = function(assert) {
     messages.push({ msg: message.arguments[0], type: message.level, innerID: message.innerID });
   }
 
+  const system = require("sdk/system/events");
   system.on("console-api-log-event", onMessage);
 
   log("Test log");
