@@ -60,6 +60,7 @@ exports.testWindowActivateMethod_simple = function(assert) {
                'Active tab is active after window.activate() call');
 };
 
+
 exports["test getView(window)"] = function(assert, done) {
   browserWindows.once("open", window => {
     const view = viewFor(window);
@@ -69,15 +70,13 @@ exports["test getView(window)"] = function(assert, done) {
     assert.equal(getWindowTitle(view), window.title,
                  "window has a right title");
 
-    window.close();
-    window.destroy();
-    assert.equal(viewFor(window), null, "window view is gone");
-    done();
+    window.close(done);
   });
 
 
   browserWindows.open({ url: "data:text/html;charset=utf-8,<title>yo</title>" });
 };
+
 
 exports["test modelFor(window)"] = function(assert, done) {
   browserWindows.once("open", window => {
@@ -87,10 +86,7 @@ exports["test modelFor(window)"] = function(assert, done) {
     assert.ok(isBrowser(view), "view is a browser window");
     assert.ok(modelFor(view) === window, "modelFor(browserWindow) is SDK window");
 
-    window.close();
-    window.destroy();
-    assert.equal(viewFor(window), null, "window view is gone");
-    done();
+    window.close(done);
   });
 
 

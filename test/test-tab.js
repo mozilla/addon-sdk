@@ -156,19 +156,20 @@ exports["test viewFor(tab)"] = (assert, done) => {
   tabs.open({ url: "about:mozilla" });
 };
 
+
 exports["test modelFor(xulTab)"] = (assert, done) => {
-  tabs.once("open", tab => {
-    const view = viewFor(tab);
-    assert.ok(view, "view is returned");
-    assert.ok(isTab(view), "view is underlaying tab");
-    assert.equal(getTabId(view), tab.id, "tab has a same id");
-    assert.equal(modelFor(view), tab, "modelFor(view) is SDK tab");
+  tabs.open({
+    url: "about:mozilla",
+    onReady: tab => {
+      const view = viewFor(tab);
+      assert.ok(view, "view is returned");
+      assert.ok(isTab(view), "view is underlaying tab");
+      assert.equal(getTabId(view), tab.id, "tab has a same id");
+      assert.equal(modelFor(view), tab, "modelFor(view) is SDK tab");
 
-    tab.close();
-    done();
+      tab.close(defer(done));
+    }
   });
-
-  tabs.open({ url: "about:mozilla" });
 };
 
 require("test").run(exports);
