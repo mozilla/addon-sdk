@@ -7,6 +7,7 @@ const { id, name } = require("sdk/self");
 const { Cc, Cu, Ci } = require("chrome");
 const { loadSubScript } = Cc['@mozilla.org/moz/jssubscript-loader;1'].
                      getService(Ci.mozIJSSubScriptLoader);
+const system = require("sdk/system/events");
 
 const ADDON_LOG_LEVEL_PREF = "extensions." + id + ".sdk.console.logLevel";
 const SDK_LOG_LEVEL_PREF = "extensions.sdk.console.logLevel";
@@ -228,6 +229,30 @@ exports.testPlainTextConsoleBoundMethods = function(assert) {
   prints = [];
 
   restorePrefs();
+};
+
+exports.testConsoleInnerID = function(assert) {
+  let Console = require("sdk/console/plain-text").PlainTextConsole;
+  let { log, info, warn, error, debug, exception, trace } = new Console(function() {}, "test ID");
+
+  let messages = [];
+  function onMessage({ subject }) {
+    let message = subject.wrappedJSObject;
+    messages.push({ msg: message.arguments[0], type: message.level, innerID: message.innerID });
+  }
+
+  system.on("console-api-log-event", onMessage);
+
+  log("Test log");
+  warn("Test warning");
+  error("Test error");
+
+  assert.equal(messages.length, 3, "Should see 3 log events");
+  assert.deepEqual(messages[0], { msg: "Test log", type: "log", innerID: "test ID" }, "Should see the right event");
+  assert.deepEqual(messages[1], { msg: "Test warning", type: "warn", innerID: "test ID" }, "Should see the right event");
+  assert.deepEqual(messages[2], { msg: "Test error", type: "error", innerID: "test ID" }, "Should see the right event");
+
+  system.off("console-api-log-event", onMessage);
 };
 
 function restorePrefs() {
