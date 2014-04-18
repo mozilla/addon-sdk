@@ -368,6 +368,33 @@ exports.testTabMove = function(assert, done) {
   }).then(null, assert.fail);
 };
 
+exports.testIgnoreClosing = function(assert, done) {
+  let originalWindow = browserWindows.activeWindow;
+  openBrowserWindow(function(window, browser) {
+    let url = "data:text/html;charset=utf-8,foobar";
+
+    assert.equal(tabs.length, 2, "should be two windows open each with one tab");
+
+    tabs.on('ready', function onReady(tab) {
+      tabs.removeListener('ready', onReady);
+
+      let win = tab.window;
+      assert.equal(win.tabs.length, 2, "should be two tabs in the new window");
+      assert.equal(tabs.length, 3, "should be three tabs in total");
+
+      tab.close(function() {
+        assert.equal(win.tabs.length, 1, "should be one tab in the new window");
+        assert.equal(tabs.length, 2, "should be two tabs in total");
+
+        originalWindow.once("activate", done);
+        close(window);
+      });
+    });
+
+    tabs.open(url);
+  });
+};
+
 // TEST: open tab with default options
 exports.testOpen = function(assert, done) {
   let url = "data:text/html;charset=utf-8,default";
@@ -413,6 +440,8 @@ exports.testPinUnpin = function(assert, done) {
 
 // TEST: open tab in background
 exports.testInBackground = function(assert, done) {
+  assert.equal(tabs.length, 1, "Should be one tab");
+
   let window = getMostRecentBrowserWindow();
   let activeUrl = tabs.activeTab.url;
   let url = "data:text/html;charset=utf-8,background";
@@ -942,9 +971,11 @@ exports['test unique tab ids'] = function(assert, done) {
   var one = openWindow(), two = openWindow();
   all([one, two]).then(function(results) {
     assert.notEqual(results[0].id, results[1].id, "tab Ids should not be equal.");
-    results[0].win.close();
-    results[1].win.close();
-    done();
+    results[0].win.close(function() {
+      results[1].win.close(function () {
+        done();
+      });
+    });
   });
 }
 
