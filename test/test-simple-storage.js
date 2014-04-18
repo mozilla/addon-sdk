@@ -19,6 +19,7 @@ let storeFile = Cc["@mozilla.org/file/directory_service;1"].
 storeFile.append("jetpack");
 storeFile.append(id);
 storeFile.append("simple-storage");
+file.mkpath(storeFile.path);
 storeFile.append("store.json");
 let storeFilename = storeFile.path;
 
@@ -106,6 +107,23 @@ exports.testEmpty = function (assert) {
   assert.ok(!file.exists(storeFilename), "Store file should not exist");
 };
 
+exports.testStorageDataRecovery = function(assert) {
+  const data = { 
+    a: true,
+    b: [3, 13],
+    c: "guilty!",
+    d: { e: 1, f: 2 }
+  };
+  let stream = file.open(storeFilename, "w");
+  stream.write(JSON.stringify(data));
+  stream.close();
+  let loader = Loader(module);
+  let ss = loader.require("sdk/simple-storage");
+  assert.deepEqual(ss.storage, data, "Recovered data should be the same as written");
+  file.remove(storeFilename);
+  loader.unload();
+}
+
 exports.testMalformed = function (assert) {
   let stream = file.open(storeFilename, "w");
   stream.write("i'm not json");
@@ -118,6 +136,7 @@ exports.testMalformed = function (assert) {
     break;
   }
   assert.ok(empty, "Malformed storage should cause root to be empty");
+  file.remove(storeFilename);
   loader.unload();
 };
 
