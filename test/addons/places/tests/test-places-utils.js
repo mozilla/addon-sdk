@@ -31,25 +31,26 @@ exports['test construct tree'] = function (assert) {
   assert.equal(tree.get(4).get(2), null, 'node.get descends from itself fails if not descendant');
 };
 
-exports['test walk'] = function (assert, done) {
+exports['test walk'] = function (assert) {
   let resultsAll = [];
-  let resultsNode = [];
   let tree = TreeNode(1);
   tree.add([2, 3, 4]);
   tree.get(2).add([2.1, 2.2]);
 
   tree.walk(function (node) {
     resultsAll.push(node.value);
-  }).then(() => {
-    [1, 2, 2.1, 2.2, 3, 4].forEach(num => {
-      assert.ok(~resultsAll.indexOf(num), 'function applied to each node from root');
-    });
-    return tree.get(2).walk(node => resultsNode.push(node.value));
-  }).then(() => {
-    [2, 2.1, 2.2].forEach(function (num) {
-      assert.ok(~resultsNode.indexOf(num), 'function applied to each node from node');
-    });
-  }).catch(assert.fail).then(done);
+  });
+
+  [1, 2, 2.1, 2.2, 3, 4].forEach(function (num) {
+    assert.ok(~resultsAll.indexOf(num), 'function applied to each node from root');
+  });
+
+  let resultsNode = [];
+  tree.get(2).walk(function (node) resultsNode.push(node.value));
+
+  [2, 2.1, 2.2].forEach(function (num) {
+    assert.ok(~resultsNode.indexOf(num), 'function applied to each node from node');
+  });
 };
 
 exports['test async walk'] = function (assert, done) {
