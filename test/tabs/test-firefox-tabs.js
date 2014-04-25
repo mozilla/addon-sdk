@@ -6,7 +6,8 @@
 const { Cc, Ci } = require('chrome');
 const { Loader } = require('sdk/test/loader');
 const { setTimeout } = require('sdk/timers');
-const { getOwnerWindow } = require('sdk/private-browsing/window/utils');
+const { viewFor } = require('sdk/view/core');
+const { getOwnerWindow } = require('sdk/tabs/utils');
 const { windows, onFocus, getMostRecentBrowserWindow } = require('sdk/window/utils');
 const { open, focus, close } = require('sdk/window/helpers');
 const tabs = require('sdk/tabs');
@@ -165,12 +166,12 @@ exports.testTabPropertiesInNewWindow = function(assert, done) {
   });
 
   let tabs = loader.require('sdk/tabs');
-  let { getOwnerWindow } = loader.require('sdk/private-browsing/window/utils');
+  let { viewFor } = loader.require('sdk/view/core');
 
   let count = 0;
   function onReadyOrLoad (tab) {
     if (count++) {
-      close(getOwnerWindow(tab)).then(done).then(null, assert.fail);
+      close(getOwnerWindow(viewFor(tab))).then(done).then(null, assert.fail);
     }
   }
 
@@ -441,7 +442,7 @@ exports.testOpenInNewWindow = function(assert, done) {
     url: url,
     inNewWindow: true,
     onReady: function(tab) {
-      let newWindow = getOwnerWindow(tab);
+      let newWindow = getOwnerWindow(viewFor(tab));
       assert.equal(windows().length, startWindowCount + 1, "a new window was opened");
 
       onFocus(newWindow).then(function() {
@@ -466,7 +467,7 @@ exports.testOpenInNewWindowOnOpen = function(assert, done) {
     url: url,
     inNewWindow: true,
     onOpen: function(tab) {
-      let newWindow = getOwnerWindow(tab);
+      let newWindow = getOwnerWindow(viewFor(tab));
 
       onFocus(newWindow).then(function() {
         assert.equal(windows().length, startWindowCount + 1, "a new window was opened");
