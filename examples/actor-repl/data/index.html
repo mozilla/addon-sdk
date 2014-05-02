@@ -1,0 +1,93 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<html>
+  <head>
+      <link rel="stylesheet" href="./codemirror.css">
+      <link rel="stylesheet" href="./main.css">
+      <script src="./codemirror-compressed.js"></script>
+  </head>
+  <body>
+      <section id="task-1" class="cm-s-default">
+        <pre class="request "></pre>
+        <pre class="response"><span class="one"></span><span class="two"></span><span class="three"></span></pre>
+      </section>
+      <pre class="input"></pre>
+  </body>
+  <script>
+      function debounce(fn, ms) {
+        var id
+        return function(...args) {
+          clearTimeout(id)
+          id = setTimeout(fn, ms, ...args)
+        }
+      }
+
+      function Try(fn) {
+        return function(...args) {
+          try { return fn(...args) }
+          catch (error) { return null }
+        }
+      }
+
+      var parse = Try(JSON.parse)
+
+      function send(editor) {
+          var input = editor.getWrapperElement().parentNode
+          var code = editor.getValue().trim()
+          var packet = parse(code)
+          if (packet) {
+            var task = input.previousElementSibling
+            var request = task.querySelector(".request")
+            var response = task.querySelector(".response")
+
+            var index = parseInt(task.id.replace("task-", "")) + 1;
+            var newTask = task.cloneNode(true)
+            newTask.id = "task-" + index
+            task.parentNode.insertBefore(newTask, input)
+
+            CodeMirror.runMode(JSON.stringify(packet, 2, 2),
+                               "application/json",
+                               request)
+            response.classList.add("pending")
+
+            editor.setValue("")
+            document.activeElement.scrollIntoView()
+
+            window.parent.postMessage({ id: task.id, packet: packet }, "*");
+          }
+      }
+
+      var editor = CodeMirror(document.querySelector(".input"), {
+        autofocus: true,
+        mode: "application/json",
+        matchBrackets: true,
+        value: '{"to": "root", "type": "requestTypes"}',
+        extraKeys: {"Cmd-Enter": send,
+                    "Ctrl-Enter": send}
+      });
+      editor.on("change", debounce(function(editor) {
+          var input = editor.getWrapperElement().parentNode;
+          if (parse(editor.getValue().trim()))
+            input.classList.remove("invalid")
+          else
+            input.classList.add("invalid")
+      }, 800))
+  </script>
+  <script>
+    window.addEventListener("message", event => {
+      const { id, packet } = event.data
+      const code = JSON.stringify(packet, 2, 2)
+      const response = document.getElementById(id).querySelector(".response")
+
+      console.log(event.data)
+
+      if (packet.error)
+        response.classList.add("error")
+
+      CodeMirror.runMode(code, "application/json", response)
+
+      document.activeElement.scrollIntoView()
+    });
+  </script>
+</html>
