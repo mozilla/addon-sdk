@@ -1,8 +1,0 @@
-<script>
-// Hack: Ideally we would have used srcdoc on iframe, but in
-// that case origin of document is either content which is unable
-// to load add-on resources or a chrome to which add-on resource
-// can not send messages back.
-document.documentElement.style.overflow = "hidden";
-document.documentElement.innerHTML = atob(location.hash.substr(1));
-</script>
