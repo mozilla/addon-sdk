@@ -6,271 +6,274 @@
 
 ### Use cases
 
-There are growing number addons that extend devtools capabilities
-one way or another. This clearly indicates there is a need for a
-APIs to make this task easier.
+There are growing number addons that extend devtools capabilities one way or another. This clearly indicates there is a need for a APIs to make this task easier.
 
-Panes in the developer tools are the primary UI estate for built-in
-tools. Add-on's can be provided an API to add their own panes.
+Toolbar panels in the developer toolbox represent primary UI estate for a built-in developer tools. It would make sense to let add-on's add their own toolbox panels for extending devtools.
 
 #### Goals
 
-- Simple API should allow add-on to add a new pane into which
-  it can render add-on specific UI.
+- Simple API should allow add-on to add a new toolbar panel into which it could render add-on specific UI.
 
-- Pane API should let users load a bundled HTML document,
-  that would have two way communication with an add-on in
-  a an API that ressables how iframes of different origin
-  can communicate with each other.
+- Toolbar panel should let users load a bundled HTML document, and setup a two way communication with an add-on using web standard APIs.
 
-- API should not be constrained with 1 to 1 relation, meaning
-  that same pane may actually be loaded multiple times (pane
-  maybe activated on several tabs).
-
-- API should allow communication with an individual viewports
-  or all of them at the same time.
-
-### Non goals
-
-- API is not supposed to completely emulate iframe API more
-  specifically `pane.contentWindow` & `pane.contentDocument`
-  are out of scope.
-
-### Future maybe goals
-
-- Once `MessageChannel` API is available it should be possible
-  send message ports to the viewports to enable more direct
-  and standard communication.
-
-- Once E10S compatible `WindowProxy` is implemented as defined
-  by [HTML WebMessaging][] it may be exposed directly.
+- API should provide a communication channel with debuggee via standard web APIs.
 
 
 ### API
 
-
 ```js
-const { Pane } = require("dev/tool")
-const pane = new Pane({
-  name: "addon-pane",
+const { Panel } = require("devtools/panel");
+const { Tool } = require("devtools/toolbox");
+
+const { MessageChannel } = require("sdk/messaging");
+
+const MyPane = Class({
+  extends: Pane,
   title: "Addon pad",
   icon: "./icon.png",
   url: "./index.html",
-  tooltip: "My superb addon"
-  onAttach: ({source, target}) => {
-    console.log("pane was attached to new developer toolbox");
+  tooltip: "My superb addon",
+  setup: function({debuggee}) {
+    this.debuggee = debugee;
   },
-  onReady: ({source, origin}) => {
-    console.log("pane document is interactive");
-    source.postMessage({ hi: "there" }, origin);
+  onAttach: ({source}) => {
+    console.log("pane document was attached");
+    // Create a two way communication channel to exchange messages
+    // with a toolbar panel document.
+    const { port1, port2 } = new MessageChannel();
+    // Keep reference to one port on and send the other to the
+    // panel document.
+    this.port = port1;
+    this.postMessage({ hi: "there" }, [port2]);
   },
-  onLoad: ({source}) => {
-    console.log("pane document load is complete");
-  },
-  onMessage: ({source, data, origin}) => {
-    console.log("Received ping from pane document");
-    source.postMessage("pong!", origin);
+  dispose: function() {
+    delete this.debugee;
+    delete this.port;
   }
 });
+exports.MyPane = MyPane;
+
+const tool = new Tool({
+  panes: { "addon-panel": MyPane }
+});
+
+tool.destroy()
 ```
 
-Constructor takes mandatory `options.title` that will be displayed
-over the pane (which users can use to toogle it).
+Constructor takes mandatory `options.title` that will be displayed over the panel tab (which users can use to toogle it).
 
-Mandatory `options.url` is relative uri, to an add-on bundled html
-document (which will be loaded into every pane viewport).
+Mandatory `options.url` is an add-on relative uri, to a bundled html document, which is loaded whenever panel is toggled.
 
-All other options are optional. Add-on can multiple Panes but creating
-multiple panes with same `url` will fail. In order to create multiple
-panes with same `url` optional `options.name` can be provided that must
-be unique.
+All other options are optional.
 
-Optional event handlers `onAttach`, `onReady`, `onLoad`, `onMessage`
-may be provided. More details on them will be covered in the events
+Optional event handler methods can be defined `onAttach`, `onReady`, `onLoad`, `onMessage`. More details on them will be covered in the events
 section of the document.
 
 #### Methods
 
-- Pane instances implement `EventTarget` interface there for
-  `on`, `once`, `off` method that can be used to register / unregister
-  event handlers.
+- Pane instances implement `EventTarget` interface there for `on`, `once`, `off` methods can be used to add / remove event handlers.
 
-- Pane instances implement `postMessage` function that implements
-  interface defined by HTML [posting messages][] specification. (Initially
-  `targetOrigin` and `transfer` arguments will be ignored. This method
-  can be used to post a message to all of the pane documents that are
-  loaded in all viewports at the moment of the call.
+- Panel instanes implement `postMessage` method that can be used to send messages to a panel window. Unlike `window.postMessage` though panel window won't have a way to communicate back. Two way communication can easily be established by sending a port of a `MessageChannel` to a panel window (see examples for more details).
 
-- Pane instances implement `Disposable` interface there for they can be
-  destroyed by calling `destroy`. This will remove all pane views from
-  firefox user interface. Panes are automatically destroyed once add-on
-  is unloaded.
+- Panel optionally may implement `setup` method that will be invoked with an `options` argument when panel is created. Given `options.debuggee` will be an instance of `MessagePort` representing a connection to a [firefox remote debugging][] protocol (see debuggee section of this document for details).
+
+- Panel optionally may implement `dispose` method that will be invoked just before given panel is destroyed. This method can be used to do any cleanup work associated with a panel instance.
+
 
 #### Events
 
-Most event handlers are passed an event `source` argument representing a window
-proxy from which event came. Event `source` implements `source.postMessage`
-method defined by HTML [posting messages][] specification, which can be used
-to send messages back to a `window` from which event occured. Event `target`
-is a pane viewport that implements same API as pane, but is bound to a specific
-viewport.
+- Event "attach" is dispatched whenever panel is toggled first time and `pane.url` is started to load. Note that by the time event is received document may already be loaded. Event object given an to a handler has a `source` field, which can be used to send a message to window loaded in the panel. Although sending message on "attach" event is not guaranteed to be received on the other end as JS in the receiver document may not be loaded yet.
 
-- Event "attach" is dispatched whenever new underlaying view port is created and
-  `pane.url` is started to load into it. Note that by the time event is received
-  document may already be loaded. Event handler is given event `source` object.
-  Message send from attach event handler is not guaranteed to be received on
-  the other end as JS in the receiver document may not be loaded yet.
+- Event "ready" is dispatched after document in the toolbar panel becomes interactive (`document.readyState === "interactive"`).
 
-- Event "ready" is dispatched whenever document in any of the viewports
-  becomes `interactive` (`document.readyState === "interactive"`).
-  Event handler is passed an event `source` object.
+- Event "load" is dispatched after document in the toolbar panel is fully loaded (`document.readySate === "complete"`).
 
-- Event "load" is dispatched whenever document in any of the viewport
-  is fully loaded (`document.readySate === "complete"`). Event handler is passed
-  an event `source` object.
-
-- Event "message" is dispatched whenever document in any of the viewport
-  sends a message to a parent (`window.parent.postMessage(data, "*"))`). Event
-  handler is passed object implementing interface from HTML [event definition][]
-  specification. Which includes `event.data`, `event.origin`, `event.source`
-  (event `source` object).
 
 #### Fields
 
-- Pane instances have a read-only `url` field representing `url` provided
-  to a constructor.
-- Pane instances have a read-only `title` field representing it's title.
-- Pane instances have a read-only `tooltip` field representing a text displayed
-  in a tootip when hovering a pane title.
-- Pane instances have a read-only `id` field representing unique identifier
-  for the instance.
+- Panel instances have a read-only `url` field representing `url` of the document that is loaded into a toolbar panel.
+- Panel instances have a read-only `title` field displayed as a toolbar panel tab title.
+- Panel instances have a read-only `tooltip` that is dysplayde in a tootip when hovering a toolbar pane tab.
+- Panel instances have a read-only `id` field that represents unique identifier of that panel instance.
+- Panel instances have a read-only `icon` field representing url of the icon that is desplayed in the toolbar panle tab.
 
 ### Example
 
 
-#### Pane Document
+#### Panel Document
 
-Document in the pane is an HTML document that has expanded
-principal. Expanded principals allow document to overcome
-cross-domain limitations. Document scripts will be able to
-interact with a domains that were provided in `package.json`.
-Note: This specific feature part of a bigger goal for add-on
-sdk and may not be present in the initial draft.
+Toolbar panels load an HTML document with expanded principal. Expanded principals allow it to overcome some cross-domain limitations (by providing list of domains document can interact with in `package.json`)
+Note: This specific feature is a part of another bigger goal for an add-on sdk and is being worked on sperately, which means it may not be available for toolbar panels initially).
 
-Pane document has no direct access to a privileged add-on APIs
-or a content document being debugged. Pane document scripts can
-communicate with add-on host (code that has access to privileged
-APIs) through message passing:
+Panel document has no access to any privileged code including add-on APIs. Neither it has access to a debuggee as it may even be on a differrent machine. Only thing panel documents could do is to receive messages from the add-on and communicate back if add-on decides to expose a communication channel.
 
 ```html
 <html>
 	<button id="mybutton">click me</button>
   <script>
+    const channel = new MessageChannel();
+    const output = channel.port1;
+    const input = channel.port2;
+
 		window.addEventListener("click", function(event) {
       if (event.target.id === "mybutton") {
-        // Pane document can send messages to add-on host
-        // via message events.
-        window.parent.postMessage({
+        // Send a message to an add-on when mybutton is pressed.
+        outgoing.postMessage({
           id: 1,
           text: "hello world"
-        }, "*");
+        });
       }
 		});
 
-		// Pane document can also receive messages from the privileged
-    // add-on code. Via message events.
+		// Pane document will receive a messages from the add-on providing it
+    // with a communication port to it.
 		window.addEventListener("message", function(event) {
-      console.log("received message from the add-on host", event.data);
+      const port = event.ports[0];
+      // connect ports to establish connection between document and an
+      // addo-on.
+      port.onmessage = input.postMessage.bind(input);
+      input.onmessage = port.postMessage.bind(port);
+      port.start();
+      input.start();
+      console.log("connected to an add-on");
 	  });
   </script>
 </html>
 ```
 
-On the add-on host side such messages can be handled via message event
-handler:
+Now add-on code needs to register panel and setup a twe way communication channel with it.
 
 ```js
-const { Pane } = require("dev/tool")
-const pane = new Pane({
-  title: "Addon pad",
+const { Panel } = require("dev/pane");
+const { Tool } = require("dev/toolbox");
+const { Class } = require("sdk/core/heritage");
+const { MessageChannel } = require("../sdk/messaging");
+
+const MyPane = Class({
+  extends: Panel,
+  title: "Addon panel",
   url: "./index.html",
-  onMessage: ({source, data, origin}) => {
-    console.log("Received message from pane document");
-    // send message back to pane document.
-    source.postMessage("pong!", origin);
-  }
-});
-```
+  onReady: function() {
+    console.log("Panel is loaded");
 
-### Inspection target
-
-Pane viewports are bound to a specific target (tab) being inspected.
-Pane viewports are passed an `event.target` that are instances of
-`[MessagePort][]` and represent [remote debugging protocol][] connection
-to an inspection target. This means that messages posted on the `target`
-are send as packets of [remote debugging protocol][] to a debuggee,
-responses are also delivered back to a `target` via message events.
-
-```js
-const pane = new Pane({
-  title: "Addon pad",
-  url: "./index.html",
-  onReady: ({source, target, origin}) => {
-    target.addEventListener("message", function({data}) {
-      console.log("Received packet from the inspection target", packet)
-    });
-    target.start();
+    // setup two way communication with a channel.
+    const { port1, port2 } = new MessageChannel();
+    port1.onmessage = this.emit.bind(this, "message");
+    this.postMessage("connect", [port2]);
   },
-  onMessage: ({source, data, origin, target}) => {
-    console.log("Forward pane message to an inspection target", data);
-    target.postMessage(data);
+  onMessage: function(event) => {
+    console.log("Button was clicked");
+  }
+});
+
+const myTool = new Tool({
+  name: "my tool",
+  panels: {
+    myPanel: MyPanel
   }
 });
 ```
 
-Above example sets up one way pane document to inspection target communication.
-Although in practice two way communication is more interesting. Given that
-ports are transfarable it's very easy to set up two way communication between
-pane document & inspection target:
+### Debuggee
 
+Developer toolbar is bound to a specefic debuggee - target (usually a tab) that is being inspected. Toolbar panels are given a `debuggee` at creation in form of a `[MessagePort][]` instance that represents a connection to a [remote debugging protocol][]. Messages posted to a debugge represent JSON packets of the [remote debugging protocol][]. Messages received on the `debuggee` are also JSON packets send from the debugger protocol server. Given such a `debuggee` add-ons are able to do anything that built-in developer tools can do (as they use same debugger protocol) and even beyond.
 
 ```js
-const pane = new Pane({
-  title: "Addon pad",
+const { Panel } = require("dev/pane");
+const { Tool } = require("dev/toolbox");
+const { Class } = require("sdk/core/heritage");
+
+const REPLPanel = Class({
+  extends: Panel,
+  label: "Actor REPL",
+  tooltip: "Firefox debugging protocol REPL",
+  icon: "./robot.png",
   url: "./index.html",
-  onReady: ({source, target, origin}) => {
-    // Transfer inspection target port to pane document once it's ready.
-    source.postMessage({ type: "inspection-target" }, origin, [target]);
+  setup: function({debuggee}) {
+    this.debuggee = debuggee;
+  },
+  dispose: function() {
+    delete this.debuggee;
+  },
+  onReady: function() {
+    console.log("READY");
+    this.debuggee.start();
+    this.postMessage("RDP", [this.debuggee]);
   }
+});
+
+const replTool = new Tool({
+  name: "repl",
+  panels: { repl: REPLPanel }
 });
 ```
 
-Now communication with a debuggee through raw [remote debugging protocol][]
-maybe too low level for most use cases. Although given raw communication port
-it is possible to generate easier to use APIs on the fly, either dinamycally
-(see [Bug 983928]) or statically. We could expose certain scripts to pane
-document via resource URIs to allow exactly that.
+Since `debuggee` is just a `MessageChannel` port it can be send over to a panel document to enable direct communication with a remote debugging protocol server. In this example we do not illustrate panel document code but it can be found in the add-on sdk examples.
+
+### RDP Client
+
+Now communication with a debuggee through a raw [remote debugging protocol][] maybe a very tedious. There for SDK is exposing a client code that can be included into a panel document to interact with a debuggee via high level OOP API. Although community could always innovate and build even better clients or provide some sugar on it's own.
+
+```html
+<html>
+  <head>
+      <script src="resource://sdk/dev/volcan.js"></script>
+      <script src="./task.js"></script>
+  </head>
+  <body>
+  </body>
+  <script>
+    const wait = (target, type, capture) => new Promise((resolve, reject) => {
+      const listener = event => {
+        target.removeEventListener(type, listener, capture);
+        resolve(event);
+      };
+      target.addEventListener(type, listener, capture);
+    });
+
+    const display = message =>
+      document.body.innerHTML += message + "<br/>";
+
+    Task.spawn(function*() {
+      var event = yield wait(window, "message");
+      var port = event.ports[0];
+
+      display("Port received");
+      var root = yield volcan.connect(port);
+
+      display("Connected to a debugger");
+
+      var message = yield root.echo("hello")
+
+      display("Received echo for: " + message);
+
+      var list = yield root.listTabs();
+
+      display("You have " + list.tabs.length + " open tabs");
+
+      var activeTab = list.tabs[list.selected];
+
+      display("Your active tab url is: " + activeTab.url);
+
+      var sheets = yield activeTab.styleSheetsActor.getStyleSheets();
+
+      display("Page in active tab has " + sheets.length + " stylesheets");
+
+    });
+  </script>
+</html>
+```
+
+Example above includes SDK provided Remote debugging protocol client from `resource://sdk/dev/volcan.js` url that is used to connect to debuggee port send to a panel document. After client is connected high level API is used to interact with a debuggee (to disable it's stylesheet). Rest of the code can be found in the SDK examples.
 
 
-### Inspection target instrumentation
+### Debuggee instrumentation
 
-While firefox debugging protocol may provide some build-in instrumentation
-code in form of actors that may not necessarily address cover everything
-that developer tool add-on may want to accomplish. There for add-on should
-be able to provide own custom instrumentation for a debugee. In most
-browsers this is accomplished via code evaluation on the inpsection target,
-but that's pretty limited. We could leverage work done to build firefox
-devtools itself and build on top of actors. Add-on should be able to provide
-custom actor definition in form of a module (with limited access, so that
-we won't have to send all of the add-on modules to debuggee which maybe
-on mobile phone). Add-on actors would be loaded when developer toolbox is
-activated & there for it will be able to instrument debuggee. It also could
-provide high level API that can be consumed from the toolbox panel or
-add-on itself.
+While firefox debugging protocol provides tons of build-in instrumentation facilities via actors, add-on still may wish to accomplish something that isn't exposed via existing protocol. There for add-on should be able to define custom instrumentation code for a debuggee. In other browsers this is usually accomplished via code evaluation in the debuggee context, but that's pretty limited. In our case we could leverage more powerful foundation used to build firefox developer tools  itself. Add-on should be able to provide custom actor definition in form of a JS (with limited capabilities, no access to other add-on modules for example to so we won't have to send all of the add-on modules to debuggee which maybe on a mobile phone) file. Add-on actors can be loaded alond with a developer toolbox & there for they could provide additional APIs to instrument debuggee through a remote debugging protocol.
 
-As a side effect community could implement actor providing chrome API &
-a script for pane document as a clinet to it, essentially providing polyfill
-that would bridge differences between browsers.
+This would also allow community to develop actors providing API they wish for example they could polifill APIs exposed by other browsers.
+
+**API to define custom actors is to be determined**
 
 
 
