@@ -29,6 +29,5 @@ exports.LadybugPanel = LadybugPanel;
 
 
 const ladybug = new Tool({
-  name: "ladybug",
   panels: { ladybug: LadybugPanel }
 });

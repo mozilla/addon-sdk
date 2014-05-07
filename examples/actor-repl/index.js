@@ -33,6 +33,5 @@ exports.REPLPanel = REPLPanel;
 
 
 const replTool = new Tool({
-  name: "repl",
   panels: { repl: REPLPanel }
 });
