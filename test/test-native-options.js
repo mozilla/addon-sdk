@@ -10,6 +10,7 @@ const { get } = require('sdk/preferences/service');
 const { setTimeout } = require('sdk/timers');
 const simple = require('sdk/simple-prefs');
 const fixtures = require('./fixtures');
+const { Cc, Ci } = require('chrome');
 
 exports.testValidate = function(assert) {
   let { preferences } = packageJSON('simple-prefs');
@@ -130,6 +131,10 @@ exports.testSimplePrefs = function(assert) {
   assert.strictEqual(simple.prefs.test2, "\u00FCnic\u00F8d\u00E9", "test2 is unicode"); 
   assert.strictEqual(simple.prefs.test3, "1", "test3 is '1'");
   assert.strictEqual(simple.prefs.test4, "red", "test4 is 'red'");
+
+  // default pref branch can't be "reset", bug 1012231
+  Cc['@mozilla.org/preferences-service;1'].getService(Ci.nsIPrefService).
+    getDefaultBranch('extensions.' + preferencesBranch).deleteBranch('');
 }
 
 function packageJSON(dir) {
