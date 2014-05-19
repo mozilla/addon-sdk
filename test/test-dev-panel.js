@@ -13,6 +13,8 @@ const { Tool } = require("dev/toolbox");
 const { Panel } = require("dev/panel");
 const { Class } = require("sdk/core/heritage");
 const { openToolbox, closeToolbox, getCurrentPanel } = require("dev/utils");
+const { MessageChannel } = require("sdk/messaging");
+const { when } = require("sdk/dom/when");
 
 const makeHTML = fn =>
   "data:text/html;charset=utf-8,<script>(" + fn + ")();</script>";
@@ -35,6 +37,7 @@ const test = function(unit) {
     yield* unit(assert);
   };
 };
+
 exports["test Panel API"] = test(function*(assert) {
   const MyPanel = Class({
     extends: Panel,
@@ -76,6 +79,71 @@ exports["test Panel API"] = test(function*(assert) {
 
   yield panel.loaded();
   assert.equal(panel.readyState, "complete", "panel is loaded");
+
+  yield closeToolbox();
+
+  assert.equal(panel.readyState, "destroyed", "panel is destroyed");
+});
+
+
+exports["test Panel communication"] = test(function*(assert) {
+  const MyPanel = Class({
+    extends: Panel,
+    label: "communication",
+    tooltip: "test palen communication",
+    url: makeHTML(() => {
+      window.addEventListener("message", event => {
+        if (event.source === window) {
+          console.log("GOT EVENT", event);
+          var port = event.ports[0];
+          port.start();
+          port.postMessage("ping");
+          console.log("SEND EVENT");
+          port.onmessage = (event) => {
+            if (event.data === "pong") {
+              port.postMessage("bye");
+              port.close();
+            }
+          };
+        }
+      });
+    }),
+    dispose: function() {
+      delete this.port;
+    }
+  });
+
+
+  const myTool = new Tool({
+    panels: {
+      myPanel: MyPanel
+    }
+  });
+
+
+  const toolbox = yield openToolbox(MyPanel);
+  const panel = yield getCurrentPanel(toolbox);
+  assert.ok(panel instanceof MyPanel, "is instance of MyPanel");
+
+  assert.isRendered(panel, toolbox);
+
+  yield panel.ready();
+  const { port1, port2 } = new MessageChannel();
+  panel.port = port1;
+  panel.postMessage("connect", [port2]);
+  panel.port.start();
+
+  const ping = yield when("message", panel.port);
+
+  assert.equal(ping.data, "ping", "received ping from panel doc");
+
+  panel.port.postMessage("pong");
+
+  const bye = yield when("message", panel.port);
+
+  assert.equal(bye.data, "bye", "received bye from panel doc");
+
+  panel.port.close();
 
   yield closeToolbox();
 
