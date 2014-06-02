@@ -9,6 +9,15 @@ const { emit } = require("sdk/system/events");
 const { id } = require("sdk/self");
 const simplePrefs = require("sdk/simple-prefs");
 const { prefs: sp } = simplePrefs;
+const { defer, resolve, reject, all } = require("sdk/core/promise");
+const AddonInstaller = require("sdk/addon/installer");
+const fixtures = require("./fixtures");
+const { ZipWriter } = require('sdk/zip/utils');
+const { pathFor } = require("sdk/system");
+const file = require("sdk/io/file");
+const { install, uninstall } = require("sdk/addon/installer");
+const { open } = require('sdk/preferences/utils');
+const { toFilename } = require('sdk/url');
 
 const specialChars = "!@#$%^&*()_-=+[]{}~`\'\"<>,./?;:";
 
@@ -230,4 +239,95 @@ exports.testPrefJSONStringification = function(assert) {
       "JSON stringification should work.");
 };
 
-require('sdk/test').run(exports);
+exports.testUnloadOfDynamicPrefGeneration = function(assert, done) {
+  let loader = Loader(module);
+
+  let { enable } = loader.require("sdk/preferences/native-options");
+
+  let addon_id = "test-bootstrap-addon@mozilla.com";
+  let xpi_path = file.join(pathFor("ProfD"), addon_id + ".xpi");
+
+  // zip the add-on
+  let zip = new ZipWriter(xpi_path);
+  assert.pass("start creating the xpi");
+  zip.addFile("install.rdf", toFilename(fixtures.url("bootstrap-addon/install.rdf")));
+  assert.pass("added install.rdf to the xpi");
+  zip.addFile("bootstrap.js", toFilename(fixtures.url("bootstrap-addon/bootstrap.js")));
+  assert.pass("added bootstrap.js to the xpi");
+  zip.addFile("options.xul", toFilename(fixtures.url("bootstrap-addon/options.xul")));
+  zip.close();
+  assert.pass("end creating the xpi");
+
+  // insatll the add-on
+  install(xpi_path).then(addon => {
+    assert.pass('installed');
+
+    assert.pass('addon id: ' + addon.id);
+    addon.userDisabled = false;
+    assert.ok(!addon.userDisabled, 'the add-on is enabled');
+    assert.ok(addon.isActive, 'the add-on is enabled');
+
+    // setup dynamic prefs
+    return enable({
+      id: addon.id,
+      preferences: [{
+        "name": "test",
+        "description": "test",
+        "title": "Test",
+        "type": "string",
+        "value": "default"
+      }, {
+        "name": "test-int",
+        "description": "test",
+        "type": "integer",
+        "value": 5,
+        "title": "How Many?"
+      }]
+    });
+  }).
+  then(args => {
+    assert.pass('enabled');
+    return args;
+  }).
+  // show inline prefs
+  then(open).
+  then(args => {
+    assert.pass('opened');
+    return args;
+  }).
+  // confirm dynamic pref generation did occur
+  then(args => {
+    let results = args.document.querySelectorAll("*[data-jetpack-id=\"" +args.id + "\"]");
+    assert.ok(results.length > 0, "the prefs were setup");
+    return args;
+  }).
+  // unload dynamic prefs
+  then(args => {
+    loader.unload();
+    assert.pass('unload');
+    return args;
+  }).
+  // hide and show the inline prefs
+  then(({ tab, id }) => {
+    let closeTab = defer();
+    tab.close(_ => {
+      closeTab.resolve({ id: id });
+    });
+    return closeTab.promise;
+  }).
+  // reopen the add-on prefs page
+  then(open).
+  // confirm dynamic pref generation did not occur
+  then(({ id, tab, document }) => {
+    let closeTab = defer();
+    let results = document.querySelectorAll("*[data-jetpack-id=\"" + id + "\"]");
+    assert.equal(0, results.length, "the prefs were not setup after unload");
+    tab.close(closeTab.resolve({ id: id }));
+    return closeTab.promise;
+  }).
+  // uninstall the add-on
+  then(({ id }) => uninstall(id)).
+  then(done, assert.fail);
+}
+
+require("sdk/test").run(exports);
