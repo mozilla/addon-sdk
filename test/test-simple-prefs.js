@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
+const { Cu } = require('chrome');
 const { Loader } = require("sdk/test/loader");
 const { setTimeout } = require("sdk/timers");
 const { emit } = require("sdk/system/events");
@@ -18,6 +19,7 @@ const file = require("sdk/io/file");
 const { install, uninstall } = require("sdk/addon/installer");
 const { open } = require('sdk/preferences/utils');
 const { toFilename } = require('sdk/url');
+const { AddonManager } = Cu.import('resource://gre/modules/AddonManager.jsm', {});
 
 const specialChars = "!@#$%^&*()_-=+[]{}~`\'\"<>,./?;:";
 
@@ -253,8 +255,14 @@ exports.testUnloadOfDynamicPrefGeneration = function(assert, done) {
   zip.addFile("", toFilename(fixtures.url("bootstrap-addon/"))).
   then(zip.close()).
   then(_ => install(xpi_path)).
-    // insatll the add-on
-    then(addon => {
+  // get the addon
+  then(id => {
+    let { promise, resolve } = defer();
+    AddonManager.getAddonByID(id, resolve);
+    return promise;
+  }).
+  // insatll the add-on
+  then(addon => {
     assert.pass('installed');
 
     assert.pass('addon id: ' + addon.id);
