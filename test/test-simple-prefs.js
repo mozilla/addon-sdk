@@ -250,16 +250,11 @@ exports.testUnloadOfDynamicPrefGeneration = function(assert, done) {
   // zip the add-on
   let zip = new ZipWriter(xpi_path);
   assert.pass("start creating the xpi");
-  zip.addFile("install.rdf", toFilename(fixtures.url("bootstrap-addon/install.rdf")));
-  assert.pass("added install.rdf to the xpi");
-  zip.addFile("bootstrap.js", toFilename(fixtures.url("bootstrap-addon/bootstrap.js")));
-  assert.pass("added bootstrap.js to the xpi");
-  zip.addFile("options.xul", toFilename(fixtures.url("bootstrap-addon/options.xul")));
-  zip.close();
-  assert.pass("end creating the xpi");
-
-  // insatll the add-on
-  install(xpi_path).then(addon => {
+  zip.addFile("", toFilename(fixtures.url("bootstrap-addon/"))).
+  then(zip.close()).
+  then(_ => install(xpi_path)).
+    // insatll the add-on
+    then(addon => {
     assert.pass('installed');
 
     assert.pass('addon id: ' + addon.id);
