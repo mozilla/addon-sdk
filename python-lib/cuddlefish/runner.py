@@ -193,11 +193,16 @@ class RemoteFennecRunner(mozrunner.Runner):
             print "Killing running Firefox instance ..."
             subprocess.call([self._adb_path, "shell",
                              "am force-stop " + self._intent_name])
-            time.sleep(2)
-            if self.getProcessPID(self._intent_name) != None:
-                raise Exception("Unable to automatically kill running Firefox" +
-                                " instance. Please close it manually before " +
-                                "executing cfx.")
+            time.sleep(7)
+            # It appears recently that the PID still exists even after
+            # Fennec closes, so removing this error still allows the tests
+            # to pass as the new Fennec instance is able to start.
+            # Leaving error in but commented out for now.
+            #
+            #if self.getProcessPID(self._intent_name) != None:
+            #    raise Exception("Unable to automatically kill running Firefox" +
+            #                    " instance. Please close it manually before " +
+            #                    "executing cfx.")
 
         print "Pushing the addon to your device"
 
@@ -413,7 +418,8 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
             is_running_tests=False,
             overload_modules=False,
             bundle_sdk=True,
-            pkgdir=""):
+            pkgdir="",
+            enable_e10s=False):
     if binary:
         binary = os.path.expanduser(binary)
 
@@ -424,6 +430,9 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
 
     cmdargs = []
     preferences = dict(DEFAULT_COMMON_PREFS)
+
+    if enable_e10s:
+        preferences['browser.tabs.remote.autostart'] = True
 
     # For now, only allow running on Mobile with --force-mobile argument
     if app_type in ["fennec", "fennec-on-device"] and not enable_mobile:
@@ -748,6 +757,11 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
         raise
     else:
         runner.wait(10)
+        # double kill - hack for bugs 942111, 1006043..
+        try:
+            runner.stop()
+        except:
+            pass
     finally:
         outf.close()
         if profile:

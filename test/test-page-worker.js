@@ -1,12 +1,10 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 "use strict";
 
 const { Loader } = require('sdk/test/loader');
-const Pages = require("sdk/page-worker");
-const Page = Pages.Page;
+const { Page } = require("sdk/page-worker");
 const { URL } = require("sdk/url");
 const fixtures = require("./fixtures");
 const testURI = fixtures.url("test.html");
@@ -93,17 +91,17 @@ exports.testPageProperties = function(assert) {
 
 exports.testConstructorAndDestructor = function(assert, done) {
   let loader = Loader(module);
-  let Pages = loader.require("sdk/page-worker");
+  let { Page } = loader.require("sdk/page-worker");
   let global = loader.sandbox("sdk/page-worker");
 
   let pagesReady = 0;
 
-  let page1 = Pages.Page({
+  let page1 = Page({
     contentScript:      "self.postMessage('')",
     contentScriptWhen:  "end",
     onMessage:          pageReady
   });
-  let page2 = Pages.Page({
+  let page2 = Page({
     contentScript:      "self.postMessage('')",
     contentScriptWhen:  "end",
     onMessage:          pageReady
@@ -128,9 +126,9 @@ exports.testConstructorAndDestructor = function(assert, done) {
 
 exports.testAutoDestructor = function(assert, done) {
   let loader = Loader(module);
-  let Pages = loader.require("sdk/page-worker");
+  let { Page } = loader.require("sdk/page-worker");
 
-  let page = Pages.Page({
+  let page = Page({
     contentScript: "self.postMessage('')",
     contentScriptWhen: "end",
     onMessage: function() {
@@ -316,12 +314,12 @@ exports.testPingPong = function(assert, done) {
 exports.testRedirect = function (assert, done) {
   let page = Page({
     contentURL: 'data:text/html;charset=utf-8,first-page',
-    contentScript: '(function () {' +
+    contentScriptWhen: "end",
+    contentScript: '' +
       'if (/first-page/.test(document.location.href)) ' +
       '  document.location.href = "data:text/html;charset=utf-8,redirect";' +
       'else ' +
-      '  self.port.emit("redirect", document.location.href);' +
-      '})();'
+      '  self.port.emit("redirect", document.location.href);'
   });
 
   page.port.on('redirect', function (url) {
@@ -347,11 +345,11 @@ exports.testRedirectIncludeArrays = function (assert, done) {
     if (url === firstURL) {
       page.port.emit('redirect', 'about:blank');
     } else if (url === 'about:blank') {
-      page.port.emit('redirect', 'about:home');
+      page.port.emit('redirect', 'about:mozilla');
       assert.ok('`include` property handles arrays');
       assert.equal(url, 'about:blank', 'Redirects work with accepted domains');
       done();
-    } else if (url === 'about:home') {
+    } else if (url === 'about:mozilla') {
       assert.fail('Should not redirect to restricted domain');
     }
   });
@@ -378,7 +376,7 @@ exports.testRedirectFromWorker = function (assert, done) {
     } else if (url === secondURL) {
       page.port.emit('redirect', thirdURL);
     } else if (url === thirdURL) {
-      page.port.emit('redirect', 'about:home');
+      page.port.emit('redirect', 'about:mozilla');
       assert.equal(url, thirdURL, 'Redirects work with accepted domains on include strings');
       done();
     } else {
@@ -405,7 +403,7 @@ exports.testRedirectWithContentURL = function (assert, done) {
     } else if (url === secondURL) {
       page.contentURL = thirdURL;
     } else if (url === thirdURL) {
-      page.contentURL = 'about:home';
+      page.contentURL = 'about:mozilla';
       assert.equal(url, thirdURL, 'Redirects work with accepted domains on include strings');
       done();
     } else {
@@ -456,8 +454,13 @@ function isDestroyed(page) {
   try {
     page.postMessage("foo");
   }
-  catch (err if err.message == ERR_DESTROYED) {
-    return true;
+  catch (err) {
+    if (err.message == ERR_DESTROYED) {
+      return true;
+    }
+    else {
+      throw err;
+    }
   }
   return false;
 }

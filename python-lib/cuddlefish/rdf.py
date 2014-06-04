@@ -150,8 +150,17 @@ def gen_manifest(template_root_dir, target_cfg, jid,
 
     if target_cfg.get("preferences"):
         manifest.set("em:optionsType", "2")
+        
+        # workaround until bug 971249 is fixed
+        # https://bugzilla.mozilla.org/show_bug.cgi?id=971249
+        manifest.set("em:optionsURL", "data:text/xml,<placeholder/>")
+
+        # workaround for workaround, for testing simple-prefs-regression
+        if (os.path.exists(os.path.join(template_root_dir, "options.xul"))):
+            manifest.remove("em:optionsURL")
     else:
         manifest.remove("em:optionsType")
+        manifest.remove("em:optionsURL")
 
     if enable_mobile:
         target_app = dom.createElement("em:targetApplication")
@@ -165,11 +174,11 @@ def gen_manifest(template_root_dir, target_cfg, jid,
         ta_desc.appendChild(elem)
 
         elem = dom.createElement("em:minVersion")
-        elem.appendChild(dom.createTextNode("19.0"))
+        elem.appendChild(dom.createTextNode("26.0"))
         ta_desc.appendChild(elem)
 
         elem = dom.createElement("em:maxVersion")
-        elem.appendChild(dom.createTextNode("22.0a1"))
+        elem.appendChild(dom.createTextNode("30.0a1"))
         ta_desc.appendChild(elem)
 
     if target_cfg.get("homepage"):
