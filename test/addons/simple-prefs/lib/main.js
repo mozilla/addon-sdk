@@ -134,7 +134,7 @@ if (app.is('Firefox')) {
       });
   }
 
-  // run it again, to test against inline options document caching 
+  // run it again, to test against inline options document caching
   // and duplication of <setting> nodes upon re-entry to about:addons
   exports.testAgainstDocCaching = exports.testAOM;
 
@@ -144,4 +144,4 @@ exports.testDefaultPreferencesBranch = function(assert) {
   assert.equal(preferencesBranch, self.id, 'preferencesBranch default the same as self.id');
 }
 
-//require('sdk/test/runner').runTestsFromModule(module);
+require('sdk/test/runner').runTestsFromModule(module);
