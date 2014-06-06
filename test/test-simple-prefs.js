@@ -13,13 +13,16 @@ const { prefs: sp } = simplePrefs;
 const { defer, resolve, reject, all } = require("sdk/core/promise");
 const AddonInstaller = require("sdk/addon/installer");
 const fixtures = require("./fixtures");
-const { ZipWriter } = require('sdk/zip/utils');
 const { pathFor } = require("sdk/system");
 const file = require("sdk/io/file");
 const { install, uninstall } = require("sdk/addon/installer");
 const { open } = require('sdk/preferences/utils');
 const { toFilename } = require('sdk/url');
 const { AddonManager } = Cu.import('resource://gre/modules/AddonManager.jsm', {});
+const { ZipWriter } = require('./zip/utils');
+const { getTabForId } = require('sdk/tabs/utils');
+const { Tab } = require('sdk/tabs/tab');
+require('sdk/tabs');
 
 const specialChars = "!@#$%^&*()_-=+[]{}~`\'\"<>,./?;:";
 
@@ -311,22 +314,27 @@ exports.testUnloadOfDynamicPrefGeneration = function(assert, done) {
     return args;
   }).
   // hide and show the inline prefs
-  then(({ tab, id }) => {
-    let closeTab = defer();
-    tab.close(_ => {
-      closeTab.resolve({ id: id });
-    });
-    return closeTab.promise;
+  then(({ tabId, id, document }) => {
+    let { promise, resolve } = defer();
+    let tab = Tab({ tab: getTabForId(tabId) });
+
+    tab.close(_ => resolve({ id: id }));
+
+    return promise;
   }).
   // reopen the add-on prefs page
   then(open).
   // confirm dynamic pref generation did not occur
-  then(({ id, tab, document }) => {
-    let closeTab = defer();
+  then(({ id, tabId, document }) => {
+    let { promise, resolve } = defer();
+    let tab = Tab({ tab: getTabForId(tabId) });
+
     let results = document.querySelectorAll("*[data-jetpack-id=\"" + id + "\"]");
     assert.equal(0, results.length, "the prefs were not setup after unload");
-    tab.close(closeTab.resolve({ id: id }));
-    return closeTab.promise;
+
+    tab.close(_ => resolve({ id: id }));
+
+    return promise;
   }).
   // uninstall the add-on
   then(({ id }) => uninstall(id)).

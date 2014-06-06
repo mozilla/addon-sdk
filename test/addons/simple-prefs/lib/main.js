@@ -7,8 +7,11 @@ const { Cu } = require('chrome');
 const sp = require('sdk/simple-prefs');
 const app = require('sdk/system/xul-app');
 const self = require('sdk/self');
-const { preferencesBranch } = require('sdk/self');
+const { preferencesBranch } = self;
 const { open } = require('sdk/preferences/utils');
+const { getTabForId } = require('sdk/tabs/utils');
+const { Tab } = require('sdk/tabs/tab');
+require('sdk/tabs');
 
 const { AddonManager } = Cu.import('resource://gre/modules/AddonManager.jsm', {});
 
@@ -26,10 +29,11 @@ exports.testOptionsType = function(assert, done) {
 }
 
 exports.testButton = function(assert, done) {
-  open(self).then(({ tab }) => {
+  open(self).then(({ tabId, document }) => {
+    let tab = Tab({ tab: getTabForId(tabId) });
     sp.once('sayHello', _ => {
       assert.pass('The button was pressed!');
-      tab.close(done)
+      tab.close(done);
     });
 
     tab.attach({
@@ -40,7 +44,8 @@ exports.testButton = function(assert, done) {
 
 if (app.is('Firefox')) {
   exports.testAOM = function(assert, done) {
-    open(self).then(({ tab }) => {
+    open(self).then(({ tabId }) => {
+      let tab = Tab({ tab: getTabForId(tabId) });
       assert.pass('the add-on prefs page was opened.');
 
       tab.attach({
