@@ -1,12 +1,15 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
-const { getTabs } = require('sdk/tabs/utils');
+const { getTabs } = require('sdk/tab/utils');
 const { isGlobalPBSupported, isWindowPBSupported, isTabPBSupported } = require('sdk/private-browsing/utils');
 const { browserWindows } = require('sdk/windows');
 const tabs = require('sdk/tabs');
 const { pb } = require('./private-browsing/helper');
 const { isPrivate } = require('sdk/private-browsing');
-const { openTab, closeTab, getTabContentWindow, getOwnerWindow } = require('sdk/tabs/utils');
+const { openTab, closeTab, getTabContentWindow, getOwnerWindow } = require('sdk/tab/utils');
 const { open, close } = require('sdk/window/helpers');
 const { windows } = require('sdk/window/utils');
 const { getMostRecentBrowserWindow } = require('sdk/window/utils');

@@ -1,6 +1,11 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+"use strict";
+
 const { getMostRecentBrowserWindow } = require('sdk/window/utils');
 const { PageMod } = require("sdk/page-mod");
-const { getActiveTab, setTabURL, openTab, closeTab } = require('sdk/tabs/utils');
+const { getActiveTab, setTabURL, openTab, closeTab } = require('sdk/tab/utils');
 const xulApp = require('sdk/system/xul-app');
 const windowHelpers = require('sdk/window/helpers');
 const { defer } = require("sdk/core/promise");

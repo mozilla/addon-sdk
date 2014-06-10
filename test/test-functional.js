@@ -1,22 +1,23 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
+"use strict";
 
 const { setTimeout } = require('sdk/timers');
 const utils = require('sdk/lang/functional');
-const { invoke, defer, partial, compose, memoize, once,
-        delay, wrap, curry, chainable, field, query, isInstance } = utils;
+const { invoke, defer, partial, compose, memoize, once, is, isnt,
+  delay, wrap, curry, chainable, field, query, isInstance, debounce, throttle
+} = utils;
 const { LoaderWithHookedConsole } = require('sdk/test/loader');
 
 exports['test forwardApply'] = function(assert) {
-  function sum(b, c) this.a + b + c
+  function sum(b, c) { return this.a + b + c; }
   assert.equal(invoke(sum, [2, 3], { a: 1 }), 6,
                'passed arguments and pseoude-variable are used');
 
   assert.equal(invoke(sum.bind({ a: 2 }), [2, 3], { a: 1 }), 7,
                'bounded `this` pseoudo variable is used');
-}
+};
 
 exports['test deferred function'] = function(assert, done) {
   let nextTurn = false;
@@ -27,13 +28,13 @@ exports['test deferred function'] = function(assert, done) {
     done();
   }
 
-  let fixture = { a: 1, method: defer(sum) }
+  let fixture = { a: 1, method: defer(sum) };
   fixture.method(2, 3);
   nextTurn = true;
 };
 
 exports['test partial function'] = function(assert) {
-  function sum(b, c) this.a + b + c;
+  function sum(b, c) { return this.a + b + c; }
 
   let foo = { a : 5 };
 
@@ -69,11 +70,11 @@ exports['test compose'] = function(assert) {
   let target = {
     name: 'Joe',
     greet: compose(function exclaim(sentence) {
-      return sentence + '!'
+      return sentence + '!';
     }, function(title) {
       return 'hi : ' + title + ' ' + this.name;
     })
-  }
+  };
 
   assert.equal(target.greet('Mr'), 'hi : Mr Joe!',
                'this can be passed in');
@@ -107,7 +108,7 @@ exports['test wrap'] = function(assert) {
 
   assert.equal(target.hi(), 'Hello Matteo', 'works with this');
 
-  function noop() { };
+  function noop() { }
   let wrapped = wrap(noop, function(f) {
     return Array.slice(arguments);
   });
@@ -118,7 +119,7 @@ exports['test wrap'] = function(assert) {
 };
 
 exports['test memoize'] = function(assert) {
-  function fib(n) n < 2 ? n : fib(n - 1) + fib(n - 2)
+  const fib = n => n < 2 ? n : fib(n - 1) + fib(n - 2);
   let fibnitro = memoize(fib);
 
   assert.equal(fib(10), 55,
@@ -126,7 +127,7 @@ exports['test memoize'] = function(assert) {
   assert.equal(fibnitro(10), 55,
         'a memoized version of fibonacci produces identical results');
 
-  function o(key, value) { return value; };
+  function o(key, value) { return value; }
   let oo = memoize(o), v1 = {}, v2 = {};
 
 
@@ -137,12 +138,12 @@ exports['test memoize'] = function(assert) {
   assert.notEqual(oo(1), oo(2), 'values do not override');
   assert.equal(o(3, v2), oo(2, 3), 'returns same value as un-memoized');
 
-  let get = memoize(function(attribute) this[attribute])
-  let target = { name: 'Bob', get: get }
+  let get = memoize(function(attribute) { return this[attribute]; });
+  let target = { name: 'Bob', get: get };
 
   assert.equal(target.get('name'), 'Bob', 'has correct `this`');
   assert.equal(target.get.call({ name: 'Jack' }, 'name'), 'Bob',
-               'name is memoized')
+               'name is memoized');
   assert.equal(get('name'), 'Bob', 'once memoized can be called without this');
 };
 
@@ -156,13 +157,13 @@ exports['test delay'] = function(assert, done) {
 };
 
 exports['test delay with this'] = function(assert, done) {
-  let context = {}
+  let context = {};
   delay.call(context, function(name) {
     assert.equal(this, context, 'this was passed in');
     assert.equal(name, 'Tom', 'argument was passed in');
     done();
   }, 10, 'Tom');
-}
+};
 
 exports['test once'] = function(assert) {
   let n = 0;
@@ -173,7 +174,12 @@ exports['test once'] = function(assert) {
 
   assert.equal(n, 1, 'only incremented once');
 
-  let target = { state: 0, update: once(function() this.state ++ ) };
+  let target = {
+    state: 0,
+    update: once(function() {
+      return this.state ++;
+    })
+  };
 
   target.update();
   target.update();
@@ -183,7 +189,7 @@ exports['test once'] = function(assert) {
 
 exports['test once with argument'] = function(assert) {
   let n = 0;
-  let increment = once(function(a) n++);
+  let increment = once(a => n++);
 
   increment();
   increment('foo');
@@ -201,17 +207,17 @@ exports['test complement'] = assert => {
 
   let isOdd = x => Boolean(x % 2);
 
-  assert.equal(isOdd(1), true)
-  assert.equal(isOdd(2), false)
+  assert.equal(isOdd(1), true);
+  assert.equal(isOdd(2), false);
 
   let isEven = complement(isOdd);
 
   assert.equal(isEven(1), false);
   assert.equal(isEven(2), true);
 
-  let foo = {}
-  let isFoo = function() this === foo
-  let insntFoo = complement(isFoo)
+  let foo = {};
+  let isFoo = function() { return this === foo; };
+  let insntFoo = complement(isFoo);
 
   assert.equal(insntFoo.call(foo), false);
   assert.equal(insntFoo.call({}), true);
@@ -222,8 +228,8 @@ exports['test constant'] = assert => {
 
   let one = constant(1);
 
-  assert.equal(one(1), 1)
-  assert.equal(one(2), 1)
+  assert.equal(one(1), 1);
+  assert.equal(one(2), 1);
 };
 
 exports['test apply'] = assert => {
@@ -247,13 +253,15 @@ exports['test flip'] = assert => {
   assert.equal(append("hello", "world"), "hello world");
   assert.equal(prepend("hello", "world"), "world hello");
 
-  let wrap = function(left, right) left + " " + this + " " + right;
+  let wrap = function(left, right) {
+    return left + " " + this + " " + right;
+  };
   let invertWrap = flip(wrap);
 
   assert.equal(wrap.call("@", "hello", "world"), "hello @ world");
   assert.equal(invertWrap.call("@", "hello", "world"), "world @ hello");
 
-  let reverse = flip((...args) => args)
+  let reverse = flip((...args) => args);
 
   assert.deepEqual(reverse(1, 2, 3, 4), [4, 3, 2, 1]);
   assert.deepEqual(reverse(1), [1]);
@@ -319,7 +327,7 @@ exports["test chainable"] = function(assert) {
   assert.equal(player.volume, 11, 'accepts no arguments in chain');
 };
 
-exports["test field"] = (assert) => {
+exports["test field"] = assert => {
   let Num = field("constructor", 0);
   assert.equal(Num.name, Number.name);
   assert.ok(typeof(Num), "function");
@@ -343,7 +351,7 @@ exports["test field"] = (assert) => {
   ].forEach(([actual, expected]) => assert.equal(actual, expected));
 };
 
-exports["test query"] = (assert) => {
+exports["test query"] = assert => {
   let Num = query("constructor", 0);
   assert.equal(Num.name, Number.name);
   assert.ok(typeof(Num), "function");
@@ -373,19 +381,83 @@ exports["test query"] = (assert) => {
   ].forEach(([actual, expected]) => assert.equal(actual, expected));
 };
 
-exports["test isInstance"] = (assert) => {
+exports["test isInstance"] = assert => {
   function X() {}
   function Y() {}
   let isX = isInstance(X);
 
   [
-    isInstance(X, new X),
-    isInstance(X)(new X),
-    !isInstance(X, new Y),
-    !isInstance(X)(new Y),
-    isX(new X),
-    !isX(new Y)
+    isInstance(X, new X()),
+    isInstance(X)(new X()),
+    !isInstance(X, new Y()),
+    !isInstance(X)(new Y()),
+    isX(new X()),
+    !isX(new Y())
   ].forEach(x => assert.ok(x));
+};
+
+exports["test is"] = assert => {
+
+  assert.deepEqual([ 1, 0, 1, 0, 1 ].map(is(1)),
+                   [ true, false, true, false, true ],
+                   "is can be partially applied");
+
+  assert.ok(is(1, 1));
+  assert.ok(!is({}, {}));
+  assert.ok(is()(1)()(1), "is is curried");
+  assert.ok(!is()(1)()(2));
+};
+
+exports["test isnt"] = assert => {
+
+  assert.deepEqual([ 1, 0, 1, 0, 1 ].map(isnt(0)),
+                   [ true, false, true, false, true ],
+                   "is can be partially applied");
+
+  assert.ok(!isnt(1, 1));
+  assert.ok(isnt({}, {}));
+  assert.ok(!isnt()(1)()(1));
+  assert.ok(isnt()(1)()(2));
+};
+
+exports["test debounce"] = (assert, done) => {
+  let counter = 0;
+  let fn = debounce(() => counter++, 100);
+
+  new Array(10).join(0).split("").forEach(fn);
+
+  assert.equal(counter, 0, "debounce does not fire immediately");
+  setTimeout(() => {
+    assert.equal(counter, 1, "function called after wait time");
+    fn();
+    setTimeout(() => {
+      assert.equal(counter, 2, "function able to be called again after wait");
+      done();
+    }, 150);
+  }, 200);
+};
+
+exports["test throttle"] = (assert, done) => {
+  let called = 0;
+  let attempt = 0;
+  let atleast100ms = false;
+  let throttledFn = throttle(() => {
+    called++;
+    if (called === 2) {
+      assert.equal(attempt, 10, "called twice, but attempted 10 times");
+      fn();
+    }
+    if (called === 3) {
+      assert.ok(atleast100ms, "atleast 100ms have passed");
+      assert.equal(attempt, 11, "called third, waits for delay to happen");
+      done();
+    }
+  }, 200);
+  let fn = () => ++attempt && throttledFn();
+
+  setTimeout(() => atleast100ms = true, 100);
+
+  new Array(11).join(0).split("").forEach(fn);
 };
 
 require('test').run(exports);

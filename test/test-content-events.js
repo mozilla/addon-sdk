@@ -1,12 +1,11 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 "use strict";
 
 const { Loader } = require("sdk/test/loader");
 const { getMostRecentBrowserWindow, getInnerId } = require("sdk/window/utils");
-const { openTab, closeTab, getBrowserForTab } = require("sdk/tabs/utils");
+const { openTab, closeTab, getBrowserForTab } = require("sdk/tab/utils");
 const { defer } = require("sdk/core/promise");
 const { curry, identity, partial } = require("sdk/lang/functional");
 
@@ -44,16 +43,9 @@ exports["test multiple tabs"] = function(assert, done) {
 
   on(events, "data", handler);
   function handler ({type, target, timeStamp}) {
-    // ignore about:blank pages and *-document-global-created
-    // events that are not very consistent.
-    // ignore http:// requests, as Fennec's `about:home` page
-    // displays add-ons a user could install
-    if (target.URL !== "about:blank" &&
-        target.URL !== "about:home" &&
-        !target.URL.match(/^https?:\/\//i) &&
-        type !== "chrome-document-global-created" &&
-        type !== "content-document-global-created")
+    eventFilter(type, target, () => {
       actual.push(type + " -> " + target.URL)
+    });
   }
 
   let window = getMostRecentBrowserWindow();
@@ -92,12 +84,9 @@ exports["test nested frames"] = function(assert, done) {
   let actual = [];
   on(events, "data", handler);
   function handler ({type, target, timeStamp}) {
-    // ignore about:blank pages and *-global-created
-    // events that are not very consistent.
-    if (target.URL !== "about:blank" &&
-       type !== "chrome-document-global-created" &&
-       type !== "content-document-global-created")
+    eventFilter(type, target, () => {
       actual.push(type + " -> " + target.URL)
+    });
   }
 
   let window =  getMostRecentBrowserWindow();
@@ -126,4 +115,16 @@ exports["test nested frames"] = function(assert, done) {
     });
 };
 
+// ignore *-document-global-created events that are not very consistent.
+// only allow data uris that we create to ignore unwanted events, e.g.,
+// about:blank, http:// requests from Fennec's `about:`home page that displays
+// add-ons a user could install, local `searchplugins`, other chrome uris
+// Calls callback if passes filter
+function eventFilter (type, target, callback) {
+  if (target.URL.startsWith("data:text/html,") &&
+    type !== "chrome-document-global-created" &&
+    type !== "content-document-global-created")
+
+    callback();
+}
 require("test").run(exports);

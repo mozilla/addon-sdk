@@ -6,6 +6,7 @@
 require("sdk/clipboard");
 
 const { Cc, Ci } = require("chrome");
+const tabs = require("sdk/tabs");
 
 const imageTools = Cc["@mozilla.org/image/tools;1"].
                     getService(Ci.imgITools);
@@ -50,6 +51,9 @@ const base64jpeg = "data:image/jpeg;base64,%2F9j%2F4AAQSkZJRgABAQAAAQABAAD%2F" +
 
 const canvasHTML = "data:text/html," + encodeURIComponent(
   "<html>\
+    <head>\
+      <title>TEST</title>\
+    </head>\
     <body>\
       <canvas width='32' height='32'></canvas>\
     </body>\
@@ -57,12 +61,10 @@ const canvasHTML = "data:text/html," + encodeURIComponent(
 );
 
 function comparePixelImages(imageA, imageB, callback) {
-  let tabs = require("sdk/tabs");
-
   tabs.open({
     url: canvasHTML,
-
-    onReady: function onReady(tab) {
+    onReady: tab => {
+      console.log('tab opened');
       let worker = tab.attach({
         contentScript: "new " + function() {
           let canvas = document.querySelector("canvas");
@@ -70,28 +72,23 @@ function comparePixelImages(imageA, imageB, callback) {
 
           self.port.on("draw-image", function(imageURI) {
             let img = new Image();
-
             img.onload = function() {
               context.drawImage(this, 0, 0);
 
               let pixels = Array.join(context.getImageData(0, 0, 32, 32).data);
               self.port.emit("image-pixels", pixels);
             }
-
             img.src = imageURI;
           });
         }
       });
-
       let compared = "";
-
       worker.port.on("image-pixels", function (pixels) {
         if (!compared) {
           compared = pixels;
           this.emit("draw-image", imageB);
         } else {
-          callback(compared === pixels);
-          tab.close()
+          tab.close(callback.bind(null, compared === pixels))
         }
       });
 
@@ -99,7 +96,6 @@ function comparePixelImages(imageA, imageB, callback) {
     }
   });
 }
-
 
 // Test the typical use case, setting & getting with no flavors specified
 exports["test With No Flavor"] = function(assert) {
@@ -179,16 +175,13 @@ exports["test Set Image"] = function(assert) {
 };
 
 exports["test Get Image"] = function(assert, done) {
-  var clip = require("sdk/clipboard");
-
+  const clip = require("sdk/clipboard");
   clip.set(base64png, "image");
+  let contents = clip.get();
 
-  var contents = clip.get();
-
-  comparePixelImages(base64png, contents, function (areEquals) {
+  comparePixelImages(base64png, contents, areEquals => {
     assert.ok(areEquals,
       "Image gets from clipboard equals to image sets to the clipboard");
-
     done();
   });
 }
@@ -219,4 +212,4 @@ exports["test Set Image Type Wrong Data"] = function(assert) {
   }, "Unable to decode data given in a valid image.");
 };
 
-require("test").run(exports)
+require("sdk/test").run(exports)

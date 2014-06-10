@@ -1,11 +1,10 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 "use strict";
 
 const { Loader } = require("sdk/test/loader");
-const utils = require("sdk/tabs/utils");
+const utils = require("sdk/tab/utils");
 const { open, close } = require("sdk/window/helpers");
 const { getMostRecentBrowserWindow } = require("sdk/window/utils");
 const { events } = require("sdk/tab/events");
@@ -33,26 +32,33 @@ function test(options) {
     }
 
     function runIfReady () {
+      assert.pass("runIfReady!");
       let releventEvents = getRelatedEvents(tabEvents, tabs);
-      if (options.readyWhen(releventEvents))
+
+      if (options.readyWhen(releventEvents)) {
+        assert.pass("ednd!");
         options.end({
           tabs: tabs,
           events: releventEvents,
           assert: assert,
           done: resolveP
         });
+      }
     }
 
     win.then(function(w) {
       window = w;
       on(events, "data", handler);
+      assert.pass('start start');
       options.start({ tabs: tabs, window: window });
+      assert.pass('start end');
 
       // Execute here for synchronous FF events, as the handlers
       // were called before tabs were pushed to `tabs`
-      runIfReady(); 
+      runIfReady();
       return promise;
     }).then(function() {
+      assert.pass('done');
       off(events, "data", handler);
       return isFennec ? null : close(window);
     }).then(done, assert.fail);

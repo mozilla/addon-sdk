@@ -1,12 +1,16 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
+"use strict";
 
 const tabs = require("sdk/tabs"); // From addon-kit
 const windowUtils = require("sdk/deprecated/window-utils");
-const { getTabForWindow } = require('sdk/tabs/helpers');
+const { getTabForContentWindow } = require('sdk/tab/utils');
 const app = require("sdk/system/xul-app");
+const { viewFor } = require("sdk/view/core");
+const { modelFor } = require("sdk/model/core");
+const { getTabId, isTab } = require("sdk/tab/utils");
+const { defer } = require("sdk/lang/functional");
 
 // The primary test tab
 var primaryTab;
@@ -17,12 +21,11 @@ var auxTab;
 // The window for the outer iframe in the primary test page
 var iframeWin;
 
-exports["test GetTabForWindow"] = function(assert, done) {
-
-  assert.equal(getTabForWindow(windowUtils.activeWindow), null,
-    "getTabForWindow return null on topwindow");
-  assert.equal(getTabForWindow(windowUtils.activeBrowserWindow), null,
-    "getTabForWindow return null on topwindow");
+exports["test getTabForContentWindow"] = function(assert, done) {
+  assert.equal(getTabForContentWindow(windowUtils.activeWindow), null,
+    "getTabForContentWindow return null on topwindow");
+  assert.equal(getTabForContentWindow(windowUtils.activeBrowserWindow), null,
+    "getTabForContentWindow return null on topwindow");
 
   let subSubDocument = encodeURIComponent(
     'Sub iframe<br/>'+
@@ -35,7 +38,7 @@ exports["test GetTabForWindow"] = function(assert, done) {
 
   // Open up a new tab in the background.
   //
-  // This lets us test whether GetTabForWindow works even when the tab in
+  // This lets us test whether getTabForContentWindow works even when the tab in
   // question is not active.
   tabs.open({
     inBackground: true,
@@ -53,7 +56,7 @@ function step2(url, assert) {
       primaryTab = tab;
       let window = windowUtils.activeBrowserWindow.content;
 
-      let matchedTab = getTabForWindow(window);
+      let matchedTab = getTabForContentWindow(window);
       assert.equal(matchedTab, tab,
         "We are able to find the tab with his content window object");
 
@@ -78,15 +81,15 @@ function step2(url, assert) {
         }
         let subSubIframeWin = subSubIframe.contentWindow;
 
-        matchedTab = getTabForWindow(iframeWin);
+        matchedTab = getTabForContentWindow(iframeWin);
         assert.equal(matchedTab, tab,
           "We are able to find the tab with an iframe window object");
 
-        matchedTab = getTabForWindow(subIframeWin);
+        matchedTab = getTabForContentWindow(subIframeWin);
         assert.equal(matchedTab, tab,
           "We are able to find the tab with a sub-iframe window object");
 
-        matchedTab = getTabForWindow(subSubIframeWin);
+        matchedTab = getTabForContentWindow(subSubIframeWin);
         assert.equal(matchedTab, tab,
           "We are able to find the tab with a sub-sub-iframe window object");
 
@@ -101,7 +104,7 @@ function step2(url, assert) {
 
 function step3(assert, done) {
 
-  let matchedTab = getTabForWindow(iframeWin);
+  let matchedTab = getTabForContentWindow(iframeWin);
   assert.equal(matchedTab, primaryTab,
     "We get the correct tab even when it's in the background");
 
@@ -136,4 +139,35 @@ exports["test behavior on close"] = function(assert, done) {
   });
 };
 
-require("test").run(exports);
+exports["test viewFor(tab)"] = (assert, done) => {
+  // Note we defer handlers as length collection is updated after
+  // handler is invoked, so if test is finished before counnts are
+  // updated wrong length will show up in followup tests.
+  tabs.once("open", defer(tab => {
+    const view = viewFor(tab);
+    assert.ok(view, "view is returned");
+    assert.equal(getTabId(view), tab.id, "tab has a same id");
+
+    tab.close(defer(done));
+  }));
+
+  tabs.open({ url: "about:mozilla" });
+};
+
+
+exports["test modelFor(xulTab)"] = (assert, done) => {
+  tabs.open({
+    url: "about:mozilla",
+    onReady: tab => {
+      const view = viewFor(tab);
+      assert.ok(view, "view is returned");
+      assert.ok(isTab(view), "view is underlaying tab");
+      assert.equal(getTabId(view), tab.id, "tab has a same id");
+      assert.equal(modelFor(view), tab, "modelFor(view) is SDK tab");
+
+      tab.close(defer(done));
+    }
+  });
+};
+
+require("sdk/test").run(exports);

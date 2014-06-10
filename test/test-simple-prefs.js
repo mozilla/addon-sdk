@@ -5,7 +5,7 @@
 
 const { Loader } = require("sdk/test/loader");
 const { setTimeout } = require("sdk/timers");
-const { notify } = require("sdk/deprecated/observer-service");
+const { emit } = require("sdk/system/events");
 const { id } = require("sdk/self");
 const simplePrefs = require("sdk/simple-prefs");
 const { prefs: sp } = simplePrefs;
@@ -38,10 +38,11 @@ exports.testSetGetBool = function(assert) {
   assert.equal(sp.test, undefined, "Value should not exist");
   sp.test = true;
   assert.ok(sp.test, "Value read should be the value previously set");
+  delete sp.test;
 };
 
 // TEST: setting and getting preferences with special characters work
-exports.testSpecialChars = function(assert) {
+exports.testSpecialChars = function(assert, done) {
   let chars = specialChars.split("");
   let len = chars.length;
 
@@ -51,10 +52,11 @@ exports.testSpecialChars = function(assert) {
     simplePrefs.on(char, function onPrefChanged() {
       simplePrefs.removeListener(char, onPrefChanged);
       assert.equal(sp[char], rand, "setting pref with a name that is a special char, " + char + ", worked!");
+      delete sp[char];
 
       // end test
       if (++count == len)
-        test.done();
+        done();
     })
     sp[char] = rand;
   });
@@ -64,6 +66,7 @@ exports.testSetGetInt = function(assert) {
   assert.equal(sp["test-int"], undefined, "Value should not exist");
   sp["test-int"] = 1;
   assert.equal(sp["test-int"], 1, "Value read should be the value previously set");
+  delete sp["test-int"];
 };
 
 exports.testSetComplex = function(assert) {
@@ -80,6 +83,7 @@ exports.testSetGetString = function(assert) {
   assert.equal(sp["test-string"], undefined, "Value should not exist");
   sp["test-string"] = "test";
   assert.equal(sp["test-string"], "test", "Value read should be the value previously set");
+  delete sp["test-string"];
 };
 
 exports.testHasAndRemove = function(assert) {
@@ -93,6 +97,7 @@ exports.testPrefListener = function(assert, done) {
   let listener = function(prefName) {
     simplePrefs.removeListener('test-listener', listener);
     assert.equal(prefName, "test-listen", "The prefs listener heard the right event");
+    delete sp["test-listen"];
     done();
   };
 
@@ -112,13 +117,14 @@ exports.testPrefListener = function(assert, done) {
 
   toSet.forEach(function(pref) {
     sp[pref] = true;
+    delete sp[pref];
   });
 
-  assert.ok((observed.length == 3 && toSet.length == 3),
+  assert.ok((observed.length === 6 && toSet.length === 3),
       "Wildcard lengths inconsistent" + JSON.stringify([observed.length, toSet.length]));
 
   toSet.forEach(function(pref,ii) {
-    assert.equal(observed[ii], pref, "Wildcard observed " + pref);
+    assert.equal(observed[2*ii], pref, "Wildcard observed " + pref);
   });
 
   simplePrefs.removeListener('',wildlistener);
@@ -132,7 +138,7 @@ exports.testBtnListener = function(assert, done) {
     assert.pass("Button press event was heard");
     done();
   });
-  notify((id + "-cmdPressed"), "", name);
+  emit((id + "-cmdPressed"), { subject: "", data: name });
 };
 
 exports.testPrefRemoveListener = function(assert, done) {
@@ -150,6 +156,7 @@ exports.testPrefRemoveListener = function(assert, done) {
 
     setTimeout(function() {
       assert.pass("The prefs listener was removed");
+      delete sp["test-listen2"];
       done();
     }, 250);
   };
@@ -176,6 +183,7 @@ exports.testPrefUnloadListener = function(assert, done) {
     // this should execute, but also definitely shouldn't fire listener
     require("sdk/simple-prefs").prefs["test-listen3"] = false;
 
+    delete sp.prefs["test-listen3"];
     done();
   };
 
@@ -203,6 +211,7 @@ exports.testPrefUnloadWildcardListener = function(assert, done) {
     // this should execute, but also definitely shouldn't fire listener
     require("sdk/simple-prefs").prefs[testpref] = false;
 
+    delete sp.prefs[testpref];
     done();
   };
 

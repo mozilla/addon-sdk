@@ -4,11 +4,12 @@
 "use strict";
 
 const { Cc, Ci } = require('chrome');
-const { Symbiont } = require('sdk/content/symbiont');
+const { Symbiont } = require('sdk/deprecated/symbiont');
 const self = require('sdk/self');
 const fixtures = require("./fixtures");
 const { close } = require('sdk/window/helpers');
 const app = require("sdk/system/xul-app");
+const { LoaderWithHookedConsole } = require('sdk/test/loader');
 
 function makeWindow() {
   let content =
@@ -76,7 +77,7 @@ exports["test:communication with worker global scope"] = function(assert, done) 
   let window = makeWindow();
   let contentSymbiont;
 
-  console.log(window)
+  assert.ok(!!window, 'there is a window');
 
   function onMessage1(message) {
     assert.equal(message, 1, "Program gets message via onMessage.");
@@ -156,5 +157,21 @@ exports["test:document element present on 'start'"] = function(assert, done) {
     }
   });
 };
+
+exports["test:content/content deprecation"] = function(assert) {
+  const { loader, messages } = LoaderWithHookedConsole(module);
+  const { Loader, Symbiont, Worker } = loader.require("sdk/content/content");
+
+  assert.equal(messages.length, 3, "Should see three warnings");
+
+  assert.strictEqual(Loader, loader.require('sdk/content/loader').Loader,
+    "Loader from content/content is the exact same object as the one from content/loader");
+
+  assert.strictEqual(Symbiont, loader.require('sdk/deprecated/symbiont').Symbiont,
+    "Symbiont from content/content is the exact same object as the one from deprecated/symbiont");
+
+  assert.strictEqual(Worker, loader.require('sdk/content/worker').Worker,
+    "Worker from content/content is the exact same object as the one from content/worker");
+}
 
 require("test").run(exports);
