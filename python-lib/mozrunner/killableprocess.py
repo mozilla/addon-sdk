@@ -126,7 +126,7 @@ class Popen(subprocess.Popen):
 
             if not isinstance(args, types.StringTypes):
                 args = subprocess.list2cmdline(args)
-            
+
             # Always or in the create new process group
             creationflags |= winprocess.CREATE_NEW_PROCESS_GROUP
 
@@ -135,7 +135,7 @@ class Popen(subprocess.Popen):
 
             if None not in (p2cread, c2pwrite, errwrite):
                 startupinfo.dwFlags |= winprocess.STARTF_USESTDHANDLES
-                
+
                 startupinfo.hStdInput = int(p2cread)
                 startupinfo.hStdOutput = int(c2pwrite)
                 startupinfo.hStdError = int(errwrite)
@@ -172,7 +172,7 @@ class Popen(subprocess.Popen):
 
             if canCreateJob:
                 # We create a new job for this process, so that we can kill
-                # the process and any sub-processes 
+                # the process and any sub-processes
                 self._job = winprocess.CreateJobObject()
                 winprocess.AssignProcessToJobObject(self._job, int(hp))
             else:
@@ -198,7 +198,7 @@ class Popen(subprocess.Popen):
                 winprocess.TerminateJobObject(self._job, 127)
             else:
                 winprocess.TerminateProcess(self._handle, 127)
-            self.returncode = 127    
+            self.returncode = 127
         else:
             if group:
                 try:
@@ -223,20 +223,20 @@ class Popen(subprocess.Popen):
             if timeout is None:
                 timeout = -1
             rc = winprocess.WaitForSingleObject(self._handle, timeout)
-            
+
             if (rc == winprocess.WAIT_OBJECT_0 or
                 rc == winprocess.WAIT_ABANDONED or
                 rc == winprocess.WAIT_FAILED):
-                # Object has either signaled, or the API call has failed.  In 
+                # Object has either signaled, or the API call has failed.  In
                 # both cases we want to give the OS the benefit of the doubt
                 # and supply a little time before we start shooting processes
                 # with an M-16.
 
-                # Returns 1 if running, 0 if not, -1 if timed out                
+                # Returns 1 if running, 0 if not, -1 if timed out
                 def check():
                     now = datetime.datetime.now()
                     diff = now - starttime
-                    if (diff.seconds * 1000 * 1000 + diff.microseconds) < (timeout * 1000):
+                    if (diff.seconds * 1000000 + diff.microseconds) < (timeout * 1000):
                         if self._job:
                             if (winprocess.QueryInformationJobObject(self._job, 8)['BasicInfo']['ActiveProcesses'] > 0):
                                 # Job Object is still containing active processes
@@ -262,7 +262,7 @@ class Popen(subprocess.Popen):
                     # Then check timed out, we have a hung process, attempt
                     # last ditch kill with explosives
                     self.kill(group)
-                                
+
             else:
                 # In this case waitforsingleobject timed out.  We have to
                 # take the process behind the woodshed and shoot it.
@@ -292,7 +292,7 @@ class Popen(subprocess.Popen):
                             time.sleep(.5); count += 500
                     except exceptions.OSError:
                         return self.returncode
-                        
+
             if timeout is None:
                 if group is True:
                     return group_wait(timeout)
@@ -304,7 +304,7 @@ class Popen(subprocess.Popen):
 
             now = datetime.datetime.now()
             diff = now - starttime
-            while (diff.seconds * 1000 * 1000 + diff.microseconds) < (timeout * 1000) and ( returncode is False ):
+            while (diff.seconds * 1000000 + diff.microseconds) < (timeout * 1000) and ( returncode is False ):
                 if group is True:
                     return group_wait(timeout)
                 else:
@@ -314,14 +314,14 @@ class Popen(subprocess.Popen):
                 now = datetime.datetime.now()
                 diff = now - starttime
             return self.returncode
-                
+
         return self.returncode
     # We get random maxint errors from subprocesses __del__
-    __del__ = lambda self: None        
-        
+    __del__ = lambda self: None
+
 def setpgid_preexec_fn():
     os.setpgid(0, 0)
-        
+
 def runCommand(cmd, **kwargs):
     if sys.platform != "win32":
         return Popen(cmd, preexec_fn=setpgid_preexec_fn, **kwargs)
