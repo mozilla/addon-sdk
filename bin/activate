@@ -81,4 +81,4 @@ if [ -n "$BASH" -o -n "$ZSH_VERSION" ] ; then
     hash -r
 fi
 
-python -c "from jetpack_sdk_env import welcome; welcome()"
+python2 -c "from jetpack_sdk_env import welcome; welcome()"
