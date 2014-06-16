@@ -12,6 +12,9 @@ const simple = require('sdk/simple-prefs');
 const fixtures = require('./fixtures');
 const { Cc, Ci } = require('chrome');
 
+const prefsrv = Cc['@mozilla.org/preferences-service;1'].
+                    getService(Ci.nsIPrefService);
+
 function injectOptions(preferences, preferencesBranch, document, parent) {
   inject({
     id: id,
@@ -66,6 +69,7 @@ exports.testNoPrefs = function(assert, done) {
 
 exports.testCurlyID = function(assert) {
   let { preferences, id } = packageJSON('curly-id');
+  let branch = prefsrv.getDefaultBranch('extensions.' + id);
 
   let parent = document.createDocumentFragment();
   injectOptions(preferences, id, document, parent);
@@ -77,10 +81,15 @@ exports.testCurlyID = function(assert) {
   setDefaults(preferences, id);
   assert.equal(get('extensions.{34a1eae1-c20a-464f-9b0e-000000000000}.test13'),
                26, "test13 is 26");
+
+  branch.deleteBranch('');
+  assert.equal(get('extensions.{34a1eae1-c20a-464f-9b0e-000000000000}.test13'),
+               undefined, "test13 is undefined");
 }
 
 exports.testPreferencesBranch = function(assert) {
   let { preferences, 'preferences-branch': prefsBranch } = packageJSON('preferences-branch');
+  let branch = prefsrv.getDefaultBranch('extensions.' + prefsBranch);
 
   let parent = document.createDocumentFragment();
   injectOptions(preferences, prefsBranch, document, parent);
@@ -91,10 +100,14 @@ exports.testPreferencesBranch = function(assert) {
 
   setDefaults(preferences, prefsBranch);
   assert.equal(get('extensions.human-readable.test42'), true, "test42 is true");
+
+  branch.deleteBranch('');
+  assert.equal(get('extensions.human-readable.test42'), undefined, "test42 is undefined");
 }
 
 exports.testSimplePrefs = function(assert) {
   let { preferences } = packageJSON('simple-prefs');
+  let branch = prefsrv.getDefaultBranch('extensions.' + preferencesBranch);
 
   function assertPref(setting, name, type, title) {
     assert.equal(setting.getAttribute('data-jetpack-id'), id,
@@ -142,9 +155,11 @@ exports.testSimplePrefs = function(assert) {
   assert.strictEqual(simple.prefs.test3, "1", "test3 is '1'");
   assert.strictEqual(simple.prefs.test4, "red", "test4 is 'red'");
 
-  // default pref branch can't be "reset", bug 1012231
-  Cc['@mozilla.org/preferences-service;1'].getService(Ci.nsIPrefService).
-    getDefaultBranch('extensions.' + preferencesBranch).deleteBranch('');
+  branch.deleteBranch('');
+  assert.strictEqual(simple.prefs.test, undefined, "test is undefined");
+  assert.strictEqual(simple.prefs.test2, undefined, "test2 is undefined");
+  assert.strictEqual(simple.prefs.test3, undefined, "test3 is undefined");
+  assert.strictEqual(simple.prefs.test4, undefined, "test4 is undefined");
 }
 
 function packageJSON(dir) {
