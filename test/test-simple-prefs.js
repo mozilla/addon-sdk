@@ -3,11 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
-const { Cu } = require('chrome');
+const { Cc, Ci, Cu } = require('chrome');
 const { Loader } = require("sdk/test/loader");
 const { setTimeout } = require("sdk/timers");
 const { emit } = require("sdk/system/events");
-const { id } = require("sdk/self");
 const simplePrefs = require("sdk/simple-prefs");
 const { prefs: sp } = simplePrefs;
 const { defer, resolve, reject, all } = require("sdk/core/promise");
@@ -21,8 +20,12 @@ const { toFilename } = require('sdk/url');
 const { AddonManager } = Cu.import('resource://gre/modules/AddonManager.jsm', {});
 const { ZipWriter } = require('./zip/utils');
 const { getTabForId } = require('sdk/tabs/utils');
+const { preferencesBranch, id } = require('sdk/self');
 const { Tab } = require('sdk/tabs/tab');
 require('sdk/tabs');
+
+const prefsrv = Cc['@mozilla.org/preferences-service;1'].
+                    getService(Ci.nsIPrefService);
 
 const specialChars = "!@#$%^&*()_-=+[]{}~`\'\"<>,./?;:";
 
@@ -246,6 +249,7 @@ exports.testPrefJSONStringification = function(assert) {
 
 exports.testUnloadOfDynamicPrefGeneration = function(assert, done) {
   let loader = Loader(module);
+  let branch = prefsrv.getDefaultBranch('extensions.' + preferencesBranch);
 
   let { enable } = loader.require("sdk/preferences/native-options");
 
@@ -338,6 +342,8 @@ exports.testUnloadOfDynamicPrefGeneration = function(assert, done) {
   }).
   // uninstall the add-on
   then(({ id }) => uninstall(id)).
+  // delete the pref branch
+  then(_ => branch.deleteBranch('')).
   then(done, assert.fail);
 }
 
