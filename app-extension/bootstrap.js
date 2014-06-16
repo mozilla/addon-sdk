@@ -233,6 +233,7 @@ function startup(data, reasonCode) {
       // Arguments related to test runner.
       modules: {
         '@test/options': {
+          allTestModules: options.allTestModules,
           iterations: options.iterations,
           filter: options.filter,
           profileMemory: options.profileMemory,
