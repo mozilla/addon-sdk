@@ -44,7 +44,7 @@ deactivate nondestructive
 _OLD_PYTHONPATH="$PYTHONPATH"
 _OLD_VIRTUAL_PATH="$PATH"
 
-VIRTUAL_ENV="`pwd`"
+VIRTUAL_ENV="$(cd "$(dirname "${BASH_SOURCE:-$0}")"; cd ..; pwd)"
 
 if [ "x$OSTYPE" = "xmsys" ] ; then
   CUDDLEFISH_ROOT="`pwd -W | sed s,/,\\\\\\\\,g`"
@@ -57,8 +57,6 @@ else
   PYTHONPATH="$VIRTUAL_ENV/python-lib:$PYTHONPATH"
   PATH="$VIRTUAL_ENV/bin:$PATH"
 fi
-
-VIRTUAL_ENV="`pwd`"
 
 export CUDDLEFISH_ROOT
 export PYTHONPATH
