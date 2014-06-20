@@ -3614,7 +3614,6 @@ exports.testPredicateContextTargetLinkSetNestedStructure = function (assert, don
   });
 };
 
-
 // Test that the data object has the value for an input textbox
 exports.testPredicateContextTargetValueSet = function (assert, done) {
   let test = new TestHelper(assert, done);
