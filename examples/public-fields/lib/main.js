@@ -44,6 +44,7 @@ Flags({
 		getObjectClient: grip => {
 			let defaultClient = defaultFlags.getObjectClient(grip);
       return decorateClient(defaultClient);
-		}
+		},
+		foo: 1
 	})
 });
