@@ -917,13 +917,23 @@ exports['test window focus changes active tab'] = function(assert, done) {
       focus(win2).then(function() {
         tabs.on("activate", function onActivate(tab) {
           tabs.removeListener("activate", onActivate);
-          assert.pass("activate was called on windows focus change.");
-          assert.equal(tab.url, url1, 'the activated tab url is correct');
 
-          return close(win2).then(function() {
-            assert.pass('window 2 was closed');
-            return close(win1);
-          }).then(done).then(null, assert.fail);
+          if (tab.readyState === 'uninitialized') {
+            tab.once('ready', whenReady);
+          }
+          else {
+            whenReady(tab);
+          }
+
+          function whenReady(tab) {
+            assert.pass("activate was called on windows focus change.");
+            assert.equal(tab.url, url1, 'the activated tab url is correct');
+
+            return close(win2).then(function() {
+              assert.pass('window 2 was closed');
+              return close(win1);
+            }).then(done).then(null, assert.fail);
+          }
         });
 
         win1.focus();
