@@ -12,6 +12,31 @@ const { addDebuggerToGlobal } =
   Cu.import('resource://gre/modules/jsdebugger.jsm', {});
 addDebuggerToGlobal(this);
 
+exports['test async basics'] = function(assert, done) {
+  let fixture = Sandbox('http://example.com');
+  fixture.then( (global) => {
+
+    fixture.evaluate('var a = 1;').then( (result) => {
+        assert.equal(result, undefined, 'returns expression value');
+
+      return fixture.evaluate('b = 2;');
+    }).
+    then( (result) => {
+      assert.equal(result, 2, 'returns expression value');
+
+      assert.equal(global.b, 2, 'global is defined as property');
+      assert.equal(global.a, 1, 'global is defined as property');
+
+      return fixture.evaluate('a + b;');
+    }).
+    then( (result) => {
+      assert.equal(result, 3, 'returns correct sum')
+      done();
+    }).
+    catch(assert.fail);
+  })
+}
+
 exports['test basics'] = function(assert) {
   let fixture = sandbox('http://example.com');
   assert.equal(evaluate(fixture, 'var a = 1;'), undefined,
@@ -23,41 +48,22 @@ exports['test basics'] = function(assert) {
   assert.equal(evaluate(fixture, 'a + b;'), 3, 'returns correct sum');
 };
 
-exports['test async basics'] = function(assert, done) {
-  let fixture = Sandbox('http://example.com');
-  fixture.
-    evaluate('var a = 1;').
-    then(result => assert.equal(result, undefined, 'returns expression value')).
-
-    then(_ => fixture.evaluate('b = 2;')).
-    then(result => assert.equal(result, 2, 'returns expression value')).
-
-    then(_ => {
-      assert.equal(fixture._sandbox.b, 2, 'global is defined as property');
-      assert.equal(fixture._sandbox.a, 1, 'global is defined as property');
-    }).
-
-    then(_ => fixture.evaluate('a + b;')).
-    then(result => assert.equal(result, 3, 'returns correct sum')).
-
-    then(done);
-}
-
 exports['test async non-privileged'] = function(assert, done) {
   let fixture = Sandbox('http://example.com');
-  fixture.
-    evaluate('Compo' + 'nents.utils').
+  fixture.then( (global) => {
+    fixture.evaluate('Compo' + 'nents.utils').
     then(_ => assert.fail("Access to Components should be restricted")).
     catch(e => assert.equal(e.message, "Components is not defined")).
 
     then(_ => {
-      fixture._sandbox.Cu = Cu;
+      global.Cu = Cu;
       return fixture.evaluate("Cu");
     }).
     then(_ => assert.fail("Should not be able to call priviliged code")).
     catch(e => assert.ok(e.message.match("Permission denied"))).
 
     then(done);
+  })
 }
 
 exports['test non-privileged'] = function(assert) {
@@ -80,15 +86,16 @@ exports['test non-privileged'] = function(assert) {
 
 
 exports['test async injection'] = function(assert, done) {
-  Sandbox().init.
-    then(fixture => {
-      fixture._sandbox.hi = (name) => 'Hi ' + name;
-      return fixture.evaluate('hi("sandbox");');
-    }).    
-    then(result => assert.equal(result, 'Hi sandbox', 'injected functions are callable')).
-
-    then(done);
-};
+  let fixture = Sandbox();
+  fixture.then( (global) => {
+    global.hi = (name) => 'Hi ' + name;
+    return fixture.evaluate('hi("sandbox");');
+  }).
+  then( (result) => {
+    assert.equal(result, 'Hi sandbox', 'injected functions are callable');
+    done();
+  })
+}
 
 exports['test injection'] = function(assert) {
   let fixture = sandbox();
@@ -108,12 +115,13 @@ exports['test async exceptions'] = function(assert, done) {
     catch(e => {
       assert.equal(e.fileName, '', 'no fileName reported');
       assert.equal(e.lineNumber, 3, 'reports correct line number');
-    }).
+    });
 
-    then(_ => fixture.evaluate('new ' + function() {
+  fixture.
+    evaluate('new ' + function() {
       var message = 'boom';
       throw Error(message);
-    }, 'foo.js')).
+    }, 'foo.js').
     then(_ => assert.fail("Should not resolve")).
     catch(e => {
       assert.equal(e.fileName, 'foo.js', 'correct fileName reported');
@@ -176,14 +184,15 @@ exports['test opt version'] = function(assert) {
 
 exports['test async load'] = function(assert, done) {
   let fixture = Sandbox();
-  fixture.
-    load(fixturesURI + 'sandbox-normal.js').
+  fixture.then( (global) => {
+    fixture.load(fixturesURI + 'sandbox-normal.js').
     then(_ => {
-      assert.equal(fixture._sandbox.a, 1, 'global variable defined');
-      assert.equal(fixture._sandbox.b, 2, 'global via `this` property was set');
-      assert.equal(fixture._sandbox.f(), 4, 'function was defined');
+      assert.equal(global.a, 1, 'global variable defined');
+      assert.equal(global.b, 2, 'global via `this` property was set');
+      assert.equal(global.f(), 4, 'function was defined');
     }).
-    then(done);
+    then(done, assert.fail);
+  })
 }
 
 exports['test load'] = function(assert) {
@@ -197,14 +206,15 @@ exports['test load'] = function(assert) {
 exports['test async load with data: URI'] = function(assert, done) {
   let code = "var a = 1; this.b = 2; function f() 4";
   let fixture = Sandbox();
-  fixture.
-    load("data:," + encodeURIComponent(code)).
+  fixture.then( (global) => {
+    fixture.load("data:," + encodeURIComponent(code)).
     then(_ => {
-      assert.equal(fixture._sandbox.a, 1, 'global variable defined');
-      assert.equal(fixture._sandbox.b, 2, 'global via `this` property was set');
-      assert.equal(fixture._sandbox.f(), 4, 'function was defined');
+      assert.equal(global.a, 1, 'global variable defined');
+      assert.equal(global.b, 2, 'global via `this` property was set');
+      assert.equal(global.f(), 4, 'function was defined');
     }).
-    then(done);
+    then(done, assert.fail);
+  })
 }
 
 exports['test load with data: URL'] = function(assert) {
@@ -219,11 +229,12 @@ exports['test load with data: URL'] = function(assert) {
 
 exports['test async script with complex char'] = function(assert, done) {
   let fixture = Sandbox();
-  fixture.
-    load(fixturesURI + 'sandbox-complex-character.js').
-    then(_ => assert.equal(fixture._sandbox.chars, 'გამარჯობა', 
+  fixture.then( (global) => {
+    fixture.load(fixturesURI + 'sandbox-complex-character.js').
+    then(_ => assert.equal(global.chars, 'გამარჯობა', 
                           'complex chars were loaded correctly')).
-    then(done);
+    then(done, assert.fail);
+  })
 }
 
 exports['test load script with complex char'] = function(assert) {
@@ -235,11 +246,12 @@ exports['test load script with complex char'] = function(assert) {
 exports['test async load with data: URI and complex char'] = function(assert, done) {
   let code = "var chars = 'გამარჯობა';";
   let fixture = Sandbox();
-  fixture.
-    load("data:," + encodeURIComponent(code)).
-    then(_ => assert.equal(fixture._sandbox.chars, 'გამარჯობა', 
+  fixture.then( (global) => {
+    fixture.load("data:," + encodeURIComponent(code)).
+    then(_ => assert.equal(global.chars, 'გამარჯობა', 
                           'complex chars were loaded correctly')).
-    then(done);
+    then(done, assert.fail);
+  })
 }
 
 exports['test load script with data: URL and complex char'] = function(assert) {
@@ -282,26 +294,27 @@ exports['test metadata']  = function(assert) {
 exports['test async nuke sandbox'] = function(assert, done) {
   let fixture = Sandbox('http://example.com');
   let ref = null;
-  fixture.init.
-    then(_ => fixture._sandbox.foo = 'foo').
-    then(_ => fixture.evaluate('let a = {bar: "bar"}; a')).
-    then(result => ref = result).
-
-    then(_ => fixture.nuke()).
-
-    then(_ => assert.ok(Cu.isDeadWrapper(fixture._sandbox), "sandbox should be dead")).
-
-    then(_ => fixture._sandbox.foo).
+  fixture.then( (global) => {
+    global.foo = 'foo';
+    fixture.evaluate('let a = {bar: "bar"}; a').
+    then( (result) => {
+      ref = result;
+      return fixture.nuke();
+    }).
+    then(_ => {
+      assert.ok(Cu.isDeadWrapper(global), "sandbox should be dead");
+      global.foo;
+    }).
+    then(_ => assert.fail("should not resolve")).
+    catch( (e) => {
+      assert.equal(e.message, "can't access dead object");
+      assert.ok(Cu.isDeadWrapper(ref), "ref object should be dead");
+      ref.bar;
+    }).
     then(_ => assert.fail("should not resolve")).
     catch(e => assert.equal(e.message, "can't access dead object")).
-
-    then(_ => assert.ok(Cu.isDeadWrapper(ref), "ref object should be dead")).
-
-    then(_ => ref.bar).
-    then(_ => assert.fail("should not resolve")).
-    catch(e => assert.equal(e.message, "can't access dead object")).
-
     then(done);
+  })
 }
 
 exports['test nuke sandbox'] = function(assert) {
