@@ -789,8 +789,12 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         options.overload_modules = True
 
     extra_environment = {}
-    harness_options['main'] = target_cfg.get('main')
-    if command != "test":
+    if command == "test":
+        # This should be contained in the test runner package.
+        harness_options['main'] = 'sdk/test/runner'
+        harness_options['mainPath'] = 'sdk/test/runner'
+    else:
+        harness_options['main'] = target_cfg.get('main')
         harness_options['mainPath'] = manifest.top_path
     extra_environment["CFX_COMMAND"] = command
 
