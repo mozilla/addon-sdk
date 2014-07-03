@@ -57,11 +57,16 @@ class Basic(unittest.TestCase):
         assertReqIs("subdir/three", "../main", "one/main")
 
         target_cfg.dependencies = []
+
+        # this should now work, as we ignore missing modules by default
+        manifest.build_manifest(target_cfg, pkg_cfg, deps, scan_tests=False)
+
         # now, because .dependencies *is* provided, we won't search 'deps',
-        # so we'll get a link error
+        # and stop_on_missing is True, we'll get a link error
         self.assertRaises(manifest.ModuleNotFoundError,
                           manifest.build_manifest,
-                          target_cfg, pkg_cfg, deps, scan_tests=False)
+                          target_cfg, pkg_cfg, deps, scan_tests=False,
+                          stop_on_missing=True)
 
     def test_main_in_deps(self):
         target_cfg = self.get_pkg("three")
