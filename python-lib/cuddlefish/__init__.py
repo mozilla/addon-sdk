@@ -234,11 +234,11 @@ parser_groups = (
                                       help="JSON file to overload package.json properties",
                                       default=None,
                                       cmds=['xpi'])),
-        (("", "--stop-on-missing",), dict(dest="stop_on_missing",
-                                          help="Stop on missing module require()s",
-                                          action="store_true",
-                                          default=False,
-                                          cmds=['test', 'run', 'xpi', 'testpkgs'])),
+        (("", "--abort-on-missing-module",), dict(dest="abort_on_missing",
+                                      help="Abort if required module is missing",
+                                      action="store_true",
+                                      default=False,
+                                      cmds=['test', 'run', 'xpi', 'testpkgs'])),
         ]
      ),
 
@@ -657,7 +657,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     use_main = False
     inherited_options = ['verbose', 'enable_e10s', 'parseable', 'check_memory', 
-                         'stop_on_missing']
+                         'abort_on_missing']
     enforce_timeouts = False
 
     if command == "xpi":
@@ -754,7 +754,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     try:
         manifest = build_manifest(target_cfg, pkg_cfg, deps, scan_tests,
                                   test_filter_re, loader_modules,
-                                  stop_on_missing=options.stop_on_missing)
+                                  abort_on_missing=options.abort_on_missing)
     except ModuleNotFoundError, e:
         print str(e)
         sys.exit(1)
