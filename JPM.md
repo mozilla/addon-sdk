@@ -28,35 +28,10 @@ The current CFX tool used to assist development in addons is a great utility for
   * `-b/--binary <BINARY>`: Sets the binary of Firefox to use
   * `--binary-args <CMDARGS>`: Passes additional binary arguments to Firefox
   * `-p/--profile-dir <PROFILE>`: Start Firefox up with this profile (Should be able to take either a name or a directory)
-  * `-o/--overload/--overload-modules`: Bake the SDK add-ons into the addon itself so it uses the local repo SDK rather than the ones built into Firefox. Should be able to consume a PATH to the SDK or use a global ENV var.
 * **test**: Runs tests for the current add-on or the SDK
   * `-f/--filter <FILENAMES>:<TESTNAMES>`: Filter tests to be run by the expression. Maybe a better interface for this?
 * **xpi**: Creates a `xpi` file of the CWD.
 
-### Will be Supported Eventually (not high priority)
-
-* `run --pkgdir`: Uses pkgdir instead of CWD.
-* `run --addons`: Path of other addons to install. Should be able to consume a working directory or an xpi.
-* `run --e10s`: Not currently implemented.
-* `run --static-args`: [Passes in arguments into the addon](https://developer.mozilla.org/en-US/Add-ons/SDK/Tools/cfx#Passing_Static_Arguments). Is this needed?
-* `test --logfile`: Dumps a logfile of test results.
-* `test --profile-memory`: Dumps a log of memory tests.
-
-### Will NOT be Supported
-
-* `--test-packges/--test-addons`: An alias for the old `testaddons` and `testpkgs`, do we need these to be two separate commands? A test should set up an addon on its own and be filterable with `-f` if we want to separate the two.
-* `test --test-runner-package`: Name of package containing test-runner program. Defaults to `test-harness`. Probably should not implement this until we can run tests with any harness.
-* `xpi --update-link, xpi --update-url`: These should probably be handled in the `package.json`.
-* `run --keydir`: Location of signing keys.
-* `test --times`: Runs tests x number of times.
-* `run --extra-packages`: As dependencies will be handled via `dependencies` in the `package.json` with npm, this is not necessary.
-* `run -g/--use-config`: This uses a `local.json` file to store arguments to be passed into jpm. [How it currently works with cfx](https://developer.mozilla.org/en-US/Add-ons/SDK/Tools/cfx#Using_Configurations). With the new tool being written in JS, if a developer wants to do this, they can easily script it. May be useful, not not important (IMO).
-* `run -a/--app`: Only `firefox` is currently supported, although this is needed for Fennec. Maybe we can have a better way of Fennec support.
-* `run --no-run`: Prints the command used to start the add-on. Necessary? Can just ensure `-v` prints this.
-* `run --templatedir`: Uses a template from `app-extension`. I do not think this is necessary.
-* `test --dependencies`: Runs tests on all the dependencies as well, possibly including SDK tests. Necessary?
-* `testcfx`: JPM will contain its own tests run with `npm install`.
-* `testex`: Example code is no longer in the SDK repo.
 
 ## Implementation
 
