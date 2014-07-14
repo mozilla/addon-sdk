@@ -796,7 +796,6 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     if options.pkgdir == env_root:
         options.bundle_sdk = True
-        options.overload_modules = True
 
     extra_environment = {}
     if command == "test":
