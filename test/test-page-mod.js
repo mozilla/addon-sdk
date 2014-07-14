@@ -591,10 +591,14 @@ exports.testContentScriptWhenDefault = function(assert) {
   pagemod.destroy();
 }
 
+
 // test timing for all 3 contentScriptWhen options (start, ready, end)
 // for new pages, or tabs opened after PageMod is created
 exports.testContentScriptWhenForNewTabs = function(assert, done) {
-  const url = "data:text/html;charset=utf-8,testContentScriptWhenForNewTabs";
+  // need a bit bigger document to get the right timing of events with e10s
+  let iframeURL = 'data:text/html;charset=utf-8,testContentScriptWhenForNewTabs';
+  let iframe = '<iframe src="' + iframeURL + '" />';
+  let url = 'data:text/html;charset=utf-8,' + encodeURIComponent(iframe);
 
   let count = 0;
 
@@ -604,7 +608,11 @@ exports.testContentScriptWhenForNewTabs = function(assert, done) {
       if (++count === 3)
         tab.close(done);
     },
-    onInteractive: () => assert.fail("onInteractive should not be called with 'start'."),
+    onInteractive: () => {
+      assert.pass("PageMod is attached while document is interactive");
+      if (++count === 3)
+        tab.close(done);
+    },
     onComplete: () => assert.fail("onComplete should not be called with 'start'."),
   });
 
@@ -634,7 +642,10 @@ exports.testContentScriptWhenForNewTabs = function(assert, done) {
 // test timing for all 3 contentScriptWhen options (start, ready, end)
 // for PageMods created right as the tab is created (in tab.onOpen)
 exports.testContentScriptWhenOnTabOpen = function(assert, done) {
-  const url = "data:text/html;charset=utf-8,testContentScriptWhenOnTabOpen";
+  // need a bit bigger document to get the right timing of events with e10s
+  let iframeURL = 'data:text/html;charset=utf-8,testContentScriptWhenOnTabOpen';
+  let iframe = '<iframe src="' + iframeURL + '" />';
+  let url = 'data:text/html;charset=utf-8,' + encodeURIComponent(iframe);
 
   tabs.open({
     url: url,
@@ -647,7 +658,11 @@ exports.testContentScriptWhenOnTabOpen = function(assert, done) {
           if (++count === 3)
             tab.close(done);
         },
-        onInteractive: () => assert.fail("onInteractive should not be called with 'start'."),
+        onInteractive: () => {
+          assert.pass("PageMod is attached while document is interactive");
+          if (++count === 3)
+            tab.close(done);
+        },
         onComplete: () => assert.fail("onComplete should not be called with 'start'."),
       });
 
@@ -678,7 +693,10 @@ exports.testContentScriptWhenOnTabOpen = function(assert, done) {
 // test timing for all 3 contentScriptWhen options (start, ready, end)
 // for PageMods created while the tab is interactive (in tab.onReady)
 exports.testContentScriptWhenOnTabReady = function(assert, done) {
-  const url = "data:text/html;charset=utf-8,testContentScriptWhenOnTabReady";
+  // need a bit bigger document to get the right timing of events with e10s
+  let iframeURL = 'data:text/html;charset=utf-8,testContentScriptWhenOnTabReady';
+  let iframe = '<iframe src="' + iframeURL + '" />';
+  let url = 'data:text/html;charset=utf-8,' + encodeURIComponent(iframe);
 
   tabs.open({
     url: url,
@@ -722,7 +740,10 @@ exports.testContentScriptWhenOnTabReady = function(assert, done) {
 // test timing for all 3 contentScriptWhen options (start, ready, end)
 // for PageMods created after a tab has completed loading (in tab.onLoad)
 exports.testContentScriptWhenOnTabLoad = function(assert, done) {
-  const url = "data:text/html;charset=utf-8,testContentScriptWhenOnTabLoad";
+  // need a bit bigger document to get the right timing of events with e10s
+  let iframeURL = 'data:text/html;charset=utf-8,testContentScriptWhenOnTabReady';
+  let iframe = '<iframe src="' + iframeURL + '" />';
+  let url = 'data:text/html;charset=utf-8,' + encodeURIComponent(iframe);
 
   tabs.open({
     url: url,
@@ -762,6 +783,7 @@ exports.testContentScriptWhenOnTabLoad = function(assert, done) {
     }
   });
 }
+
 
 exports.testTabWorkerOnMessage = function(assert, done) {
   let { browserWindows } = require("sdk/windows");
@@ -1556,7 +1578,7 @@ exports.testDetachOnUnload = function(assert, done) {
   const TEST_URL = 'data:text/html;charset=utf-8,detach';
   const loader = Loader(module);
   const { PageMod } = loader.require('sdk/page-mod');
-
+ 
   let mod1 = PageMod({
     include: TEST_URL,
     contentScript: Isolate(function() {
