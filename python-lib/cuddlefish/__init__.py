@@ -656,7 +656,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     # a Mozilla application (which includes running tests).
 
     use_main = False
-    inherited_options = ['verbose', 'enable_e10s', 'parseable', 'check_memory',
+    inherited_options = ['verbose', 'enable_e10s', 'parseable', 'check_memory', 
                          'abort_on_missing']
     enforce_timeouts = False
 
@@ -793,9 +793,6 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         options.bundle_sdk = True
         options.force_use_bundled_sdk = False
         options.overload_modules = True
-
-    if options.pkgdir == env_root:
-        options.bundle_sdk = True
 
     extra_environment = {}
     if command == "test":
