@@ -104,7 +104,8 @@ Devtools models the `VariablesView` as a tree. In the `Navigator` API, we will m
 	    //
 	    // i.e. don't admit to the user that this is lazy
 	    getEntries() -> this.getProperties(),
-
+	    getProperties() : { propertyName -> ObjectView | PrimitiveView }
+	}
 
 ### Future Considerations
 * Remove the need for this exploration to be read-only. This would likely require retooling/integration of the `Object Inspectors` API.
