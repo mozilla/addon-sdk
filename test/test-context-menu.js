@@ -3969,7 +3969,7 @@ TestHelper.prototype = {
     let loader = Loader(module, null, null, {
       modules: {
         "sdk/self": merge({}, selfModule, {
-          data: merge({}, selfModule.data, {require("./fixtures")})
+          data: merge({}, selfModule.data, require("./fixtures"))
         })
       }
     });
