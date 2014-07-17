@@ -1,251 +1,114 @@
-# (Note: This high-level API is out-of-date. It depends on the low-level API described in Flags.md. It will be updated when the low-level API is finalized.)
-
-# Object Inspectors
+# VariablesView APIs
 
 ## Overview
 
-The default VariablesView is great for displaying most JS objects when users click on them from the console. However, addon developers may want to modify the way that it displays objects. The Object Inspectors SDK extension will allow developers to do just this. Specifically, the Object Inspectors extension will let addons:
+The `VariablesView` is a UI widget used by the Webconsole, Debugger, and other devtools components to expand and edit objects. Addon developers may want to make a number of modifications to `VariablesView` instances.
 
-* Apply filters/wrappers to objects before passing them to the default Object Inspector.
-* Replace the default Object Inspector with a custom Object Inspector of their own design (see "Possible Future Goals").
-* Place one or more custom Object Inspectors in tabs alongside the default Object Inspector (see "Possible Future Goals").
+Two SDK APIs could break out some of the `VariablesView`'s most useful features to addon developers:
 
-## Use Cases
+* `Object Inspectors`: This API would allow developers to Modify the manner in which the VariablesView fetches data for the objects it's displaying.
+* `VariablesView Navigator`: This API would allow developers to retrieve and then traverse active `VariablesView` instances. For now, this would allow only 'read-only' inspection of the `VariablesView`.
 
-Use cases/patterns for these SDK feature include:
+## Object Inspectors
 
-* Change an object's representation in an Object Inspector:
+To get information about objects being displayed in the `VariablesView`, the devtools use asynchronous Object clients to retrieve object properties. The `Object Inspectors` API allows developers to proxy these clients and fake, hide, or otherwise modify which properties objects expose through their clients.
 
-	* Small modifications which retain the default Object Inspector's tree structure. For example:
+### Use cases
 
-		* Hide private fields
-		* LinkedList (example below)
-		* Represent objects from compile-to-JS lanuages or JS frameworks in more intuitive formats
+Some potential use cases for this API include:
 
-	* Larger modifications which do not retain the default Object Inspector's tree structure.
-
-		* Would require "User-Defined Object Inspecter Views" in "Possible Future Goals".
-		* For example, render nodes and edges for objects tagged as graphs.
-
-* Object inspection side-effects:
-
-	* Take additional actions on page when an object is opened for inspection.
+* Hide private fields (example below)
+* Represent objects from compile-to-JS lanuages or JS libraries in more intuitive formats
+* Trigger additional effects when users update the object on display in the VariablesView
 	* For example, alert users when they try to set one a field of the object under inspection to an illegal value.
 
-* Reactive object inspectors:
+### Implementation
 
-	* Force an object inspector to update more freqently/in response to more events than it normally would.
-	* For example, update the inspector whenever the underlying object changes, not just when it's clicked in the console.
+Some implementation details or solutions to edge-cases:
 
-## Implementation
+* Potential problems arise when addons install multiple `Object Inspectors` on one `VariablesView`. In this case, we can actually replace the `VariablesView` UI widget with a `tabbox` which contains multiple `VariablesView` widgets, one for each active `Object Inspector`.
 
 ### API
 
-* ProxyRule
+We represent the default ObjectInspector, which is truthful about all of an object's properties, as such:
 
-		/*
-		 * A `ProxyRule` must contain two options: `filter` and `proxy`.
-		 *
-		 * `filter` behaves similarly to a functional filter, and `proxy`
-		 * behaves similarly to a functional map. Given a simplified object
-		 * grip client (the interface for such grips is) defined below),
-		 * `filter` returns a promise. If the promise resolves, then `proxy` is
-		 * applied to the client before it is passed to the VariablesView.
-		 * If the promise rejects, then the client is passed to the
-		 * VariablesView without modification.
-		 *
-		 * The object passed to `filter` and `proxy` implements a simplified
-		 * object grip client interface. The result of `proxy` must implement
-		 * the same interface. The interface contains the methods:
-		 *
-		 *  - `prototypeAndProperties`: Returns a promise which resolves to
-		 *  an object with two fields: `prototype` and `properties`. These
-		 *  are the prototype and properties that will be displayed in the
-		 *  VariablesView.
-		 *
-		 *  - `changeValue`: Given an object containing `key` and `newValue`
-		 *  fields, returns a promise that resolves when it has finished
-		 *  changing that value on the client or rejects if that value cannot
-		 *  be changed.
-		 *
-		 *  - `changeKey`: Given an object containing `key` and `newKey`
-		 *  fields, returns a promise that resolves when it has finished
-		 *  changing that key on the client or rejects if that key cannot be
-		 *  changed.
-		 *
-		 *  - `deleteKey`: Given an object containing a `key` field, returns
-		 *  a promise when resolves when that key has been deleted on the
-		 *  client or rejects if the key cannot be deleted.
-		 */
-		ProxyRule({filter, proxy})
+	class ObjectInspector {
+	  getOwnKeys() : Promise <[String]>
+	  getPropertyDescriptor(key) : Promise <[{configurable: Boolean, enumerable: Boolean, writable: Boolean, value: ObjectInspector|PrimitiveValue }]>,
+	  getPrototype: Promise <ObjectInspector|null>,
+	  isFrozen: Promise <Boolean>,
+	  isExtensible: Promise <Boolean>,
+	  isSealed: Promise <Boolean>,
 
-		/*
-		 * Enable or disable the proxying of objects caught by this rule's
-		 * filter.
-		 */
-		enable()
-		disable()
-
-### Usage Example
-
-Object Inspectors can be used to create a convenient viewer for linked lists. Consider a `LinkedList` implementation like this:
-
-	/*
-	 * An element in a `LinkedList`.
-	 *
-	 * @param value Object The value in this `Node`.
-	 * @param next Node The next `Node` in the `LinkedList`.
-	 */
-	function Node(value, next) {
-		this._LinkedList = "dummy";
-		this.value = value;
-		this.next = next;
+	  // modification methods
+	  setProperty(key, value): Promise <Boolean> // suceeded or failed to modify
+	  removeProperty(key): Promise <Boolean> // suceeded or failed to modify
 	}
 
-	/*
-	 * An ordered collection of `Nodes`.
-	 */
-	function LinkedList() {
-		/*
-		 * The first element of the `LinkedList`.
-		 * @type Node
-		 */
-		this.head = null;
-	}
+To create their own `Object Inspector`, developers subclass the `ObjectInspector` class. They can specify one of more 'sources' for which this inspector should replace the default inspector: the Webconsole and Debugger are examples of sources.
 
-In an addon, we can create a `ProxyRule` that identifies `LinkedList` objects and proxies them before passing them to the VariablesView.. The addon's `main.js` could look something like this:
+Note that an `ObjectInspector` provides an asynchronous, promise-based client for an actual object that exists in content.
 
-	const inspectors = require('sdk/dev/object-inspectors');
-	const linkedList = require('./linked-list.js');
+### Usage example
 
-	let linkedListRule = new inspectors.ProxyRule({
-		filter: client => client.properties().then({properties} => "_LinkedList" in properties),
-		proxy: client => new LinkedListClient(client)
-	});
+The `Object Inspectors` API can be used to construct a simple addon which shows only the 'public' fields in objects (here defined as fields with names that do not start with '_').
 
-	function LinkedListClient(client) {
-		this._client = client;
-	}
-
-	LinkedListClient.prototype = {
-		prototypeAndProperties: () => {
-			let deferred = promise.defer();
-
-			((client, list) => {
-				client.properties().then({properties} => {
-					if (properties.next) {
-						_properties(properties.next, list.concat(properties["value"]));
-					} else {
-						deferred.resolve({
-							properties: list,
-							prototype: this._client.prototype
-						});
-					}
-				});
-			}) (this._client, []);
-
-			return deferred.promise;
-		},
-		changeValue: {key, newValue} => {
-			let deferred = promise.defer();
-
-			let targetIndex = key;
-			(function _changeValue(client, index) {
-				if (index == targetIndex) {
-					client.changeKey("value", newValue).then(deferred);
-				} else {
-					client.properties().then(properties => {
-						// Note that we can just check properties.next directly without
-						// having to fetch the object for it. This is because we
-						// magically wrap any grip clients as simplified grip clients
-						// (described above).
-						if (properties.next) {
-							_changeValue(properties.next, index);
-						} else {
-							dererred.reject();
-						}
-					});
-				}
-			}) (this._client, 0)
-
-			return deferred.promise;
-		},
-		changeKey: {key, newKey} => promise.reject(),
-		deleteKey: {key} => promise.reject()
+	class PublicFieldInspector extends ObjectInspector {
+		Sources: [Webconsole, Debugger],
+	    getOwnKeys() {
+	        return ObjectInspector.prototype.getOwnKeys.call(this).then(function() {
+	            return publicFields(keys);
+	        });
+	    },
+	    getPrototype() ObjectInspector.prototype.getPrototype.call(this),
+	    getPropertyDescriptor(key) ObjectInspector.prototype.getPrototype.call(this, key),
 	};
 
-### Starting Points
+	Tool({
+	    inspectors: {
+	        publicFields: PublicFieldInspector
+	    }
+	})
 
-* Will rely heavily on `browser/devtools/shared/widgets/VariablesView.jsm` and `browser/devtools/shared/widgets/VariablesViewController.jsm` to display objects in in inspector after user has applied filters to them.
+### Future Considerations
 
-### Potential Issues
+After implementing the basic API, we can explore the following additions:
 
-* Must give the addon-developer the appearance of control over the default Object Inspector code without actually making significant modifications to the VariablesView code.
+* In addition to clients for Objects, we should consider adding clients for LongStrings, Arrays, Functions, and other sorts of JS constructs.
 
-## Possible Future Goals
+## Variables View Navigator
 
-* `ProxyRule` instances dictate display in Console in addition to display in Object Inspector:
-	* Add a `print` option to `ProxyRule` which produces an object that will display in the Console if that `ProxyRule`'s `filter` is matched.
-	* One issue: if we rename certain fields in the object before displaying it, we have to know what to do when the user clicks on those same fields. This seems like it would require another set of the `changeKey`, etc. callbacks used for the Inspector. This could easily become too big.
-* User-Defined Object Inspecter Views:
-	* If we remove the restriction that addon developers must use the default Object Inspector's view and allow them to define their own custom views, this SDK feature becomes much more powerful.
-	* In addition UI freedom, developers gain the freedom to install their own listeners in their custom Object Inspectors (instead of being limited to `changeKey`, `changeValue`, and `deleteKey`).
-	* Views would no longer need to follow the VariablesView's tree structure.
-	* Addon-developers will supply an HTML document to describe their views.
-	* Multiple views can sit alongside eachother in tabs.
-	* The API might look like this:
+The `Navigator` would allow users to explore the contents of a (wrapped version of a) `VariablesView` instance. This exploration would be read-only for now.
 
-		* Top-level methods:
+### Use Cases
+* SDK tests involving the VariablesView
 
-				/*
-				 * For consistency, allow the user to get a reference to the
-				 * VariablesView, wrapped as an `View`.
-				 */
-				defaultView()
+### API
+Devtools models the `VariablesView` as a tree. In the `Navigator` API, we will modify this model only slightly. For example, the devtools view is filled lazily; we will hide this fact from users by filling out Objects as the user explores them.
 
-		* View
+	getVariablesViews(tab) -> { source : { addonID : VariableView } }
+	class VariablesView {
+	    getEntries() this.getScopes(),
+	    getScopes(): { scopeName -> ScopeView }
+	}
+	class ScopeView {
+	    getEntries() -> this.getVariables(),
+	    getVariables() -> { variableName ->  ObjectView | PrimitiveView }
+	}
+	class PrimitiveView {
+	    value: primitive
+	}
+	class ObjectView {
+	    // Gives PrimitiveView|ObjectView objects that are children if they exist,
+	    // or gets properties thru client and creates Views before returning them.
+	    //
+	    // i.e. don't admit to the user that this is lazy
+	    getEntries() -> this.getProperties(),
 
-				/*
-				 * A `View` is a custom UI widget for displaying objects.
-				 *
-				 * `title`  is the name to given to the tab that this `View`
-				 * will occupy if we have multiple `View` instances active at
-				 * one time.
-				 *
-				 * `contentURL` is the path to the HTML page used to render
-				 * this `View`.
-				 */
-				View({title, contentURL})
 
-				/*
-				 * These methods allow the `View` to show or force it to
-				 * hide.
-				 */
-				enable()
-				disable()
-
-		* ViewRule:
-
-				/*
-				 * A `ViewRule` is significantly simpler than a `ProxyRule`.
-				 * A `ViewRule` only contains information about when it should
-				 * be applied (`filter`) and what to do when an object matches
-				 * a filter (`onSelect`).
-				 */
-				InspectorRule({filter, onSelect})
-
-## Mockup
-
-Inspecting a `LinkedList` with the default VariablesView:
-
-<img src="http://www.contrib.andrew.cmu.edu/~cbrem/files/images/without_rule.png" alt="Object Inspector" style="width: 50%">
-
-Inspecting the same object with the addon from the example:
-
-<img src="http://www.contrib.andrew.cmu.edu/~cbrem/files/images/with_rule.png" alt="Linked List Inspector" style="width: 50%">
+### Future Considerations
+* Remove the need for this exploration to be read-only. This would likely require retooling/integration of the `Object Inspectors` API.
 
 ## Discussion
-
-[Etherpad](https://etherpad.mozilla.org/6P2gZHE7ug)
 
 [Bugzilla](https://bugzilla.mozilla.org/show_bug.cgi?id=980555)
