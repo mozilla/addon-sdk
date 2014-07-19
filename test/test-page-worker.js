@@ -79,7 +79,7 @@ exports.testUnwrappedDOM = function(assert, done) {
 exports.testPageProperties = function(assert) {
   let page = new Page();
 
-  for each (let prop in ['contentURL', 'allow', 'contentScriptFile',
+  for (let prop of ['contentURL', 'allow', 'contentScriptFile',
                          'contentScript', 'contentScriptWhen', 'on',
                          'postMessage', 'removeListener']) {
     assert.ok(prop in page, prop + " property is defined on page.");
