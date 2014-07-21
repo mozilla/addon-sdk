@@ -36,6 +36,8 @@ exports.testPageMod = function testPageMod(assert, done, testURL, pageModOptions
 
   var pageMods = [new pageMod.PageMod(opts) for each(opts in pageModOptions)];
 
+timer.setTimeout(_ => {
+
   let newTab = openTab(browserWindow, testURL, {
     inBackground: false
   });
@@ -47,7 +49,7 @@ exports.testPageMod = function testPageMod(assert, done, testURL, pageModOptions
     // load event. So page-mod actions may not be already done.
     // If we delay even more contentScriptWhen:'end', we may want to modify
     // this code again.
-    timer.setTimeout(testCallback, 0,
+    timer.setTimeout(testCallback, 2500,
       b.contentWindow.wrappedJSObject, 
       function () {
         pageMods.forEach(function(mod) mod.destroy());
@@ -58,8 +60,15 @@ exports.testPageMod = function testPageMod(assert, done, testURL, pageModOptions
       }
     );
   }
-  b.addEventListener("load", onPageLoad, true);
+  // b.addEventListener("load", onPageLoad, true);
+  b.messageManager.addMessageListener('sdk/tab/event', function ste({ data }) {
+    if (data.type != 'load') 
+      return;
+    b.messageManager.removeMessageListener('sdk/tab/event', ste);
+    onPageLoad();
+  })
 
+}, 300);
   return pageMods;
 }
 

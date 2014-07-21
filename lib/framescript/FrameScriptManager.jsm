@@ -13,6 +13,15 @@ const globalMM = Components.classes["@mozilla.org/globalmessagemanager;1"].
 // Since this JSM will be loaded using require(), PATH will be
 // overridden while running tests, just like any other module.
 const PATH = __URI__.replace('FrameScriptManager.jsm', '');
+const SANDBOX_HELPER = PATH + 'SandboxHelper.jsm';
+const TAB_EVENTS = PATH + 'tab-events.js';
+
+globalMM.addMessageListener('sdk/sandbox/helper', _ => SANDBOX_HELPER);
+
+const { ConsoleAPI } = Cu.import("resource://gre/modules/devtools/Console.jsm", {});
+const console = new ConsoleAPI();
+globalMM.addMessageListener('sdk/log', m => console.log(m.data, m.objects));
+
 
 // ensure frame scripts are loaded only once
 let loadedTabEvents = false;
@@ -22,8 +31,10 @@ function enableTabEvents() {
     return;
 
   loadedTabEvents = true;
-  globalMM.loadFrameScript(PATH + 'tab-events.js', true);
+  globalMM.loadFrameScript(TAB_EVENTS, true);
 }
+
+
 
 let helpers = new WeakMap();
 
@@ -63,9 +74,10 @@ function loadSandboxHelper(window) {
   return helper;
 }
 
-function getFrameElement(window) {
-  return window.QueryInterface(Ci.nsIInterfaceRequestor).
-         getInterface(Ci.nsIDOMWindowUtils).containerElement || window.frameElement;
-}
+const getFrameElement = target =>
+  (target instanceof Ci.nsIDOMDocument ? target.defaultView : target).
+  QueryInterface(Ci.nsIInterfaceRequestor).
+  getInterface(Ci.nsIDOMWindowUtils).
+  containerElement;
 
 const EXPORTED_SYMBOLS = ['enableTabEvents', 'loadSandboxHelper'];

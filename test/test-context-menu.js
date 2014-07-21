@@ -3971,7 +3971,7 @@ TestHelper.prototype = {
       this.delayedEventListener(this.browserWindow, "popupshowing",
         function (e) {
           let popup = e.target;
-          setTimeout(_ => onshownCallback.call(this, popup), 100/2);
+          setTimeout(_ => onshownCallback.call(this, popup), 500);
         }, false);
 
       let rect = targetNode ?

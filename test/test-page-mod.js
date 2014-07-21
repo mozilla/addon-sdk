@@ -33,6 +33,8 @@ const { devtools } = Cu.import("resource://gre/modules/devtools/Loader.jsm", {})
 const { require: devtoolsRequire } = devtools;
 const contentGlobals = devtoolsRequire("devtools/server/content-globals");
 
+const { getBrowserForTab } = require("sdk/tabs/utils");
+
 const testPageURI = data.url("test.html");
 
 // The following adds Debugger constructor to the global namespace.
@@ -46,6 +48,7 @@ function Isolate(worker) {
 
 /* Tests for the PageMod APIs */
 
+//zzzzzzzzzzz
 exports.testPageMod1 = function(assert, done) {
   let mods = testPageMod(assert, done, "about:", [{
       include: /about:/,
@@ -256,6 +259,7 @@ exports.testPageModValidationExclude = function(assert) {
 };
 
 /* Tests for internal functions. */
+
 exports.testCommunication1 = function(assert, done) {
   let workerDone = false,
       callbackDone = null;
@@ -280,8 +284,9 @@ exports.testCommunication1 = function(assert, done) {
             "test comunication"
           );
           workerDone = true;
-          if (callbackDone)
-            callbackDone();
+          // if (callbackDone)
+          //   callbackDone();
+          setTimeout(_ => callbackDone(), 3500);
         });
         worker.postMessage('do it!')
       }
@@ -336,7 +341,8 @@ exports.testCommunication2 = function(assert, done) {
               msg,
               'PageMod test #2: second script has run'
             )
-            callbackDone();
+            // callbackDone();
+            setTimeout(_ => callbackDone(), 3500);
           }
         });
       }
@@ -388,6 +394,9 @@ exports.testEventEmitter = function(assert, done) {
 
 // Execute two concurrent page mods on same document to ensure that their
 // JS contexts are different
+
+///////////////////////////zzzzzzzzzzzz
+
 exports.testMixedContext = function(assert, done) {
   let doneCallback = null;
   let messages = 0;
@@ -404,21 +413,26 @@ exports.testMixedContext = function(assert, done) {
       w.on("message", function (isContextShared) {
         if (isContextShared) {
           assert.fail("Page mod contexts are mixed.");
-          doneCallback();
+//          doneCallback();
+          setTimeout(_ => doneCallback(), 3500);
         }
         else if (++messages == 2) {
           assert.pass("Page mod contexts are different.");
-          doneCallback();
+//          doneCallback();
+          setTimeout(_ => doneCallback(), 3500);
         }
       });
     }
   };
   testPageMod(assert, done, "data:text/html;charset=utf-8,", [modObject, modObject],
     function(win, done) {
+      console.log('kkkkkkkkkkkkkkkkkkkkkkkkkk');
       doneCallback = done;
     }
   );
 };
+/////////////////////////zzzzzzzzzzzzz
+
 
 exports.testHistory = function(assert, done) {
   // We need a valid url in order to have a working History API.
@@ -438,7 +452,8 @@ exports.testHistory = function(assert, done) {
         worker.on('message', function (data) {
           assert.equal(JSON.stringify(data), JSON.stringify({foo: "bar"}),
                            "History API works!");
-          callbackDone();
+          // callbackDone();
+          setTimeout(_ => callbackDone(), 3500);
         });
       }
     }],
@@ -447,6 +462,7 @@ exports.testHistory = function(assert, done) {
     }
   );
 };
+
 
 exports.testRelatedTab = function(assert, done) {
   let tab;
@@ -652,6 +668,8 @@ exports.testContentScriptWhenOnTabOpen = function(assert, done) {
     onOpen: function(tab) {
       let count = 0;
 
+      console.log('zzzzzzzzzzzzzzzzzzzzzz');
+
       handleReadyState(url, 'start', {
         onLoading: () => {
           assert.pass("PageMod is attached while document is loading");
@@ -697,6 +715,8 @@ exports.testContentScriptWhenOnTabReady = function(assert, done) {
   let iframeURL = 'data:text/html;charset=utf-8,testContentScriptWhenOnTabReady';
   let iframe = '<iframe src="' + iframeURL + '" />';
   let url = 'data:text/html;charset=utf-8,' + encodeURIComponent(iframe);
+  iframe = '<iframe src="' + url + '" />';
+  url = 'data:text/html;charset=utf-8,' + encodeURIComponent(iframe);
 
   tabs.open({
     url: url,
@@ -989,6 +1009,7 @@ exports['test111 attachTo [frame]'] = function(assert, done) {
   let workerCount = 0, messageCount = 0;
 
   function onMessage(href) {
+    console.log('heyyyyyyyy', href);
     if (href == frameURL)
       assert.pass("worker on first frame");
     else if (href == subFrameURL)
@@ -1004,9 +1025,10 @@ exports['test111 attachTo [frame]'] = function(assert, done) {
   let mod = PageMod({
     include: 'data:text/html*',
     contentScriptWhen: 'start',
-    contentScript: 'self.postMessage(document.location.href);',
+    contentScript: 'console.log("hahaha", document.location.href);self.postMessage(document.location.href);',
     attachTo: ['frame'],
     onAttach: function onAttach(worker) {
+      console.log('zzzzzzzz', worker.url);
       if (++workerCount <= 2) {
         worker.on('message', onMessage);
       }
@@ -1033,7 +1055,8 @@ exports.testContentScriptOptionsOption = function(assert, done) {
           assert.equal( msg[1].a, true, 'boolean in contentScriptOptions' );
           assert.equal( msg[1].b.join(), '1,2,3', 'array and numbers in contentScriptOptions' );
           assert.equal( msg[1].c, 'string', 'string in contentScriptOptions' );
-          callbackDone();
+          // callbackDone();
+          setTimeout(_ => callbackDone(), 3500);
         });
       }
     }],
@@ -1272,9 +1295,9 @@ exports.testExistingOnFrames = function(assert, done) {
 
   let counter = 0;
   let tab = openTab(getMostRecentBrowserWindow(), url);
-  let window = getTabContentWindow(tab);
 
   function wait4Iframes() {
+    let window = getTabContentWindow(tab);
     if (window.document.readyState != "complete" ||
         getFrames(window).length != 2) {
       return;
@@ -1325,7 +1348,15 @@ exports.testExistingOnFrames = function(assert, done) {
     });
   }
 
-  window.addEventListener("load", wait4Iframes, false);
+  // window.addEventListener("load", wait4Iframes, false);
+
+  let mm = getBrowserForTab(tab).messageManager;
+  mm.addMessageListener('sdk/tab/event', function ste({ data }) {
+    if (data.type != 'load')
+      return;
+    mm.removeMessageListener('sdk/tab/event', ste);
+    wait4Iframes();
+  })
 };
 
 exports.testIFramePostMessage = function(assert, done) {
@@ -1472,7 +1503,7 @@ exports.testWorkerTabClose = function(assert, done) {
             assert.ok(!worker.tab,
                         "worker.tab should be null right after tab.close()");
             callbackDone();
-          }, 0);
+          }, 3500);
         });
       }
     }],
