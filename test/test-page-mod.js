@@ -315,9 +315,12 @@ exports.testCommunication2 = function(assert, done) {
       contentScriptWhen: 'start',
       contentScript: 'new ' + function WorkerScope() {
         document.documentElement.setAttribute('AUQLUE', 42);
-        window.addEventListener('load', function listener() {
+        if (document.readyState == 'complete') {
           self.postMessage('onload');
-        }, false);
+        }
+        else {
+          window.addEventListener('load', _ => self.postMessage('onload'));
+        }
         self.on("message", function() {
           self.postMessage(document.documentElement.getAttribute("test"))
         });
@@ -328,21 +331,22 @@ exports.testCommunication2 = function(assert, done) {
         });
         worker.on('message', function(msg) {
           if ('onload' == msg) {
-            assert.equal(
-              '42',
-              window.document.documentElement.getAttribute('AUQLUE'),
-              'PageMod scripts executed in order'
-            );
-            window.document.documentElement.setAttribute('test', 'changes in window');
-            worker.postMessage('get window.test')
+            setTimeout(_ => {
+              assert.equal(
+                '42',
+                window.document.documentElement.getAttribute('AUQLUE'),
+                'PageMod scripts executed in order'
+              );
+              window.document.documentElement.setAttribute('test', 'changes in window');
+              worker.postMessage('get window.test')
+            }, 3500);
           } else {
             assert.equal(
               'changes in window',
               msg,
               'PageMod test #2: second script has run'
             )
-            // callbackDone();
-            setTimeout(_ => callbackDone(), 3500);
+            callbackDone();
           }
         });
       }
@@ -426,7 +430,6 @@ exports.testMixedContext = function(assert, done) {
   };
   testPageMod(assert, done, "data:text/html;charset=utf-8,", [modObject, modObject],
     function(win, done) {
-      console.log('kkkkkkkkkkkkkkkkkkkkkkkkkk');
       doneCallback = done;
     }
   );
@@ -629,7 +632,11 @@ exports.testContentScriptWhenForNewTabs = function(assert, done) {
       if (++count === 3)
         tab.close(done);
     },
-    onComplete: () => assert.fail("onComplete should not be called with 'start'."),
+    onComplete: () => {
+      assert.pass("PageMod is attached while document is ready");
+      if (++count === 3)
+        tab.close(done);
+    },
   });
 
   handleReadyState(url, 'ready', {
@@ -639,7 +646,11 @@ exports.testContentScriptWhenForNewTabs = function(assert, done) {
         tab.close(done);
     },
     onLoading: () => assert.fail("onLoading should not be called with 'ready'."),
-    onComplete: () => assert.fail("onComplete should not be called with 'ready'."),
+    onComplete: (tab) => {
+      assert.pass("PageMod is attached while document is interactive");
+      if (++count === 3)
+        tab.close(done);
+    },
   });
 
   handleReadyState(url, 'end', {
@@ -668,8 +679,6 @@ exports.testContentScriptWhenOnTabOpen = function(assert, done) {
     onOpen: function(tab) {
       let count = 0;
 
-      console.log('zzzzzzzzzzzzzzzzzzzzzz');
-
       handleReadyState(url, 'start', {
         onLoading: () => {
           assert.pass("PageMod is attached while document is loading");
@@ -681,7 +690,11 @@ exports.testContentScriptWhenOnTabOpen = function(assert, done) {
           if (++count === 3)
             tab.close(done);
         },
-        onComplete: () => assert.fail("onComplete should not be called with 'start'."),
+        onComplete: () => {
+          assert.pass("PageMod is attached while document is interactive");
+          if (++count === 3)
+            tab.close(done);
+        },
       });
 
       handleReadyState(url, 'ready', {
@@ -691,7 +704,11 @@ exports.testContentScriptWhenOnTabOpen = function(assert, done) {
             tab.close(done);
         },
         onLoading: () => assert.fail("onLoading should not be called with 'ready'."),
-        onComplete: () => assert.fail("onComplete should not be called with 'ready'."),
+        onComplete: () => {
+          assert.pass("PageMod is attached while document is interactive");
+          if (++count === 3)
+            tab.close(done);
+        },
       });
 
       handleReadyState(url, 'end', {
@@ -730,7 +747,11 @@ exports.testContentScriptWhenOnTabReady = function(assert, done) {
             tab.close(done);
         },
         onLoading: () => assert.fail("onLoading should not be called with 'start'."),
-        onComplete: () => assert.fail("onComplete should not be called with 'start'."),
+        onComplete: () => {
+          assert.pass("PageMod is attached while document is interactive");
+          if (++count === 3)
+            tab.close(done);
+        },
       });
 
       handleReadyState(url, 'ready', {
@@ -740,7 +761,11 @@ exports.testContentScriptWhenOnTabReady = function(assert, done) {
             tab.close(done);
         },
         onLoading: () => assert.fail("onLoading should not be called with 'ready'."),
-        onComplete: () => assert.fail("onComplete should not be called with 'ready'."),
+        onComplete: () => {
+          assert.pass("PageMod is attached while document is interactive");
+          if (++count === 3)
+            tab.close(done);
+        },
       });
 
       handleReadyState(url, 'end', {
@@ -1009,7 +1034,6 @@ exports['test111 attachTo [frame]'] = function(assert, done) {
   let workerCount = 0, messageCount = 0;
 
   function onMessage(href) {
-    console.log('heyyyyyyyy', href);
     if (href == frameURL)
       assert.pass("worker on first frame");
     else if (href == subFrameURL)
@@ -1025,10 +1049,9 @@ exports['test111 attachTo [frame]'] = function(assert, done) {
   let mod = PageMod({
     include: 'data:text/html*',
     contentScriptWhen: 'start',
-    contentScript: 'console.log("hahaha", document.location.href);self.postMessage(document.location.href);',
+    contentScript: 'self.postMessage(document.location.href);',
     attachTo: ['frame'],
     onAttach: function onAttach(worker) {
-      console.log('zzzzzzzz', worker.url);
       if (++workerCount <= 2) {
         worker.on('message', onMessage);
       }

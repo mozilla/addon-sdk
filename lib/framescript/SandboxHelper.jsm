@@ -14,9 +14,28 @@ const { addContentGlobal } = devtools['require']("devtools/server/content-global
 const cpmm = Cc["@mozilla.org/childprocessmessagemanager;1"].
              getService(Ci.nsISyncMessageSender);
 
+cpmm.addMessageListener("sdk/sandbox/init", ({ objects: { target, options, id }}) => {
+  // only respond to sandbox requests for windows from the same process
+  if (Cu.isCrossProcessWrapper(options.sandboxPrototype))
+    return;
+  try {
+    options.metadata = JSON.parse(JSON.stringify(options.metadata));
+    let sandbox = sandboxActual(target, options);
+    sandbox = Cu.waiveXrays(sandbox);
+    cpmm.sendAsyncMessage('sdk/sandbox/result', null, { id, sandbox: sandbox });
+  } catch (e) {
+    cpmm.sendAsyncMessage('sdk/sandbox/result', null, { id: id, error: e });
+  }
+})
 
-const { ConsoleAPI } = Cu.import("resource://gre/modules/devtools/Console.jsm", {});
-const console = new ConsoleAPI();
+remotePromise('sdk/sandbox/init', ({ target, options }) => {
+  options.metadata = JSON.parse(JSON.stringify(options.metadata));
+  return Cu.waiveXrays(sandbox(target, options));
+})
+
+remotePromise('sdk/sandbox/load', ({ sandbox, uri } => {
+
+})
 
 cpmm.addMessageListener("sdk/sandbox/load", ({ objects: { sandbox, uri, id }}) => {
   // only respond to sandbox requests for windows from the same process
@@ -33,13 +52,9 @@ cpmm.addMessageListener("sdk/sandbox/load", ({ objects: { sandbox, uri, id }}) =
         hasListenerFor: x.hasListenerFor
       }
     }};
-    // console.log('zzzzzzzzzzzzzzzzzzzzzzz', sandbox, uri, result, result.inject, !!result.inject, Cu.waiveXrays(result).inject, !!Cu.waiveXrays(result).inject);
-    // cpmm.sendAsyncMessage('sdk/log', 'zzzzzzzzzzzzzzzz', [''+sandbox, ''+uri, ''+result, ''+result.inject, !!result.inject, Cu.waiveXrays(result).inject, !!Cu.waiveXrays(result).inject]);
-    cpmm.sendAsyncMessage('sdk/sandbox/lresult', [''+sandbox, ''+uri, ''+result, '|||'+result.inject, !!result.inject, 
-      Cu.waiveXrays(result).inject, !!Cu.waiveXrays(result).inject], { id: id, result: result });
+    cpmm.sendAsyncMessage('sdk/sandbox/lresult', null, { id: id, result: result });
   } catch (e) {
-    // console.error('load exception', e);
-    cpmm.sendAsyncMessage('sdk/sandbox/lresult', ''+e, { id: id, error: e });
+    cpmm.sendAsyncMessage('sdk/sandbox/lresult', null, { id: id, error: e });
   }
 })
 
@@ -56,20 +71,19 @@ cpmm.addMessageListener("sdk/sandbox/eval", ({ objects: { sandbox, code, uri, li
   }
 })
 
-cpmm.addMessageListener("sdk/sandbox/init", ({ objects: { target, options, id }}) => {
-  // only respond to sandbox requests for windows from the same process
-  if (Cu.isCrossProcessWrapper(options.sandboxPrototype))
-    return;
-  try {
-    options.metadata = JSON.parse(JSON.stringify(options.metadata));
-    let sandbox = sandboxActual(target, options);
-    sandbox = Cu.waiveXrays(sandbox);
-    cpmm.sendAsyncMessage('sdk/sandbox/result', null, { id: id, sandbox: sandbox });
-  } catch (e) {
-    // console.error('sandbox exception', e);
-    cpmm.sendAsyncMessage('sdk/sandbox/result', null, { id: id, error: e });
-  }
-})
+function remotePromise(name, response) {
+  cpmm.addMessageListener(name, ({ objects }) => {
+    // only respond to sandbox requests for windows from the same process
+    if (Cu.isCrossProcessWrapper(objects.sandbox))
+      return;
+    try {
+      let result = response(objects);
+      cpmm.sendAsyncMessage(name + '/response', null, { _id: objects._id, result });
+    } catch (error) {
+      cpmm.sendAsyncMessage(name + '/response', null, { _id: objects._id, error });
+    }
+  })
+}
 
 let listener = {
   observe: function(subject) {
@@ -80,16 +94,12 @@ let listener = {
 const svc = Cc["@mozilla.org/observer-service;1"].getService(Ci.nsIObserverService);
 svc.addObserver(listener, 'document-element-inserted', false);
 
-
-function sandboxActual(target, options) {
+function sandbox(target, options) {
   let sandbox = Cu.Sandbox(target || systemPrincipal, options);
   Cu.setSandboxMetadata(sandbox, options.metadata);
   let innerWindowID = options.metadata['inner-window-id'];
   if (innerWindowID) {
-    addContentGlobal({
-      global: sandbox,
-      'inner-window-id': innerWindowID
-    });
+    addContentGlobal({ global: sandbox, 'inner-window-id': innerWindowID });
   }
   return sandbox;
 }
@@ -108,4 +118,8 @@ function evaluate(sandbox, code, uri, line, version) {
   return Cu.evalInSandbox(code, sandbox, version || '1.8', uri || '', line || 1);
 }
 
-const EXPORTED_SYMBOLS = ['sandboxActual'];
+function nuke(sandbox) {
+  Cu.nukeSandbox(sandbox);
+}
+
+const EXPORTED_SYMBOLS = ['sandbox', 'load', 'evaluate', 'nuke'];
