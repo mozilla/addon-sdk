@@ -13,6 +13,8 @@ const ERR_DESTROYED =
   "Couldn't find the worker to receive this message. " +
   "The script may not be initialized yet, or may already have been unloaded.";
 
+const Isolate = fn => "(" + fn + ")()";
+
 exports.testSimplePageCreation = function(assert, done) {
   let page = new Page({
     contentScript: "self.postMessage(window.location.href)",
@@ -476,6 +478,38 @@ exports.testMessageQueue = function (assert, done) {
     done();
   });
 };
+
+exports.testWindowStopDontBreak = function (assert, done) {
+  const { Ci, Cc } = require('chrome');
+  const consoleService = Cc['@mozilla.org/consoleservice;1'].
+                            getService(Ci.nsIConsoleService);
+  const listener = {
+    observe: ({message}) => {
+      if (message.contains('contentWorker is null'))
+        assert.fail('contentWorker is null');
+    }
+  };
+  consoleService.registerListener(listener)
+
+  let page = new Page({
+    contentURL: 'data:text/html;charset=utf-8,testWindowStopDontBreak',
+    contentScriptWhen: 'ready',
+    contentScript: Isolate(() => {
+      window.stop();
+      self.port.on('ping', () => self.port.emit('pong'));
+    })
+  });
+
+  page.port.on('pong', () => {
+    assert.pass('page-worker works after window.stop');
+    page.destroy();
+    consoleService.unregisterListener(listener);
+    done();
+  });
+
+  page.port.emit("ping");
+};
+
 
 function isDestroyed(page) {
   try {
