@@ -30,12 +30,12 @@ PARSEABLE_TEST_NAME = re.compile(r'TEST-START \| ([^\n]+)\n')
 # The purpose of this timeout is to recover from infinite loops.  It should be
 # longer than the amount of time any test run takes, including those on slow
 # machines running slow (debug) versions of Firefox.
-RUN_TIMEOUT = 1.5 * 60 * 60 # 1.5 Hour
+RUN_TIMEOUT = 5400     #1.5 hours (1.5 * 60 * 60 sec)
 
 # Maximum time we'll wait for tests to emit output, in seconds.
 # The purpose of this timeout is to recover from hangs.  It should be longer
 # than the amount of time any test takes to report results.
-OUTPUT_TIMEOUT = 60 * 5 # five minutes
+OUTPUT_TIMEOUT = 300   #five minutes (60 * 5 sec)
 
 def follow_file(filename):
     """
