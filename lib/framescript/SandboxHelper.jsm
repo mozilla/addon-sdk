@@ -28,13 +28,29 @@ cpmm.addMessageListener("sdk/sandbox/init", ({ objects: { target, options, id }}
   }
 })
 
-remotePromise('sdk/sandbox/init', ({ target, options }) => {
+remotePromise('init', ({ target, options }) => {
   options.metadata = JSON.parse(JSON.stringify(options.metadata));
-  return Cu.waiveXrays(sandbox(target, options));
+  let result = sandbox(target, options);
+  return Cu.waiveXrays(result);
 })
 
-remotePromise('sdk/sandbox/load', ({ sandbox, uri } => {
+remotePromise('load', ({ sandbox, uri } => {
+  let result = load(sandbox, uri);
+  result = Cu.waiveXrays(result);
+  result = { inject: (...args) => {
+    let { emitToContent, hasListenerFor } = result.inject(...args);
+    return { emitToContent, hasListenerFor };
+  }}
+  return result;
+})
 
+remotePromise('evaluate', { sandbox, code, uri, line, version } =>> {
+  let result = evaluate(sandbox, code, uri, line, version);
+  return Cu.waiveXrays(result);
+})
+
+remotePromise('nuke', ({ sandbox }) => {
+  nuke(sandbox);
 })
 
 cpmm.addMessageListener("sdk/sandbox/load", ({ objects: { sandbox, uri, id }}) => {
@@ -71,28 +87,25 @@ cpmm.addMessageListener("sdk/sandbox/eval", ({ objects: { sandbox, code, uri, li
   }
 })
 
+// for page-mod
+Cc["@mozilla.org/observer-service;1"].getService(Ci.nsIObserverService).addObserver(
+  {observe: subject => cpmm.sendAsyncMessage('sdk/observer/document', null, { subject })},
+  'document-element-inserted', false);
+
 function remotePromise(name, response) {
-  cpmm.addMessageListener(name, ({ objects }) => {
-    // only respond to sandbox requests for windows from the same process
+  name = 'sdk/sandbox' + name;
+  cpmm.addMessageListener(name, ({ data: { id }, objects }) => {
+    // only respond to sandbox requests for window/sandbox from the same process
     if (Cu.isCrossProcessWrapper(objects.sandbox))
       return;
     try {
       let result = response(objects);
-      cpmm.sendAsyncMessage(name + '/response', null, { _id: objects._id, result });
+      cpmm.sendAsyncMessage(name + '/response', { id }, { result });
     } catch (error) {
-      cpmm.sendAsyncMessage(name + '/response', null, { _id: objects._id, error });
+      cpmm.sendAsyncMessage(name + '/response', { id }, { error });
     }
   })
 }
-
-let listener = {
-  observe: function(subject) {
-    cpmm.sendAsyncMessage('sdk/observer/document', null, { subject: subject });
-  }
-}
-
-const svc = Cc["@mozilla.org/observer-service;1"].getService(Ci.nsIObserverService);
-svc.addObserver(listener, 'document-element-inserted', false);
 
 function sandbox(target, options) {
   let sandbox = Cu.Sandbox(target || systemPrincipal, options);
