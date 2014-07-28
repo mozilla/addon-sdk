@@ -14,103 +14,16 @@ const { addContentGlobal } = devtools['require']("devtools/server/content-global
 const cpmm = Cc["@mozilla.org/childprocessmessagemanager;1"].
              getService(Ci.nsISyncMessageSender);
 
-cpmm.addMessageListener("sdk/sandbox/init", ({ objects: { target, options, id }}) => {
-  // only respond to sandbox requests for windows from the same process
-  if (Cu.isCrossProcessWrapper(options.sandboxPrototype))
-    return;
-  try {
-    options.metadata = JSON.parse(JSON.stringify(options.metadata));
-    let sandbox = sandboxActual(target, options);
-    sandbox = Cu.waiveXrays(sandbox);
-    cpmm.sendAsyncMessage('sdk/sandbox/result', null, { id, sandbox: sandbox });
-  } catch (e) {
-    cpmm.sendAsyncMessage('sdk/sandbox/result', null, { id: id, error: e });
-  }
-})
-
-remotePromise('init', ({ target, options }) => {
-  options.metadata = JSON.parse(JSON.stringify(options.metadata));
-  let result = sandbox(target, options);
-  return Cu.waiveXrays(result);
-})
-
-remotePromise('load', ({ sandbox, uri } => {
-  let result = load(sandbox, uri);
-  result = Cu.waiveXrays(result);
-  result = { inject: (...args) => {
-    let { emitToContent, hasListenerFor } = result.inject(...args);
-    return { emitToContent, hasListenerFor };
-  }}
-  return result;
-})
-
-remotePromise('evaluate', { sandbox, code, uri, line, version } =>> {
-  let result = evaluate(sandbox, code, uri, line, version);
-  return Cu.waiveXrays(result);
-})
-
-remotePromise('nuke', ({ sandbox }) => {
-  nuke(sandbox);
-})
-
-cpmm.addMessageListener("sdk/sandbox/load", ({ objects: { sandbox, uri, id }}) => {
-  // only respond to sandbox requests for windows from the same process
-  if (Cu.isCrossProcessWrapper(sandbox))
-    return;
-  try {
-    // sandbox = Cu.waiveXrays(sandbox);
-    let result2 = load(sandbox, uri);
-    result2 = Cu.waiveXrays(result2);
-    let result = { inject: (...args) => {
-      let x = result2.inject(...args);
-      return {
-        emitToContent: x.emitToContent,
-        hasListenerFor: x.hasListenerFor
-      }
-    }};
-    cpmm.sendAsyncMessage('sdk/sandbox/lresult', null, { id: id, result: result });
-  } catch (e) {
-    cpmm.sendAsyncMessage('sdk/sandbox/lresult', null, { id: id, error: e });
-  }
-})
-
-cpmm.addMessageListener("sdk/sandbox/eval", ({ objects: { sandbox, code, uri, line, version, id }}) => {
-  // only respond to sandbox requests for windows from the same process
-  if (Cu.isCrossProcessWrapper(sandbox))
-    return;
-  try {
-    let result = evaluate(sandbox, code, uri, line, version);
-    result = Cu.waiveXrays(result);
-    cpmm.sendAsyncMessage('sdk/sandbox/eresult', null, { id: id, result: result });
-  } catch (e) {
-    cpmm.sendAsyncMessage('sdk/sandbox/eresult', null, { id: id, error: e });
-  }
-})
-
-// for page-mod
-Cc["@mozilla.org/observer-service;1"].getService(Ci.nsIObserverService).addObserver(
-  {observe: subject => cpmm.sendAsyncMessage('sdk/observer/document', null, { subject })},
-  'document-element-inserted', false);
-
-function remotePromise(name, response) {
-  name = 'sdk/sandbox' + name;
-  cpmm.addMessageListener(name, ({ data: { id }, objects }) => {
-    // only respond to sandbox requests for window/sandbox from the same process
-    if (Cu.isCrossProcessWrapper(objects.sandbox))
-      return;
-    try {
-      let result = response(objects);
-      cpmm.sendAsyncMessage(name + '/response', { id }, { result });
-    } catch (error) {
-      cpmm.sendAsyncMessage(name + '/response', { id }, { error });
-    }
-  })
-}
+const { ConsoleAPI } = Cu.import("resource://gre/modules/devtools/Console.jsm", {});
+const console = new ConsoleAPI();
 
 function sandbox(target, options) {
+// options.metadata = JSON.parse(JSON.stringify(options.metadata));
+  let { metadata } = options;
+  delete options.metadata;
   let sandbox = Cu.Sandbox(target || systemPrincipal, options);
-  Cu.setSandboxMetadata(sandbox, options.metadata);
-  let innerWindowID = options.metadata['inner-window-id'];
+  Cu.setSandboxMetadata(sandbox, metadata);
+  let innerWindowID = metadata['inner-window-id'];
   if (innerWindowID) {
     addContentGlobal({ global: sandbox, 'inner-window-id': innerWindowID });
   }
@@ -135,4 +48,31 @@ function nuke(sandbox) {
   Cu.nukeSandbox(sandbox);
 }
 
+remotePromise('init', (_, ...args) => sandbox(...args));
+remotePromise('load', load); // result = { inject: (...args) => result.inject(...args) };
+remotePromise('evaluate', evaluate);
+remotePromise('nuke', nuke);
+
+function remotePromise(name, response) {
+  name = 'sdk/sandbox/' + name;
+  cpmm.addMessageListener(name, ({ data: { id, waiveXrays }, objects }) => {
+    // only respond to sandbox requests for window/sandbox from the same process
+    if (Cu.isCrossProcessWrapper(objects[0]))
+      return;
+    try {
+      let result = response(...objects);
+      if (waiveXrays)
+        result = Cu.waiveXrays(result);
+      cpmm.sendAsyncMessage(name + '/response', { id }, { result });
+    } catch (error) {
+      cpmm.sendAsyncMessage(name + '/response', { id }, { error });
+    }
+  })
+}
+
 const EXPORTED_SYMBOLS = ['sandbox', 'load', 'evaluate', 'nuke'];
+
+// for page-mod
+Cc["@mozilla.org/observer-service;1"].getService(Ci.nsIObserverService).addObserver(
+  { observe: doc => cpmm.sendAsyncMessage('sdk/observer/document', null, { doc }) },
+  'document-element-inserted', false);
