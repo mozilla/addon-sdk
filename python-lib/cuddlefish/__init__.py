@@ -746,10 +746,14 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                                       "lib", "sdk", "loader", "cuddlefish.js")
     loader_modules = [("addon-sdk", "lib", "sdk/loader/cuddlefish", cuddlefish_js_path)]
     scan_tests = command == "test"
-
+    test_filter_re = None
+    if scan_tests and options.filter:
+        test_filter_re = options.filter
+        if ":" in options.filter:
+            test_filter_re = options.filter.split(":")[0]
     try:
         manifest = build_manifest(target_cfg, pkg_cfg, deps, scan_tests,
-                                  None, loader_modules,
+                                  test_filter_re, loader_modules,
                                   abort_on_missing=options.abort_on_missing)
     except ModuleNotFoundError, e:
         print str(e)
