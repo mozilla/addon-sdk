@@ -11,6 +11,10 @@ merge(module.exports, require('./test-tab-events'));
 merge(module.exports, require('./test-tab-observer'));
 merge(module.exports, require('./test-tab-utils'));
 
+merge(module.exports, require('./test-window-events'));
+merge(module.exports, require('./test-window-loader'));
+merge(module.exports, require('./test-window-observer'));
+
 // e10s tests should not ride the train to aurora
 if (get('app.update.channel') !== 'nightly') {
   module.exports = {};
