@@ -55,8 +55,10 @@ timer.setTimeout(_ => {
         pageMods.forEach(function(mod) mod.destroy());
         // XXX leaks reported if we don't close the tab?
         closeTab(newTab);
-        loader.unload();
-        done();
+        timer.setTimeout(_ => {
+          loader.unload();
+          done();
+        }, 3000)
       }
     );
   }

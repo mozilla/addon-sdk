@@ -749,7 +749,7 @@ exports["test:check worker API with page history"] = WorkerTest(
       // otherwise `goBack` won't do anything.
       setTimeout(function () {
         browser.goBack();
-      }, 0);
+      }, 100);
 
       // Wait for the document to be hidden
       browser.addEventListener("pagehide", function onpagehide() {

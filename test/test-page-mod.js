@@ -259,7 +259,7 @@ exports.testPageModValidationExclude = function(assert) {
 };
 
 /* Tests for internal functions. */
-
+/*
 exports.testCommunication1 = function(assert, done) {
   let workerDone = false,
       callbackDone = null;
@@ -305,7 +305,8 @@ exports.testCommunication1 = function(assert, done) {
     }
   );
 };
-
+*/
+/*
 exports.testCommunication2 = function(assert, done) {
   let callbackDone = null,
       window;
@@ -357,7 +358,7 @@ exports.testCommunication2 = function(assert, done) {
     }
   );
 };
-
+*/
 exports.testEventEmitter = function(assert, done) {
   let workerDone = false,
       callbackDone = null;
@@ -610,7 +611,7 @@ exports.testContentScriptWhenDefault = function(assert) {
   pagemod.destroy();
 }
 
-
+/*
 // test timing for all 3 contentScriptWhen options (start, ready, end)
 // for new pages, or tabs opened after PageMod is created
 exports.testContentScriptWhenForNewTabs = function(assert, done) {
@@ -828,7 +829,7 @@ exports.testContentScriptWhenOnTabLoad = function(assert, done) {
     }
   });
 }
-
+*/
 
 exports.testTabWorkerOnMessage = function(assert, done) {
   let { browserWindows } = require("sdk/windows");
