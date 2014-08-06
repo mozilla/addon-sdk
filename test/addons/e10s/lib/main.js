@@ -6,6 +6,7 @@
 const { get: getPref } = require('sdk/preferences/service');
 const { getMostRecentBrowserWindow } = require('sdk/window/utils');
 const { openTab, closeTab, getBrowserForTab } = require('sdk/tabs/utils');
+const { version } = require('sdk/system');
 const tabs = require('sdk/tabs');
 
 exports.testRemotePrefIsSet = function(assert) {
@@ -28,8 +29,8 @@ exports.testTabIsRemote = function(assert, done) {
   mm.loadFrameScript('data:,sendAsyncMessage("7")', true);
 }
 
-// e10s tests should not ride the train to aurora, beta
-if (getPref('app.update.channel') !== 'nightly') {
+// run e10s tests only on builds from trunk, fx-team, Nightly..
+if (!version.endsWith('a1')) {
   module.exports = {};
 }
 
