@@ -4,6 +4,7 @@
 
 # This file must be used with "source bin/activate" *from bash*
 # you cannot run it directly
+pushd $(dirname $0/..)
 
 deactivate () {
     if [ -n "$_OLD_VIRTUAL_PATH" ] ; then
@@ -82,3 +83,4 @@ if [ -n "$BASH" -o -n "$ZSH_VERSION" ] ; then
 fi
 
 python -c "from jetpack_sdk_env import welcome; welcome()"
+popd
