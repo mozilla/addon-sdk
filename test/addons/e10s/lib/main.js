@@ -3,16 +3,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
-const { get: getPref } = require('sdk/preferences/service');
 const { getMostRecentBrowserWindow } = require('sdk/window/utils');
+const { promise: windowPromise, close, focus } = require('sdk/window/helpers');
 const { openTab, closeTab, getBrowserForTab } = require('sdk/tabs/utils');
 const { version } = require('sdk/system');
 const tabs = require('sdk/tabs');
-
-exports.testRemotePrefIsSet = function(assert) {
-  assert.ok(getPref('browser.tabs.remote.autostart'),
-            "Electrolysis remote tabs pref should be set");
-}
 
 exports.testTabIsRemote = function(assert, done) {
   const url = 'data:text/html,test-tab-is-remote';
@@ -33,5 +28,31 @@ exports.testTabIsRemote = function(assert, done) {
 if (!version.endsWith('a1')) {
   module.exports = {};
 }
+
+function openE10sWindow() {
+  let window = getMostRecentBrowserWindow().OpenBrowserWindow({ remote: true });
+  return windowPromise(window, 'load').then(focus);
+}
+
+function makeE10sTests(exports) {
+  let newExports = {};
+
+  for (let key of Object.keys(exports)) {
+    if (typeof(exports[key]) == "function" && key.substring(0, 4) == "test") {
+      let testFunction = exports[key];
+      newExports[key] = function(assert, done) {
+        openE10sWindow().then(window => {
+          testFunction(assert, () => {
+            close(window).then(done);
+          });
+        });
+      }
+    }
+  }
+
+  return newExports;
+}
+
+module.exports = makeE10sTests(exports);
 
 require('sdk/test/runner').runTestsFromModule(module);
