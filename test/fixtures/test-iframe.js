@@ -10,4 +10,4 @@ setTimeout(function() {
   });
 
   document.getElementById('inner').src = iframePath;
-}, 0);
+}, 100);

@@ -1,0 +1,28 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<html>
+<head>
+  <meta charset="UTF-8">
+  <script>
+
+    // use sync XHR to slow down the loading of the document
+    function delay() {
+      var t = Date.now();
+      var r = new XMLHttpRequest();
+      while (Date.now() - t < 2000) {
+        r.open('GET', 'data:,blah', false); // sync
+        r.send();
+      }
+    }
+    
+    // delay both the `DOMContentLoaded` and `load` events..
+    delay();
+    addEventListener('DOMContentLoaded', delay);
+
+  </script>
+</head>
+<body>
+  <p>slooow..</p>
+</body>
+</html>

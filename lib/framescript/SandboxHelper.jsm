@@ -18,15 +18,14 @@ const { ConsoleAPI } = Cu.import("resource://gre/modules/devtools/Console.jsm", 
 const console = new ConsoleAPI();
 
 function sandbox(target, options) {
-options.metadata = JSON.parse(JSON.stringify(options.metadata));
-  // let { metadata } = options;
-  // delete options.metadata;
+  options.metadata = JSON.parse(JSON.stringify(options.metadata));
   let sandbox = Cu.Sandbox(target || systemPrincipal, options);
   Cu.setSandboxMetadata(sandbox, options.metadata);
   let innerWindowID = options.metadata['inner-window-id'];
   if (innerWindowID) {
     addContentGlobal({ global: sandbox, 'inner-window-id': innerWindowID });
   }
+  alive.push(sandbox);
   return sandbox;
 }
 
@@ -49,13 +48,21 @@ function nuke(sandbox) {
 }
 
 remotePromise('init', (_, ...args) => sandbox(...args));
+
 remotePromise('load', (...args) => {
-  let x = load(...args);
-  x = Cu.waiveXrays(x);
-  return { inject: (...api) => x.inject(...api) };
-}); // result = { inject: (...args) => result.inject(...args) };
+  let result = load(...args);
+  // hack for CPOW -> CCW method call..
+  if (Cu.waiveXrays(result).inject) {
+    result = { inject: Cu.waiveXrays(result).inject.bind(result) };
+  }
+  alive.push(result);
+  return result;
+})
+
 remotePromise('evaluate', evaluate);
 remotePromise('nuke', nuke);
+
+var alive = [];
 
 function remotePromise(name, response) {
   name = 'sdk/sandbox/' + name;
@@ -65,7 +72,7 @@ function remotePromise(name, response) {
       return;
     try {
       let result = response(...args);
-      // if (waiveXrays)
+      if (waiveXrays)
         result = Cu.waiveXrays(result);
       cpmm.sendAsyncMessage(name + '/response', { id }, { result });
     } catch (error) {
@@ -76,7 +83,7 @@ function remotePromise(name, response) {
 
 const EXPORTED_SYMBOLS = ['sandbox', 'load', 'evaluate', 'nuke'];
 
-// for page-mod
+// quick workaround for page-mod
 Cc["@mozilla.org/observer-service;1"].getService(Ci.nsIObserverService).
   addObserver(subject => cpmm.sendAsyncMessage('sdk/obs/doc', 0, { subject }),
   'document-element-inserted', false);

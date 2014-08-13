@@ -40,7 +40,14 @@ DEFAULT_COMMON_PREFS = {
     'extensions.update.url' : 'http://localhost/extensions-dummy/updateURL',
     'extensions.blocklist.url' : 'http://localhost/extensions-dummy/blocklistURL',
     # Make sure opening about:addons won't hit the network.
-    'extensions.webservice.discoverURL' : 'http://localhost/extensions-dummy/discoveryURL'
+    'extensions.webservice.discoverURL' : 'http://localhost/extensions-dummy/discoveryURL',
+
+    # disable download/install of GMP manager addon
+    'media.gmp-manager.url.override' : 'http://localhost/dummy.xml',
+
+    # shut up some warning on `about:` page
+    'app.releaseNotesURL': 'http://blah',
+    'app.vendorURL': 'http://blah'
 }
 
 DEFAULT_FENNEC_PREFS = {
