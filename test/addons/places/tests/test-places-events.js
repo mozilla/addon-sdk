@@ -49,7 +49,9 @@ exports['test bookmark-item-added'] = function (assert, done) {
     assert.equal(data.url, 'http://moz.com/', 'correct data in bookmark-added event');
     assert.ok(data.dateAdded != null, 'correct data in bookmark-added event');
     events.off('data', handler);
-    done();
+    // Delay finishing so the host-bookmarks can finish it's magic
+    // without being torn down
+    setTimeout(done, 0);
   }
   events.on('data', handler);
   createBookmark({ title: 'bookmark-added-title' });
@@ -83,7 +85,7 @@ exports['test bookmark-item-changed'] = function (assert, done) {
     assert.equal(data.value, 'bookmark-changed-title-2',
       'correct value in bookmark-item-changed event');
     assert.ok(data.id === id, 'correct id in bookmark-item-changed event');
-    assert.ok(data.parentId != null, 'correct data in bookmark-added event');
+    assert.ok(data.parentId != null, 'correct data in bookmark-item-changed event');
 
     events.off('data', handler);
     complete();
