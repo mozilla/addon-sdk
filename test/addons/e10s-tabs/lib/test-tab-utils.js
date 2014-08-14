@@ -38,7 +38,7 @@ if (isWindowPBSupported) {
         assert.equal(isPrivate(window), false, 'all found windows are not private');
       });
 
-      assert.equal(windows(null, {includePrivate: true}).length, 3, 'there are really three windows');
+      assert.equal(windows(null, {includePrivate: true}).length, 2, 'there are really two windows');
 
       close(window).then(done);
     });
@@ -57,7 +57,7 @@ else if (isTabPBSupported) {
                  'there are two tabs found');
     assert.equal(utils_tabs[utils_tabs.length-1], tab,
                  'the last tab is the opened tab');
-    assert.equal(browserWindows.length, 2, 'there is only two windows');
+    assert.equal(browserWindows.length, 1, 'there is only one window');
     closeTab(tab);
 
     done();
