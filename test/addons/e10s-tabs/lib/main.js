@@ -5,14 +5,26 @@
 
 const { merge } = require('sdk/util/object');
 const { version } = require('sdk/system');
-const { getMostRecentBrowserWindow } = require('sdk/window/utils');
-const { promise: windowPromise, close, focus } = require('sdk/window/helpers');
+const { getMostRecentBrowserWindow, isBrowser } = require('sdk/window/utils');
+const { WindowTracker } = require('sdk/deprecated/window-utils');
+const { close, focus } = require('sdk/window/helpers');
 const { when } = require('sdk/system/unload');
 
 function replaceWindow(remote) {
+  let next = null;
   let old = getMostRecentBrowserWindow();
-  let window = old.OpenBrowserWindow({ remote });
-  return windowPromise(window, 'load').then(focus).then(_ => close(old));
+  let promise = new Promise(resolve => {
+    let tracker = WindowTracker({
+      onTrack: window => {
+        if (window !== next)
+          return;
+        resolve(window);
+        tracker.unload();
+      }
+    });
+  })
+  next = old.OpenBrowserWindow({ remote });
+  return promise.then(focus).then(_ => close(old));
 }
 
 // merge(module.exports, require('./test-tab'));
