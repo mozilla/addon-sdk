@@ -40,6 +40,7 @@ DEFAULT_NO_CONNECTIONS_PREFS = {
     'toolkit.telemetry.enabled': False,
     'app.update.auto' : False,
     'app.update.url': 'http://localhost/app-dummy/update',
+    'media.gmp-gmpopenh264.autoupdate' : False,
     'media.gmp-manager.cert.checkAttributes' : False,
     'media.gmp-manager.cert.requireBuiltIn' : False,
     'media.gmp-manager.url' : 'http://localhost/media-dummy/gmpmanager',
