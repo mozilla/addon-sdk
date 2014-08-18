@@ -7,8 +7,8 @@ const { getMostRecentBrowserWindow, isBrowser } = require('sdk/window/utils');
 const { promise: windowPromise, close, focus } = require('sdk/window/helpers');
 const { openTab, closeTab, getBrowserForTab } = require('sdk/tabs/utils');
 const { WindowTracker } = require('sdk/deprecated/window-utils');
+const { version, platform } = require('sdk/system');
 const { when } = require('sdk/system/unload');
-const { version } = require('sdk/system');
 const tabs = require('sdk/tabs');
 
 exports.testTabIsRemote = function(assert, done) {
@@ -28,6 +28,11 @@ exports.testTabIsRemote = function(assert, done) {
 
 // run e10s tests only on builds from trunk, fx-team, Nightly..
 if (!version.endsWith('a1')) {
+  module.exports = {};
+}
+
+// bug 1054482 - e10s test addons time out on linux
+if (platform === 'linux') {
   module.exports = {};
 }
 

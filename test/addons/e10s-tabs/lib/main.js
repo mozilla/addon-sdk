@@ -4,7 +4,7 @@
 'use strict';
 
 const { merge } = require('sdk/util/object');
-const { version } = require('sdk/system');
+const { version, platform } = require('sdk/system');
 const { getMostRecentBrowserWindow, isBrowser } = require('sdk/window/utils');
 const { WindowTracker } = require('sdk/deprecated/window-utils');
 const { close, focus } = require('sdk/window/helpers');
@@ -34,6 +34,11 @@ merge(module.exports, require('./test-tab-utils'));
 
 // run e10s tests only on builds from trunk, fx-team, Nightly..
 if (!version.endsWith('a1')) {
+  module.exports = {};
+}
+
+// bug 1054482 - e10s test addons time out on linux
+if (platform === 'linux') {
   module.exports = {};
 }
 
