@@ -31,11 +31,6 @@ if (!version.endsWith('a1')) {
   module.exports = {};
 }
 
-// bug 1054482 - e10s test addons time out on linux
-if (platform === 'linux') {
-  module.exports = {};
-}
-
 function replaceWindow(remote) {
   let next = null;
   let old = getMostRecentBrowserWindow();
@@ -53,7 +48,14 @@ function replaceWindow(remote) {
   return promise.then(focus).then(_ => close(old));
 }
 
-replaceWindow(true).then(_ =>
-  require('sdk/test/runner').runTestsFromModule(module));
+// bug 1054482 - e10s test addons time out on linux
+if (platform === 'linux') {
+  module.exports = {};
+  require('sdk/test/runner').runTestsFromModule(module);
+}
+else {
+  replaceWindow(true).then(_ =>
+    require('sdk/test/runner').runTestsFromModule(module));
 
-when(_ => replaceWindow(false));
+  when(_ => replaceWindow(false));
+}

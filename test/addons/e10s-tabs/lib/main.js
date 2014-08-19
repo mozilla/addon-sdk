@@ -40,9 +40,11 @@ if (!version.endsWith('a1')) {
 // bug 1054482 - e10s test addons time out on linux
 if (platform === 'linux') {
   module.exports = {};
+  require('sdk/test/runner').runTestsFromModule(module);
 }
+else {
+  replaceWindow(true).then(_ =>
+    require('sdk/test/runner').runTestsFromModule(module));
 
-replaceWindow(true).then(_ =>
-  require('sdk/test/runner').runTestsFromModule(module));
-
-when(_ => replaceWindow(false));
+  when(_ => replaceWindow(false));
+}
