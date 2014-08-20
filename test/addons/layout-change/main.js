@@ -1,8 +1,12 @@
-﻿/* This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
+
+const { LoaderWithHookedConsole } = require('sdk/test/loader');
+const { loader } = LoaderWithHookedConsole(module);
+const app = require("sdk/system/xul-app");
 
 // This test makes sure that require statements used by all AMO hosted
 // add-ons will be able to use old require statements.
@@ -16,14 +20,18 @@ exports["test compatibility"] = function(assert) {
   assert.equal(require("tabs"),
                require("sdk/tabs"), "sdk/tabs -> tabs");
 
-  assert.equal(require("widget"),
-               require("sdk/widget"), "sdk/widget -> widget");
+  if (app.is("Firefox")) {
+    assert.equal(require("widget"),
+                 require("sdk/widget"), "sdk/widget -> widget");
+  }
 
   assert.equal(require("page-mod"),
                require("sdk/page-mod"), "sdk/page-mod -> page-mod");
 
-  assert.equal(require("panel"),
-               require("sdk/panel"), "sdk/panel -> panel");
+  if (app.is("Firefox")) {
+    assert.equal(require("panel"),
+                 require("sdk/panel"), "sdk/panel -> panel");
+  }
 
   assert.equal(require("request"),
                require("sdk/request"), "sdk/request -> request");
@@ -34,8 +42,10 @@ exports["test compatibility"] = function(assert) {
   assert.equal(require("simple-storage"),
                require("sdk/simple-storage"), "sdk/simple-storage -> simple-storage");
 
-  assert.equal(require("context-menu"),
-               require("sdk/context-menu"), "sdk/context-menu -> context-menu");
+  if (app.is("Firefox")) {
+    assert.equal(require("context-menu"),
+                 require("sdk/context-menu"), "sdk/context-menu -> context-menu");
+  }
 
   assert.equal(require("notifications"),
                require("sdk/notifications"), "sdk/notifications -> notifications");
@@ -49,8 +59,10 @@ exports["test compatibility"] = function(assert) {
   assert.equal(require("url"),
                require("sdk/url"), "sdk/url -> url");
 
-  assert.equal(require("selection"),
-               require("sdk/selection"), "sdk/selection -> selection");
+  if (app.is("Firefox")) {
+    assert.equal(require("selection"),
+                 require("sdk/selection"), "sdk/selection -> selection");
+  }
 
   assert.equal(require("timers"),
                require("sdk/timers"), "sdk/timers -> timers");
@@ -67,8 +79,10 @@ exports["test compatibility"] = function(assert) {
   assert.equal(require("hotkeys"),
                require("sdk/hotkeys"), "sdk/hotkeys -> hotkeys");
 
-  assert.equal(require("clipboard"),
-               require("sdk/clipboard"), "sdk/clipboard -> clipboard");
+  if (app.is("Firefox")) {
+    assert.equal(require("clipboard"),
+                 require("sdk/clipboard"), "sdk/clipboard -> clipboard");
+  }
 
   assert.equal(require("windows"),
                require("sdk/windows"), "sdk/windows -> windows");
@@ -82,9 +96,6 @@ exports["test compatibility"] = function(assert) {
   assert.equal(require("xhr"),
                require("sdk/net/xhr"), "sdk/io/xhr -> xhr");
 
-  assert.equal(require("observer-service"),
-               require("sdk/deprecated/observer-service"), "sdk/deprecated/observer-service -> observer-service");
-
   assert.equal(require("private-browsing"),
                require("sdk/private-browsing"), "sdk/private-browsing -> private-browsing");
 
@@ -95,10 +106,7 @@ exports["test compatibility"] = function(assert) {
                require("sdk/deprecated/events"), "sdk/deprecated/events -> events");
 
   assert.equal(require("match-pattern"),
-               require("sdk/page-mod/match-pattern"), "sdk/page-mod/match-pattern -> match-pattern");
-
-  assert.equal(require("tab-browser"),
-               require("sdk/deprecated/tab-browser"), "sdk/deprecated/tab-browser -> tab-browser");
+               require("sdk/util/match-pattern"), "sdk/util/match-pattern -> match-pattern");
 
   assert.equal(require("file"),
                require("sdk/io/file"), "sdk/io/file -> file");
@@ -130,14 +138,11 @@ exports["test compatibility"] = function(assert) {
   assert.equal(require("querystring"),
                require("sdk/querystring"), "sdk/querystring -> querystring");
 
-  assert.equal(require("addon-page"),
-               require("sdk/addon-page"), "sdk/addon-page -> addon-page");
+  assert.equal(loader.require("addon-page"),
+               loader.require("sdk/addon-page"), "sdk/addon-page -> addon-page");
 
   assert.equal(require("tabs/utils"),
                require("sdk/tabs/utils"), "sdk/tabs/utils -> tabs/utils");
-
-  assert.equal(require("app-strings"),
-               require("sdk/deprecated/app-strings"), "sdk/deprecated/app-strings -> app-strings");
 
   assert.equal(require("dom/events"),
                require("sdk/dom/events"), "sdk/dom/events -> dom/events");
@@ -154,8 +159,12 @@ exports["test compatibility"] = function(assert) {
   assert.equal(require("environment"),
                require("sdk/system/environment"), "sdk/system/environment -> environment");
 
-  assert.equal(require("utils/data"),
-               require("sdk/io/data"), "sdk/io/data -> utils/data");
+  if (app.is("Firefox")) {
+    // This module fails on fennec because of favicon xpcom component
+    // being not implemented on it.
+    assert.equal(require("utils/data"),
+                 require("sdk/io/data"), "sdk/io/data -> utils/data");
+  }
 
   assert.equal(require("test/assert"),
                require("sdk/test/assert"), "sdk/test/assert -> test/assert");
@@ -173,15 +182,5 @@ exports["test compatibility"] = function(assert) {
                require("sdk/deprecated/cortex"),
                "api-utils/cortex -> sdk/deprecated/cortex");
 };
-
-if (require("sdk/system/xul-app").is("Fennec")) {
-  module.exports = {
-    "test Unsupported Test": function UnsupportedTest (assert) {
-        assert.pass(
-          "Skipping this test until Fennec support is implemented." +
-          "See bug 809352");
-    }
-  }
-}
 
 require("sdk/test/runner").runTestsFromModule(module);

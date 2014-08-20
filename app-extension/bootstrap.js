@@ -1,4 +1,3 @@
-/* vim:set ts=2 sw=2 sts=2 expandtab */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -20,11 +19,14 @@ const systemPrincipal = CC('@mozilla.org/systemprincipal;1', 'nsIPrincipal')();
 const scriptLoader = Cc['@mozilla.org/moz/jssubscript-loader;1'].
                      getService(Ci.mozIJSSubScriptLoader);
 const prefService = Cc['@mozilla.org/preferences-service;1'].
-                    getService(Ci.nsIPrefService);
+                    getService(Ci.nsIPrefService).
+                    QueryInterface(Ci.nsIPrefBranch);
 const appInfo = Cc["@mozilla.org/xre/app-info;1"].
                 getService(Ci.nsIXULAppInfo);
 const vc = Cc["@mozilla.org/xpcom/version-comparator;1"].
            getService(Ci.nsIVersionComparator);
+
+const Startup = Cu.import("resource://gre/modules/sdk/system/Startup.js", {}).exports;
 
 
 const REASON = [ 'unknown', 'startup', 'shutdown', 'enable', 'disable',
@@ -36,6 +38,12 @@ let loader = null;
 let unload = null;
 let cuddlefishSandbox = null;
 let nukeTimer = null;
+
+let resourceDomains = [];
+function setResourceSubstitution(domain, uri) {
+  resourceDomains.push(domain);
+  resourceHandler.setSubstitution(domain, uri);
+}
 
 // Utility function that synchronously reads local resource from the given
 // `uri` and returns content string.
@@ -105,7 +113,7 @@ function startup(data, reasonCode) {
 
     let prefixURI = 'resource://' + domain + '/';
     let resourcesURI = ioService.newURI(rootURI + '/resources/', null, null);
-    resourceHandler.setSubstitution(domain, resourcesURI);
+    setResourceSubstitution(domain, resourcesURI);
 
     // Create path to URLs mapping supported by loader.
     let paths = {
@@ -127,12 +135,21 @@ function startup(data, reasonCode) {
     if (name == 'addon-sdk')
       paths['tests/'] = prefixURI + name + '/tests/';
 
+    let useBundledSDK = options['force-use-bundled-sdk'];
+    if (!useBundledSDK) {
+      try {
+        useBundledSDK = prefService.getBoolPref("extensions.addon-sdk.useBundledSDK");
+      }
+      catch (e) {
+        // Pref doesn't exist, allow using Firefox shipped SDK
+      }
+    }
+
     // Starting with Firefox 21.0a1, we start using modules shipped into firefox
     // Still allow using modules from the xpi if the manifest tell us to do so.
     // And only try to look for sdk modules in xpi if the xpi actually ship them
     if (options['is-sdk-bundled'] &&
-        (vc.compare(appInfo.version, '21.0a1') < 0 ||
-         options['force-use-bundled-sdk'])) {
+        (vc.compare(appInfo.version, '21.0a1') < 0 || useBundledSDK)) {
       // Maps sdk module folders to their resource folder
       paths[''] = prefixURI + 'addon-sdk/lib/';
       // test.js is usually found in root commonjs or SDK_ROOT/lib/ folder,
@@ -151,11 +168,16 @@ function startup(data, reasonCode) {
       if (path) path += '/';
       let fileURI = branch.getCharPref(name);
 
+      // On mobile, file URI has to end with a `/` otherwise, setSubstitution
+      // takes the parent folder instead.
+      if (fileURI[fileURI.length-1] !== '/')
+        fileURI += '/';
+
       // Maps the given file:// URI to a resource:// in order to avoid various
       // failure that happens with file:// URI and be close to production env
       let resourcesURI = ioService.newURI(fileURI, null, null);
       let resName = 'extensions.modules.' + domain + '.commonjs.path' + name;
-      resourceHandler.setSubstitution(resName, resourcesURI);
+      setResourceSubstitution(resName, resourcesURI);
 
       result[path] = 'resource://' + resName + '/';
       return result;
@@ -205,21 +227,21 @@ function startup(data, reasonCode) {
       // options used by system module.
       // File to write 'OK' or 'FAIL' (exit code emulation).
       resultFile: options.resultFile,
-      // File to write stdout.
-      logFile: options.logFile,
       // Arguments passed as --static-args
       staticArgs: options.staticArgs,
+      // Add-on preferences branch name
+      preferencesBranch: options.preferencesBranch,
 
       // Arguments related to test runner.
       modules: {
         '@test/options': {
-          allTestModules: options.allTestModules,
           iterations: options.iterations,
           filter: options.filter,
           profileMemory: options.profileMemory,
           stopOnError: options.stopOnError,
           verbose: options.verbose,
           parseable: options.parseable,
+          checkMemory: options.check_memory,
         }
       }
     });
@@ -290,6 +312,11 @@ function shutdown(data, reasonCode) {
       // We need to keep a reference to the timer, otherwise it is collected
       // and won't ever fire.
       nukeTimer = setTimeout(nukeModules, 1000);
+
+      // Bug 944951 - bootstrap.js must remove the added resource: URIs on unload
+      resourceDomains.forEach(domain => {
+        resourceHandler.setSubstitution(domain, null);
+      })
     }
   }
 };

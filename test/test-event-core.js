@@ -4,8 +4,8 @@
 
 'use strict';
 
-const { on, once, off, emit, count, amass } = require('sdk/event/core');
-const { Loader } = require('sdk/test/loader');
+const { on, once, off, emit, count } = require('sdk/event/core');
+const { LoaderWithHookedConsole } = require("sdk/test/loader");
 
 exports['test add a listener'] = function(assert) {
   let events = [ { name: 'event#1' }, 'event#2' ];
@@ -66,6 +66,19 @@ exports['test no side-effects in emit'] = function(assert) {
     });
   });
   emit(target, 'message');
+};
+
+exports['test can remove next listener'] = function(assert) {
+  let target = { name: 'target' };
+  function fail() assert.fail('Listener should be removed');
+
+  on(target, 'data', function() {
+    assert.pass('first litener called');
+    off(target, 'data', fail);
+  });
+  on(target, 'data', fail);
+
+  emit(target, 'data', 'hello');
 };
 
 exports['test order of propagation'] = function(assert) {
@@ -157,15 +170,10 @@ exports['test error handling'] = function(assert) {
   emit(target, 'message');
 };
 
-exports['test unhandled errors'] = function(assert) {
+exports['test unhandled exceptions'] = function(assert) {
   let exceptions = [];
-  let loader = Loader(module, {
-    console: Object.create(console, {
-      exception: { value: function(e) {
-        exceptions.push(e);
-      }}
-    })
-  });
+  let { loader, messages } = LoaderWithHookedConsole(module);
+
   let { emit, on } = loader.require('sdk/event/core');
   let target = {};
   let boom = Error('Boom!');
@@ -174,14 +182,34 @@ exports['test unhandled errors'] = function(assert) {
   on(target, 'message', function() { throw boom; });
 
   emit(target, 'message');
-  assert.ok(~String(exceptions[0]).indexOf('Boom!'),
+  assert.equal(messages.length, 1, 'Got the first exception');
+  assert.equal(messages[0].type, 'exception', 'The console message is exception');
+  assert.ok(~String(messages[0].msg).indexOf('Boom!'),
             'unhandled exception is logged');
 
   on(target, 'error', function() { throw drax; });
   emit(target, 'message');
-  assert.ok(~String(exceptions[1]).indexOf('Draax!'),
+  assert.equal(messages.length, 2, 'Got the second exception');
+  assert.equal(messages[1].type, 'exception', 'The console message is exception');
+  assert.ok(~String(messages[1].msg).indexOf('Draax!'),
             'error in error handler is logged');
 };
+
+exports['test unhandled errors'] = function(assert) {
+  let exceptions = [];
+  let { loader, messages } = LoaderWithHookedConsole(module);
+
+  let { emit, on } = loader.require('sdk/event/core');
+  let target = {};
+  let boom = Error('Boom!');
+
+  emit(target, 'error', boom);
+  assert.equal(messages.length, 1, 'Error was logged');
+  assert.equal(messages[0].type, 'exception', 'The console message is exception');
+  assert.ok(~String(messages[0].msg).indexOf('Boom!'),
+            'unhandled exception is logged');
+};
+
 
 exports['test count'] = function(assert) {
   let target = {};
@@ -194,23 +222,24 @@ exports['test count'] = function(assert) {
   assert.equal(count(target, 'foo'), 0, 'listeners unregistered');
 };
 
-exports['test emit.lazy'] = function(assert) {
-  let target = {}, boom = Error('boom!'), errors = [], actual = []
+exports['test listen to all events'] = function(assert) {
+  let actual = [];
+  let target = {};
 
-  on(target, 'error', function error(e) errors.push(e))
+  on(target, 'foo', message => actual.push(message));
+  on(target, '*', (type, ...message) => {
+    actual.push([type].concat(message));
+  });
+ 
+  emit(target, 'foo', 'hello');
+  assert.equal(actual[0], 'hello',
+    'non-wildcard listeners still work');
+  assert.deepEqual(actual[1], ['foo', 'hello'],
+    'wildcard listener called');
 
-  on(target, 'a', function() 1);
-  on(target, 'a', function() {});
-  on(target, 'a', function() 2);
-  on(target, 'a', function() { throw boom });
-  on(target, 'a', function() 3);
-
-  for each (let value in emit.lazy(target, 'a'))
-    actual.push(value);
-
-  assert.deepEqual(actual, [ 1, undefined, 2, 3 ],
-                   'all results were collected');
-  assert.deepEqual(errors, [ boom ], 'errors reporetd');
+  emit(target, 'bar', 'goodbye');
+  assert.deepEqual(actual[2], ['bar', 'goodbye'],
+    'wildcard listener called for unbound event name');
 };
 
 require('test').run(exports);

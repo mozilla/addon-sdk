@@ -2,13 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-var widgets = require('widget');
-var pageMod = require('page-mod');
-var data = require('self').data;
-var panels = require('panel');
-var simpleStorage = require('simple-storage');
-var notifications = require("notifications");
-var privateBrowsing = require('private-browsing');
+var widgets = require('sdk/widget');
+var pageMod = require('sdk/page-mod');
+var data = require('sdk/self').data;
+var panels = require('sdk/panel');
+var simpleStorage = require('sdk/simple-storage');
+var notifications = require("sdk/notifications");
 
 /*
 Global variables
@@ -30,13 +29,6 @@ function updateMatchers() {
   matchers.forEach(function (matcher) {
     matcher.postMessage(simpleStorage.storage.annotations);
   });
-}
-
-/*
-You can add annotations iff the add-on is on AND private browsing is off
-*/
-function canEnterAnnotations() {
-  return (annotatorIsOn && !privateBrowsing.isActive);
 }
 
 /*
@@ -66,21 +58,17 @@ Function to tell the selector page mod that the add-on has become (in)active
 function activateSelectors() {
   selectors.forEach(
     function (selector) {
-      selector.postMessage(canEnterAnnotations());
+      selector.postMessage(annotatorIsOn);
   });
 }
 
 /*
 Toggle activation: update the on/off state and notify the selectors.
-Toggling activation is disabled when private browsing is on.
 */
 function toggleActivation() {
-  if (privateBrowsing.isActive) {
-    return false;
-  }
   annotatorIsOn = !annotatorIsOn;
   activateSelectors();
-  return canEnterAnnotations();
+  return annotatorIsOn;
 }
 
 function detachWorker(worker, workerArray) {
@@ -138,7 +126,7 @@ display it.
     contentScriptFile: [data.url('jquery-1.4.2.min.js'),
                         data.url('selector.js')],
     onAttach: function(worker) {
-      worker.postMessage(canEnterAnnotations());
+      worker.postMessage(annotatorIsOn);
       selectors.push(worker);
       worker.port.on('show', function(data) {
         annotationEditor.annotationAnchor = data;
@@ -200,7 +188,7 @@ in the browser.
       this.postMessage(simpleStorage.storage.annotations);
     },
     onMessage: function(message) {
-      require('tabs').open(message);
+      require('sdk/tabs').open(message);
     }
   });
 
@@ -215,22 +203,6 @@ recent annotations until we are back in quota.
       text: 'Removing recent annotations'});
     while (simpleStorage.quotaUsage > 1)
       simpleStorage.storage.annotations.pop();
-  });
-
-/*
-We listen for private browsing start/stop events to change the widget icon
-and to notify the selectors of the change in state.
-*/
-  privateBrowsing.on('start', function() {
-    widget.contentURL = data.url('widget/pencil-off.png');
-    activateSelectors();
-  });
-
-  privateBrowsing.on('stop', function() {
-    if (canEnterAnnotations()) {
-      widget.contentURL = data.url('widget/pencil-on.png');
-      activateSelectors();
-    }
   });
 
 /*

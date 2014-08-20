@@ -1,11 +1,9 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
- */
-
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
-var runtime = require("sdk/system/runtime");
+const runtime = require("sdk/system/runtime");
 
 exports["test system runtime"] = function(assert) {
   assert.equal(typeof(runtime.inSafeMode), "boolean",
@@ -16,7 +14,7 @@ exports["test system runtime"] = function(assert) {
                "runtime.processType is a number");
   assert.equal(typeof(runtime.widgetToolkit), "string",
                "runtime.widgetToolkit is string");
-  var XPCOMABI = typeof(runtime.XPCOMABI);
+  const XPCOMABI = runtime.XPCOMABI;
   assert.ok(XPCOMABI === null || typeof(XPCOMABI) === "string",
             "runtime.XPCOMABI is string or null if not supported by platform");
 };

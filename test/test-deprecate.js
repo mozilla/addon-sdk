@@ -2,28 +2,17 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+'use strict';
+
 const deprecate = require("sdk/util/deprecate");
-var { Loader } = require("sdk/test/loader");
-
-function LoaderWithHookedConsole() {
-  let errors = [];
-  let loader = Loader(module, {
-    console: Object.create(console, {
-      error: { value: function(error) {
-        errors.push(error);
-      }}
-    })
-  });
-
-  return {
-    loader: loader,
-    deprecate: loader.require("sdk/util/deprecate"),
-    errors: errors
-  }
-}
+const { LoaderWithHookedConsole } = require("sdk/test/loader");
+const { get, set } = require("sdk/preferences/service");
+const PREFERENCE = "devtools.errorconsole.deprecation_warnings";
 
 exports["test Deprecate Usage"] = function testDeprecateUsage(assert) {
-  let { loader, deprecate, errors } = LoaderWithHookedConsole();
+  set(PREFERENCE, true);
+  let { loader, messages } = LoaderWithHookedConsole(module);
+  let deprecate = loader.require("sdk/util/deprecate");
 
   function functionIsDeprecated() {
     deprecate.deprecateUsage("foo");
@@ -31,9 +20,10 @@ exports["test Deprecate Usage"] = function testDeprecateUsage(assert) {
 
   functionIsDeprecated();
 
-  assert.equal(errors.length, 1, "only one error is dispatched");
+  assert.equal(messages.length, 1, "only one error is dispatched");
+  assert.equal(messages[0].type, "error", "the console message is an error");
 
-  let msg = errors[0];
+  let msg = messages[0].msg;
 
   assert.ok(msg.indexOf("foo") !== -1,
             "message contains the given message");
@@ -46,7 +36,9 @@ exports["test Deprecate Usage"] = function testDeprecateUsage(assert) {
 }
 
 exports["test Deprecate Function"] = function testDeprecateFunction(assert) {
-  let { loader, deprecate, errors } = LoaderWithHookedConsole();
+  set(PREFERENCE, true);
+  let { loader, messages } = LoaderWithHookedConsole(module);
+  let deprecate = loader.require("sdk/util/deprecate");
 
   let self = {};
   let arg1 = "foo";
@@ -63,10 +55,10 @@ exports["test Deprecate Function"] = function testDeprecateFunction(assert) {
 
   deprecateFunction.call(self, arg1, arg2);
 
-  assert.equal(errors.length, 1,
-                   "only one error is dispatched");
+  assert.equal(messages.length, 1, "only one error is dispatched");
+  assert.equal(messages[0].type, "error", "the console message is an error");
 
-  let msg = errors[0];
+  let msg = messages[0].msg;
   assert.ok(msg.indexOf("bar") !== -1, "message contains the given message");
   assert.ok(msg.indexOf("testDeprecateFunction") !== -1,
             "message contains name of the caller function");
@@ -77,7 +69,9 @@ exports["test Deprecate Function"] = function testDeprecateFunction(assert) {
 }
 
 exports.testDeprecateEvent = function(assert, done) {
-  let { loader, deprecate, errors } = LoaderWithHookedConsole();
+  set(PREFERENCE, true);
+  let { loader, messages } = LoaderWithHookedConsole(module);
+  let deprecate = loader.require("sdk/util/deprecate");
 
   let { on, emit } = loader.require('sdk/event/core');
   let testObj = {};
@@ -85,15 +79,16 @@ exports.testDeprecateEvent = function(assert, done) {
 
   testObj.on('fire', function() {
     testObj.on('water', function() {
-      assert.equal(errors.length, 1, "only one error is dispatched");
+      assert.equal(messages.length, 1, "only one error is dispatched");
       loader.unload();
       done();
     })
-    assert.equal(errors.length, 1, "only one error is dispatched");
+    assert.equal(messages.length, 1, "only one error is dispatched");
     emit(testObj, 'water');
   });
-  assert.equal(errors.length, 1, "only one error is dispatched");
-  let msg = errors[0];
+  assert.equal(messages.length, 1, "only one error is dispatched");
+  assert.equal(messages[0].type, "error", "the console message is an error");
+  let msg = messages[0].msg;
   assert.ok(msg.indexOf("BAD") !== -1, "message contains the given message");
   assert.ok(msg.indexOf("deprecateEvent") !== -1,
             "message contains name of the caller function");
@@ -103,4 +98,63 @@ exports.testDeprecateEvent = function(assert, done) {
   emit(testObj, 'fire');
 }
 
+exports.testDeprecateSettingToggle = function (assert, done) {
+  let { loader, messages } = LoaderWithHookedConsole(module);
+  let deprecate = loader.require("sdk/util/deprecate");
+  
+  function fn () { deprecate.deprecateUsage("foo"); }
+
+  set(PREFERENCE, false);
+  fn();
+  assert.equal(messages.length, 0, 'no deprecation warnings');
+  
+  set(PREFERENCE, true);
+  fn();
+  assert.equal(messages.length, 1, 'deprecation warnings when toggled');
+
+  set(PREFERENCE, false);
+  fn();
+  assert.equal(messages.length, 1, 'no new deprecation warnings');
+  done();
+};
+
+exports.testDeprecateSetting = function (assert, done) {
+  // Set devtools.errorconsole.deprecation_warnings to false
+  set(PREFERENCE, false);
+
+  let { loader, messages } = LoaderWithHookedConsole(module);
+  let deprecate = loader.require("sdk/util/deprecate");
+
+  // deprecateUsage test
+  function functionIsDeprecated() {
+    deprecate.deprecateUsage("foo");
+  }
+  functionIsDeprecated();
+
+  assert.equal(messages.length, 0,
+    "no errors dispatched on deprecateUsage");
+
+  // deprecateFunction test
+  function originalFunction() {};
+
+  let deprecateFunction = deprecate.deprecateFunction(originalFunction,
+                                                       "bar");
+  deprecateFunction();
+
+  assert.equal(messages.length, 0,
+    "no errors dispatched on deprecateFunction");
+
+  // deprecateEvent
+  let { on, emit } = loader.require('sdk/event/core');
+  let testObj = {};
+  testObj.on = deprecate.deprecateEvent(on.bind(null, testObj), 'BAD', ['fire']);
+
+  testObj.on('fire', () => {
+    assert.equal(messages.length, 0,
+      "no errors dispatched on deprecateEvent");
+    done();
+  });
+
+  emit(testObj, 'fire');
+}
 require("test").run(exports);

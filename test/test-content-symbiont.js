@@ -1,12 +1,18 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 "use strict";
 
 const { Cc, Ci } = require('chrome');
-const { Symbiont } = require('sdk/content/symbiont');
-const self = require("sdk/self");
+const { Symbiont } = require('sdk/deprecated/symbiont');
+const self = require('sdk/self');
+const fixtures = require("./fixtures");
+const { close } = require('sdk/window/helpers');
+const app = require("sdk/system/xul-app");
+const { LoaderWithHookedConsole } = require('sdk/test/loader');
+const { set: setPref, get: getPref } = require("sdk/preferences/service");
+
+const DEPRECATE_PREF = "devtools.errorconsole.deprecation_warnings";
 
 function makeWindow() {
   let content =
@@ -26,7 +32,7 @@ function makeWindow() {
 
 exports['test:constructing symbiont && validating API'] = function(assert) {
   let contentScript = ["1;", "2;"];
-  let contentScriptFile = self.data.url("test-content-symbiont.js");
+  let contentScriptFile = fixtures.url("test-content-symbiont.js");
 
   // We can avoid passing a `frame` argument. Symbiont will create one
   // by using HiddenFrame module
@@ -66,8 +72,15 @@ exports['test:constructing symbiont && validating API'] = function(assert) {
 };
 
 exports["test:communication with worker global scope"] = function(assert, done) {
+  if (app.is('Fennec')) {
+    assert.pass('Test skipped on Fennec');
+    done();
+  }
+
   let window = makeWindow();
   let contentSymbiont;
+
+  assert.ok(!!window, 'there is a window');
 
   function onMessage1(message) {
     assert.equal(message, 1, "Program gets message via onMessage.");
@@ -78,9 +91,9 @@ exports["test:communication with worker global scope"] = function(assert, done) 
 
   function onMessage2(message) {
     if (5 == message) {
-      window.close();
-      done();
-    } else {
+      close(window).then(done);
+    }
+    else {
       assert.equal(message, 3, "Program gets message via onMessage2.");
       contentSymbiont.postMessage(4)
     }
@@ -148,43 +161,25 @@ exports["test:document element present on 'start'"] = function(assert, done) {
   });
 };
 
-exports["test:direct communication with trusted document"] = function(assert, done) {
-  let worker = Symbiont({
-    contentURL: require("sdk/self").data.url("test-trusted-document.html")
-  });
+exports["test:content/content deprecation"] = function(assert) {
+  let pref = getPref(DEPRECATE_PREF, false);
+  setPref(DEPRECATE_PREF, true);
 
-  worker.port.on('document-to-addon', function (arg) {
-    assert.equal(arg, "ok", "Received an event from the document");
-    worker.destroy();
-    done();
-  });
-  worker.port.emit('addon-to-document', 'ok');
-};
+  const { loader, messages } = LoaderWithHookedConsole(module);
+  const { Loader, Symbiont, Worker } = loader.require("sdk/content/content");
 
-exports["test:`addon` is not available when a content script is set"] = function(assert, done) {
-  let worker = Symbiont({
-    contentURL: require("sdk/self").data.url("test-trusted-document.html"),
-    contentScript: "new " + function ContentScriptScope() {
-      self.port.emit("cs-to-addon", "addon" in unsafeWindow);
-    }
-  });
+  assert.equal(messages.length, 3, "Should see three warnings");
 
-  worker.port.on('cs-to-addon', function (hasAddon) {
-    assert.equal(hasAddon, false,
-      "`addon` is not available");
-    worker.destroy();
-    done();
-  });
-};
+  assert.strictEqual(Loader, loader.require('sdk/content/loader').Loader,
+    "Loader from content/content is the exact same object as the one from content/loader");
 
-if (require("sdk/system/xul-app").is("Fennec")) {
-  module.exports = {
-    "test Unsupported Test": function UnsupportedTest (assert) {
-        assert.pass(
-          "Skipping this test until Fennec support is implemented." +
-          "See bug 806815");
-    }
-  }
+  assert.strictEqual(Symbiont, loader.require('sdk/deprecated/symbiont').Symbiont,
+    "Symbiont from content/content is the exact same object as the one from deprecated/symbiont");
+
+  assert.strictEqual(Worker, loader.require('sdk/content/worker').Worker,
+    "Worker from content/content is the exact same object as the one from content/worker");
+
+  setPref(DEPRECATE_PREF, pref);
 }
 
 require("test").run(exports);

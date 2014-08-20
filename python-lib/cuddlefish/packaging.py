@@ -23,7 +23,7 @@ DEFAULT_ICON64 = 'icon64.png'
 
 METADATA_PROPS = ['name', 'description', 'keywords', 'author', 'version',
                   'translators', 'contributors', 'license', 'homepage', 'icon',
-                  'icon64', 'main', 'directories', 'permissions']
+                  'icon64', 'main', 'directories', 'permissions', 'preferences']
 
 RESOURCE_HOSTNAME_RE = re.compile(r'^[a-z0-9_\-]+$')
 
@@ -113,6 +113,12 @@ def resolve_dirs(pkg_cfg, dirnames):
 def resolve_dir(pkg_cfg, dirname):
     return os.path.join(pkg_cfg.root_dir, dirname)
 
+def validate_permissions(perms):
+    if (perms.get('cross-domain-content') and
+        not isinstance(perms.get('cross-domain-content'), list)):
+        raise ValueError("Error: `cross-domain-content` permissions in \
+ package.json file must be an array of strings:\n  %s" % perms)
+
 def get_metadata(pkg_cfg, deps):
     metadata = Bunch()
     for pkg_name in deps:
@@ -120,6 +126,8 @@ def get_metadata(pkg_cfg, deps):
         metadata[pkg_name] = Bunch()
         for prop in METADATA_PROPS:
             if cfg.get(prop):
+                if prop == 'permissions':
+                    validate_permissions(cfg[prop])
                 metadata[pkg_name][prop] = cfg[prop]
     return metadata
 
@@ -385,8 +393,20 @@ def generate_build_for_target(pkg_cfg, target, deps,
         build['icon64'] = os.path.join(target_cfg.root_dir, target_cfg.icon64)
         del target_cfg['icon64']
 
-    if ('preferences' in target_cfg):
-        build['preferences'] = target_cfg.preferences
+    if 'id' in target_cfg:
+        # NOTE: logic duplicated from buildJID()
+        jid = target_cfg['id']
+        if not ('@' in jid or jid.startswith('{')):
+            jid += '@jetpack'
+        build['preferencesBranch'] = jid
+
+    if 'preferences-branch' in target_cfg:
+        # check it's a non-empty, valid branch name
+        preferencesBranch = target_cfg['preferences-branch']
+        if re.match('^[\w{@}-]+$', preferencesBranch):
+            build['preferencesBranch'] = preferencesBranch
+        elif not is_running_tests:
+            print >>sys.stderr, "IGNORING preferences-branch (not a valid branch name)"
 
     return build
 

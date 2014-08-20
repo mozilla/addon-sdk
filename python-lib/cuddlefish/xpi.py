@@ -23,7 +23,14 @@ def mkzipdir(zf, path):
 
 def build_xpi(template_root_dir, manifest, xpi_path,
               harness_options, limit_to=None, extra_harness_options={},
-              bundle_sdk=True):
+              bundle_sdk=True, pkgdir=""):
+    IGNORED_FILES = [".hgignore", ".DS_Store",
+                     "application.ini", xpi_path]
+    IGNORED_TOP_LVL_FILES = ["install.rdf"]
+
+    files_to_copy = {} # maps zipfile path to local-disk abspath
+    dirs_to_create = set() # zipfile paths, no trailing slash
+
     zf = zipfile.ZipFile(xpi_path, "w", zipfile.ZIP_DEFLATED)
 
     open('.install.rdf', 'w').write(str(manifest))
@@ -39,37 +46,34 @@ def build_xpi(template_root_dir, manifest, xpi_path,
         zf.write(str(harness_options['icon64']), 'icon64.png')
         del harness_options['icon64']
 
-    # Handle simple-prefs
-    if 'preferences' in harness_options:
-        from options_xul import parse_options, validate_prefs
+    # chrome.manifest
+    if os.path.isfile(os.path.join(pkgdir, 'chrome.manifest')):
+      files_to_copy['chrome.manifest'] = os.path.join(pkgdir, 'chrome.manifest')
 
-        validate_prefs(harness_options["preferences"])
-
-        opts_xul = parse_options(harness_options["preferences"],
-                                 harness_options["jetpackID"])
-        open('.options.xul', 'wb').write(opts_xul.encode("utf-8"))
-        zf.write('.options.xul', 'options.xul')
-        os.remove('.options.xul')
-
-        from options_defaults import parse_options_defaults
-        prefs_js = parse_options_defaults(harness_options["preferences"],
-                                          harness_options["jetpackID"])
-        open('.prefs.js', 'wb').write(prefs_js.encode("utf-8"))
-
-    else:
-        open('.prefs.js', 'wb').write("")
-
-    zf.write('.prefs.js', 'defaults/preferences/prefs.js')
-    os.remove('.prefs.js')
-
-
-    IGNORED_FILES = [".hgignore", ".DS_Store", "install.rdf",
-                     "application.ini", xpi_path]
-
-    files_to_copy = {} # maps zipfile path to local-disk abspath
-    dirs_to_create = set() # zipfile paths, no trailing slash
+    # chrome folder (would contain content, skin, and locale folders typically)
+    folder = 'chrome'
+    if os.path.exists(os.path.join(pkgdir, folder)):
+      dirs_to_create.add('chrome')
+      # cp -r folder
+      abs_dirname = os.path.join(pkgdir, folder)
+      for dirpath, dirnames, filenames in os.walk(abs_dirname):
+          goodfiles = list(filter_filenames(filenames, IGNORED_FILES))
+          dirnames[:] = filter_dirnames(dirnames)
+          for dirname in dirnames:
+            arcpath = make_zipfile_path(template_root_dir,
+                                        os.path.join(dirpath, dirname))
+            dirs_to_create.add(arcpath)
+          for filename in goodfiles:
+              abspath = os.path.join(dirpath, filename)
+              arcpath = ZIPSEP.join(
+                  [folder,
+                   make_zipfile_path(abs_dirname, os.path.join(dirpath, filename)),
+                   ])
+              files_to_copy[str(arcpath)] = str(abspath)
 
     for dirpath, dirnames, filenames in os.walk(template_root_dir):
+        if template_root_dir == dirpath:
+            filenames = list(filter_filenames(filenames, IGNORED_TOP_LVL_FILES))
         filenames = list(filter_filenames(filenames, IGNORED_FILES))
         dirnames[:] = filter_dirnames(dirnames)
         for dirname in dirnames:

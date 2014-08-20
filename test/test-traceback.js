@@ -1,9 +1,11 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+ "use strict";
 
 var traceback = require("sdk/console/traceback");
 var {Cc,Ci,Cr,Cu} = require("chrome");
+const { on, off } = require("sdk/system/events");
 
 function throwNsIException() {
   var ios = Cc['@mozilla.org/network/io-service;1']
@@ -15,8 +17,7 @@ function throwError() {
   throw new Error("foob");
 }
 
-exports.testFormatDoesNotFetchRemoteFiles = function(test) {
-  var observers = require("sdk/deprecated/observer-service");
+exports.testFormatDoesNotFetchRemoteFiles = function(assert) {
   ["http", "https"].forEach(
     function(scheme) {
       var httpRequests = 0;
@@ -24,7 +25,7 @@ exports.testFormatDoesNotFetchRemoteFiles = function(test) {
         httpRequests++;
       }
 
-      observers.add("http-on-modify-request", onHttp);
+      on("http-on-modify-request", onHttp);
 
       try {
         var tb = [{filename: scheme + "://www.mozilla.org/",
@@ -32,75 +33,90 @@ exports.testFormatDoesNotFetchRemoteFiles = function(test) {
                    name: "blah"}];
         traceback.format(tb);
       } catch (e) {
-        test.exception(e);
+        assert.fail(e);
       }
 
-      observers.remove("http-on-modify-request", onHttp);
+      off("http-on-modify-request", onHttp);
 
-      test.assertEqual(httpRequests, 0,
+      assert.equal(httpRequests, 0,
                        "traceback.format() does not make " +
                        scheme + " request");
     });
 };
 
-exports.testFromExceptionWithString = function(test) {
+exports.testFromExceptionWithString = function(assert) {
   try {
     throw "foob";
-    test.fail("an exception should've been thrown");
-  } catch (e if e == "foob") {
-    var tb = traceback.fromException(e);
-    test.assertEqual(tb.length, 0);
+    assert.fail("an exception should've been thrown");
+  } catch (e) {
+    if (e == "foob") {
+      var tb = traceback.fromException(e);
+      assert.equal(tb.length, 0);
+    }
+    else {
+      throw e;
+    }
   }
 };
 
-exports.testFormatWithString = function(test) {
+exports.testFormatWithString = function(assert) {
   // This can happen if e.g. a thrown exception was
   // a string instead of an Error instance.
-  test.assertEqual(traceback.format("blah"),
+  assert.equal(traceback.format("blah"),
 		   "Traceback (most recent call last):");
 };
 
-exports.testFromExceptionWithError = function(test) {
+exports.testFromExceptionWithError = function(assert) {
   try {
     throwError();
-    test.fail("an exception should've been thrown");
-  } catch (e if e instanceof Error) {
-    var tb = traceback.fromException(e);
+    assert.fail("an exception should've been thrown");
+  } catch (e) {
+    if (e instanceof Error) {
+      var tb = traceback.fromException(e);
 
-    var xulApp = require("sdk/system/xul-app");
-    test.assertEqual(tb.slice(-1)[0].name, "throwError");
+      var xulApp = require("sdk/system/xul-app");
+      assert.equal(tb.slice(-1)[0].name, "throwError");
+    }
+    else {
+      throw e;
+    }
   }
 };
 
-exports.testFromExceptionWithNsIException = function(test) {
+exports.testFromExceptionWithNsIException = function(assert) {
   try {
     throwNsIException();
-    test.fail("an exception should've been thrown");
-  } catch (e if e.result == Cr.NS_ERROR_MALFORMED_URI) {
-    var tb = traceback.fromException(e);
-    test.assertEqual(tb[tb.length - 1].name, "throwNsIException");
+    assert.fail("an exception should've been thrown");
+  } catch (e) {
+    if (e.result == Cr.NS_ERROR_MALFORMED_URI) {
+      var tb = traceback.fromException(e);
+      assert.equal(tb[tb.length - 1].name, "throwNsIException");
+    }
+    else {
+      throw e;
+    }
   }
 };
 
-exports.testFormat = function(test) {
+exports.testFormat = function(assert) {
   function getTraceback() {
     return traceback.format();
   }
 
   var formatted = getTraceback();
-  test.assertEqual(typeof(formatted), "string");
+  assert.equal(typeof(formatted), "string");
   var lines = formatted.split("\n");
 
-  test.assertEqual(lines[lines.length - 2].indexOf("getTraceback") > 0,
+  assert.equal(lines[lines.length - 2].indexOf("getTraceback") > 0,
                    true,
                    "formatted traceback should include function name");
 
-  test.assertEqual(lines[lines.length - 1].trim(),
+  assert.equal(lines[lines.length - 1].trim(),
                    "return traceback.format();",
                    "formatted traceback should include source code");
 };
 
-exports.testExceptionsWithEmptyStacksAreLogged = function(test) {
+exports.testExceptionsWithEmptyStacksAreLogged = function(assert) {
   // Ensures that our fix to bug 550368 works.
   var sandbox = Cu.Sandbox("http://www.foo.com");
   var excRaised = false;
@@ -110,12 +126,14 @@ exports.testExceptionsWithEmptyStacksAreLogged = function(test) {
   } catch (e) {
     excRaised = true;
     var stack = traceback.fromException(e);
-    test.assertEqual(stack.length, 1, "stack should have one frame");
+    assert.equal(stack.length, 1, "stack should have one frame");
 
-    test.assert(stack[0].fileName, "blah.js", "frame should have filename");
-    test.assert(stack[0].lineNumber, 25, "frame should have line no");
-    test.assertEqual(stack[0].name, null, "frame should have null function name");
+    assert.ok(stack[0].fileName, "blah.js", "frame should have filename");
+    assert.ok(stack[0].lineNumber, 25, "frame should have line no");
+    assert.equal(stack[0].name, null, "frame should have null function name");
   }
   if (!excRaised)
-    test.fail("Exception should have been raised.");
+    assert.fail("Exception should have been raised.");
 };
+
+require('sdk/test').run(exports);

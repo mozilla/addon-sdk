@@ -149,7 +149,7 @@ def gen_manifest(template_root_dir, target_cfg, jid, harness_options,
         dom.documentElement.getElementsByTagName("Description")[0].appendChild(localizedElement)
 
     manifest.set("em:name",
-                 target_cfg.get('fullName', target_cfg['name']))
+                 target_cfg.get('title', target_cfg.get('fullName', target_cfg['name'])))
     manifest.set("em:description",
                  target_cfg.get("description", ""))
     manifest.set("em:creator",
@@ -182,8 +182,17 @@ def gen_manifest(template_root_dir, target_cfg, jid, harness_options,
 
     if target_cfg.get("preferences"):
         manifest.set("em:optionsType", "2")
+        
+        # workaround until bug 971249 is fixed
+        # https://bugzilla.mozilla.org/show_bug.cgi?id=971249
+        manifest.set("em:optionsURL", "data:text/xml,<placeholder/>")
+
+        # workaround for workaround, for testing simple-prefs-regression
+        if (os.path.exists(os.path.join(template_root_dir, "options.xul"))):
+            manifest.remove("em:optionsURL")
     else:
         manifest.remove("em:optionsType")
+        manifest.remove("em:optionsURL")
 
     if enable_mobile:
         target_app = dom.createElement("em:targetApplication")
@@ -197,11 +206,11 @@ def gen_manifest(template_root_dir, target_cfg, jid, harness_options,
         ta_desc.appendChild(elem)
 
         elem = dom.createElement("em:minVersion")
-        elem.appendChild(dom.createTextNode("18.0"))
+        elem.appendChild(dom.createTextNode("26.0"))
         ta_desc.appendChild(elem)
 
         elem = dom.createElement("em:maxVersion")
-        elem.appendChild(dom.createTextNode("21.0a1"))
+        elem.appendChild(dom.createTextNode("30.0a1"))
         ta_desc.appendChild(elem)
 
     return manifest

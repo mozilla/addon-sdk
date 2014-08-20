@@ -1,4 +1,4 @@
-﻿/* This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
@@ -7,6 +7,7 @@ const prefs = require("sdk/preferences/service");
 const { Loader } = require('sdk/test/loader');
 const { resolveURI } = require('toolkit/loader');
 const { rootURI } = require("@loader/options");
+const { usingJSON } = require('sdk/l10n/json/core');
 
 const PREF_MATCH_OS_LOCALE  = "intl.locale.matchOS";
 const PREF_SELECTED_LOCALE  = "general.useragent.locale";
@@ -67,7 +68,7 @@ exports.testExactMatching = createTest("fr-FR", function(assert, loader, done) {
                    "Value with placeholder");
   assert.equal(_("Placeholder %s", "works"), "Placeholder works",
                    "Key without value but with placeholder");
-  assert.equal(_("Placeholders %2s %1s %s.", "working", "are", "correctly"), 
+  assert.equal(_("Placeholders %2s %1s %s.", "working", "are", "correctly"),
                    "Placeholders are working correctly.",
                    "Multiple placeholders");
 
@@ -86,7 +87,6 @@ exports.testExactMatching = createTest("fr-FR", function(assert, loader, done) {
 });
 
 exports.testHtmlLocalization = createTest("en-GB", function(assert, loader, done) {
-
   // Ensure initing html component that watch document creations
   // Note that this module is automatically initialized in
   // cuddlefish.js:Loader.main in regular addons. But it isn't for unit tests.
@@ -164,8 +164,26 @@ exports.testEnUsLocaleName = createTest("en-US", function(assert, loader, done) 
                    "other",
                    "PluralForm form can be omitting generic key [i.e. without ...[other] at end of key)");
 
+  assert.equal(_("first_identifier", "ONE", "TWO"), "the entries are ONE and TWO.", "first_identifier no count");
+  assert.equal(_("first_identifier", 0, "ONE", "TWO"), "the entries are ONE and TWO.", "first_identifier with count = 0");
+  assert.equal(_("first_identifier", 1, "ONE", "TWO"), "first entry is ONE and the second one is TWO.", "first_identifier with count = 1");
+  assert.equal(_("first_identifier", 2, "ONE", "TWO"), "the entries are ONE and TWO.", "first_identifier with count = 2");
+
+  assert.equal(_("second_identifier", "ONE", "TWO"), "first entry is ONE and the second one is TWO.", "second_identifier with no count");
+  assert.equal(_("second_identifier", 0, "ONE", "TWO"), "first entry is ONE and the second one is TWO.", "second_identifier with count = 0");
+  assert.equal(_("second_identifier", 1, "ONE", "TWO"), "first entry is ONE and the second one is TWO.", "second_identifier with count = 1");
+  assert.equal(_("second_identifier", 2, "ONE", "TWO"), "first entry is ONE and the second one is TWO.", "second_identifier with count = 2");
+
+  assert.equal(_("third_identifier", "ONE", "TWO"), "first entry is ONE and the second one is TWO.", "third_identifier with no count");
+  assert.equal(_("third_identifier", 0, "ONE", "TWO"), "first entry is ONE and the second one is TWO.", "third_identifier with count = 0");
+  assert.equal(_("third_identifier", 2, "ONE", "TWO"), "first entry is ONE and the second one is TWO.", "third_identifier with count = 2");
+
   done();
 });
+
+exports.testUsingJSON = function(assert) {
+  assert.equal(usingJSON, true, 'using json');
+}
 
 exports.testShortLocaleName = createTest("eo", function(assert, loader, done) {
   let _ = loader.require("sdk/l10n").get;

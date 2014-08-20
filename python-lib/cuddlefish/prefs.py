@@ -8,8 +8,10 @@ DEFAULT_COMMON_PREFS = {
     # sets this preference)
     'browser.dom.window.dump.enabled': True,
     # warn about possibly incorrect code
-    'javascript.options.strict': True,
     'javascript.options.showInConsole': True,
+
+    # Allow remote connections to the debugger
+    'devtools.debugger.remote-enabled' : True,
 
     'extensions.sdk.console.logLevel': 'info',
 
@@ -17,6 +19,7 @@ DEFAULT_COMMON_PREFS = {
 
     # Disable extension updates and notifications.
     'extensions.update.enabled' : False,
+    'lightweightThemes.update.enabled' : False,
     'extensions.update.notifyUser' : False,
 
     # From:
@@ -30,6 +33,24 @@ DEFAULT_COMMON_PREFS = {
     'extensions.installDistroAddons' : False,
     # Allow installing extensions dropped into the profile folder
     'extensions.autoDisableScopes' : 10,
+
+}
+
+DEFAULT_NO_CONNECTIONS_PREFS = {
+    'toolkit.telemetry.enabled': False,
+    'app.update.auto' : False,
+    'app.update.url': 'http://localhost/app-dummy/update',
+    'media.gmp-gmpopenh264.autoupdate' : False,
+    'media.gmp-manager.cert.checkAttributes' : False,
+    'media.gmp-manager.cert.requireBuiltIn' : False,
+    'media.gmp-manager.url' : 'http://localhost/media-dummy/gmpmanager',
+    'browser.newtab.url' : 'about:blank',
+    'browser.search.update': False,
+    'browser.safebrowsing.enabled' : False,
+    'browser.safebrowsing.updateURL': 'http://localhost/safebrowsing-dummy/update',
+    'browser.safebrowsing.gethashURL': 'http://localhost/safebrowsing-dummy/gethash',
+    'browser.safebrowsing.reportURL': 'http://localhost/safebrowsing-dummy/report',
+    'browser.safebrowsing.malware.reportURL': 'http://localhost/safebrowsing-dummy/malwarereport',
 
     # Disable app update
     'app.update.enabled' : False,
@@ -51,9 +72,7 @@ DEFAULT_FIREFOX_PREFS = {
     'browser.startup.homepage' : 'about:blank',
     'startup.homepage_welcome_url' : 'about:blank',
     'devtools.errorconsole.enabled' : True,
-
-    # Disable the feedback extension
-    'extensions.testpilot.runStudies' : False,
+    'devtools.chrome.enabled' : True,
 
     # From:
     # http://hg.mozilla.org/mozilla-central/file/1dd81c324ac7/build/automation.py.in#l388
@@ -61,7 +80,6 @@ DEFAULT_FIREFOX_PREFS = {
     'urlclassifier.updateinterval' : 172800,
     # Point the url-classifier to a nonexistent local URL for fast failures.
     'browser.safebrowsing.provider.0.gethashURL' : 'http://localhost/safebrowsing-dummy/gethash',
-    'browser.safebrowsing.provider.0.keyURL' : 'http://localhost/safebrowsing-dummy/newkey',
     'browser.safebrowsing.provider.0.updateURL' : 'http://localhost/safebrowsing-dummy/update',
     }
 

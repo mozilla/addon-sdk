@@ -120,7 +120,9 @@ def hash_file(fn):
     return hashlib.sha256(open(fn,"rb").read()).hexdigest()
 
 def get_datafiles(datadir):
-    # yields pathnames relative to DATADIR, ignoring some files
+    """
+    yields pathnames relative to DATADIR, ignoring some files
+    """
     for dirpath, dirnames, filenames in os.walk(datadir):
         filenames = list(filter_filenames(filenames))
         # this tells os.walk to prune the search
@@ -179,7 +181,7 @@ class ModuleInfo:
 
 class ManifestBuilder:
     def __init__(self, target_cfg, pkg_cfg, deps, extra_modules,
-                 stderr=sys.stderr):
+                 stderr=sys.stderr, abort_on_missing=False):
         self.manifest = {} # maps (package,section,module) to ManifestEntry
         self.target_cfg = target_cfg # the entry point
         self.pkg_cfg = pkg_cfg # all known packages
@@ -191,10 +193,12 @@ class ManifestBuilder:
         self.datamaps = {} # maps package name to DataMap instance
         self.files = [] # maps manifest index to (absfn,absfn) js/docs pair
         self.test_modules = [] # for runtime
+        self.abort_on_missing = abort_on_missing # cfx eol
 
     def build(self, scan_tests, test_filter_re):
-        # process the top module, which recurses to process everything it
-        # reaches
+        """
+        process the top module, which recurses to process everything it reaches
+        """
         if "main" in self.target_cfg:
             top_mi = self.find_top(self.target_cfg)
             top_me = self.process_module(top_mi)
@@ -261,28 +265,27 @@ class ManifestBuilder:
         return sorted(used)
 
     def get_used_files(self, bundle_sdk_modules):
-        # returns all .js files that we reference, plus data/ files. You will
-        # need to add the loader, off-manifest files that it needs, and
-        # generated metadata.
+        """
+        returns all .js files that we reference, plus data/ files. You will
+        need to add the loader, off-manifest files that it needs, and
+        generated metadata.
+        """
         for datamap in self.datamaps.values():
             for (zipname, absname) in datamap.files_to_copy:
                 yield absname
 
         for me in self.get_module_entries():
-            # Do not add manifest entries for system modules,
-            # so that we won't ship SDK files.
+            # Only ship SDK files if we are told to do so
             if me.packageName != "addon-sdk" or bundle_sdk_modules:
                 yield me.js_filename
-
-    def get_all_test_modules(self):
-        return self.test_modules
 
     def get_harness_options_manifest(self, bundle_sdk_modules):
         manifest = {}
         for me in self.get_module_entries():
             path = me.get_path()
-            # Do not add manifest entries for system modules,
-            # so that we won't ship SDK files.
+            # Do not add manifest entries for system modules.
+            # Doesn't prevent from shipping modules.
+            # Shipping modules is decided in `get_used_files`.
             if me.packageName != "addon-sdk" or bundle_sdk_modules:
                 manifest[path] = me.get_entry_for_manifest()
         return manifest
@@ -407,12 +410,18 @@ class ManifestBuilder:
                 # populate the self.modules[] cache. Note that we must
                 # tolerate cycles in the reference graph.
                 looked_in = [] # populated by subroutines
-                them_me = self.find_req_for(mi, reqname, looked_in)
+                them_me = self.find_req_for(mi, reqname, looked_in, locations)
                 if them_me is None:
                     if mi.section == "tests":
                         # tolerate missing modules in tests, because
                         # test-securable-module.js, and the modules/red.js
                         # that it imports, both do that intentionally
+                        continue
+                    if not self.abort_on_missing:
+                        # print a warning, but tolerate missing modules
+                        # unless cfx --abort-on-missing-module flag was set
+                        print >>self.stderr, "Warning: missing module: %s" % reqname
+                        me.add_requirement(reqname, reqname)
                         continue
                     lineno = locations.get(reqname) # None means define()
                     if lineno is None:
@@ -428,7 +437,7 @@ class ManifestBuilder:
         return me
         #print "LEAVING", pkg.name, mi.name
 
-    def find_req_for(self, from_module, reqname, looked_in):
+    def find_req_for(self, from_module, reqname, looked_in, locations):
         # handle a single require(reqname) statement from from_module .
         # Return a uri that exists in self.manifest
         # Populate looked_in with places we looked.
@@ -474,18 +483,6 @@ class ManifestBuilder:
         # non-relative import. Might be a short name (requiring a search
         # through "library" packages), or a fully-qualified one.
 
-        # Search for a module in new layout.
-        # First normalize require argument in order to easily find a mapping
-        normalized = reqname
-        if normalized.endswith(".js"):
-            normalized = normalized[:-len(".js")]
-        if normalized.startswith("addon-kit/"):
-            normalized = normalized[len("addon-kit/"):]
-        if normalized.startswith("api-utils/"):
-            normalized = normalized[len("api-utils/"):]
-        if normalized in NEW_LAYOUT_MAPPING:
-          reqname = NEW_LAYOUT_MAPPING[normalized]
-
         if "/" in reqname:
             # 2: PKG/MOD: find PKG, look inside for MOD
             bits = reqname.split("/")
@@ -507,9 +504,45 @@ class ManifestBuilder:
         # their own package first, then the list of packages defined by their
         # .dependencies list
         from_pkg = from_module.package.name
-        return self._search_packages_for_module(from_pkg,
-                                                lookfor_sections, reqname,
-                                                looked_in)
+        mi = self._search_packages_for_module(from_pkg,
+                                              lookfor_sections, reqname,
+                                              looked_in)
+        if mi:
+            return mi
+
+        # Only after we look for module in the addon itself, search for a module
+        # in new layout.
+        # First normalize require argument in order to easily find a mapping
+        normalized = reqname
+        if normalized.endswith(".js"):
+            normalized = normalized[:-len(".js")]
+        if normalized.startswith("addon-kit/"):
+            normalized = normalized[len("addon-kit/"):]
+        if normalized.startswith("api-utils/"):
+            normalized = normalized[len("api-utils/"):]
+        if normalized in NEW_LAYOUT_MAPPING:
+            # get the new absolute path for this module
+            original_reqname = reqname
+            reqname = NEW_LAYOUT_MAPPING[normalized]
+            from_pkg = from_module.package.name
+
+            # If the addon didn't explicitely told us to ignore deprecated
+            # require path, warn the developer:
+            # (target_cfg is the package.json file)
+            if not "ignore-deprecated-path" in self.target_cfg:
+                lineno = locations.get(original_reqname)
+                print >>self.stderr, "Warning: Use of deprecated require path:"
+                print >>self.stderr, "  In %s:%d:" % (from_module.js, lineno)
+                print >>self.stderr, "    require('%s')." % original_reqname
+                print >>self.stderr, "  New path should be:"
+                print >>self.stderr, "    require('%s')" % reqname
+
+            return self._search_packages_for_module(from_pkg,
+                                                    lookfor_sections, reqname,
+                                                    looked_in)
+        else:
+            # We weren't able to find this module, really.
+            return None
 
     def _handle_module(self, mi):
         if not mi:
@@ -582,9 +615,13 @@ class ManifestBuilder:
         filename = os.sep.join(name.split("/"))
         # normalize filename, make sure that we do not add .js if it already has
         # it.
-        if not filename.endswith(".js"):
+        if not filename.endswith(".js") and not filename.endswith(".json"):
           filename += ".js"
-        basename = filename[:-3]
+
+        if filename.endswith(".js"):
+          basename = filename[:-3]
+        if filename.endswith(".json"):
+          basename = filename[:-5]
 
         pkg = self.pkg_cfg.packages[pkgname]
         if isinstance(sections, basestring):
@@ -603,7 +640,7 @@ class ManifestBuilder:
         return None
 
 def build_manifest(target_cfg, pkg_cfg, deps, scan_tests,
-                   test_filter_re=None, extra_modules=[]):
+                   test_filter_re=None, extra_modules=[], abort_on_missing=False):
     """
     Perform recursive dependency analysis starting from entry_point,
     building up a manifest of modules that need to be included in the XPI.
@@ -629,7 +666,8 @@ def build_manifest(target_cfg, pkg_cfg, deps, scan_tests,
     code which does, so it knows what to copy into the XPI.
     """
 
-    mxt = ManifestBuilder(target_cfg, pkg_cfg, deps, extra_modules)
+    mxt = ManifestBuilder(target_cfg, pkg_cfg, deps, extra_modules,
+                          abort_on_missing=abort_on_missing)
     mxt.build(scan_tests, test_filter_re)
     return mxt
 
@@ -659,12 +697,13 @@ def scan_requirements_with_grep(fn, lines):
                     iscomment = True
             if iscomment:
                 continue
-            mo = re.search(REQUIRE_RE, clause)
+            mo = re.finditer(REQUIRE_RE, clause)
             if mo:
-                modname = mo.group(1)
-                requires[modname] = {}
-                if modname not in first_location:
-                    first_location[modname] = lineno0+1
+                for mod in mo:
+                    modname = mod.group(1)
+                    requires[modname] = {}
+                    if modname not in first_location:
+                        first_location[modname] = lineno0 + 1
 
     # define() can happen across multiple lines, so join everyone up.
     wholeshebang = "\n".join(lines)
