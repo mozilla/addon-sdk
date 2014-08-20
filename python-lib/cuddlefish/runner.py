@@ -18,6 +18,7 @@ from cuddlefish.prefs import DEFAULT_FIREFOX_PREFS
 from cuddlefish.prefs import DEFAULT_THUNDERBIRD_PREFS
 from cuddlefish.prefs import DEFAULT_FENNEC_PREFS
 from cuddlefish.prefs import DEFAULT_NO_CONNECTIONS_PREFS
+from cuddlefish.prefs import DEFAULT_TEST_PREFS
 
 # Used to remove noise from ADB output
 CLEANUP_ADB = re.compile(r'^(I|E)/(stdout|stderr|GeckoConsole)\s*\(\s*\d+\):\s*(.*)$')
@@ -432,6 +433,9 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
 
     cmdargs = []
     preferences = dict(DEFAULT_COMMON_PREFS)
+
+    if is_running_tests:
+      preferences.update(DEFAULT_TEST_PREFS)
 
     if no_connections:
       preferences.update(DEFAULT_NO_CONNECTIONS_PREFS)
