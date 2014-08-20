@@ -88,7 +88,7 @@ class RDFTests(unittest.TestCase):
                 self.failUnlessIn(node, rdfstr, n)
 
                 for value_in in localizable_in:
-                    key_in = "addon_" + value_in
+                    key_in = "extensions." + m.get('em:id') + "." + value_in
                     tag_out = localized_out[localizable_in.index(value_in)]
                     if key_in in harness_options["locale"][lang]:
                         # E.g. "<em:creator>author-en-US</em:creator>"

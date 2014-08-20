@@ -141,7 +141,7 @@ def gen_manifest(template_root_dir, target_cfg, jid, harness_options={},
             desc = dom.createElement("Description")
 
             for value_in in localizable_in:
-                key_in = "addon_" + value_in
+                key_in = "extensions." + target_cfg.get("id", "") + "." + value_in
                 tag_out = localized_out[localizable_in.index(value_in)]
 
                 if key_in in harness_options["locale"][lang]:
