@@ -22,9 +22,10 @@ class RDF(object):
         # have .encoding hardwired to "ascii" and put only bytes in
         # the backing store, so we can't use them here).
         #
-        # The encoding= argument to dom.writexml() merely sets the XML header's
-        # encoding= attribute. It still writes unencoded unicode to the output file,
-        # so we have to encode it for real afterwards.
+        # The encoding= argument to dom.writexml() merely sets the
+        # XML header's encoding= attribute. It still writes unencoded
+        # unicode to the output file, so we have to encode it for
+        # real afterwards.
         #
         # Also see: https://bugzilla.mozilla.org/show_bug.cgi?id=567660
 
@@ -114,7 +115,12 @@ class RDFManifest(RDF):
 
         return True;
 
-def gen_manifest(template_root_dir, target_cfg, jid, harness_options,
+    def add_node(self, node):
+        top =  self.dom.documentElement.getElementsByTagName("Description")[0];
+        top.appendChild(node)
+
+
+def gen_manifest(template_root_dir, target_cfg, jid, harness_options={},
                  update_url=None, bootstrap=True, enable_mobile=False):
     install_rdf = os.path.join(template_root_dir, "install.rdf")
     manifest = RDFManifest(install_rdf)
@@ -123,30 +129,36 @@ def gen_manifest(template_root_dir, target_cfg, jid, harness_options,
     manifest.set("em:id", jid)
     manifest.set("em:version",
                  target_cfg.get('version', '1.0'))
-    
-    # Using keys:
-    #   addon_creator
-    #   addon_name
-    #   addon_description
-    #   addon_homepageURL
-    localizableFields = ["name", "creator", "description", "homepageURL"]    
-    for yal in harness_options["locale"]:
-        localizedElement = dom.createElement("em:localized")
-        localizedElementDescription = dom.createElement("Description")
 
-        locale = dom.createElement("em:locale")
-        locale.appendChild(dom.createTextNode(yal))
-        localizedElementDescription.appendChild(locale)
+    if "locale" in harness_options:
+        # addon_title       -> <em:name>
+        # addon_author      -> <em:creator>
+        # addon_description -> <em:description>
+        # addon_homepageURL -> <em:homepageURL>
+        localizable_in = ["title", "author", "description", "homepage"]
+        localized_out  = ["name", "creator", "description", "homepageURL"]
+        for lang in harness_options["locale"]:
+            desc = dom.createElement("Description")
 
-        for yalf in localizableFields:
-            yalfk = "addon_" + yalf
-            if yalfk in harness_options["locale"][yal]:
-                yallde = dom.createElement("em:" + yalf)
-                yallde.appendChild(dom.createTextNode(harness_options["locale"][yal][yalfk]))
-                localizedElementDescription.appendChild(yallde)
+            for value_in in localizable_in:
+                key_in = "addon_" + value_in
+                tag_out = localized_out[localizable_in.index(value_in)]
 
-        localizedElement.appendChild(localizedElementDescription)
-        dom.documentElement.getElementsByTagName("Description")[0].appendChild(localizedElement)
+                if key_in in harness_options["locale"][lang]:
+                    elem = dom.createElement("em:" + tag_out)
+                    elem_value = harness_options["locale"][lang][key_in]
+                    elem.appendChild(dom.createTextNode(elem_value))
+                    desc.appendChild(elem)
+
+            # Don't add language if no localizeable field was localized
+            if desc.hasChildNodes():
+                locale = dom.createElement("em:locale")
+                locale.appendChild(dom.createTextNode(lang))
+                desc.appendChild(locale)
+
+                localized = dom.createElement("em:localized")
+                localized.appendChild(desc)
+                manifest.add_node(localized)
 
     manifest.set("em:name",
                  target_cfg.get('title', target_cfg.get('fullName', target_cfg['name'])))
@@ -154,12 +166,14 @@ def gen_manifest(template_root_dir, target_cfg, jid, harness_options,
                  target_cfg.get("description", ""))
     manifest.set("em:creator",
                  target_cfg.get("author", ""))
+
     if target_cfg.get("homepage"):
         manifest.set("em:homepageURL", target_cfg.get("homepage"))
     else:
         manifest.remove("em:homepageURL")
-        
+
     manifest.set("em:bootstrap", str(bootstrap).lower())
+
     # XPIs remain packed by default, but package.json can override that. The
     # RDF format accepts "true" as True, anything else as False. We expect
     # booleans in the .json file, not strings.
@@ -168,12 +182,12 @@ def gen_manifest(template_root_dir, target_cfg, jid, harness_options,
     for translator in target_cfg.get("translators", [ ]):
         elem = dom.createElement("em:translator");
         elem.appendChild(dom.createTextNode(translator))
-        dom.documentElement.getElementsByTagName("Description")[0].appendChild(elem)
+        manifest.add_node(elem)
 
     for contributor in target_cfg.get("contributors", [ ]):
         elem = dom.createElement("em:contributor");
         elem.appendChild(dom.createTextNode(contributor))
-        dom.documentElement.getElementsByTagName("Description")[0].appendChild(elem)
+        manifest.add_node(elem)
 
     if update_url:
         manifest.set("em:updateURL", update_url)
@@ -182,7 +196,7 @@ def gen_manifest(template_root_dir, target_cfg, jid, harness_options,
 
     if target_cfg.get("preferences"):
         manifest.set("em:optionsType", "2")
-        
+
         # workaround until bug 971249 is fixed
         # https://bugzilla.mozilla.org/show_bug.cgi?id=971249
         manifest.set("em:optionsURL", "data:text/xml,<placeholder/>")
@@ -196,7 +210,7 @@ def gen_manifest(template_root_dir, target_cfg, jid, harness_options,
 
     if enable_mobile:
         target_app = dom.createElement("em:targetApplication")
-        dom.documentElement.getElementsByTagName("Description")[0].appendChild(target_app)
+        manifest.add_node(target_app)
 
         ta_desc = dom.createElement("Description")
         target_app.appendChild(ta_desc)
