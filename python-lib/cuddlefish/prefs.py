@@ -60,6 +60,10 @@ DEFAULT_NO_CONNECTIONS_PREFS = {
     'extensions.blocklist.url' : 'http://localhost/extensions-dummy/blocklistURL',
     # Make sure opening about:addons won't hit the network.
     'extensions.webservice.discoverURL' : 'http://localhost/extensions-dummy/discoveryURL'
+
+    # Disable new tab page connections
+    browser.newtabpage.directory.source = 'data:application/json,{"jetpack":1}'
+    browser.newtabpage.directory.ping = ''
 }
 
 DEFAULT_FENNEC_PREFS = {
