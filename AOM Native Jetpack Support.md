@@ -46,14 +46,13 @@ won't require presence of `install.rdf` or `boostrap.js`.
 
 # Implementation
 
-## Phase 1 (2013 Q4 - 2014 Q1)
+## Phase 1
 
 In the first phase there will not be any changes to the AOM interface nor to the Firefox CLI;
-all changes will be to the backend XPIProvider, the SDK cfx tool and the SDK `bootstrap.js`, loader, and various other modules.
-These are the important first steps, from here many different directions can be taken,
-and they can all be prototyped with extensions and be built in-house or by third parties.
+all changes will be to the backend XPIProvider, the SDK cfx tool the SDK `bootstrap.js`, loader, and various other modules.
+These are the important first steps, from here many different directions can be taken.
 
-The vision here is not to remove the cfx command line tool just yet, but instead to offload or nullify large parts
+The vision here is to keep the cfx command line tool for now, and offload or nullify large parts
 of the workload it handles.  There will still be a
 desire for a cli tool, so the goal here is to make the instructions so simple that this tool set we are familiar with
 (namely `cfx run`, `cfx xpi`, `cfx test`) will be possible for anyone to reproduce in any language
@@ -66,14 +65,14 @@ This will be the end of life for our cuddlefish/cfx command line tool (for reaso
 as a thing that is meant for community use, if it exists at all then it will be a small fragment of
 what it used to be.
 
-The new tool is [jpm](https://github.com/jsantell/jpm).
+The new tool is [jpm](https://github.com/mozilla/jpm).
 
 Here is what is happening to the old `cfx` commands:
 
 * `cfx init`: Will be handled by `jpm init`.
 * `cfx xpi`: Will be handled by `jpm xpi`.
 * `cfx run`: Will be handled by `jpm run`.
-* `cfx test` (if used when the current working directory is for an add-on): Will be handled by `jpm test`.
+* `cfx test` (if used an add-on): Will be handled by `jpm test`.
 * `cfx testall`: Will be handled by a simple script, my preference would be to use node, but this will probably need
 to be used by m-c to run their test suite so it should probably be done in python and thus we may be able to use cfx here.
 * `cfx docs`: The docs have been migrated (see [bug 948606](https://bugzilla.mozilla.org/show_bug.cgi?id=948606))
@@ -89,31 +88,14 @@ is extremely simple, and the rest is just loads of sugar (aka non-essentials).
 
 * `jpm xpi` is essentially a wrapper for zip, with the potential for all kinds of sugar.
 * `jpm run` will run `jpm xpi`, create a blank firefox profile with the extension, and run firefox with that profile.
-* `jpm test` will run zip the SDK extension, but with an extra `jetpack-test-options.json` file describing how the tests should be run.
+* `jpm test` will run `jpm run` and run the profile with extra preferences which provide information for the sdk/test/options module.
 
 Note: `jpm run` could be simplified by adding a (or multiple) commaind line option(s) to Firefox which
 would create temporary blank profiles, and run a profile with a restartless add-on (and tear it out on shutdown), but
 I don't think this is fruitful path to explore intially because there are so many libraries that help
 us do these things already.
 
-[The JPM code base can be found here](https://github.com/jsantell/jpm).
-
-##### The Structure Of `jetpack-test-options.json`
-
-The `jetpack-test-options.json` file will be used for when one want to run tests.  It will
-also be used in cases like `jpm run`, which should be considered a test as well, since using
-`jpm run` can be considered as testing manually.
-
-The values stored within the `jetpack-test-options.json` will be the same as those currently
-use in the `harness-options.json` file, with the following differences:
-
-* Overloaded SDK modules will be overloaded using properties from the `jetpack-test-options.json`
-  file instead pulling these overloads from preferences (which can be done at a later time if
-  it is desirable)
-* All properties that were redundant copies of data from the package.json file will no longer
-  be used.
-* The `manifest` key will no longer be used, which stored information about the packages
-  used.
+[The JPM code base can be found here](https://github.com/mozilla/jpm).
 
 #### On Running SDK Tests
 
@@ -125,30 +107,19 @@ The SDK has these current `cfx` test suites:
 * `testcfx` which tests cfx itself.
 * `test` which tests a third party package or SDK extension.
 
-All of these tests can be done by performing the steps described for `jpm test` with minor changes made to the
-`jetpack-test-options.json` file which is generated.  So I suggest we replace/simplify these `cfx test*` variations with
-a python harness that can handle the `testaddons`, `testex`, `testpkgs` use cases, then the `test` use case will be handled by `jpm test`
-and `jpm` will have tests for itself to replace the `testcfx` tests.
-
-In order for this `cfx test*` derivative to use SDK modules from the [addon-sdk](https://github.com/mozilla/addon-sdk/) repository I see two
-options, the first is to extend `jetpack-test-options.json` to optional include this information, and the other is to pass the module overload
-information over preferences, [similar to how cfx currently works](https://github.com/mozilla/addon-sdk/blob/1.15/app-extension/bootstrap.js#L153-L176).
-
-I think that we should provide these options via the `jetpack-test-options.json` file atleast to begin with, then
-we can think up new ways to provide/overload this baseline `jetpack-test-options.json` information in the future.
+All of these tests can be done with `jpm test`.
+So I suggest we replace/simplify these `cfx test*` variations with
+a python harness (we are currently working on a Mochitest implementation) that can handle the `testaddons`, `testex`, `testpkgs` use cases, then the `test` use case will be handled by `jpm test`
+and `jpm` has tests for itself to replace the `testcfx` tests.
 
 ### Updating Loader
-
-The `harness-options.json` file will no longer be used, instead it will be replaced by the `jetpack-test-options.json` file
-which would be generated by `jpm test` or some derivative and a `modules.json`
-file which can be generated by `jpm xpi` or at install time and cached (possibly in the Firefox profile someplace) if is not in the add-on root.
 
 There is also a parallel project to support node dependencies (see [bug 935109](https://bugzilla.mozilla.org/show_bug.cgi?id=935109)) which can be integrated into this plan, since the changes are overlapping and
 because this project is the solution to our legacy dependency handling which would bloat `jpm xpi`
 and which we've already decided should be replaced
 by leverging NPM's infrustructure which is more sane than building our own.
 
-Note: I do not suggest we tie ourseleves to NPM, if there is other popular CommonJS package manager that comes along then we should try to leverage that too in my opionion.
+Note: I do not suggest we tie ourseleves to NodeJS, if there is other popular CommonJS package manager that comes along then we should try to leverage that too in my opionion.
 
 ### Updating XPIProvider
 
@@ -234,7 +205,7 @@ the extension documentation.
 
 #### On Test Suite portablity
 
-With the `jetpack-test-options.json` file it should be possible for anyone to create a test suite of SDK tests, for example they
+By using preferences to pass the `sdk/test/options` it should be possible for anyone to create a test suite of SDK tests, for example they
 could be used for testing a website using page-mods, or for writing bug examples, which are either SDK extensions which
 reproduce a bug that can then be easily converted to an SDK test or written as SDK tests from the start, attached
 to new bugs, which when resolved are shipped with the community contributed SDK test. This is [bug 852538](https://bugzilla.mozilla.org/show_bug.cgi?id=852538).
@@ -246,7 +217,7 @@ There are two options which I see where SDK tests can live anywhere in mozilla-c
 
 The former seems like it may be the quickest path to success, but I think that the latter should be the end goal, so I feel like the latter is the path to take because I'm not sure how much reusuable work is in the two options.
 
-## Phase 2 (2014 Q2 - ?)
+## Phase 2
 
 In the second phase we have a few remaining very important issues to consider which address the end of life
 for Flightdeck.  There are many different options that can be taken after Phase 1, and really
