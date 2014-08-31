@@ -756,17 +756,19 @@ exports["test:check worker API with page history"] = WorkerTest(
         browser.removeEventListener("pagehide", onpagehide, false);
         // Now any event sent to this worker should throw
 
-        assert.throws(
-            function () { worker.postMessage("data"); },
-            /The page is currently hidden and can no longer be used/,
-            "postMessage should throw when the page is hidden in history"
-            );
+        setTimeout(_ => {
+          assert.throws(
+              function () { worker.postMessage("data"); },
+              /The page is currently hidden and can no longer be used/,
+              "postMessage should throw when the page is hidden in history"
+              );
 
-        assert.throws(
-            function () { worker.port.emit("event"); },
-            /The page is currently hidden and can no longer be used/,
-            "port.emit should throw when the page is hidden in history"
-            );
+          assert.throws(
+              function () { worker.port.emit("event"); },
+              /The page is currently hidden and can no longer be used/,
+              "port.emit should throw when the page is hidden in history"
+              );
+        })
 
         // Display the page with attached content script back in order to resume
         // its timeout and receive the expected message.

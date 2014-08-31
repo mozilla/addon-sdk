@@ -58,12 +58,14 @@ exports.testPageMod1 = function(assert, done) {
       }
     }],
     function(win, done) {
-      assert.equal(
-        win.document.body.getAttribute("JEP-107"),
-        "worked",
-        "PageMod.onReady test"
-      );
-      done();
+      setTimeout(_ => {
+        assert.equal(
+          win.document.body.getAttribute("JEP-107"),
+          "worked",
+          "PageMod.onReady test"
+        );
+        done();
+      })
     }
   );
 };
@@ -87,15 +89,17 @@ exports.testPageMod2 = function(assert, done) {
         }
       ]
     }], function(win, done) {
-      assert.equal(win.document.documentElement.getAttribute("first"),
-                       "true",
-                       "PageMod test #2: first script has run");
-      assert.equal(win.document.documentElement.getAttribute("second"),
-                       "true",
-                       "PageMod test #2: second script has run");
-      assert.equal("AUQLUE" in win, false,
-                       "PageMod test #2: scripts get a wrapped window");
-      done();
+      setTimeout(_ => {
+        assert.equal(win.document.documentElement.getAttribute("first"),
+                         "true",
+                         "PageMod test #2: first script has run");
+        assert.equal(win.document.documentElement.getAttribute("second"),
+                         "true",
+                         "PageMod test #2: second script has run");
+        assert.equal("AUQLUE" in win, false,
+                         "PageMod test #2: scripts get a wrapped window");
+        done();
+      })
     });
 };
 
@@ -127,9 +131,9 @@ exports.testPageModIncludes = function(assert, done) {
   }
 
   testPageMod(assert, done, testPageURI, [
+      createPageModTest("resource:*", true),
       createPageModTest("*", false),
       createPageModTest("*.google.com", false),
-      createPageModTest("resource:*", true),
       createPageModTest("resource:", false),
       createPageModTest(testPageURI, true)
     ],
@@ -175,10 +179,10 @@ exports.testPageModExcludes = function(assert, done) {
   }
 
   testPageMod(assert, done, testPageURI, [
+      createPageModTest(testPageURI, "*.google.com", true),
       createPageModTest("*", testPageURI, false),
       createPageModTest(testPageURI, testPageURI, false),
       createPageModTest(testPageURI, "resource://*", false),
-      createPageModTest(testPageURI, "*.google.com", true)
     ],
     function (win, done) {
       waitUntil(() => win.localStorage[JSON.stringify([testPageURI, "*.google.com"])],
@@ -567,6 +571,7 @@ exports.testExistingOnlyFrameMatchesInclude = function(assert, done) {
   let iframeURL = 'data:text/html;charset=utf-8,UNIQUE-TEST-STRING-43';
   let iframe = '<iframe src="' + iframeURL + '" />';
   let url = 'data:text/html;charset=utf-8,' + encodeURIComponent(iframe);
+  let once = false;
   tabs.open({
     url: url,
     onReady: function onReady(tab) {
@@ -574,6 +579,10 @@ exports.testExistingOnlyFrameMatchesInclude = function(assert, done) {
         include: iframeURL,
         attachTo: ['existing', 'frame'],
         onAttach: function(worker) {
+          if (once)
+            return;
+          // bug 1056380
+          once = true;
           assert.equal(iframeURL, worker.url,
               "PageMod attached to existing iframe when only it matches include rules");
           pagemod.destroy();
@@ -594,7 +603,7 @@ exports.testContentScriptWhenDefault = function(assert) {
 // test timing for all 3 contentScriptWhen options (start, ready, end)
 // for new pages, or tabs opened after PageMod is created
 exports.testContentScriptWhenForNewTabs = function(assert, done) {
-  const url = "data:text/html;charset=utf-8,testContentScriptWhenForNewTabs";
+  const url = data.url('test-contentScriptWhen.html?ForNewTabs');
 
   let count = 0;
 
@@ -634,7 +643,7 @@ exports.testContentScriptWhenForNewTabs = function(assert, done) {
 // test timing for all 3 contentScriptWhen options (start, ready, end)
 // for PageMods created right as the tab is created (in tab.onOpen)
 exports.testContentScriptWhenOnTabOpen = function(assert, done) {
-  const url = "data:text/html;charset=utf-8,testContentScriptWhenOnTabOpen";
+  const url = data.url('test-contentScriptWhen.html?OnTabOpen');
 
   tabs.open({
     url: url,
@@ -678,10 +687,8 @@ exports.testContentScriptWhenOnTabOpen = function(assert, done) {
 // test timing for all 3 contentScriptWhen options (start, ready, end)
 // for PageMods created while the tab is interactive (in tab.onReady)
 exports.testContentScriptWhenOnTabReady = function(assert, done) {
-  // need a bit bigger document to get the right timing of events with e10s
-  let iframeURL = 'data:text/html;charset=utf-8,testContentScriptWhenOnTabReady';
-  let iframe = '<iframe src="' + iframeURL + '" />';
-  let url = 'data:text/html;charset=utf-8,' + encodeURIComponent(iframe);
+  const url = data.url('test-contentScriptWhen.html?OnTabReady');
+
   tabs.open({
     url: url,
     onReady: function(tab) {
@@ -1140,43 +1147,49 @@ exports.testPageModCssAutomaticDestroy = function(assert, done) {
     url: "data:text/html;charset=utf-8,<div style='width:200px'>css test</div>",
 
     onReady: function onReady(tab) {
-      let browserWindow = getMostRecentBrowserWindow();
-      let win = getTabContentWindow(getActiveTab(browserWindow));
+      setTimeout(_ => {
+        let browserWindow = getMostRecentBrowserWindow();
+        let win = getTabContentWindow(getActiveTab(browserWindow));
 
-      let div = win.document.querySelector("div");
-      let style = win.getComputedStyle(div);
+        let div = win.document.querySelector("div");
+        let style = win.getComputedStyle(div);
 
-      assert.equal(
-        style.width,
-        "100px",
-        "PageMod contentStyle worked"
-      );
+        assert.equal(
+          style.width,
+          "100px",
+          "PageMod contentStyle worked"
+        );
 
-      loader.unload();
+        loader.unload();
 
-      assert.equal(
-        style.width,
-        "200px",
-        "PageMod contentStyle is removed after loader's unload"
-      );
+        assert.equal(
+          style.width,
+          "200px",
+          "PageMod contentStyle is removed after loader's unload"
+        );
 
-      tab.close(done);
+        tab.close(done);
+      })
     }
   });
 };
 
 exports.testPageModContentScriptFile = function(assert, done) {
-
+  let count = 0;
   testPageMod(assert, done, "about:license", [{
       include: "about:*",
       contentScriptWhen: "start",
       contentScriptFile: "./test-contentScriptFile.js",
       onMessage: message => {
+        count++;
         assert.equal(message, "msg from contentScriptFile",
           "PageMod contentScriptFile with relative path worked");
       }
     }],
-    (win, done) => done()
+    (win, done) => setTimeout(_ => {
+      assert.equal(count, 1, "message received");
+      done();
+    }, 200)
   );
 
 };
@@ -1349,7 +1362,7 @@ exports.testIFramePostMessage = function(assert, done) {
 exports.testEvents = function(assert, done) {
   let content = "<script>\n new " + function DocumentScope() {
     window.addEventListener("ContentScriptEvent", function () {
-      window.receivedEvent = true;
+      window.document.body.setAttribute("receivedEvent", true);
     }, false);
   } + "\n</script>";
   let url = "data:text/html;charset=utf-8," + encodeURIComponent(content);
@@ -1362,11 +1375,13 @@ exports.testEvents = function(assert, done) {
       }
     }],
     function(win, done) {
-      assert.ok(
-        win.receivedEvent,
-        "Content script sent an event and document received it"
-      );
-      done();
+      setTimeout(_ => {
+        assert.ok(
+          win.document.body.getAttribute("receivedEvent"),
+          "Content script sent an event and document received it"
+        );
+        done();
+      }, 100);
     }
   );
 };
@@ -1671,11 +1686,13 @@ exports.testSyntaxErrorInContentScript = function(assert, done) {
     }],
 
     function(win, done) {
-      assert.ok(attached, "The worker was attached.");
-      assert.notStrictEqual(hitError, null, "The syntax error was reported.");
-      if (hitError)
-        assert.equal(hitError.name, "SyntaxError", "The error thrown should be a SyntaxError");
-      done();
+      setTimeout(_ => {
+        assert.ok(attached, "The worker was attached.");
+        assert.notStrictEqual(hitError, null, "The syntax error was reported.");
+        if (hitError)
+          assert.equal(hitError.name, "SyntaxError", "The error thrown should be a SyntaxError");
+        done();
+      }, 100);
     }
   );
 };
