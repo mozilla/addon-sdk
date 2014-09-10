@@ -168,11 +168,11 @@ class RemoteFennecRunner(mozrunner.Runner):
         # or use name given as cfx `--mobile-app` argument.
         intents = self.getIntentNames()
         if not intents:
-            raise ValueError("Unable to found any Firefox "
+            raise ValueError("Unable to find any Firefox "
                              "application on your device.")
         elif mobile_app_name:
             if not mobile_app_name in intents:
-                raise ValueError("Unable to found Firefox application "
+                raise ValueError("Unable to find Firefox application "
                                  "with intent name '%s'\n"
                                  "Available ones are: %s" %
                                  (mobile_app_name, ", ".join(intents)))
