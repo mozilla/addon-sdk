@@ -2,19 +2,18 @@
 
 ## Overview
 
-DevTools Addons should be able to support remote targets (e.g. Firefox OS Devices/Simulators, 
-Firefox for Android) and local targets without changes in their own addon code, the Director
-helps addons developers to inject their instrumentation code to the target tab, local or remote.
+DevTools Add-ons should be able to support remote targets (e.g. Firefox OS Devices/Simulators, 
+Firefox for Android) and local targets without changes in their own add-on code, the Director
+helps add-ons developers to inject their instrumentation code to the target tab, local or remote.
 
-Using the Director API an addon developer can install/uninstall instrumentation code modules.
+Using the Director API an add-on developer can install/uninstall instrumentation code modules.
 
-The instrumentation code modules live in a **Content Script** running on the remote target side:
+The instrumentation javascript code modules lives in a **Debug Script** running on the remote target side:
 
-- can be activated (instrumenter.setup) and deactivated (instrumenter.finalize)
 - will be automatically attached/detached on tab navigation 
-- has direct access to target tab window and document objects
-- evaluate javascript in the target tab javascript context (using the `evalInWindow` function)
-- send and receive custom events with the devtool addon using a MessagePort
+- has a one way access the target tab window
+- communicate with a devtool add-on via MessagePort instance
+- can be activated (instrumenter.setup) and deactivated (instrumenter.finalize)
 
 ### Examples
 
@@ -25,9 +24,9 @@ The instrumentation code modules live in a **Content Script** running on the rem
 ``` js
 const { Panel } = require("dev/panel");
 const { Tool } = require("dev/toolbox");
-const { ContentScriptInstrumenter } = require("devtools/director");
+const { DebugScript } = require("dev/debug-script");
 
-const customInstrumenter = ContentScriptInstrumenter({
+const myInstrumenter = DebugScript({
   id: "customInstrumenter",
   contentScriptFile: self.data.url("instrumenter-script.js"),
   contentScriptOptions: {
@@ -39,7 +38,7 @@ const customInstrumenter = ContentScriptInstrumenter({
 const CustomPanel = ...
 
 const myCustomDevTools = new Tool({
-  instrumenters: [customInstrumenter],
+  debugScripts: [customInstrumenter],
   panels: { custom: CustomPanel }
 });
 ```
@@ -47,42 +46,67 @@ const myCustomDevTools = new Tool({
 **myaddon/data/instrumenter-script.js**:
 
 ```
-// NOTE: temporary solution to give a MessagePort to the instrumenter content script
-self.on("connectPort", function (port) {
-  port.onmessage = function (evt) {
-    ... // react to the evt, use evt.data
-    evt.source.postMessage(reply); // reply using evt.source
-  }
-  // and/or send a message immediately
-  port.postMessage("your instrumenter is ready");
-});
+console.log("LOADING debug script on: ", window.location);
+
+port.onmessage = function (evt) {
+  ... // react to the evt, use evt.data
+  evt.source.postMessage(reply); // reply using evt.source
+}
+
+// and/or send a message immediately
+port.postMessage("your instrumenter is ready");
 ```
 
-#### Use an installed Instrumenter (in the devtool panel using volcan)
+#### PROPOSED: Use an installed debug-script (in the add-on and send it as a messageport to the devtool panel)
 
+**myaddon/lib/main.js**:
 ```js
-...
-var root = yield volcan.connect(dbgPort);
-var list = yield root.listTabs();
-var selectedTab = list.tabs[list.selected];
-
-var instrumenter = selectedTab.directorActor.getInstrumenter("customInstrumenter");
-
-instrumenter.on("attach", function ({innerId, url, port) {
-  // handle message from the received messageport client
-  var handleMessage = function (evt) {
-    console.log("RECEIVED EVT", evt.data);
-    evt.source.postMessage({"attr": "reply"});
+MyDevtoolPanel = Class({
+  extends: Panel,
+  name: "my-devtool-panel",
+  ...
+  setup: function({director}) {
+    this.director = director;
+    this.onDirectorAttach = this.onDirectorAttach.bind();
+    this.onDirectorDetach = this.onDirectorDetach.bind();
+    
+    on(director, 'attach', this.onDirectorAttach);
+    on(director, 'detach', this.onDirectorDetach);
+  },
+  dispose: function() {
+    off(this.director);
+    delete this.director;
+  },
+  onDirectorAttach: function({url, innerId, debugScripts) {
+    var port = debugScripts["customInstrumenter"];
+    port.start();
+    this.postMessage("customInstrumenter-port", [port]);
   }
-  
-  // remove event handler from messageport client on detach
-  instrumenter.once("detach", () => port.off("meesage", handleMessage));
-  // add event handler on messageport client event  
-  port.on("message", handleMessage);
-  
-  // start queue messages
-  port.start();
-});
+  onDirectorDetach: function({ innerId }) {
+    this.postMessage("customInstrumenter-port-detach", []);
+  }
+});  
+```
+
+**myaddon/data/devtool-panel.js**
+```js
+var myInstrumenterPort;
+    
+window.addEventListener("message", function(evt) {
+  if (evt.data === "customInstrumenter-port") {
+    // setup port message handler
+    var port = myInstrumenterPort = evt.ports[0];
+    port.onmessage = function(evt) {
+      console.log("ON MESSAGE PORT MESSAGE", evt)
+    }
+    post.postMessage({ k1: "v1" });
+  } else if (evt.data === "customInstrumenter-port-detach") {
+    // cleanup port message handler
+    myInstrumenterPort.onmessage = null;
+    myInstrumenterPort = null;
+  }
+}, false);
+
 ```
 
 ### PROPOSED: Configure support for remote target on Devtool Panels
@@ -98,7 +122,7 @@ MyDevtoolPanel = Class({
   icon: "./img/webstore-icon.png",
   url: "./panel.html",
   // NOTE: this panel supports local and remote tabs and apps
-  // and does not support addons at all
+  // and does not support add-ons at all
   supportedTarget: {
     local: true,
     remote: true,
