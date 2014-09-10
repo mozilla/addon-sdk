@@ -8,7 +8,7 @@ helps add-ons developers to inject their instrumentation code to the target tab,
 
 Using the Director API an add-on developer can install/uninstall instrumentation code modules.
 
-The instrumentation javascript code modules lives in a **Debug Script** running on the remote target side:
+The instrumentation javascript code lives in a **Debug Script** running on the remote target side:
 
 - will be automatically attached/detached on tab navigation 
 - has a one way access the target tab window
@@ -19,6 +19,13 @@ The instrumentation javascript code modules lives in a **Debug Script** running 
 
 #### PROPOSED: Install a new Instrumenter
 
+**Debug Scripts** will be defined using the DebugScript class from the "dev/debug-script"
+module, and added to a **Tool** definition.
+
+The **Tool** internals will ensure (using the **Director** class from the "dev/debug-script"
+module) that the requested **Debug Scripts** are automatically installed and activated on the 
+debugging target.
+
 **myaddon/lib/main.js**:
 
 ``` js
@@ -28,6 +35,7 @@ const { DebugScript } = require("dev/debug-script");
 
 const myInstrumenter = DebugScript({
   id: "customInstrumenter",
+  reload: true, // defaults to false
   contentScriptFile: self.data.url("instrumenter-script.js"),
   contentScriptOptions: {
     inPageScript: "...",
@@ -42,6 +50,9 @@ const myCustomDevTools = new Tool({
   panels: { custom: CustomPanel }
 });
 ```
+
+In the **Debug Script**, the javascript code has one way access to the target *window* object
+and to the messageport connected to the devtools add-on client as *port*.
 
 **myaddon/data/instrumenter-script.js**:
 
@@ -58,6 +69,13 @@ port.postMessage("your instrumenter is ready");
 ```
 
 #### PROPOSED: Use an installed debug-script (in the add-on and send it as a messageport to the devtool panel)
+
+The add-on devtool **Panel** will receive a *Director* instance in the *setup* method, 
+and it should handle its *attach/detach* events, to be able to receive and invalidate
+the messageport connected to the *Debug Scripts*, previously requested in the *Tool*  definition.
+
+The add-on devtool **Panel** is responsible to send the needed messageport object to the
+its related iframe.
 
 **myaddon/lib/main.js**:
 ```js
@@ -88,6 +106,9 @@ MyDevtoolPanel = Class({
 });  
 ```
 
+In the devtool **Panel** iframe, the port will be used to directly exchange json messages 
+between the iframe embedded in the devtool toolbox and the target debug script.
+
 **myaddon/data/devtool-panel.js**
 ```js
 var myInstrumenterPort;
@@ -110,6 +131,9 @@ window.addEventListener("message", function(evt) {
 ```
 
 ### PROPOSED: Configure support for remote target on Devtool Panels
+
+A devtool **Panel** should be able to declare its supported targets and 
+detect the target shared by the other panels embedded in the devtool toolbox.
 
 ```js
 ...
