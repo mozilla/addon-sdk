@@ -5,7 +5,6 @@
 import sys
 import os
 import optparse
-import webbrowser
 import time
 
 from copy import copy
@@ -96,8 +95,8 @@ parser_groups = (
                                          "match FILENAME and optionally "
                                          "match TESTNAME, both regexps"),
                                    metavar="FILENAME[:TESTNAME]",
-                                   default=None,
-                                   cmds=['test', 'testex', 'testpkgs',
+                                   default='',
+                                   cmds=['test', 'testex', 'testaddons', 'testpkgs',
                                          'testall'])),
         (("-g", "--use-config",), dict(dest="config",
                                        help="use named config from local.json",
@@ -235,6 +234,18 @@ parser_groups = (
                                       help="JSON file to overload package.json properties",
                                       default=None,
                                       cmds=['xpi'])),
+        (("", "--abort-on-missing-module",), dict(dest="abort_on_missing",
+                                      help="Abort if required module is missing",
+                                      action="store_true",
+                                      default=False,
+                                      cmds=['test', 'run', 'xpi', 'testpkgs'])),
+        (("", "--no-connections",), dict(dest="no_connections",
+                                      help="disable/enable remote connections (on for cfx run only by default)",
+                                      type="choice",
+                                      choices=["on", "off", "default"],
+                                      default="default",
+                                      cmds=['test', 'run', 'testpkgs',
+                                            'testall', 'testaddons', 'testex'])),
         ]
      ),
 
@@ -264,10 +275,11 @@ parser_groups = (
                                  cmds=['test', 'run', 'xpi', 'testex',
                                        'testpkgs', 'testall'])),
         (("", "--e10s",), dict(dest="enable_e10s",
-                               help="enable out-of-process Jetpacks",
+                               help="enable remote windows",
                                action="store_true",
                                default=False,
-                               cmds=['test', 'run', 'testex', 'testpkgs'])),
+                               cmds=['test', 'run', 'testex', 'testpkgs',
+                                     'testaddons', 'testcfx', 'testall'])),
         (("", "--logfile",), dict(dest="logfile",
                                   help="log console output to file",
                                   metavar=None,
@@ -421,10 +433,14 @@ def test_all_testaddons(env_root, defaults):
     addons.sort()
     fail = False
     for dirname in addons:
+        # apply the filter
+        if (not defaults['filter'].split(":")[0] in dirname):
+            continue
+
         print >>sys.stderr, "Testing %s..." % dirname
         sys.stderr.flush()
         try:
-            run(arguments=["run",
+            run(arguments=["testrun",
                            "--pkgdir",
                            os.path.join(addons_dir, dirname)],
                 defaults=defaults,
@@ -445,6 +461,9 @@ def test_all_examples(env_root, defaults):
     examples.sort()
     fail = False
     for dirname in examples:
+        if (not defaults['filter'].split(":")[0] in dirname):
+            continue
+
         print >>sys.stderr, "Testing %s..." % dirname
         sys.stderr.flush()
         try:
@@ -537,11 +556,9 @@ def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
     if existing:
         print >>err, 'This command must be run in an empty directory.'
         return {"result":1}
-    for d in ['lib','data','test','doc']:
+    for d in ['lib','data','test']:
         os.mkdir(os.path.join(path,d))
         print >>out, '*', d, 'directory created'
-    open(os.path.join(path,'README.md'),'w').write('')
-    print >>out, '* README.md written'
     jid = create_jid()
     print >>out, '* generated jID automatically:', jid
     open(os.path.join(path,'package.json'),'w').write(PACKAGE_JSON % {'name':addon.lower(),
@@ -552,8 +569,6 @@ def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
     print >>out, '* test/test-main.js written'
     open(os.path.join(path,'lib','main.js'),'w').write('')
     print >>out, '* lib/main.js written'
-    open(os.path.join(path,'doc','main.md'),'w').write('')
-    print >>out, '* doc/main.md written'
     if len(args) == 1:
         print >>out, '\nYour sample add-on is now ready.'
         print >>out, 'Do "cfx test" to test it and "cfx run" to try it.  Have fun!'
@@ -617,7 +632,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
             return
         test_cfx(env_root, options.verbose)
         return
-    elif command not in ["xpi", "test", "run"]:
+    elif command not in ["xpi", "test", "run", "testrun"]:
         print >>sys.stderr, "Unknown command: %s" % command
         print >>sys.stderr, "Try using '--help' for assistance."
         sys.exit(1)
@@ -648,7 +663,8 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     # a Mozilla application (which includes running tests).
 
     use_main = False
-    inherited_options = ['verbose', 'enable_e10s', 'parseable', 'check_memory']
+    inherited_options = ['verbose', 'enable_e10s', 'parseable', 'check_memory',
+                         'abort_on_missing']
     enforce_timeouts = False
 
     if command == "xpi":
@@ -661,6 +677,9 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         enforce_timeouts = True
     elif command == "run":
         use_main = True
+    elif command == "testrun":
+        use_main = True
+        enforce_timeouts = True
     else:
         assert 0, "shouldn't get here"
 
@@ -679,7 +698,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     # TODO: Consider keeping a cache of dynamic UUIDs, based
     # on absolute filesystem pathname, in the root directory
     # or something.
-    if command in ('xpi', 'run'):
+    if command in ('xpi', 'run', 'testrun'):
         from cuddlefish.preflight import preflight_config
         if target_cfg_json:
             config_was_ok, modified = preflight_config(target_cfg,
@@ -734,15 +753,11 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                                       "lib", "sdk", "loader", "cuddlefish.js")
     loader_modules = [("addon-sdk", "lib", "sdk/loader/cuddlefish", cuddlefish_js_path)]
     scan_tests = command == "test"
-    test_filter_re = None
-    if scan_tests and options.filter:
-        test_filter_re = options.filter
-        if ":" in options.filter:
-            test_filter_re = options.filter.split(":")[0]
+
     try:
-        manifest = build_manifest(target_cfg, pkg_cfg, deps,
-                                  scan_tests, test_filter_re,
-                                  loader_modules)
+        manifest = build_manifest(target_cfg, pkg_cfg, deps, scan_tests,
+                                  None, loader_modules,
+                                  abort_on_missing=options.abort_on_missing)
     except ModuleNotFoundError, e:
         print str(e)
         sys.exit(1)
@@ -782,10 +797,13 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         options.force_use_bundled_sdk = False
         options.overload_modules = True
 
+    if options.pkgdir == env_root:
+        options.bundle_sdk = True
+        options.overload_modules = True
+
     extra_environment = {}
     if command == "test":
         # This should be contained in the test runner package.
-        # maybe just do: target_cfg.main = 'test-harness/run-tests'
         harness_options['main'] = 'sdk/test/runner'
         harness_options['mainPath'] = 'sdk/test/runner'
     else:
@@ -812,19 +830,16 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         mydir = os.path.dirname(os.path.abspath(__file__))
         app_extension_dir = os.path.join(mydir, "../../app-extension")
 
-    if target_cfg.get('preferences'):
-        harness_options['preferences'] = target_cfg.get('preferences')
-
     # Do not add entries for SDK modules
     harness_options['manifest'] = manifest.get_harness_options_manifest(False)
 
     # Gives an hint to tell if sdk modules are bundled or not
-    harness_options['is-sdk-bundled'] = options.bundle_sdk
+    harness_options['is-sdk-bundled'] = options.bundle_sdk or options.no_strip_xpi
 
     if options.force_use_bundled_sdk:
-        if not options.bundle_sdk:
-            print >>sys.stderr, ("--force-use-bundled-sdk and --strip-sdk "
-                                 "can't be used at the same time.")
+        if not harness_options['is-sdk-bundled']:
+            print >>sys.stderr, ("--force-use-bundled-sdk "
+                                 "can't be used if sdk isn't bundled.")
             sys.exit(1)
         if options.overload_modules:
             print >>sys.stderr, ("--force-use-bundled-sdk and --overload-modules "
@@ -833,12 +848,6 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         # Pass a flag in order to force using sdk modules shipped in the xpi
         harness_options['force-use-bundled-sdk'] = True
 
-    # Pass the list of absolute path for all test modules
-    if command == "test":
-        harness_options['allTestModules'] = manifest.get_all_test_modules()
-        if len(harness_options['allTestModules']) == 0:
-            sys.exit(0)
-
     from cuddlefish.rdf import gen_manifest, RDFUpdate
 
     manifest_rdf = gen_manifest(template_root_dir=app_extension_dir,
@@ -846,7 +855,8 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                                 jid=jid,
                                 update_url=options.update_url,
                                 bootstrap=True,
-                                enable_mobile=options.enable_mobile)
+                                enable_mobile=options.enable_mobile,
+                                harness_options=harness_options)
 
     if command == "xpi" and options.update_link:
         if not options.update_link.startswith("https"):
@@ -893,12 +903,24 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     else:
         from cuddlefish.runner import run_app
 
+        if options.no_connections == "default":
+            if command == "run":
+              no_connections = False
+            else:
+              no_connections = True
+        elif options.no_connections == "on":
+            no_connections = True
+        else:
+            no_connections = False
+
         if options.profiledir:
             options.profiledir = os.path.expanduser(options.profiledir)
             options.profiledir = os.path.abspath(options.profiledir)
 
         if options.addons is not None:
             options.addons = options.addons.split(",")
+
+        enable_e10s = options.enable_e10s or target_cfg.get('e10s', False)
 
         try:
             retval = run_app(harness_root_dir=app_extension_dir,
@@ -922,7 +944,9 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                              is_running_tests=(command == "test"),
                              overload_modules=options.overload_modules,
                              bundle_sdk=options.bundle_sdk,
-                             pkgdir=options.pkgdir)
+                             pkgdir=options.pkgdir,
+                             enable_e10s=enable_e10s,
+                             no_connections=no_connections)
         except ValueError, e:
             print ""
             print "A given cfx option has an inappropriate value:"

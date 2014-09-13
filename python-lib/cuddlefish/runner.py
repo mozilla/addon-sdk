@@ -17,6 +17,8 @@ from cuddlefish.prefs import DEFAULT_COMMON_PREFS
 from cuddlefish.prefs import DEFAULT_FIREFOX_PREFS
 from cuddlefish.prefs import DEFAULT_THUNDERBIRD_PREFS
 from cuddlefish.prefs import DEFAULT_FENNEC_PREFS
+from cuddlefish.prefs import DEFAULT_NO_CONNECTIONS_PREFS
+from cuddlefish.prefs import DEFAULT_TEST_PREFS
 
 # Used to remove noise from ADB output
 CLEANUP_ADB = re.compile(r'^(I|E)/(stdout|stderr|GeckoConsole)\s*\(\s*\d+\):\s*(.*)$')
@@ -30,12 +32,12 @@ PARSEABLE_TEST_NAME = re.compile(r'TEST-START \| ([^\n]+)\n')
 # The purpose of this timeout is to recover from infinite loops.  It should be
 # longer than the amount of time any test run takes, including those on slow
 # machines running slow (debug) versions of Firefox.
-RUN_TIMEOUT = 1.5 * 60 * 60 # 1.5 Hour
+RUN_TIMEOUT = 5400     #1.5 hours (1.5 * 60 * 60 sec)
 
 # Maximum time we'll wait for tests to emit output, in seconds.
 # The purpose of this timeout is to recover from hangs.  It should be longer
 # than the amount of time any test takes to report results.
-OUTPUT_TIMEOUT = 60 * 5 # five minutes
+OUTPUT_TIMEOUT = 300   #five minutes (60 * 5 sec)
 
 def follow_file(filename):
     """
@@ -166,11 +168,11 @@ class RemoteFennecRunner(mozrunner.Runner):
         # or use name given as cfx `--mobile-app` argument.
         intents = self.getIntentNames()
         if not intents:
-            raise ValueError("Unable to found any Firefox "
+            raise ValueError("Unable to find any Firefox "
                              "application on your device.")
         elif mobile_app_name:
             if not mobile_app_name in intents:
-                raise ValueError("Unable to found Firefox application "
+                raise ValueError("Unable to find Firefox application "
                                  "with intent name '%s'\n"
                                  "Available ones are: %s" %
                                  (mobile_app_name, ", ".join(intents)))
@@ -193,11 +195,16 @@ class RemoteFennecRunner(mozrunner.Runner):
             print "Killing running Firefox instance ..."
             subprocess.call([self._adb_path, "shell",
                              "am force-stop " + self._intent_name])
-            time.sleep(2)
-            if self.getProcessPID(self._intent_name) != None:
-                raise Exception("Unable to automatically kill running Firefox" +
-                                " instance. Please close it manually before " +
-                                "executing cfx.")
+            time.sleep(7)
+            # It appears recently that the PID still exists even after
+            # Fennec closes, so removing this error still allows the tests
+            # to pass as the new Fennec instance is able to start.
+            # Leaving error in but commented out for now.
+            #
+            #if self.getProcessPID(self._intent_name) != None:
+            #    raise Exception("Unable to automatically kill running Firefox" +
+            #                    " instance. Please close it manually before " +
+            #                    "executing cfx.")
 
         print "Pushing the addon to your device"
 
@@ -413,7 +420,9 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
             is_running_tests=False,
             overload_modules=False,
             bundle_sdk=True,
-            pkgdir=""):
+            pkgdir="",
+            enable_e10s=False,
+            no_connections=False):
     if binary:
         binary = os.path.expanduser(binary)
 
@@ -424,6 +433,15 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
 
     cmdargs = []
     preferences = dict(DEFAULT_COMMON_PREFS)
+
+    if is_running_tests:
+      preferences.update(DEFAULT_TEST_PREFS)
+
+    if no_connections:
+      preferences.update(DEFAULT_NO_CONNECTIONS_PREFS)
+
+    if enable_e10s:
+        preferences['browser.tabs.remote.autostart'] = True
 
     # For now, only allow running on Mobile with --force-mobile argument
     if app_type in ["fennec", "fennec-on-device"] and not enable_mobile:
@@ -498,6 +516,8 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
 
     env = {}
     env.update(os.environ)
+    if no_connections:
+      env['MOZ_DISABLE_NONLOCAL_CONNECTIONS'] = '1'
     env['MOZ_NO_REMOTE'] = '1'
     env['XPCOM_DEBUG_BREAK'] = 'stack'
     env['NS_TRACE_MALLOC_DISABLE_STACKS'] = '1'
@@ -530,7 +550,10 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
     outfile_tail = follow_file(outfile)
     def maybe_remove_outfile():
         if os.path.exists(outfile):
-            os.remove(outfile)
+            try:
+                os.remove(outfile)
+            except Exception, e:
+                print "Error Cleaning up: " + str(e)
     atexit.register(maybe_remove_outfile)
     outf = open(outfile, "w")
     popen_kwargs = { 'stdout': outf, 'stderr': outf}
@@ -706,7 +729,7 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
 
     done = False
     result = None
-    test_name = "unknown"
+    test_name = "Jetpack startup"
 
     def Timeout(message, test_name, parseable):
         if parseable:
@@ -748,6 +771,11 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
         raise
     else:
         runner.wait(10)
+        # double kill - hack for bugs 942111, 1006043..
+        try:
+            runner.stop()
+        except:
+            pass
     finally:
         outf.close()
         if profile:

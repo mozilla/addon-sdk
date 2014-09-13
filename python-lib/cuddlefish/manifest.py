@@ -120,7 +120,9 @@ def hash_file(fn):
     return hashlib.sha256(open(fn,"rb").read()).hexdigest()
 
 def get_datafiles(datadir):
-    # yields pathnames relative to DATADIR, ignoring some files
+    """
+    yields pathnames relative to DATADIR, ignoring some files
+    """
     for dirpath, dirnames, filenames in os.walk(datadir):
         filenames = list(filter_filenames(filenames))
         # this tells os.walk to prune the search
@@ -179,7 +181,7 @@ class ModuleInfo:
 
 class ManifestBuilder:
     def __init__(self, target_cfg, pkg_cfg, deps, extra_modules,
-                 stderr=sys.stderr):
+                 stderr=sys.stderr, abort_on_missing=False):
         self.manifest = {} # maps (package,section,module) to ManifestEntry
         self.target_cfg = target_cfg # the entry point
         self.pkg_cfg = pkg_cfg # all known packages
@@ -191,10 +193,12 @@ class ManifestBuilder:
         self.datamaps = {} # maps package name to DataMap instance
         self.files = [] # maps manifest index to (absfn,absfn) js/docs pair
         self.test_modules = [] # for runtime
+        self.abort_on_missing = abort_on_missing # cfx eol
 
     def build(self, scan_tests, test_filter_re):
-        # process the top module, which recurses to process everything it
-        # reaches
+        """
+        process the top module, which recurses to process everything it reaches
+        """
         if "main" in self.target_cfg:
             top_mi = self.find_top(self.target_cfg)
             top_me = self.process_module(top_mi)
@@ -261,9 +265,11 @@ class ManifestBuilder:
         return sorted(used)
 
     def get_used_files(self, bundle_sdk_modules):
-        # returns all .js files that we reference, plus data/ files. You will
-        # need to add the loader, off-manifest files that it needs, and
-        # generated metadata.
+        """
+        returns all .js files that we reference, plus data/ files. You will
+        need to add the loader, off-manifest files that it needs, and
+        generated metadata.
+        """
         for datamap in self.datamaps.values():
             for (zipname, absname) in datamap.files_to_copy:
                 yield absname
@@ -272,9 +278,6 @@ class ManifestBuilder:
             # Only ship SDK files if we are told to do so
             if me.packageName != "addon-sdk" or bundle_sdk_modules:
                 yield me.js_filename
-
-    def get_all_test_modules(self):
-        return self.test_modules
 
     def get_harness_options_manifest(self, bundle_sdk_modules):
         manifest = {}
@@ -413,6 +416,12 @@ class ManifestBuilder:
                         # tolerate missing modules in tests, because
                         # test-securable-module.js, and the modules/red.js
                         # that it imports, both do that intentionally
+                        continue
+                    if not self.abort_on_missing:
+                        # print a warning, but tolerate missing modules
+                        # unless cfx --abort-on-missing-module flag was set
+                        print >>self.stderr, "Warning: missing module: %s" % reqname
+                        me.add_requirement(reqname, reqname)
                         continue
                     lineno = locations.get(reqname) # None means define()
                     if lineno is None:
@@ -631,7 +640,7 @@ class ManifestBuilder:
         return None
 
 def build_manifest(target_cfg, pkg_cfg, deps, scan_tests,
-                   test_filter_re=None, extra_modules=[]):
+                   test_filter_re=None, extra_modules=[], abort_on_missing=False):
     """
     Perform recursive dependency analysis starting from entry_point,
     building up a manifest of modules that need to be included in the XPI.
@@ -657,7 +666,8 @@ def build_manifest(target_cfg, pkg_cfg, deps, scan_tests,
     code which does, so it knows what to copy into the XPI.
     """
 
-    mxt = ManifestBuilder(target_cfg, pkg_cfg, deps, extra_modules)
+    mxt = ManifestBuilder(target_cfg, pkg_cfg, deps, extra_modules,
+                          abort_on_missing=abort_on_missing)
     mxt.build(scan_tests, test_filter_re)
     return mxt
 

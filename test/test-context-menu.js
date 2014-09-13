@@ -10,6 +10,7 @@ require("sdk/context-menu");
 const { Loader } = require('sdk/test/loader');
 const timer = require("sdk/timers");
 const { merge } = require("sdk/util/object");
+const { defer } = require("sdk/core/promise");
 
 // These should match the same constants in the module.
 const ITEM_CLASS = "addon-context-menu-item";
@@ -543,7 +544,6 @@ exports.testPageReload = function (assert, done) {
     label: "item",
     contentScript: 'self.postMessage("loaded"); self.on("detach", function () { console.log("saw detach"); self.postMessage("detach") });',
     onMessage: function (msg) {
-      console.log("Saw " + msg)
       switch (msg) {
       case "loaded":
         assert.ok(loadExpected, "Should have seen the load event at the right time");
@@ -880,6 +880,10 @@ exports.testContentContextMatchString = function (assert, done) {
 exports.testContentScriptFile = function (assert, done) {
   let test = new TestHelper(assert, done);
   let loader = test.newLoader();
+  let { defer, all } = require("sdk/core/promise");
+  let itemScript = [defer(), defer()];
+  let menuShown = defer();
+  let menuPromises = itemScript.concat(menuShown).map(({promise}) => promise);
 
   // Reject remote files
   assert.throws(function() {
@@ -888,20 +892,37 @@ exports.testContentScriptFile = function (assert, done) {
         contentScriptFile: "http://mozilla.com/context-menu.js"
       });
     },
-    new RegExp("The 'contentScriptFile' option must be a local file URL " +
-    "or an array of local file URLs."),
+    /The `contentScriptFile` option must be a local URL or an array of URLs/,
     "Item throws when contentScriptFile is a remote URL");
 
   // But accept files from data folder
   let item = new loader.cm.Item({
     label: "item",
-    contentScriptFile: data.url("test-context-menu.js")
+    contentScriptFile: data.url("test-contentScriptFile.js"),
+    onMessage: (message) => {
+      assert.equal(message, "msg from contentScriptFile",
+        "contentScriptFile loaded with absolute url");
+      itemScript[0].resolve();
+    }
   });
 
-  test.showMenu(null, function (popup) {
-    test.checkMenu([item], [], []);
-    test.done();
+  let item2 = new loader.cm.Item({
+    label: "item2",
+    contentScriptFile: "./test-contentScriptFile.js",
+    onMessage: (message) => {
+      assert.equal(message, "msg from contentScriptFile",
+        "contentScriptFile loaded with relative url");
+      itemScript[1].resolve();
+    }
   });
+  console.log(item.contentScriptFile, item2.contentScriptFile);
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([item, item2], [], []);
+    menuShown.resolve();
+  });
+
+  all(menuPromises).then(() => test.done());
 };
 
 
@@ -2644,6 +2665,58 @@ exports.testItemNoData = function (assert, done) {
 }
 
 
+exports.testItemNoAccessKey = function (assert, done) {
+  let test = new TestHelper(assert, done);
+  let loader = test.newLoader();
+
+  let item1 = new loader.cm.Item({ label: "item 1" });
+  let item2 = new loader.cm.Item({ label: "item 2", accesskey: null });
+  let item3 = new loader.cm.Item({ label: "item 3", accesskey: undefined });
+
+  assert.equal(item1.accesskey, undefined, "Should be no defined image");
+  assert.equal(item2.accesskey, null, "Should be no defined image");
+  assert.equal(item3.accesskey, undefined, "Should be no defined image");
+
+  test.showMenu().
+  then((popup) => test.checkMenu([item1, item2, item3], [], [])).
+  then(test.done).
+  catch(assert.fail);
+}
+
+
+// Test accesskey support.
+exports.testItemAccessKey = function (assert, done) {
+  let test = new TestHelper(assert, done);
+  let loader = test.newLoader();
+
+  let item = new loader.cm.Item({ label: "item", accesskey: "i" });
+  assert.equal(item.accesskey, "i", "Should have set the image to i");
+
+  let menu = new loader.cm.Menu({ label: "menu", accesskey: "m", items: [
+    loader.cm.Item({ label: "subitem" })
+  ]});
+  assert.equal(menu.accesskey, "m", "Should have set the accesskey to m");
+
+  test.showMenu().then((popup) => {
+    test.checkMenu([item, menu], [], []);
+
+    let accesskey = "e";
+    menu.accesskey = item.accesskey = accesskey;
+    assert.equal(item.accesskey, accesskey, "Should have set the accesskey to " + accesskey);
+    assert.equal(menu.accesskey, accesskey, "Should have set the accesskey to " + accesskey);
+    test.checkMenu([item, menu], [], []);
+
+    item.accesskey = null;
+    menu.accesskey = null;
+    assert.equal(item.accesskey, null, "Should have set the accesskey to " + accesskey);
+    assert.equal(menu.accesskey, null, "Should have set the accesskey to " + accesskey);
+    test.checkMenu([item, menu], [], []);
+  }).
+  then(test.done).
+  catch(assert.fail);
+};
+
+
 // Tests that items without an image don't attempt to show one
 exports.testItemNoImage = function (assert, done) {
   let test = new TestHelper(assert, done);
@@ -3490,7 +3563,7 @@ exports.testPredicateContextTargetSrcSet = function (assert, done) {
   let test = new TestHelper(assert, done);
   let loader = test.newLoader();
   let image;
-  
+
   let items = [loader.cm.Item({
     label: "item",
     context: loader.cm.PredicateContext(function (data) {
@@ -3512,7 +3585,7 @@ exports.testPredicateContextTargetSrcSet = function (assert, done) {
 exports.testPredicateContextTargetSrcNotSet = function (assert, done) {
   let test = new TestHelper(assert, done);
   let loader = test.newLoader();
-  
+
   let items = [loader.cm.Item({
     label: "item",
     context: loader.cm.PredicateContext(function (data) {
@@ -3535,7 +3608,7 @@ exports.testPredicateContextTargetLinkSet = function (assert, done) {
   let test = new TestHelper(assert, done);
   let loader = test.newLoader();
   let image;
-  
+
   let items = [loader.cm.Item({
     label: "item",
     context: loader.cm.PredicateContext(function (data) {
@@ -3556,7 +3629,7 @@ exports.testPredicateContextTargetLinkSet = function (assert, done) {
 exports.testPredicateContextTargetLinkNotSet = function (assert, done) {
   let test = new TestHelper(assert, done);
   let loader = test.newLoader();
-  
+
   let items = [loader.cm.Item({
     label: "item",
     context: loader.cm.PredicateContext(function (data) {
@@ -3573,12 +3646,54 @@ exports.testPredicateContextTargetLinkNotSet = function (assert, done) {
   });
 };
 
+// Test that the data object has the correct link for a nested image
+exports.testPredicateContextTargetLinkSetNestedImage = function (assert, done) {
+  let test = new TestHelper(assert, done);
+  let loader = test.newLoader();
+
+  let items = [loader.cm.Item({
+    label: "item",
+    context: loader.cm.PredicateContext(function (data) {
+      assert.strictEqual(data.linkURL, TEST_DOC_URL + "#nested-image");
+      return true;
+    })
+  })];
+
+  test.withTestDoc(function (window, doc) {
+    test.showMenu(doc.getElementById("predicate-test-nested-image"), function (popup) {
+      test.checkMenu(items, [], []);
+      test.done();
+    });
+  });
+};
+
+// Test that the data object has the correct link for a complex nested structure
+exports.testPredicateContextTargetLinkSetNestedStructure = function (assert, done) {
+  let test = new TestHelper(assert, done);
+  let loader = test.newLoader();
+
+  let items = [loader.cm.Item({
+    label: "item",
+    context: loader.cm.PredicateContext(function (data) {
+      assert.strictEqual(data.linkURL, TEST_DOC_URL + "#nested-structure");
+      return true;
+    })
+  })];
+
+  test.withTestDoc(function (window, doc) {
+    test.showMenu(doc.getElementById("predicate-test-nested-structure"), function (popup) {
+      test.checkMenu(items, [], []);
+      test.done();
+    });
+  });
+};
+
 // Test that the data object has the value for an input textbox
 exports.testPredicateContextTargetValueSet = function (assert, done) {
   let test = new TestHelper(assert, done);
   let loader = test.newLoader();
   let image;
-  
+
   let items = [loader.cm.Item({
     label: "item",
     context: loader.cm.PredicateContext(function (data) {
@@ -3599,7 +3714,7 @@ exports.testPredicateContextTargetValueSet = function (assert, done) {
 exports.testPredicateContextTargetValueNotSet = function (assert, done) {
   let test = new TestHelper(assert, done);
   let loader = test.newLoader();
-  
+
   let items = [loader.cm.Item({
     label: "item",
     context: loader.cm.PredicateContext(function (data) {
@@ -3633,6 +3748,7 @@ function TestHelper(assert, done) {
                        getMostRecentWindow("navigator:browser");
   this.overflowThreshValue = require("sdk/preferences/service").
                              get(OVERFLOW_THRESH_PREF, OVERFLOW_THRESH_DEFAULT);
+  this.done = this.done.bind(this);
 }
 
 TestHelper.prototype = {
@@ -3691,6 +3807,20 @@ TestHelper.prototype = {
     if (itemType === "Item" || itemType === "Menu") {
       this.assert.equal(elt.getAttribute("label"), item.label,
                             "Item should have correct title");
+
+      // validate accesskey prop
+      if (item.accesskey) {
+        this.assert.equal(elt.getAttribute("accesskey"),
+                          item.accesskey,
+                          "Item should have correct accesskey");
+      }
+      else {
+        this.assert.equal(elt.getAttribute("accesskey"),
+                          "",
+                          "Item should not have accesskey");
+      }
+
+      // validate image prop
       if (typeof(item.image) === "string") {
         this.assert.equal(elt.getAttribute("image"), item.image,
                               "Item should have correct image");
@@ -3903,7 +4033,15 @@ TestHelper.prototype = {
   // function that unloads the loader and associated resources.
   newLoader: function () {
     const self = this;
-    let loader = Loader(module);
+    const selfModule = require('sdk/self');
+    let loader = Loader(module, null, null, {
+      modules: {
+        "sdk/self": merge({}, selfModule, {
+          data: merge({}, selfModule.data, require("./fixtures"))
+        })
+      }
+    });
+
     let wrapper = {
       loader: loader,
       cm: loader.require("sdk/context-menu"),
@@ -3964,11 +4102,16 @@ TestHelper.prototype = {
   // menu is opened in the top-left corner.  onShowncallback is passed the
   // popup.
   showMenu: function(targetNode, onshownCallback) {
+    let { promise, resolve } = defer();
+
     function sendEvent() {
       this.delayedEventListener(this.browserWindow, "popupshowing",
         function (e) {
           let popup = e.target;
-          onshownCallback.call(this, popup);
+          if (onshownCallback) {
+            onshownCallback.call(this, popup);
+          }
+          resolve(popup);
         }, false);
 
       let rect = targetNode ?
@@ -4000,6 +4143,8 @@ TestHelper.prototype = {
     }
     else
       sendEvent.call(this);
+
+    return promise;
   },
 
   hideMenu: function(onhiddenCallback) {

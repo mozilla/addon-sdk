@@ -5,16 +5,16 @@
 
 const { Cc, Ci } = require('chrome');
 const { Loader } = require('sdk/test/loader');
-const timer = require('sdk/timers');
-const { getOwnerWindow } = require('sdk/private-browsing/window/utils');
+const { setTimeout } = require('sdk/timers');
+const { viewFor } = require('sdk/view/core');
+const { getOwnerWindow } = require('sdk/tabs/utils');
 const { windows, onFocus, getMostRecentBrowserWindow } = require('sdk/window/utils');
 const { open, focus, close } = require('sdk/window/helpers');
 const tabs = require('sdk/tabs');
 const { browserWindows } = require('sdk/windows');
 const { set: setPref } = require("sdk/preferences/service");
 const DEPRECATE_PREF = "devtools.errorconsole.deprecation_warnings";
-
-const base64png = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQImWNgYGBgAA";
+const fixtures = require("../fixtures");
 
 // Bug 682681 - tab.title should never be empty
 exports.testBug682681_aboutURI = function(assert, done) {
@@ -65,32 +65,95 @@ exports.testBrowserWindowCreationOnActivate = function(assert, done) {
   });
 
   open().then(function(window) {
-    assert.ok(gotActivate, "Received activate event before openBrowserWindow's callback is called");
-    close(window).then(done);
-  });
+    assert.ok(gotActivate, "Received activate event");
+    return close(window);
+  }).then(done).then(null, assert.fail);
 }
 
 // TEST: tab unloader
-exports.testAutomaticDestroy = function(assert, done) {
-  // Create a second tab instance that we will destroy
+exports.testAutomaticDestroyEventOpen = function(assert, done) {
   let called = false;
-
   let loader = Loader(module);
   let tabs2 = loader.require("sdk/tabs");
-  tabs2.on('open', function onOpen(tab) {
-    called = true;
-  });
-
-  loader.unload();
+  tabs2.on('open', _ => called = true);
 
   // Fire a tab event and ensure that the destroyed tab is inactive
-  tabs.once('open', function (tab) {
-    timer.setTimeout(function () {
+  tabs.once('open', tab => {
+    setTimeout(_ => {
       assert.ok(!called, "Unloaded tab module is destroyed and inactive");
       tab.close(done);
     });
   });
-  tabs.open("data:text/html;charset=utf-8,foo");
+
+  loader.unload();
+  tabs.open("data:text/html;charset=utf-8,testAutomaticDestroyEventOpen");
+};
+
+exports.testAutomaticDestroyEventActivate = function(assert, done) {
+  let called = false;
+  let loader = Loader(module);
+  let tabs2 = loader.require("sdk/tabs");
+  tabs2.on('activate', _ => called = true);
+
+  // Fire a tab event and ensure that the destroyed tab is inactive
+  tabs.once('activate', tab => {
+    setTimeout(_ => {
+      assert.ok(!called, "Unloaded tab module is destroyed and inactive");
+      tab.close(done);
+    });
+  });
+
+  loader.unload();
+  tabs.open("data:text/html;charset=utf-8,testAutomaticDestroyEventActivate");
+};
+
+exports.testAutomaticDestroyEventDeactivate = function(assert, done) {
+  let called = false;
+  let currentTab = tabs.activeTab;
+  let loader = Loader(module);
+  let tabs2 = loader.require("sdk/tabs");
+
+  tabs.open({
+    url: "data:text/html;charset=utf-8,testAutomaticDestroyEventDeactivate",
+    onActivate: _ => setTimeout(_ => {
+      tabs2.on('deactivate', _ => called = true);
+
+      // Fire a tab event and ensure that the destroyed tab is inactive
+      tabs.once('deactivate', tab => {
+        setTimeout(_ => {
+          assert.ok(!called, "Unloaded tab module is destroyed and inactive");
+          tab.close(done);
+        });
+      });
+
+      loader.unload();
+      currentTab.activate();
+    })
+  });
+};
+
+exports.testAutomaticDestroyEventClose = function(assert, done) {
+  let called = false;
+  let loader = Loader(module);
+  let tabs2 = loader.require("sdk/tabs");
+
+  tabs.open({
+    url: "data:text/html;charset=utf-8,testAutomaticDestroyEventClose",
+    onReady: tab => {
+      tabs2.on('close', _ => called = true);
+
+      // Fire a tab event and ensure that the destroyed tab is inactive
+      tabs.once('close', tab => {
+        setTimeout(_ => {
+          assert.ok(!called, "Unloaded tab module is destroyed and inactive");
+          done();
+        });
+      });
+
+      loader.unload();
+      tab.close();
+    }
+  });
 };
 
 exports.testTabPropertiesInNewWindow = function(assert, done) {
@@ -103,12 +166,12 @@ exports.testTabPropertiesInNewWindow = function(assert, done) {
   });
 
   let tabs = loader.require('sdk/tabs');
-  let { getOwnerWindow } = loader.require('sdk/private-browsing/window/utils');
+  let { viewFor } = loader.require('sdk/view/core');
 
   let count = 0;
   function onReadyOrLoad (tab) {
     if (count++) {
-      close(getOwnerWindow(tab)).then(done);
+      close(getOwnerWindow(viewFor(tab))).then(done).then(null, assert.fail);
     }
   }
 
@@ -204,7 +267,7 @@ exports.testTabContentTypeAndReload = function(assert, done) {
         }
         else {
           assert.equal(tab.contentType, "text/xml");
-          close(window).then(done);
+          close(window).then(done).then(null, assert.fail);
         }
       }
     });
@@ -215,7 +278,7 @@ exports.testTabContentTypeAndReload = function(assert, done) {
 exports.testTabsIteratorAndLength = function(assert, done) {
   open(null, { features: { chrome: true, toolbar: true } }).then(focus).then(function(window) {
     let startCount = 0;
-    for each (let t in tabs) startCount++;
+    for (let t of tabs) startCount++;
     assert.equal(startCount, tabs.length, "length property is correct");
     let url = "data:text/html;charset=utf-8,default";
 
@@ -225,11 +288,11 @@ exports.testTabsIteratorAndLength = function(assert, done) {
       url: url,
       onOpen: function(tab) {
         let count = 0;
-        for each (let t in tabs) count++;
+        for (let t of tabs) count++;
         assert.equal(count, startCount + 3, "iterated tab count matches");
         assert.equal(startCount + 3, tabs.length, "iterated tab count matches length property");
 
-        close(window).then(done);
+        close(window).then(done).then(null, assert.fail);
       }
     });
   });
@@ -246,7 +309,7 @@ exports.testTabLocation = function(assert, done) {
         return;
       tabs.removeListener('ready', onReady);
       assert.pass("tab.load() loaded the correct url");
-      close(window).then(done);
+      close(window).then(done).then(null, assert.fail);
     });
 
     tabs.open({
@@ -260,20 +323,22 @@ exports.testTabLocation = function(assert, done) {
 
 // TEST: tab.close()
 exports.testTabClose = function(assert, done) {
-  let url = "data:text/html;charset=utf-8,foo";
+  let testName = "testTabClose";
+  let url = "data:text/html;charset=utf-8," + testName;
 
   assert.notEqual(tabs.activeTab.url, url, "tab is not the active tab");
-  tabs.on('ready', function onReady(tab) {
-    tabs.removeListener('ready', onReady);
+  tabs.once('ready', function onReady(tab) {
     assert.equal(tabs.activeTab.url, tab.url, "tab is now the active tab");
+    assert.equal(url, tab.url, "tab url is the test url");
     let secondOnCloseCalled = false;
 
     // Bug 699450: Multiple calls to tab.close should not throw
     tab.close(function() secondOnCloseCalled = true);
     try {
       tab.close(function () {
+        assert.notEqual(tabs.activeTab.url, url, "tab is no longer the active tab");
         assert.ok(secondOnCloseCalled,
-          "The immediate second call to tab.close gots its callback fired");
+          "The immediate second call to tab.close happened");
         assert.notEqual(tabs.activeTab.url, url, "tab is no longer the active tab");
 
         done();
@@ -282,7 +347,6 @@ exports.testTabClose = function(assert, done) {
     catch(e) {
       assert.fail("second call to tab.close() thrown an exception: " + e);
     }
-    assert.notEqual(tabs.activeTab.url, url, "tab is no longer the active tab");
   });
 
   tabs.open(url);
@@ -299,9 +363,36 @@ exports.testTabMove = function(assert, done) {
         assert.equal(tab.index, 1, "tab index before move matches");
         tab.index = 0;
         assert.equal(tab.index, 0, "tab index after move matches");
-        close(window).then(done);
+        close(window).then(done).then(null, assert.fail);
       }
     });
+  }).then(null, assert.fail);
+};
+
+exports.testIgnoreClosing = function(assert, done) {
+  let originalWindow = browserWindows.activeWindow;
+  openBrowserWindow(function(window, browser) {
+    let url = "data:text/html;charset=utf-8,foobar";
+
+    assert.equal(tabs.length, 2, "should be two windows open each with one tab");
+
+    tabs.on('ready', function onReady(tab) {
+      tabs.removeListener('ready', onReady);
+
+      let win = tab.window;
+      assert.equal(win.tabs.length, 2, "should be two tabs in the new window");
+      assert.equal(tabs.length, 3, "should be three tabs in total");
+
+      tab.close(function() {
+        assert.equal(win.tabs.length, 1, "should be one tab in the new window");
+        assert.equal(tabs.length, 2, "should be two tabs in total");
+
+        originalWindow.once("activate", done);
+        close(window);
+      });
+    });
+
+    tabs.open(url);
   });
 };
 
@@ -350,15 +441,17 @@ exports.testPinUnpin = function(assert, done) {
 
 // TEST: open tab in background
 exports.testInBackground = function(assert, done) {
+  assert.equal(tabs.length, 1, "Should be one tab");
+
   let window = getMostRecentBrowserWindow();
   let activeUrl = tabs.activeTab.url;
   let url = "data:text/html;charset=utf-8,background";
-  assert.equal(activeWindow, window, "activeWindow matches this window");
+  assert.equal(getMostRecentBrowserWindow(), window, "getMostRecentBrowserWindow() matches this window");
   tabs.on('ready', function onReady(tab) {
     tabs.removeListener('ready', onReady);
     assert.equal(tabs.activeTab.url, activeUrl, "URL of active tab has not changed");
     assert.equal(tab.url, url, "URL of the new background tab matches");
-    assert.equal(activeWindow, window, "a new window was not opened");
+    assert.equal(getMostRecentBrowserWindow(), window, "a new window was not opened");
     assert.notEqual(tabs.activeTab.url, url, "URL of active tab is not the new URL");
     tab.close(done);
   });
@@ -378,17 +471,17 @@ exports.testOpenInNewWindow = function(assert, done) {
     url: url,
     inNewWindow: true,
     onReady: function(tab) {
-      let newWindow = getOwnerWindow(tab);
+      let newWindow = getOwnerWindow(viewFor(tab));
       assert.equal(windows().length, startWindowCount + 1, "a new window was opened");
 
       onFocus(newWindow).then(function() {
-        assert.equal(activeWindow, newWindow, "new window is active");
+        assert.equal(getMostRecentBrowserWindow(), newWindow, "new window is active");
         assert.equal(tab.url, url, "URL of the new tab matches");
         assert.equal(newWindow.content.location, url, "URL of new tab in new window matches");
         assert.equal(tabs.activeTab.url, url, "URL of activeTab matches");
 
-        close(newWindow).then(done);
-      }, assert.fail).then(null, assert.fail);
+        return close(newWindow).then(done);
+      }).then(null, assert.fail);
     }
   });
 
@@ -403,13 +496,13 @@ exports.testOpenInNewWindowOnOpen = function(assert, done) {
     url: url,
     inNewWindow: true,
     onOpen: function(tab) {
-      let newWindow = getOwnerWindow(tab);
+      let newWindow = getOwnerWindow(viewFor(tab));
 
       onFocus(newWindow).then(function() {
         assert.equal(windows().length, startWindowCount + 1, "a new window was opened");
-        assert.equal(activeWindow, newWindow, "new window is active");
+        assert.equal(getMostRecentBrowserWindow(), newWindow, "new window is active");
 
-        close(newWindow).then(done);
+        close(newWindow).then(done).then(null, assert.fail);
       });
     }
   });
@@ -417,7 +510,7 @@ exports.testOpenInNewWindowOnOpen = function(assert, done) {
 
 // TEST: onOpen event handler
 exports.testTabsEvent_onOpen = function(assert, done) {
-  openBrowserWindow(function(window, browser) {
+  open().then(focus).then(window => {
     let url = "data:text/html;charset=utf-8,1";
     let eventCount = 0;
 
@@ -432,16 +525,16 @@ exports.testTabsEvent_onOpen = function(assert, done) {
       assert.equal(++eventCount, 2, "both listeners notified");
       tabs.removeListener('open', listener1);
       tabs.removeListener('open', listener2);
-      close(window).then(done);
+      close(window).then(done).then(null, assert.fail);
     });
 
     tabs.open(url);
-  });
+  }).then(null, assert.fail);
 };
 
 // TEST: onClose event handler
 exports.testTabsEvent_onClose = function(assert, done) {
-  openBrowserWindow(function(window, browser) {
+  open().then(focus).then(window => {
     let url = "data:text/html;charset=utf-8,onclose";
     let eventCount = 0;
 
@@ -456,7 +549,7 @@ exports.testTabsEvent_onClose = function(assert, done) {
       assert.equal(++eventCount, 2, "both listeners notified");
       tabs.removeListener('close', listener1);
       tabs.removeListener('close', listener2);
-      close(window).then(done);
+      close(window).then(done).then(null, assert.fail);
     });
 
     tabs.on('ready', function onReady(tab) {
@@ -465,7 +558,7 @@ exports.testTabsEvent_onClose = function(assert, done) {
     });
 
     tabs.open(url);
-  });
+  }).then(null, assert.fail);
 };
 
 // TEST: onClose event handler when a window is closed
@@ -473,7 +566,9 @@ exports.testTabsEvent_onCloseWindow = function(assert, done) {
   let closeCount = 0;
   let individualCloseCount = 0;
 
-  openBrowserWindow(function(window) {
+  open().then(focus).then(window => {
+    assert.pass('opened a new window');
+
     tabs.on("close", function listener() {
       if (++closeCount == 4) {
         tabs.removeListener("close", listener);
@@ -482,6 +577,7 @@ exports.testTabsEvent_onCloseWindow = function(assert, done) {
 
     function endTest() {
       if (++individualCloseCount < 3) {
+        assert.pass('tab closed ' + individualCloseCount);
         return;
       }
 
@@ -499,6 +595,7 @@ exports.testTabsEvent_onCloseWindow = function(assert, done) {
       if (++openTabs == 4) {
         window.close();
       }
+      assert.pass('tab opened ' + openTabs);
     }
 
     tabs.open({
@@ -518,12 +615,12 @@ exports.testTabsEvent_onCloseWindow = function(assert, done) {
       onOpen: testCasePossiblyLoaded,
       onClose: endTest
     });
-  });
+  }).then(null, assert.fail);
 }
 
 // TEST: onReady event handler
 exports.testTabsEvent_onReady = function(assert, done) {
-  openBrowserWindow(function(window, browser) {
+  open().then(focus).then(window => {
     let url = "data:text/html;charset=utf-8,onready";
     let eventCount = 0;
 
@@ -542,12 +639,12 @@ exports.testTabsEvent_onReady = function(assert, done) {
     });
 
     tabs.open(url);
-  });
+  }).then(null, assert.fail);
 };
 
 // TEST: onActivate event handler
 exports.testTabsEvent_onActivate = function(assert, done) {
-  openBrowserWindow(function(window, browser) {
+  open().then(focus).then(window => {
     let url = "data:text/html;charset=utf-8,onactivate";
     let eventCount = 0;
 
@@ -562,16 +659,16 @@ exports.testTabsEvent_onActivate = function(assert, done) {
       assert.equal(++eventCount, 2, "both listeners notified");
       tabs.removeListener('activate', listener1);
       tabs.removeListener('activate', listener2);
-      close(window).then(done);
+      close(window).then(done).then(null, assert.fail);
     });
 
     tabs.open(url);
-  });
+  }).then(null, assert.fail);
 };
 
 // onDeactivate event handler
 exports.testTabsEvent_onDeactivate = function(assert, done) {
-  openBrowserWindow(function(window, browser) {
+  open().then(focus).then(window => {
     let url = "data:text/html;charset=utf-8,ondeactivate";
     let eventCount = 0;
 
@@ -586,7 +683,7 @@ exports.testTabsEvent_onDeactivate = function(assert, done) {
       assert.equal(++eventCount, 2, "both listeners notified");
       tabs.removeListener('deactivate', listener1);
       tabs.removeListener('deactivate', listener2);
-      close(window).then(done);
+      close(window).then(done).then(null, assert.fail);
     });
 
     tabs.on('open', function onOpen(tab) {
@@ -595,12 +692,12 @@ exports.testTabsEvent_onDeactivate = function(assert, done) {
     });
 
     tabs.open(url);
-  });
+  }).then(null, assert.fail);
 };
 
 // pinning
 exports.testTabsEvent_pinning = function(assert, done) {
-  openBrowserWindow(function(window, browser) {
+  open().then(focus).then(window => {
     let url = "data:text/html;charset=utf-8,1";
 
     tabs.on('open', function onOpen(tab) {
@@ -617,16 +714,16 @@ exports.testTabsEvent_pinning = function(assert, done) {
     tabs.on('unpinned', function onUnpinned(tab) {
       tabs.removeListener('unpinned', onUnpinned);
       assert.ok(!tab.isPinned, "notified tab is not pinned");
-      close(window).then(done);
+      close(window).then(done).then(null, assert.fail);
     });
 
     tabs.open(url);
-  });
+  }).then(null, assert.fail);
 };
 
 // TEST: per-tab event handlers
 exports.testPerTabEvents = function(assert, done) {
-  openBrowserWindow(function(window, browser) {
+  open().then(focus).then(window => {
     let eventCount = 0;
 
     tabs.open({
@@ -643,16 +740,16 @@ exports.testPerTabEvents = function(assert, done) {
           assert.equal(eventCount, 1, "both listeners notified");
           tab.removeListener('ready', listener1);
           tab.removeListener('ready', listener2);
-          close(window).then(done);
+          close(window).then(done).then(null, assert.fail);
         });
       }
     });
-  });
+  }).then(null, assert.fail);
 };
 
 exports.testAttachOnOpen = function (assert, done) {
   // Take care that attach has to be called on tab ready and not on tab open.
-  openBrowserWindow(function(window, browser) {
+  open().then(focus).then(window => {
     tabs.open({
       url: "data:text/html;charset=utf-8,foobar",
       onOpen: function (tab) {
@@ -662,18 +759,17 @@ exports.testAttachOnOpen = function (assert, done) {
             assert.equal(msg, "about:blank",
               "Worker document url is about:blank on open");
             worker.destroy();
-            close(window).then(done);
+            close(window).then(done).then(null, assert.fail);
           }
         });
       }
     });
-
-  });
+  }).then(null, assert.fail);
 }
 
 exports.testAttachOnMultipleDocuments = function (assert, done) {
   // Example of attach that process multiple tab documents
-  openBrowserWindow(function(window, browser) {
+  open().then(focus).then(window => {
     let firstLocation = "data:text/html;charset=utf-8,foobar";
     let secondLocation = "data:text/html;charset=utf-8,bar";
     let thirdLocation = "data:text/html;charset=utf-8,fox";
@@ -745,16 +841,15 @@ exports.testAttachOnMultipleDocuments = function (assert, done) {
 
       assert.pass("Got all detach events");
 
-      close(window).then(done);
+      close(window).then(done).then(null, assert.fail);
     }
-
-  });
+  }).then(null, assert.fail);
 }
 
 
 exports.testAttachWrappers = function (assert, done) {
   // Check that content script has access to wrapped values by default
-  openBrowserWindow(function(window, browser) {
+  open().then(focus).then(window => {
     let document = "data:text/html;charset=utf-8,<script>var globalJSVar = true; " +
                    "                       document.getElementById = 3;</script>";
     let count = 0;
@@ -772,13 +867,12 @@ exports.testAttachWrappers = function (assert, done) {
           onMessage: function (msg) {
             assert.equal(msg, true, "Worker has wrapped objects ("+count+")");
             if (count++ == 1)
-              close(window).then(done);
+              close(window).then(done).then(null, assert.fail);
           }
         });
       }
     });
-
-  });
+  }).then(null, assert.fail);
 }
 
 /*
@@ -826,10 +920,10 @@ exports['test window focus changes active tab'] = function(assert, done) {
           assert.pass("activate was called on windows focus change.");
           assert.equal(tab.url, url1, 'the activated tab url is correct');
 
-          close(win2).then(function() {
+          return close(win2).then(function() {
             assert.pass('window 2 was closed');
             return close(win1);
-          }).then(done);
+          }).then(done).then(null, assert.fail);
         });
 
         win1.focus();
@@ -845,7 +939,7 @@ exports['test ready event on new window tab'] = function(assert, done) {
     if (tab.url === uri) {
       require("sdk/tabs").removeListener("ready", onReady);
       assert.pass("ready event was emitted");
-      close(window).then(done);
+      close(window).then(done).then(null, assert.fail);
     }
   });
 
@@ -857,7 +951,6 @@ exports['test unique tab ids'] = function(assert, done) {
   var { all, defer } = require('sdk/core/promise');
 
   function openWindow() {
-    // console.log('in openWindow');
     let deferred = defer();
     let win = windows.open({
       url: "data:text/html;charset=utf-8,<html>foo</html>",
@@ -879,9 +972,11 @@ exports['test unique tab ids'] = function(assert, done) {
   var one = openWindow(), two = openWindow();
   all([one, two]).then(function(results) {
     assert.notEqual(results[0].id, results[1].id, "tab Ids should not be equal.");
-    results[0].win.close();
-    results[1].win.close();
-    done();
+    results[0].win.close(function() {
+      results[1].win.close(function () {
+        done();
+      });
+    });
   });
 }
 
@@ -914,7 +1009,7 @@ exports.testOnLoadEventWithImage = function(assert, done) {
   let count = 0;
 
   tabs.open({
-    url: base64png,
+    url: fixtures.url('Firefox.jpg'),
     inBackground: true,
     onLoad: function(tab) {
       if (++count > 1) {
@@ -953,13 +1048,6 @@ exports.testFaviconGetterDeprecation = function (assert, done) {
 
 /******************* helpers *********************/
 
-// Helper for getting the active window
-this.__defineGetter__("activeWindow", function activeWindow() {
-  return Cc["@mozilla.org/appshell/window-mediator;1"].
-         getService(Ci.nsIWindowMediator).
-         getMostRecentWindow("navigator:browser");
-});
-
 // Utility function to open a new browser window.
 function openBrowserWindow(callback, url) {
   let ww = Cc["@mozilla.org/embedcomp/window-watcher;1"].
@@ -976,7 +1064,7 @@ function openBrowserWindow(callback, url) {
         window.removeEventListener("load", onLoad, true);
         let browsers = window.document.getElementsByTagName("tabbrowser");
         try {
-          timer.setTimeout(function () {
+          setTimeout(function () {
             callback(window, browsers[0]);
           }, 10);
         }

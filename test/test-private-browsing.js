@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
-const { Ci } = require('chrome');
+const { Ci, Cu } = require('chrome');
 const { safeMerge } = require('sdk/util/object');
 const windows = require('sdk/windows').browserWindows;
 const tabs = require('sdk/tabs');
@@ -12,26 +12,16 @@ const { isWindowPrivate } = winUtils;
 const { isPrivateBrowsingSupported } = require('sdk/self');
 const { is } = require('sdk/system/xul-app');
 const { isPrivate } = require('sdk/private-browsing');
-const { getOwnerWindow } = require('sdk/private-browsing/window/utils');
 const { LoaderWithHookedConsole } = require("sdk/test/loader");
-const { getMode, isGlobalPBSupported,
-        isWindowPBSupported, isTabPBSupported } = require('sdk/private-browsing/utils');
+const { getMode, isWindowPBSupported, isTabPBSupported } = require('sdk/private-browsing/utils');
 const { pb } = require('./private-browsing/helper');
 const prefs = require('sdk/preferences/service');
-const { set: setPref } = require("sdk/preferences/service");
-const DEPRECATE_PREF = "devtools.errorconsole.deprecation_warnings";
+
+const { Services } = Cu.import("resource://gre/modules/Services.jsm", {});
 
 const kAutoStartPref = "browser.privatebrowsing.autostart";
 
-// is global pb is enabled?
-if (isGlobalPBSupported) {
-  safeMerge(module.exports, require('./private-browsing/global'));
-
-  exports.testGlobalOnlyOnFirefox = function(assert) {
-    assert.ok(is("Firefox"), "isGlobalPBSupported is only true on Firefox");
-  }
-}
-else if (isWindowPBSupported) {
+if (isWindowPBSupported) {
   safeMerge(module.exports, require('./private-browsing/windows'));
 
   exports.testPWOnlyOnFirefox = function(assert) {
@@ -57,24 +47,17 @@ exports.testIsPrivateDefaults = function(assert) {
 };
 
 exports.testWindowDefaults = function(assert) {
-  setPref(DEPRECATE_PREF, true);
   // Ensure that browserWindow still works while being deprecated
   let { loader, messages } = LoaderWithHookedConsole(module);
   let windows = loader.require("sdk/windows").browserWindows;
-  assert.equal(windows.activeWindow.isPrivateBrowsing, false,
-                   'window is not private browsing by default');
-  assert.ok(/DEPRECATED.+isPrivateBrowsing/.test(messages[0].msg),
-                     'isPrivateBrowsing is deprecated');
+  assert.equal(windows.activeWindow.isPrivateBrowsing, undefined,
+              'window.isPrivateBrowsing is undefined');
+  assert.equal(undefined, messages[0],
+               'isPrivateBrowsing is deprecated');
 
   let chromeWin = winUtils.getMostRecentBrowserWindow();
   assert.equal(getMode(chromeWin), false);
   assert.equal(isWindowPrivate(chromeWin), false);
-};
-
-// tests for the case where private browsing doesn't exist
-exports.testIsActiveDefault = function(assert) {
-  assert.equal(pb.isActive, false,
-                   'pb.isActive returns false when private browsing isn\'t supported');
 };
 
 exports.testIsPrivateBrowsingFalseDefault = function(assert) {
@@ -82,33 +65,13 @@ exports.testIsPrivateBrowsingFalseDefault = function(assert) {
   	               'isPrivateBrowsingSupported property is false by default');
 };
 
-exports.testGetOwnerWindow = function(assert, done) {
-  let window = windows.activeWindow;
-  let chromeWindow = getOwnerWindow(window);
-  assert.ok(chromeWindow instanceof Ci.nsIDOMWindow, 'associated window is found');
-
-  tabs.open({
-    url: 'about:blank',
-    isPrivate: true,
-    onOpen: function(tab) {
-      // test that getOwnerWindow works as expected
-      if (is('Fennec')) {
-        assert.notStrictEqual(chromeWindow, getOwnerWindow(tab)); 
-        assert.ok(getOwnerWindow(tab) instanceof Ci.nsIDOMWindow); 
-      }
-      else {
-        assert.strictEqual(chromeWindow, getOwnerWindow(tab), 'associated window is the same for window and window\'s tab');
-      }
-
-      // test that the tab is not private
-      // private flag should be ignored by default
-      assert.ok(!isPrivate(tab));
-      assert.ok(!isPrivate(getOwnerWindow(tab)));
-
-      tab.close(done);
-    }
-  });
-};
+exports.testNSIPrivateBrowsingChannel = function(assert) {
+  let channel = Services.io.newChannel("about:blank", null, null);
+  channel.QueryInterface(Ci.nsIPrivateBrowsingChannel);
+  assert.equal(isPrivate(channel), false, 'isPrivate detects non-private channels');
+  channel.setPrivate(true);
+  assert.ok(isPrivate(channel), 'isPrivate detects private channels');
+}
 
 exports.testNewGlobalPBService = function(assert) {
   assert.equal(isPrivate(), false, 'isPrivate() is false by default');

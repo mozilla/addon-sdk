@@ -42,6 +42,33 @@ exports.testOpenAndCloseWindow = function(assert, done) {
   });
 };
 
+exports.testOpenRelativePathWindow = function(assert, done) {
+  assert.equal(browserWindows.length, 1, "Only one window open");
+
+  const { merge } = require("sdk/util/object");
+  const self = require("sdk/self");
+
+  let loader = Loader(module, null, null, {
+    modules: {
+      "sdk/self": merge({}, self, {
+        data: merge({}, self.data, require("./../fixtures"))
+      })
+    }
+  });
+
+  loader.require("sdk/windows").browserWindows.open({
+    url: "./test.html",
+    onOpen: (window) => {
+      window.tabs.activeTab.once("ready", (tab) => {
+        assert.equal(tab.title, "foo",
+          "tab opened a document with relative path");
+
+        window.close(done);
+      });
+    }
+  })
+}
+
 exports.testAutomaticDestroy = function(assert, done) {
   let windows = browserWindows;
 
@@ -184,7 +211,7 @@ exports.testActiveWindow = function(assert, done) {
   let rawWindow2, rawWindow3;
 
   let testSteps = [
-    function() {
+    () => {
       assert.equal(windows.length, 3, "Correct number of browser windows");
 
       let count = 0;
@@ -196,20 +223,17 @@ exports.testActiveWindow = function(assert, done) {
 
       continueAfterFocus(rawWindow2);
       rawWindow2.focus();
-    },
-    function() {
+    }, () => {
       assert.equal(windows.activeWindow.title, window2.title, "Correct active window - 2");
 
       continueAfterFocus(rawWindow2);
       window2.activate();
-    },
-    function() {
+    }, () => {
       assert.equal(windows.activeWindow.title, window2.title, "Correct active window - 2");
 
       continueAfterFocus(rawWindow3);
       window3.activate();
-    },
-    function() {
+    }, () => {
       assert.equal(windows.activeWindow.title, window3.title, "Correct active window - 3");
       finishTest();
     }
@@ -224,10 +248,10 @@ exports.testActiveWindow = function(assert, done) {
 
   windows.open({
     url: "data:text/html;charset=utf-8,<title>window 2</title>",
-    onOpen: function(window) {
+    onOpen: (window) => {
       assert.pass('window 2 open');
 
-      window.tabs.activeTab.on('ready', function() {
+      window.tabs.activeTab.once('ready', () => {
         assert.pass('window 2 tab activated');
 
         window2 = window;
@@ -240,10 +264,10 @@ exports.testActiveWindow = function(assert, done) {
 
         windows.open({
           url: "data:text/html;charset=utf-8,<title>window 3</title>",
-          onOpen: function(window) {
+          onOpen: (window) => {
             assert.pass('window 3 open');
 
-            window.tabs.activeTab.on('ready', function onReady() {
+            window.tabs.activeTab.once('ready', () => {
               assert.pass('window 3 tab activated');
 
               window3 = window;
@@ -255,7 +279,6 @@ exports.testActiveWindow = function(assert, done) {
               assert.equal(rawWindow3.document.title, window3.title, "Saw correct title on window 3");
 
               continueAfterFocus(rawWindow3);
-              rawWindow3.focus();
             });
           }
         });
@@ -263,24 +286,16 @@ exports.testActiveWindow = function(assert, done) {
     }
   });
 
-  function nextStep() {
-    if (testSteps.length) {
-      setTimeout(testSteps.shift())
-    }
-  }
-
-  let continueAfterFocus = function(w) onFocus(w).then(nextStep);
+  let nextStep = () => testSteps.length ? setTimeout(testSteps.shift()) : null;
+  let continueAfterFocus = (w) => onFocus(w).then(nextStep);
 
   function finishTest() {
     // close unactive window first to avoid unnecessary focus changing
-    window2.close(function() {
-      window3.close(function() {
-        assert.equal(rawWindow2.closed, true, 'window 2 is closed');
-        assert.equal(rawWindow3.closed, true, 'window 3 is closed');
-
-        done();
-      });
-    });
+    window2.close(() => window3.close(() => {
+      assert.equal(rawWindow2.closed, true, 'window 2 is closed');
+      assert.equal(rawWindow3.closed, true, 'window 3 is closed');
+      done();
+    }));
   }
 };
 

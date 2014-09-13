@@ -4,13 +4,17 @@
 "use strict";
 
 const { PageMod } = require("sdk/page-mod");
-const testPageMod = require("./pagemod-test-helpers").testPageMod;
+const { testPageMod, handleReadyState } = require("./pagemod-test-helpers");
 const { Loader } = require('sdk/test/loader');
 const tabs = require("sdk/tabs");
-const timer = require("sdk/timers");
+const { setTimeout } = require("sdk/timers");
 const { Cc, Ci, Cu } = require("chrome");
-const { open, getFrames, getMostRecentBrowserWindow } = require('sdk/window/utils');
-const windowUtils = require('sdk/deprecated/window-utils');
+const {
+  open,
+  getFrames,
+  getMostRecentBrowserWindow,
+  getInnerId
+} = require('sdk/window/utils');
 const { getTabContentWindow, getActiveTab, setTabURL, openTab, closeTab } = require('sdk/tabs/utils');
 const xulApp = require("sdk/system/xul-app");
 const { isPrivateBrowsingSupported } = require('sdk/self');
@@ -20,9 +24,14 @@ const { isTabPBSupported, isWindowPBSupported, isGlobalPBSupported } = require('
 const promise = require("sdk/core/promise");
 const { pb } = require('./private-browsing/helper');
 const { URL } = require("sdk/url");
+const { LoaderWithHookedConsole } = require('sdk/test/loader');
 
 const { waitUntil } = require("sdk/test/utils");
 const data = require("./fixtures");
+
+const { devtools } = Cu.import("resource://gre/modules/devtools/Loader.jsm", {});
+const { require: devtoolsRequire } = devtools;
+const contentGlobals = devtoolsRequire("devtools/server/content-globals");
 
 const testPageURI = data.url("test.html");
 
@@ -125,24 +134,125 @@ exports.testPageModIncludes = function(assert, done) {
       createPageModTest(testPageURI, true)
     ],
     function (win, done) {
-      waitUntil(function () win.localStorage[testPageURI],
-                     testPageURI + " page-mod to be executed")
-          .then(function () {
-            asserts.forEach(function(fn) {
-              fn(assert, win);
-            });
-            done();
-          });
-    }
-    );
+      waitUntil(() => win.localStorage[testPageURI],
+          testPageURI + " page-mod to be executed")
+        .then(() => {
+          asserts.forEach(fn => fn(assert, win));
+          win.localStorage.clear();
+          done();
+        });
+    });
 };
 
-exports.testPageModErrorHandling = function(assert) {
-  assert.throws(function() {
-      new PageMod();
-    },
-    /The `include` option must always contain atleast one rule/,
-    "PageMod() throws when 'include' option is not specified.");
+exports.testPageModExcludes = function(assert, done) {
+  var asserts = [];
+  function createPageModTest(include, exclude, expectedMatch) {
+    // Create an 'onload' test function...
+    asserts.push(function(test, win) {
+      var matches = JSON.stringify([include, exclude]) in win.localStorage;
+      assert.ok(expectedMatch ? matches : !matches,
+          "[include, exclude] = [" + include + ", " + exclude +
+          "] match test, expected: " + expectedMatch);
+    });
+    // ...and corresponding PageMod options
+    return {
+      include: include,
+      exclude: exclude,
+      contentScript: 'new ' + function() {
+        self.on("message", function(msg) {
+          // The key in localStorage is "[<include>, <exclude>]".
+          window.localStorage[JSON.stringify(msg)] = true;
+        });
+      },
+      // The testPageMod callback with test assertions is called on 'end',
+      // and we want this page mod to be attached before it gets called,
+      // so we attach it on 'start'.
+      contentScriptWhen: 'start',
+      onAttach: function(worker) {
+        worker.postMessage([this.include[0], this.exclude[0]]);
+      }
+    };
+  }
+
+  testPageMod(assert, done, testPageURI, [
+      createPageModTest("*", testPageURI, false),
+      createPageModTest(testPageURI, testPageURI, false),
+      createPageModTest(testPageURI, "resource://*", false),
+      createPageModTest(testPageURI, "*.google.com", true)
+    ],
+    function (win, done) {
+      waitUntil(() => win.localStorage[JSON.stringify([testPageURI, "*.google.com"])],
+          testPageURI + " page-mod to be executed")
+        .then(() => {
+          asserts.forEach(fn => fn(assert, win));
+          win.localStorage.clear();
+          done();
+        });
+    });
+};
+
+exports.testPageModValidationAttachTo = function(assert) {
+  [{ val: 'top', type: 'string "top"' },
+   { val: 'frame', type: 'string "frame"' },
+   { val: ['top', 'existing'], type: 'array with "top" and "existing"' },
+   { val: ['frame', 'existing'], type: 'array with "frame" and "existing"' },
+   { val: ['top'], type: 'array with "top"' },
+   { val: ['frame'], type: 'array with "frame"' },
+   { val: undefined, type: 'undefined' }].forEach((attachTo) => {
+    new PageMod({ attachTo: attachTo.val, include: '*.validation111' });
+    assert.pass("PageMod() does not throw when attachTo is " + attachTo.type);
+  });
+
+  [{ val: 'existing', type: 'string "existing"' },
+   { val: ['existing'], type: 'array with "existing"' },
+   { val: 'not-legit', type: 'string with "not-legit"' },
+   { val: ['not-legit'], type: 'array with "not-legit"' },
+   { val: {}, type: 'object' }].forEach((attachTo) => {
+    assert.throws(() =>
+      new PageMod({ attachTo: attachTo.val, include: '*.validation111' }),
+      /The `attachTo` option/,
+      "PageMod() throws when 'attachTo' option is " + attachTo.type + ".");
+  });
+};
+
+exports.testPageModValidationInclude = function(assert) {
+  [{ val: undefined, type: 'undefined' },
+   { val: {}, type: 'object' },
+   { val: [], type: 'empty array'},
+   { val: [/regexp/, 1], type: 'array with non string/regexp' },
+   { val: 1, type: 'number' }].forEach((include) => {
+    assert.throws(() => new PageMod({ include: include.val }),
+      /The `include` option must always contain atleast one rule/,
+      "PageMod() throws when 'include' option is " + include.type + ".");
+  });
+
+  [{ val: '*.validation111', type: 'string' },
+   { val: /validation111/, type: 'regexp' },
+   { val: ['*.validation111'], type: 'array with length > 0'}].forEach((include) => {
+    new PageMod({ include: include.val });
+    assert.pass("PageMod() does not throw when include option is " + include.type);
+  });
+};
+
+exports.testPageModValidationExclude = function(assert) {
+  let includeVal = '*.validation111';
+
+  [{ val: {}, type: 'object' },
+   { val: [], type: 'empty array'},
+   { val: [/regexp/, 1], type: 'array with non string/regexp' },
+   { val: 1, type: 'number' }].forEach((exclude) => {
+    assert.throws(() => new PageMod({ include: includeVal, exclude: exclude.val }),
+      /If set, the `exclude` option must always contain at least one rule as a string, regular expression, or an array of strings and regular expressions./,
+      "PageMod() throws when 'exclude' option is " + exclude.type + ".");
+  });
+
+  [{ val: undefined, type: 'undefined' },
+   { val: '*.validation111', type: 'string' },
+   { val: /validation111/, type: 'regexp' },
+   { val: ['*.validation111'], type: 'array with length > 0'}].forEach((exclude) => {
+    new PageMod({ include: includeVal, exclude: exclude.val });
+    assert.pass("PageMod() does not throw when exclude option is " + exclude.type);
+  });
 };
 
 /* Tests for internal functions. */
@@ -412,7 +522,7 @@ exports.testWorksWithExistingTabs = function(assert, done) {
           assert.ok(!!worker.tab, "Worker.tab exists");
           assert.equal(tab, worker.tab, "A worker has been created on this existing tab");
 
-          timer.setTimeout(function() {
+          setTimeout(function() {
             pageModOnExisting.destroy();
             pageModOffExisting.destroy();
             tab.close(done);
@@ -444,7 +554,7 @@ exports.testExistingFrameDoesntMatchInclude = function(assert, done) {
           assert.fail("Existing iframe URL doesn't match include, must not attach to anything");
         }
       });
-      timer.setTimeout(function() {
+      setTimeout(function() {
         assert.pass("PageMod didn't attach to anything")
         pagemod.destroy();
         tab.close(done);
@@ -464,7 +574,7 @@ exports.testExistingOnlyFrameMatchesInclude = function(assert, done) {
         include: iframeURL,
         attachTo: ['existing', 'frame'],
         onAttach: function(worker) {
-          assert.equal(iframeURL, worker.url, 
+          assert.equal(iframeURL, worker.url,
               "PageMod attached to existing iframe when only it matches include rules");
           pagemod.destroy();
           tab.close(done);
@@ -473,6 +583,187 @@ exports.testExistingOnlyFrameMatchesInclude = function(assert, done) {
     }
   });
 };
+
+exports.testContentScriptWhenDefault = function(assert) {
+  let pagemod = PageMod({include: '*'});
+
+  assert.equal(pagemod.contentScriptWhen, 'end', "Default contentScriptWhen is 'end'");
+  pagemod.destroy();
+}
+
+// test timing for all 3 contentScriptWhen options (start, ready, end)
+// for new pages, or tabs opened after PageMod is created
+exports.testContentScriptWhenForNewTabs = function(assert, done) {
+  const url = "data:text/html;charset=utf-8,testContentScriptWhenForNewTabs";
+
+  let count = 0;
+
+  handleReadyState(url, 'start', {
+    onLoading: (tab) => {
+      assert.pass("PageMod is attached while document is loading");
+      if (++count === 3)
+        tab.close(done);
+    },
+    onInteractive: () => assert.fail("onInteractive should not be called with 'start'."),
+    onComplete: () => assert.fail("onComplete should not be called with 'start'."),
+  });
+
+  handleReadyState(url, 'ready', {
+    onInteractive: (tab) => {
+      assert.pass("PageMod is attached while document is interactive");
+      if (++count === 3)
+        tab.close(done);
+    },
+    onLoading: () => assert.fail("onLoading should not be called with 'ready'."),
+    onComplete: () => assert.fail("onComplete should not be called with 'ready'."),
+  });
+
+  handleReadyState(url, 'end', {
+    onComplete: (tab) => {
+      assert.pass("PageMod is attached when document is complete");
+      if (++count === 3)
+        tab.close(done);
+    },
+    onLoading: () => assert.fail("onLoading should not be called with 'end'."),
+    onInteractive: () => assert.fail("onInteractive should not be called with 'end'."),
+  });
+
+  tabs.open(url);
+}
+
+// test timing for all 3 contentScriptWhen options (start, ready, end)
+// for PageMods created right as the tab is created (in tab.onOpen)
+exports.testContentScriptWhenOnTabOpen = function(assert, done) {
+  const url = "data:text/html;charset=utf-8,testContentScriptWhenOnTabOpen";
+
+  tabs.open({
+    url: url,
+    onOpen: function(tab) {
+      let count = 0;
+
+      handleReadyState(url, 'start', {
+        onLoading: () => {
+          assert.pass("PageMod is attached while document is loading");
+          if (++count === 3)
+            tab.close(done);
+        },
+        onInteractive: () => assert.fail("onInteractive should not be called with 'start'."),
+        onComplete: () => assert.fail("onComplete should not be called with 'start'."),
+      });
+
+      handleReadyState(url, 'ready', {
+        onInteractive: () => {
+          assert.pass("PageMod is attached while document is interactive");
+          if (++count === 3)
+            tab.close(done);
+        },
+        onLoading: () => assert.fail("onLoading should not be called with 'ready'."),
+        onComplete: () => assert.fail("onComplete should not be called with 'ready'."),
+      });
+
+      handleReadyState(url, 'end', {
+        onComplete: () => {
+          assert.pass("PageMod is attached when document is complete");
+          if (++count === 3)
+            tab.close(done);
+        },
+        onLoading: () => assert.fail("onLoading should not be called with 'end'."),
+        onInteractive: () => assert.fail("onInteractive should not be called with 'end'."),
+      });
+
+    }
+  });
+}
+
+// test timing for all 3 contentScriptWhen options (start, ready, end)
+// for PageMods created while the tab is interactive (in tab.onReady)
+exports.testContentScriptWhenOnTabReady = function(assert, done) {
+  // need a bit bigger document to get the right timing of events with e10s
+  let iframeURL = 'data:text/html;charset=utf-8,testContentScriptWhenOnTabReady';
+  let iframe = '<iframe src="' + iframeURL + '" />';
+  let url = 'data:text/html;charset=utf-8,' + encodeURIComponent(iframe);
+  tabs.open({
+    url: url,
+    onReady: function(tab) {
+      let count = 0;
+
+      handleReadyState(url, 'start', {
+        onInteractive: () => {
+          assert.pass("PageMod is attached while document is interactive");
+          if (++count === 3)
+            tab.close(done);
+        },
+        onLoading: () => assert.fail("onLoading should not be called with 'start'."),
+        onComplete: () => assert.fail("onComplete should not be called with 'start'."),
+      });
+
+      handleReadyState(url, 'ready', {
+        onInteractive: () => {
+          assert.pass("PageMod is attached while document is interactive");
+          if (++count === 3)
+            tab.close(done);
+        },
+        onLoading: () => assert.fail("onLoading should not be called with 'ready'."),
+        onComplete: () => assert.fail("onComplete should not be called with 'ready'."),
+      });
+
+      handleReadyState(url, 'end', {
+        onComplete: () => {
+          assert.pass("PageMod is attached when document is complete");
+          if (++count === 3)
+            tab.close(done);
+        },
+        onLoading: () => assert.fail("onLoading should not be called with 'end'."),
+        onInteractive: () => assert.fail("onInteractive should not be called with 'end'."),
+      });
+
+    }
+  });
+}
+
+// test timing for all 3 contentScriptWhen options (start, ready, end)
+// for PageMods created after a tab has completed loading (in tab.onLoad)
+exports.testContentScriptWhenOnTabLoad = function(assert, done) {
+  const url = "data:text/html;charset=utf-8,testContentScriptWhenOnTabLoad";
+
+  tabs.open({
+    url: url,
+    onLoad: function(tab) {
+      let count = 0;
+
+      handleReadyState(url, 'start', {
+        onComplete: () => {
+          assert.pass("PageMod is attached when document is complete");
+          if (++count === 3)
+            tab.close(done);
+        },
+        onLoading: () => assert.fail("onLoading should not be called with 'start'."),
+        onInteractive: () => assert.fail("onInteractive should not be called with 'start'."),
+      });
+
+      handleReadyState(url, 'ready', {
+        onComplete: () => {
+          assert.pass("PageMod is attached when document is complete");
+          if (++count === 3)
+            tab.close(done);
+        },
+        onLoading: () => assert.fail("onLoading should not be called with 'ready'."),
+        onInteractive: () => assert.fail("onInteractive should not be called with 'ready'."),
+      });
+
+      handleReadyState(url, 'end', {
+        onComplete: () => {
+          assert.pass("PageMod is attached when document is complete");
+          if (++count === 3)
+            tab.close(done);
+        },
+        onLoading: () => assert.fail("onLoading should not be called with 'end'."),
+        onInteractive: () => assert.fail("onInteractive should not be called with 'end'."),
+      });
+
+    }
+  });
+}
 
 exports.testTabWorkerOnMessage = function(assert, done) {
   let { browserWindows } = require("sdk/windows");
@@ -544,7 +835,6 @@ exports.testAutomaticDestroy = function(assert, done) {
 };
 
 exports.testAttachToTabsOnly = function(assert, done) {
-
   let { PageMod } = require('sdk/page-mod');
   let openedTab = null; // Tab opened in openTabWithIframe()
   let workerCount = 0;
@@ -569,7 +859,7 @@ exports.testAttachToTabsOnly = function(assert, done) {
   });
 
   function openHiddenFrame() {
-    console.info('Open iframe in hidden window');
+    assert.pass('Open iframe in hidden window');
     let hiddenFrames = require('sdk/frame/hidden-frame');
     let hiddenFrame = hiddenFrames.add(hiddenFrames.HiddenFrame({
       onReady: function () {
@@ -591,7 +881,7 @@ exports.testAttachToTabsOnly = function(assert, done) {
   }
 
   function openToplevelWindow() {
-    console.info('Open toplevel window');
+    assert.pass('Open toplevel window');
     let win = open('data:text/html;charset=utf-8,bar');
     win.addEventListener('DOMContentLoaded', function onload() {
       win.removeEventListener('DOMContentLoaded', onload, false);
@@ -601,7 +891,7 @@ exports.testAttachToTabsOnly = function(assert, done) {
   }
 
   function openBrowserIframe() {
-    console.info('Open iframe in browser window');
+    assert.pass('Open iframe in browser window');
     let window = require('sdk/deprecated/window-utils').activeBrowserWindow;
     let document = window.document;
     let iframe = document.createElement('iframe');
@@ -617,7 +907,7 @@ exports.testAttachToTabsOnly = function(assert, done) {
 
   // Only these three documents will be accepted by the page-mod
   function openTabWithIframes() {
-    console.info('Open iframes in a tab');
+    assert.pass('Open iframes in a tab');
     let subContent = '<iframe src="data:text/html;charset=utf-8,sub frame" />'
     let content = '<iframe src="data:text/html;charset=utf-8,' +
                   encodeURIComponent(subContent) + '" />';
@@ -738,20 +1028,20 @@ exports.testPageModCss = function(assert, done) {
     'data:text/html;charset=utf-8,<div style="background: silver">css test</div>', [{
       include: ["*", "data:*"],
       contentStyle: "div { height: 100px; }",
-      contentStyleFile: data.url("pagemod-css-include-file.css")
+      contentStyleFile: [data.url("include-file.css"), "./border-style.css"]
     }],
     function(win, done) {
       let div = win.document.querySelector("div");
-      assert.equal(
-        div.clientHeight,
-        100,
-        "PageMod contentStyle worked"
-      );
-      assert.equal(
-       div.offsetHeight,
-        120,
-        "PageMod contentStyleFile worked"
-      );
+
+      assert.equal(div.clientHeight, 100,
+        "PageMod contentStyle worked");
+   
+      assert.equal(div.offsetHeight, 120,
+        "PageMod contentStyleFile worked");
+
+      assert.equal(win.getComputedStyle(div).borderTopStyle, "dashed",
+        "PageMod contentStyleFile with relative path worked");
+
       done();
     }
   );
@@ -850,7 +1140,7 @@ exports.testPageModCssAutomaticDestroy = function(assert, done) {
     url: "data:text/html;charset=utf-8,<div style='width:200px'>css test</div>",
 
     onReady: function onReady(tab) {
-      let browserWindow = windowUtils.activeBrowserWindow;
+      let browserWindow = getMostRecentBrowserWindow();
       let win = getTabContentWindow(getActiveTab(browserWindow));
 
       let div = win.document.querySelector("div");
@@ -875,6 +1165,21 @@ exports.testPageModCssAutomaticDestroy = function(assert, done) {
   });
 };
 
+exports.testPageModContentScriptFile = function(assert, done) {
+
+  testPageMod(assert, done, "about:license", [{
+      include: "about:*",
+      contentScriptWhen: "start",
+      contentScriptFile: "./test-contentScriptFile.js",
+      onMessage: message => {
+        assert.equal(message, "msg from contentScriptFile",
+          "PageMod contentScriptFile with relative path worked");
+      }
+    }],
+    (win, done) => done()
+  );
+
+};
 
 exports.testPageModTimeout = function(assert, done) {
   let tab = null
@@ -995,7 +1300,7 @@ exports.testExistingOnFrames = function(assert, done) {
         else {
           assert.equal(subFrameURL, worker.url, '2nd attach is for sub frame');
           // need timeout because onAttach is called before the constructor returns
-          timer.setTimeout(function() {
+          setTimeout(function() {
             pagemodOnExisting.destroy();
             pagemodOffExisting.destroy();
             closeTab(tab);
@@ -1152,12 +1457,13 @@ exports.testWorkerTabClose = function(assert, done) {
       include: "about:",
       contentScript: '',
       onAttach: function(worker) {
-        console.log("call close");
+        assert.pass("The page-mod was attached");
+
         worker.tab.close(function () {
           // On Fennec, tab is completely destroyed right after close event is
           // dispatch, so we need to wait for the next event loop cycle to
           // check for tab nulliness.
-          timer.setTimeout(function () {
+          setTimeout(function () {
             assert.ok(!worker.tab,
                         "worker.tab should be null right after tab.close()");
             callbackDone();
@@ -1182,18 +1488,193 @@ exports.testDebugMetadata = function(assert, done) {
       include: "about:",
       contentScriptWhen: "start",
       contentScript: "null;",
-    }],
-    function(win, done) {
+    }], function(win, done) {
       assert.ok(globalDebuggees.some(function(global) {
         try {
           let metadata = Cu.getSandboxMetadata(global.unsafeDereference());
-          return metadata && metadata.addonID && metadata.SDKContentScript;
+          return metadata && metadata.addonID && metadata.SDKContentScript &&
+                 metadata['inner-window-id'] == getInnerId(win);
         } catch(e) {
           // Some of the globals might not be Sandbox instances and thus
           // will cause getSandboxMetadata to fail.
           return false;
         }
       }), "one of the globals is a content script");
+      done();
+    }
+  );
+};
+
+exports.testDevToolsExtensionsGetContentGlobals = function(assert, done) {
+  let mods = testPageMod(assert, done, "about:", [{
+      include: "about:",
+      contentScriptWhen: "start",
+      contentScript: "null;",
+    }], function(win, done) {
+      assert.equal(contentGlobals.getContentGlobals({ 'inner-window-id': getInnerId(win) }).length, 1);
+      done();
+    }
+  );
+};
+
+exports.testDetachOnDestroy = function(assert, done) {
+  let tab;
+  const TEST_URL = 'data:text/html;charset=utf-8,detach';
+  const loader = Loader(module);
+  const { PageMod } = loader.require('sdk/page-mod');
+
+  let mod1 = PageMod({
+    include: TEST_URL,
+    contentScript: Isolate(function() {
+      self.port.on('detach', function(reason) {
+        window.document.body.innerHTML += '!' + reason;
+      });
+    }),
+    onAttach: worker => {
+      assert.pass('attach[1] happened');
+
+      worker.on('detach', _ => setTimeout(_ => {
+        assert.pass('detach happened');
+
+        let mod2 = PageMod({
+          attachTo: [ 'existing', 'top' ],
+          include: TEST_URL,
+          contentScript: Isolate(function() {
+            self.port.on('test', _ => {
+              self.port.emit('result', { result: window.document.body.innerHTML});
+            });
+          }),
+          onAttach: worker => {
+            assert.pass('attach[2] happened');
+            worker.port.once('result', ({ result }) => {
+              assert.equal(result, 'detach!', 'the body.innerHTML is as expected');
+              mod1.destroy();
+              mod2.destroy();
+              loader.unload();
+              tab.close(done);
+            });
+            worker.port.emit('test');
+          }
+        });
+      }));
+
+      worker.destroy();
+    }
+  });
+
+  tabs.open({
+    url: TEST_URL,
+    onOpen: t => tab = t
+  })
+}
+
+exports.testDetachOnUnload = function(assert, done) {
+  let tab;
+  const TEST_URL = 'data:text/html;charset=utf-8,detach';
+  const loader = Loader(module);
+  const { PageMod } = loader.require('sdk/page-mod');
+
+  let mod1 = PageMod({
+    include: TEST_URL,
+    contentScript: Isolate(function() {
+      self.port.on('detach', function(reason) {
+        window.document.body.innerHTML += '!' + reason;
+      });
+    }),
+    onAttach: worker => {
+      assert.pass('attach[1] happened');
+
+      worker.on('detach', _ => setTimeout(_ => {
+        assert.pass('detach happened');
+
+        let mod2 = require('sdk/page-mod').PageMod({
+          attachTo: [ 'existing', 'top' ],
+          include: TEST_URL,
+          contentScript: Isolate(function() {
+            self.port.on('test', _ => {
+              self.port.emit('result', { result: window.document.body.innerHTML});
+            });
+          }),
+          onAttach: worker => {
+            assert.pass('attach[2] happened');
+            worker.port.once('result', ({ result }) => {
+              assert.equal(result, 'detach!shutdown', 'the body.innerHTML is as expected');
+              mod2.destroy();
+              tab.close(done);
+            });
+            worker.port.emit('test');
+          }
+        });
+      }));
+
+      loader.unload('shutdown');
+    }
+  });
+
+  tabs.open({
+    url: TEST_URL,
+    onOpen: t => tab = t
+  })
+}
+
+exports.testConsole = function(assert, done) {
+  let innerID;
+  const TEST_URL = 'data:text/html;charset=utf-8,console';
+  const { loader } = LoaderWithHookedConsole(module, onMessage);
+  const { PageMod } = loader.require('sdk/page-mod');
+  const system = require("sdk/system/events");
+
+  let seenMessage = false;
+  function onMessage(type, msg, msgID) {
+    seenMessage = true;
+    innerID = msgID;
+  }
+
+  let mod = PageMod({
+    include: TEST_URL,
+    contentScriptWhen: "ready",
+    contentScript: Isolate(function() {
+      console.log("Hello from the page mod");
+      self.port.emit("done");
+    }),
+    onAttach: function(worker) {
+      worker.port.on("done", function() {
+        let window = getTabContentWindow(tab);
+        let id = getInnerId(window);
+        assert.ok(seenMessage, "Should have seen the console message");
+        assert.equal(innerID, id, "Should have seen the right inner ID");
+        closeTab(tab);
+        done();
+      });
+    },
+  });
+
+  let tab = openTab(getMostRecentBrowserWindow(), TEST_URL);
+}
+
+exports.testSyntaxErrorInContentScript = function(assert, done) {
+  const url = "data:text/html;charset=utf-8,testSyntaxErrorInContentScript";
+  let hitError = null;
+  let attached = false;
+
+  testPageMod(assert, done, url, [{
+      include: url,
+      contentScript: 'console.log(23',
+
+      onAttach: function() {
+        attached = true;
+      },
+
+      onError: function(e) {
+        hitError = e;
+      }
+    }],
+
+    function(win, done) {
+      assert.ok(attached, "The worker was attached.");
+      assert.notStrictEqual(hitError, null, "The syntax error was reported.");
+      if (hitError)
+        assert.equal(hitError.name, "SyntaxError", "The error thrown should be a SyntaxError");
       done();
     }
   );

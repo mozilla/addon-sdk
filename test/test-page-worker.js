@@ -1,12 +1,10 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 "use strict";
 
 const { Loader } = require('sdk/test/loader');
-const Pages = require("sdk/page-worker");
-const Page = Pages.Page;
+const { Page } = require("sdk/page-worker");
 const { URL } = require("sdk/url");
 const fixtures = require("./fixtures");
 const testURI = fixtures.url("test.html");
@@ -14,6 +12,8 @@ const testURI = fixtures.url("test.html");
 const ERR_DESTROYED =
   "Couldn't find the worker to receive this message. " +
   "The script may not be initialized yet, or may already have been unloaded.";
+
+const Isolate = fn => "(" + fn + ")()";
 
 exports.testSimplePageCreation = function(assert, done) {
   let page = new Page({
@@ -81,7 +81,7 @@ exports.testUnwrappedDOM = function(assert, done) {
 exports.testPageProperties = function(assert) {
   let page = new Page();
 
-  for each (let prop in ['contentURL', 'allow', 'contentScriptFile',
+  for (let prop of ['contentURL', 'allow', 'contentScriptFile',
                          'contentScript', 'contentScriptWhen', 'on',
                          'postMessage', 'removeListener']) {
     assert.ok(prop in page, prop + " property is defined on page.");
@@ -93,17 +93,17 @@ exports.testPageProperties = function(assert) {
 
 exports.testConstructorAndDestructor = function(assert, done) {
   let loader = Loader(module);
-  let Pages = loader.require("sdk/page-worker");
+  let { Page } = loader.require("sdk/page-worker");
   let global = loader.sandbox("sdk/page-worker");
 
   let pagesReady = 0;
 
-  let page1 = Pages.Page({
+  let page1 = Page({
     contentScript:      "self.postMessage('')",
     contentScriptWhen:  "end",
     onMessage:          pageReady
   });
-  let page2 = Pages.Page({
+  let page2 = Page({
     contentScript:      "self.postMessage('')",
     contentScriptWhen:  "end",
     onMessage:          pageReady
@@ -128,9 +128,9 @@ exports.testConstructorAndDestructor = function(assert, done) {
 
 exports.testAutoDestructor = function(assert, done) {
   let loader = Loader(module);
-  let Pages = loader.require("sdk/page-worker");
+  let { Page } = loader.require("sdk/page-worker");
 
-  let page = Pages.Page({
+  let page = Page({
     contentScript: "self.postMessage('')",
     contentScriptWhen: "end",
     onMessage: function() {
@@ -270,6 +270,33 @@ exports.testLoadContentPage = function(assert, done) {
   });
 }
 
+exports.testLoadContentPageRelativePath = function(assert, done) {
+  const self = require("sdk/self");
+  const { merge } = require("sdk/util/object");
+
+  let loader = Loader(module, null, null, {
+    modules: {
+      "sdk/self": merge({}, self, {
+        data: merge({}, self.data, fixtures)
+      })
+    }
+  });
+
+  let page = loader.require("sdk/page-worker").Page({
+    onMessage: function(message) {
+      // The message is an array whose first item is the test method to call
+      // and the rest of whose items are arguments to pass it.
+      let msg = message.shift();
+      if (msg == "done")
+        return done();
+      assert[msg].apply(assert, message);
+    },
+    contentURL: "./test-page-worker.html",
+    contentScriptFile: "./test-page-worker.js",
+    contentScriptWhen: "ready"
+  });
+}
+
 exports.testAllowScriptDefault = function(assert, done) {
   let page = Page({
     onMessage: function(message) {
@@ -316,12 +343,12 @@ exports.testPingPong = function(assert, done) {
 exports.testRedirect = function (assert, done) {
   let page = Page({
     contentURL: 'data:text/html;charset=utf-8,first-page',
-    contentScript: '(function () {' +
+    contentScriptWhen: "end",
+    contentScript: '' +
       'if (/first-page/.test(document.location.href)) ' +
       '  document.location.href = "data:text/html;charset=utf-8,redirect";' +
       'else ' +
-      '  self.port.emit("redirect", document.location.href);' +
-      '})();'
+      '  self.port.emit("redirect", document.location.href);'
   });
 
   page.port.on('redirect', function (url) {
@@ -347,11 +374,11 @@ exports.testRedirectIncludeArrays = function (assert, done) {
     if (url === firstURL) {
       page.port.emit('redirect', 'about:blank');
     } else if (url === 'about:blank') {
-      page.port.emit('redirect', 'about:home');
+      page.port.emit('redirect', 'about:mozilla');
       assert.ok('`include` property handles arrays');
       assert.equal(url, 'about:blank', 'Redirects work with accepted domains');
       done();
-    } else if (url === 'about:home') {
+    } else if (url === 'about:mozilla') {
       assert.fail('Should not redirect to restricted domain');
     }
   });
@@ -378,7 +405,7 @@ exports.testRedirectFromWorker = function (assert, done) {
     } else if (url === secondURL) {
       page.port.emit('redirect', thirdURL);
     } else if (url === thirdURL) {
-      page.port.emit('redirect', 'about:home');
+      page.port.emit('redirect', 'about:mozilla');
       assert.equal(url, thirdURL, 'Redirects work with accepted domains on include strings');
       done();
     } else {
@@ -405,7 +432,7 @@ exports.testRedirectWithContentURL = function (assert, done) {
     } else if (url === secondURL) {
       page.contentURL = thirdURL;
     } else if (url === thirdURL) {
-      page.contentURL = 'about:home';
+      page.contentURL = 'about:mozilla';
       assert.equal(url, thirdURL, 'Redirects work with accepted domains on include strings');
       done();
     } else {
@@ -452,12 +479,49 @@ exports.testMessageQueue = function (assert, done) {
   });
 };
 
+exports.testWindowStopDontBreak = function (assert, done) {
+  const { Ci, Cc } = require('chrome');
+  const consoleService = Cc['@mozilla.org/consoleservice;1'].
+                            getService(Ci.nsIConsoleService);
+  const listener = {
+    observe: ({message}) => {
+      if (message.contains('contentWorker is null'))
+        assert.fail('contentWorker is null');
+    }
+  };
+  consoleService.registerListener(listener)
+
+  let page = new Page({
+    contentURL: 'data:text/html;charset=utf-8,testWindowStopDontBreak',
+    contentScriptWhen: 'ready',
+    contentScript: Isolate(() => {
+      window.stop();
+      self.port.on('ping', () => self.port.emit('pong'));
+    })
+  });
+
+  page.port.on('pong', () => {
+    assert.pass('page-worker works after window.stop');
+    page.destroy();
+    consoleService.unregisterListener(listener);
+    done();
+  });
+
+  page.port.emit("ping");
+};
+
+
 function isDestroyed(page) {
   try {
     page.postMessage("foo");
   }
-  catch (err if err.message == ERR_DESTROYED) {
-    return true;
+  catch (err) {
+    if (err.message == ERR_DESTROYED) {
+      return true;
+    }
+    else {
+      throw err;
+    }
   }
   return false;
 }
