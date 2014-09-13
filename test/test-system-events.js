@@ -6,16 +6,18 @@ const events = require("sdk/system/events");
 const self = require("sdk/self");
 const { Cc, Ci, Cu } = require("chrome");
 const { setTimeout } = require("sdk/timers");
-const { LoaderWithHookedConsole2 } = require("sdk/test/loader");
+const { Loader, LoaderWithHookedConsole2 } = require("sdk/test/loader");
 const nsIObserverService = Cc["@mozilla.org/observer-service;1"].
                            getService(Ci.nsIObserverService);
 
+let isConsoleEvent = (topic) =>
+  !!~["console-api-log-event", "console-storage-cache-event"].indexOf(topic)
 
 exports["test basic"] = function(assert) {
   let type = Date.now().toString(32);
 
   let timesCalled = 0;
-  function handler(subject, data) { timesCalled++; };
+  function handler({subject, data}) { timesCalled++; };
 
   events.on(type, handler);
   events.emit(type, { data: "yo yo" });
@@ -34,6 +36,32 @@ exports["test basic"] = function(assert) {
   assert.equal(timesCalled, 2, "handlers added via once are triggered once");
 }
 
+exports["test simple argument passing"] = function (assert) {
+  let type = Date.now().toString(32);
+
+  let lastArg;
+  function handler({data}) { lastArg = data; }
+  events.on(type, handler);
+
+  [true, false, 100, 0, 'a string', ''].forEach(arg => {
+    events.emit(type, arg);
+    assert.strictEqual(lastArg, arg + '',
+      'event emitted for ' + arg + ' has correct data value');
+
+    events.emit(type, { data: arg });
+    assert.strictEqual(lastArg, arg + '',
+      'event emitted for ' + arg + ' has correct data value when a property on an object');
+  });
+
+  [null, undefined, {}].forEach(arg => {
+    events.emit(type, arg);
+    assert.strictEqual(lastArg, null,
+      'emitting ' + arg + ' gets null data');
+  });
+
+  events.off(type, handler);
+};
+
 exports["test error reporting"] = function(assert) {
   let { loader, messages } = LoaderWithHookedConsole2(module);
 
@@ -48,10 +76,10 @@ exports["test error reporting"] = function(assert) {
   events.on(errorType, brokenHandler);
   events.emit(errorType, { data: "yo yo" });
 
-  assert.equal(messages.length, 1, "Got an exception");
-  let text = messages[0];
-  assert.ok(text.indexOf(self.name + ": An exception occurred.") >= 0,
-            "error is logged");
+  assert.equal(messages.length, 2, "Got an exception");
+  assert.equal(messages[0], "console.error: " + self.name + ": \n",
+               "error is logged");
+  let text = messages[1];
   assert.ok(text.indexOf("Error: foo") >= 0, "error message is logged");
   assert.ok(text.indexOf(module.uri) >= 0, "module uri is logged");
   assert.ok(text.indexOf(lineNumber) >= 0, "error line is logged");
@@ -64,7 +92,10 @@ exports["test error reporting"] = function(assert) {
 exports["test listeners are GC-ed"] = function(assert, done) {
   let receivedFromWeak = [];
   let receivedFromStrong = [];
-  let type = Date.now().toString(32);
+  let loader = Loader(module);
+  let events = loader.require('sdk/system/events');
+
+  let type = 'test-listeners-are-garbage-collected';
   function handler(event) { receivedFromStrong.push(event); }
   function weakHandler(event) { receivedFromWeak.push(event); }
 
@@ -77,14 +108,39 @@ exports["test listeners are GC-ed"] = function(assert, done) {
 
   handler = weakHandler = null;
 
-  Cu.forceGC();
-  setTimeout(function() {
-    Cu.forceGC();
+  Cu.schedulePreciseGC(function() {
     events.emit(type, { data: 2 });
+
     assert.equal(receivedFromWeak.length, 1, "weak listener was GC-ed");
     assert.equal(receivedFromStrong.length, 2, "strong listener was invoked");
+
+    loader.unload();
     done();
-  }, 300);
+  });
+};
+
+exports["test alive listeners are removed on unload"] = function(assert) {
+  let receivedFromWeak = [];
+  let receivedFromStrong = [];
+  let loader = Loader(module);
+  let events = loader.require('sdk/system/events');
+
+  let type = 'test-alive-listeners-are-removed';
+  const handler = (event) => receivedFromStrong.push(event);
+  const weakHandler = (event) => receivedFromWeak.push(event); 
+
+  events.on(type, handler, true);
+  events.on(type, weakHandler);
+
+  events.emit(type, { data: 1 });
+  assert.equal(receivedFromStrong.length, 1, "strong listener invoked");
+  assert.equal(receivedFromWeak.length, 1, "weak listener invoked");
+
+  loader.unload();
+  events.emit(type, { data: 2 });
+
+  assert.equal(receivedFromWeak.length, 1, "weak listener was removed");
+  assert.equal(receivedFromStrong.length, 1, "strong listener was removed");
 };
 
 exports["test handle nsIObserverService notifications"] = function(assert) {
@@ -100,6 +156,9 @@ exports["test handle nsIObserverService notifications"] = function(assert) {
   let lastType = null;
 
   function handler({ subject, data, type }) {
+    // Ignores internal console events
+    if (isConsoleEvent(type))
+      return;
     timesCalled++;
     lastSubject = subject;
     lastData = data;
@@ -164,6 +223,9 @@ exports["test emit to nsIObserverService observers"] = function(assert) {
       return nsIObserver;
     },
     observe: function(subject, topic, data) {
+      // Ignores internal console events
+      if (isConsoleEvent(topic))
+        return;
       timesCalled = timesCalled + 1;
       lastSubject = subject;
       lastData = data;
@@ -180,7 +242,6 @@ exports["test emit to nsIObserverService observers"] = function(assert) {
   assert.equal(lastSubject.wrappedJSObject.object, uri,
                "event.subject is notification subject");
   assert.equal(lastData, "some data", "event.data is notification data");
-
   function customSubject() {}
   function customData() {}
   events.emit(topic, { subject: customSubject, data: customData });
@@ -202,6 +263,7 @@ exports["test emit to nsIObserverService observers"] = function(assert) {
   events.emit(topic, { data: "data again" });
 
   assert.equal(timesCalled, 3, "emit notifies * observers");
+
   assert.equal(lastTopic, topic, "event.type is notification");
   assert.equal(lastSubject, null,
                "event.subject is notification subject");

@@ -106,15 +106,27 @@ if not mswindows:
 class Popen(subprocess.Popen):
     kill_called = False
     if mswindows:
-        def _execute_child(self, args, executable, preexec_fn, close_fds,
-                           cwd, env, universal_newlines, startupinfo,
-                           creationflags, shell,
-                           p2cread, p2cwrite,
-                           c2pread, c2pwrite,
-                           errread, errwrite):
+        def _execute_child(self, *args_tuple):
+            # workaround for bug 958609
+            if sys.hexversion < 0x02070600: # prior to 2.7.6
+                (args, executable, preexec_fn, close_fds,
+                    cwd, env, universal_newlines, startupinfo,
+                    creationflags, shell,
+                    p2cread, p2cwrite,
+                    c2pread, c2pwrite,
+                    errread, errwrite) = args_tuple
+                to_close = set()
+            else: # 2.7.6 and later
+                (args, executable, preexec_fn, close_fds,
+                    cwd, env, universal_newlines, startupinfo,
+                    creationflags, shell, to_close,
+                    p2cread, p2cwrite,
+                    c2pread, c2pwrite,
+                    errread, errwrite) = args_tuple
+
             if not isinstance(args, types.StringTypes):
                 args = subprocess.list2cmdline(args)
-            
+
             # Always or in the create new process group
             creationflags |= winprocess.CREATE_NEW_PROCESS_GROUP
 
@@ -123,7 +135,7 @@ class Popen(subprocess.Popen):
 
             if None not in (p2cread, c2pwrite, errwrite):
                 startupinfo.dwFlags |= winprocess.STARTF_USESTDHANDLES
-                
+
                 startupinfo.hStdInput = int(p2cread)
                 startupinfo.hStdOutput = int(c2pwrite)
                 startupinfo.hStdError = int(errwrite)
@@ -160,7 +172,7 @@ class Popen(subprocess.Popen):
 
             if canCreateJob:
                 # We create a new job for this process, so that we can kill
-                # the process and any sub-processes 
+                # the process and any sub-processes
                 self._job = winprocess.CreateJobObject()
                 winprocess.AssignProcessToJobObject(self._job, int(hp))
             else:
@@ -186,7 +198,7 @@ class Popen(subprocess.Popen):
                 winprocess.TerminateJobObject(self._job, 127)
             else:
                 winprocess.TerminateProcess(self._handle, 127)
-            self.returncode = 127    
+            self.returncode = 127
         else:
             if group:
                 try:
@@ -211,7 +223,7 @@ class Popen(subprocess.Popen):
             if timeout is None:
                 timeout = -1
             rc = winprocess.WaitForSingleObject(self._handle, timeout)
-            
+
             if (rc == winprocess.WAIT_OBJECT_0 or
                 rc == winprocess.WAIT_ABANDONED or
                 rc == winprocess.WAIT_FAILED):
@@ -220,11 +232,11 @@ class Popen(subprocess.Popen):
                 # and supply a little time before we start shooting processes
                 # with an M-16.
 
-                # Returns 1 if running, 0 if not, -1 if timed out                
+                # Returns 1 if running, 0 if not, -1 if timed out
                 def check():
                     now = datetime.datetime.now()
                     diff = now - starttime
-                    if (diff.seconds * 1000 * 1000 + diff.microseconds) < (timeout * 1000):
+                    if (diff.seconds * 1000000 + diff.microseconds) < (timeout * 1000):    # (1000*1000)
                         if self._job:
                             if (winprocess.QueryInformationJobObject(self._job, 8)['BasicInfo']['ActiveProcesses'] > 0):
                                 # Job Object is still containing active processes
@@ -257,7 +269,8 @@ class Popen(subprocess.Popen):
                 self.kill(group)
 
         else:
-            if (sys.platform == 'linux2') or (sys.platform in ('sunos5', 'solaris')):
+            if sys.platform in ('linux2', 'sunos5', 'solaris') \
+                    or sys.platform.startswith('freebsd'):
                 def group_wait(timeout):
                     try:
                         os.waitpid(self.pid, 0)
@@ -301,14 +314,14 @@ class Popen(subprocess.Popen):
                 now = datetime.datetime.now()
                 diff = now - starttime
             return self.returncode
-                
+
         return self.returncode
     # We get random maxint errors from subprocesses __del__
     __del__ = lambda self: None        
         
 def setpgid_preexec_fn():
     os.setpgid(0, 0)
-        
+   
 def runCommand(cmd, **kwargs):
     if sys.platform != "win32":
         return Popen(cmd, preexec_fn=setpgid_preexec_fn, **kwargs)

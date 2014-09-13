@@ -1,23 +1,38 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
- 'use strict';
+'use strict';
+
+module.metadata = {
+  'engines': {
+    'Firefox': '*'
+  }
+};
 
 const { Cc, Ci } = require("chrome");
 const { Loader } = require('sdk/test/loader');
 const { LoaderWithHookedConsole } = require("sdk/test/loader");
-const timer = require("sdk/timers");
+const { setTimeout } = require("sdk/timers");
 const self = require('sdk/self');
-const { open, close, focus } = require('sdk/window/helpers');
+const { open, close, focus, ready } = require('sdk/window/helpers');
 const { isPrivate } = require('sdk/private-browsing');
-const { isWindowPBSupported, isGlobalPBSupported } = require('sdk/private-browsing/utils');
-const { defer } = require('sdk/core/promise');
+const { isWindowPBSupported } = require('sdk/private-browsing/utils');
+const { defer, all } = require('sdk/core/promise');
 const { getMostRecentBrowserWindow } = require('sdk/window/utils');
 const { getWindow } = require('sdk/panel/window');
-const { pb } = require('./private-browsing/helper');
 const { URL } = require('sdk/url');
+const { wait } = require('./event/helpers');
 
-const SVG_URL = self.data.url('mofo_logo.SVG');
+const fixtures = require('./fixtures')
+
+const SVG_URL = fixtures.url('mofo_logo.SVG');
+
+const Isolate = fn => '(' + fn + ')()';
+
+function ignorePassingDOMNodeWarning(type, message) {
+  if (type !== 'warn' || !message.startsWith('Passing a DOM node'))
+    console[type](message);
+}
 
 function makeEmptyPrivateBrowserWindow(options) {
   options = options || {};
@@ -118,78 +133,95 @@ exports["test Show Hide Panel"] = function(assert, done) {
 exports["test Document Reload"] = function(assert, done) {
   const { Panel } = require('sdk/panel');
 
+  let url2 = "data:text/html;charset=utf-8,page2";
   let content =
     "<script>" +
-    "setTimeout(function () {" +
-    "  window.location = 'about:blank';" +
-    "}, 250);" +
+    "window.addEventListener('message', function({ data }) {"+
+    "  if (data == 'move') window.location = '" + url2 + "';" +
+    '}, false);' +
     "</script>";
   let messageCount = 0;
   let panel = Panel({
     // using URL here is intentional, see bug 859009
     contentURL: URL("data:text/html;charset=utf-8," + encodeURIComponent(content)),
-    contentScript: "self.postMessage(window.location.href)",
+    contentScript: "self.postMessage(window.location.href);" +
+                   // initiate change to url2
+                   "self.port.once('move', function() document.defaultView.postMessage('move', '*'));",
     onMessage: function (message) {
       messageCount++;
+      assert.notEqual(message, "about:blank", "about:blank is not a message " + messageCount);
+
       if (messageCount == 1) {
-        assert.ok(/data:text\/html/.test(message), "First document had a content script");
+        assert.ok(/data:text\/html/.test(message), "First document had a content script; " + message);
+        panel.port.emit('move');
+        assert.pass('move message was sent');
+        return;
       }
       else if (messageCount == 2) {
-        assert.equal(message, "about:blank", "Second document too");
+        assert.equal(message, url2, "Second document too; " + message);
         panel.destroy();
         done();
       }
     }
   });
+  assert.pass('Panel was created');
 };
 
+// Test disabled because of bug 910230
+/*
 exports["test Parent Resize Hack"] = function(assert, done) {
   const { Panel } = require('sdk/panel');
 
-  let browserWindow = Cc["@mozilla.org/appshell/window-mediator;1"].
-                      getService(Ci.nsIWindowMediator).
-                      getMostRecentWindow("navigator:browser");
-  let docShell = browserWindow.QueryInterface(Ci.nsIInterfaceRequestor)
-                  .getInterface(Ci.nsIWebNavigation)
-                  .QueryInterface(Ci.nsIDocShell);
-  if (!("allowWindowControl" in docShell)) {
-    // bug 635673 is not fixed in this firefox build
-    assert.pass("allowWindowControl attribute that allow to fix browser window " +
-              "resize is not available on this build.");
-    return;
-  }
+  let browserWindow = getMostRecentBrowserWindow();
 
-  let previousWidth = browserWindow.outerWidth, previousHeight = browserWindow.outerHeight;
+  let previousWidth = browserWindow.outerWidth;
+  let previousHeight = browserWindow.outerHeight;
 
   let content = "<script>" +
                 "function contentResize() {" +
                 "  resizeTo(200,200);" +
                 "  resizeBy(200,200);" +
+                "  window.postMessage('resize-attempt', '*');" +
                 "}" +
                 "</script>" +
                 "Try to resize browser window";
+
   let panel = Panel({
     contentURL: "data:text/html;charset=utf-8," + encodeURIComponent(content),
-    contentScript: "self.on('message', function(message){" +
-                   "  if (message=='resize') " +
-                   "    unsafeWindow.contentResize();" +
-                   "});",
     contentScriptWhen: "ready",
-    onMessage: function (message) {
+    contentScript: Isolate(() => {
+        self.on('message', message => {
+          if (message === 'resize') unsafeWindow.contentResize();
+        });
 
-    },
-    onShow: function () {
-      panel.postMessage('resize');
-      timer.setTimeout(function () {
-        assert.equal(previousWidth,browserWindow.outerWidth,"Size doesn't change by calling resizeTo/By/...");
-        assert.equal(previousHeight,browserWindow.outerHeight,"Size doesn't change by calling resizeTo/By/...");
+        window.addEventListener('message', ({ data }) => self.postMessage(data));
+      }),
+    onMessage: function (message) {
+      if (message !== "resize-attempt") return;
+
+      assert.equal(browserWindow, getMostRecentBrowserWindow(),
+        "The browser window is still the same");
+      assert.equal(previousWidth, browserWindow.outerWidth,
+        "Size doesn't change by calling resizeTo/By/...");
+      assert.equal(previousHeight, browserWindow.outerHeight,
+        "Size doesn't change by calling resizeTo/By/...");
+
+      try {
         panel.destroy();
-        done();
-      },0);
-    }
+      }
+      catch (e) {
+        assert.fail(e);
+        throw e;
+      }
+
+      done();
+    },
+    onShow: () => panel.postMessage('resize')
   });
+
   panel.show();
 }
+*/
 
 exports["test Resize Panel"] = function(assert, done) {
   const { Panel } = require('sdk/panel');
@@ -288,7 +320,8 @@ exports["test Several Show Hides"] = function(assert, done) {
 };
 
 exports["test Anchor And Arrow"] = function(assert, done) {
-  const { Panel } = require('sdk/panel');
+  let { loader } = LoaderWithHookedConsole(module, ignorePassingDOMNodeWarning);
+  let { Panel } = loader.require('sdk/panel');
 
   let count = 0;
   let queue = [];
@@ -318,7 +351,7 @@ exports["test Anchor And Arrow"] = function(assert, done) {
       return;
     }
     let { panel, anchor } = queue.shift();
-    panel.show(anchor);
+    panel.show(null, anchor);
   }
 
   let tabs= require("sdk/tabs");
@@ -454,6 +487,24 @@ exports["test Panel Text Color"] = function(assert, done) {
   });
 };
 
+// Bug 866333
+exports["test watch event name"] = function(assert, done) {
+  const { Panel } = require('sdk/panel');
+
+  let html = "<html><head><style>body {color: yellow}</style></head>" +
+             "<body><p>Foo</p></body></html>";
+
+  let panel = Panel({
+    contentURL: "data:text/html;charset=utf-8," + encodeURI(html),
+    contentScript: "self.port.emit('watch', 'test');"
+  });
+  panel.port.on("watch", function (msg) {
+    assert.equal(msg, "test", 'watch event name works');
+    panel.destroy();
+    done();
+  });
+}
+
 // Bug 696552: Ensure panel.contentURL modification support
 exports["test Change Content URL"] = function(assert, done) {
   const { Panel } = require('sdk/panel');
@@ -462,6 +513,7 @@ exports["test Change Content URL"] = function(assert, done) {
     contentURL: "about:blank",
     contentScript: "self.port.emit('ready', document.location.href);"
   });
+
   let count = 0;
   panel.port.on("ready", function (location) {
     count++;
@@ -492,7 +544,7 @@ function makeEventOrderTest(options) {
       panel.on(event, function() {
         assert.equal(event, expectedEvents.shift());
         if (cb)
-          timer.setTimeout(cb, 1);
+          setTimeout(cb, 1);
       });
       return {then: expect};
     }
@@ -511,11 +563,9 @@ exports["test Automatic Destroy"] = function(assert) {
 
   loader.unload();
 
-  panel.port.on("event-back", function () {
-    assert.fail("Panel should have been destroyed on module unload");
-  });
-  panel.port.emit("event");
-  assert.pass("check automatic destroy");
+  assert.throws(() => {
+    panel.port.emit("event");
+  }, /already have been unloaded/, "check automatic destroy");
 };
 
 exports["test Show Then Destroy"] = makeEventOrderTest({
@@ -616,7 +666,7 @@ exports["test console.log in Panel"] = function(assert, done) {
 
 if (isWindowPBSupported) {
   exports.testPanelDoesNotShowInPrivateWindowNoAnchor = function(assert, done) {
-    let loader = Loader(module);
+    let { loader } = LoaderWithHookedConsole(module, ignorePassingDOMNodeWarning);
     let { Panel } = loader.require("sdk/panel");
     let browserWindow = getMostRecentBrowserWindow();
 
@@ -651,7 +701,7 @@ if (isWindowPBSupported) {
         showTries++;
         panel.show();
         showTries++;
-        panel.show(browserWindow.gBrowser);
+        panel.show(null, browserWindow.gBrowser);
 
         return promise;
       }).
@@ -670,7 +720,7 @@ if (isWindowPBSupported) {
   }
 
   exports.testPanelDoesNotShowInPrivateWindowWithAnchor = function(assert, done) {
-    let loader = Loader(module);
+    let { loader } = LoaderWithHookedConsole(module, ignorePassingDOMNodeWarning);
     let { Panel } = loader.require("sdk/panel");
     let browserWindow = getMostRecentBrowserWindow();
 
@@ -703,9 +753,9 @@ if (isWindowPBSupported) {
           }
         });
         showTries++;
-        panel.show(window.gBrowser);
+        panel.show(null, window.gBrowser);
         showTries++;
-        panel.show(browserWindow.gBrowser);
+        panel.show(null, browserWindow.gBrowser);
 
         return promise;
       }).
@@ -753,7 +803,7 @@ exports['test Style Applied Only Once'] = function (assert, done) {
       'self.port.on("check",function() { self.port.emit("count", document.getElementsByTagName("style").length); });' +
       'self.port.on("ping", function (count) { self.port.emit("pong", count); });'
   });
-  
+
   panel.port.on('count', function (styleCount) {
     assert.equal(styleCount, 1, 'should only have one style');
     done();
@@ -806,6 +856,429 @@ exports['test Only One Panel Open Concurrently'] = function (assert, done) {
   panelB.show();
 };
 
+exports['test passing DOM node as first argument'] = function (assert, done) {
+  let warned = defer();
+  let shown = defer();
+
+  function onMessage(type, message) {
+    if (type != 'warn') return;
+
+    let warning = 'Passing a DOM node to Panel.show() method is an unsupported ' +
+                  'feature that will be soon replaced. ' +
+                  'See: https://bugzilla.mozilla.org/show_bug.cgi?id=878877';
+
+    assert.equal(type, 'warn',
+      'the message logged is a warning');
+
+    assert.equal(message, warning,
+      'the warning content is correct');
+
+    warned.resolve();
+  }
+
+  let { loader } = LoaderWithHookedConsole(module, onMessage);
+  let { Panel } = loader.require('sdk/panel');
+  let { Widget } = loader.require('sdk/widget');
+  let { document } = getMostRecentBrowserWindow();
+  let widgetId = 'widget:' + self.id + '-panel-widget';
+
+  let panel = Panel({
+    onShow: function() {
+      let panelNode = document.getElementById('mainPopupSet').lastChild;
+
+      assert.equal(panelNode.anchorNode, widgetNode,
+        'the panel is properly anchored to the widget');
+
+      shown.resolve();
+    }
+  });
+
+  let widget = Widget({
+    id: 'panel-widget',
+    label: 'panel widget',
+    content: '<i></i>',
+  });
+
+  let widgetNode = document.getElementById(widgetId);
+
+  all([warned.promise, shown.promise]).
+    then(loader.unload).
+    then(done, assert.fail)
+
+  panel.show(widgetNode);
+};
+
+// This test is checking that `onpupshowing` events emitted by panel's children
+// are not considered.
+// See Bug 886329
+exports['test nested popups'] = function (assert, done) {
+  let loader = Loader(module);
+  let { Panel } = loader.require('sdk/panel');
+  let { getActiveView } = loader.require('sdk/view/core');
+  let url = '<select><option>1<option>2<option>3</select>';
+
+  let getContentWindow = panel => {
+    return getActiveView(panel).querySelector('iframe').contentWindow;
+  }
+
+  let panel = Panel({
+    contentURL: 'data:text/html;charset=utf-8,' + encodeURIComponent(url),
+    onShow: () => {
+      ready(getContentWindow(panel)).then(({ window, document }) => {
+        let select = document.querySelector('select');
+        let event = document.createEvent('UIEvent');
+
+        event.initUIEvent('popupshowing', true, true, window, null);
+        select.dispatchEvent(event);
+
+        assert.equal(
+          select,
+          getContentWindow(panel).document.querySelector('select'),
+          'select is still loaded in panel'
+        );
+
+        done();
+      });
+    }
+  });
+
+  panel.show();
+};
+
+exports['test emits on url changes'] = function (assert, done) {
+  let loader = Loader(module);
+  let { Panel } = loader.require('sdk/panel');
+  let uriA = 'data:text/html;charset=utf-8,A';
+  let uriB = 'data:text/html;charset=utf-8,B';
+
+  let panel = Panel({
+    contentURL: uriA,
+    contentScript: 'new ' + function() {
+      self.port.on('hi', function() {
+        self.port.emit('bye', document.URL);
+      });
+    }
+  });
+
+  panel.contentURL = uriB;
+  panel.port.emit('hi', 'hi')
+  panel.port.on('bye', function(uri) {
+    assert.equal(uri, uriB, 'message was delivered to new uri');
+    loader.unload();
+    done();
+  });
+};
+
+exports['test panel can be constructed without any arguments'] = function (assert) {
+  const { Panel } = require('sdk/panel');
+
+  let panel = Panel();
+  assert.ok(true, "Creating a panel with no arguments does not throw");
+};
+
+exports['test panel CSS'] = function(assert, done) {
+  const { merge } = require("sdk/util/object");
+
+  let loader = Loader(module, null, null, {
+    modules: {
+      "sdk/self": merge({}, self, {
+        data: merge({}, self.data, fixtures)
+      })
+    }
+  });
+
+  const { Panel } = loader.require('sdk/panel');
+
+  const { getActiveView } = loader.require('sdk/view/core');
+
+  const getContentWindow = panel =>
+    getActiveView(panel).querySelector('iframe').contentWindow;
+
+  let panel = Panel({
+    contentURL: 'data:text/html;charset=utf-8,' +
+                '<div style="background: silver">css test</div>',
+    contentStyle: 'div { height: 100px; }',
+    contentStyleFile: [fixtures.url("include-file.css"), "./border-style.css"],
+    onShow: () => {
+      ready(getContentWindow(panel)).then(({ window, document }) => {
+        let div = document.querySelector('div');
+
+      assert.equal(div.clientHeight, 100,
+        "Panel contentStyle worked");
+
+      assert.equal(div.offsetHeight, 120,
+        "Panel contentStyleFile worked");
+
+      assert.equal(window.getComputedStyle(div).borderTopStyle, "dashed",
+        "Panel contentStyleFile with relative path worked");
+
+        loader.unload();
+        done();
+      }).then(null, assert.fail);
+    }
+  });
+
+  panel.show();
+};
+
+exports['test panel contentScriptFile'] = function(assert, done) {
+  const { merge } = require("sdk/util/object");
+
+  let loader = Loader(module, null, null, {
+    modules: {
+      "sdk/self": merge({}, self, {
+        data: merge({}, self.data, {url: fixtures.url})
+      })
+    }
+  });
+
+  const { Panel } = loader.require('sdk/panel');
+  const { getActiveView } = loader.require('sdk/view/core');
+
+  const getContentWindow = panel =>
+    getActiveView(panel).querySelector('iframe').contentWindow;
+
+  let whenMessage = defer();
+  let whenShown = defer();
+
+  let panel = Panel({
+    contentURL: './test.html',
+    contentScriptFile: "./test-contentScriptFile.js",
+    onMessage: (message) => {
+      assert.equal(message, "msg from contentScriptFile",
+        "Panel contentScriptFile with relative path worked");
+
+      whenMessage.resolve();
+    },
+    onShow: () => {
+      ready(getContentWindow(panel)).then(({ document }) => {
+        assert.equal(document.title, 'foo',
+          "Panel contentURL with relative path worked");
+
+        whenShown.resolve();
+      });
+    }
+  });
+
+  all([whenMessage.promise, whenShown.promise]).
+    then(loader.unload).
+    then(done, assert.fail);
+
+  panel.show();
+};
+
+
+exports['test panel CSS list'] = function(assert, done) {
+  const loader = Loader(module);
+  const { Panel } = loader.require('sdk/panel');
+
+  const { getActiveView } = loader.require('sdk/view/core');
+
+  const getContentWindow = panel =>
+    getActiveView(panel).querySelector('iframe').contentWindow;
+
+  let panel = Panel({
+    contentURL: 'data:text/html;charset=utf-8,' +
+                '<div style="width:320px; max-width: 480px!important">css test</div>',
+    contentStyleFile: [
+      // Highlight evaluation order in this list
+      "data:text/css;charset=utf-8,div { border: 1px solid black; }",
+      "data:text/css;charset=utf-8,div { border: 10px solid black; }",
+      // Highlight evaluation order between contentStylesheet & contentStylesheetFile
+      "data:text/css;charset=utf-8s,div { height: 1000px; }",
+      // Highlight precedence between the author and user style sheet
+      "data:text/css;charset=utf-8,div { width: 200px; max-width: 640px!important}",
+    ],
+    contentStyle: [
+      "div { height: 10px; }",
+      "div { height: 100px; }"
+    ],
+    onShow: () => {
+      ready(getContentWindow(panel)).then(({ window, document }) => {
+        let div = document.querySelector('div');
+        let style = window.getComputedStyle(div);
+
+        assert.equal(div.clientHeight, 100,
+          'Panel contentStyle list is evaluated after contentStyleFile');
+
+        assert.equal(div.offsetHeight, 120,
+          'Panel contentStyleFile list works');
+
+        assert.equal(style.width, '320px',
+          'add-on author/page author stylesheet precedence works');
+
+        assert.equal(style.maxWidth, '480px',
+          'add-on author/page author stylesheet !important precedence works');
+
+        loader.unload();
+      }).then(done, assert.fail);
+    }
+  });
+
+  panel.show();
+};
+
+exports['test panel contextmenu validation'] = function(assert) {
+  const loader = Loader(module);
+  const { Panel } = loader.require('sdk/panel');
+
+  let panel = Panel({});
+
+  assert.equal(panel.contextMenu, false,
+    'contextMenu option is `false` by default');
+
+  panel.destroy();
+
+  panel = Panel({
+    contextMenu: false
+  });
+
+  assert.equal(panel.contextMenu, false,
+    'contextMenu option is `false`');
+
+  panel.contextMenu = true;
+
+  assert.equal(panel.contextMenu, true,
+    'contextMenu option accepts boolean values');
+
+  panel.destroy();
+
+  panel = Panel({
+    contextMenu: true
+  });
+
+  assert.equal(panel.contextMenu, true,
+    'contextMenu option is `true`');
+
+  panel.contextMenu = false;
+
+  assert.equal(panel.contextMenu, false,
+    'contextMenu option accepts boolean values');
+
+  assert.throws(() =>
+    Panel({contextMenu: 1}),
+    /The option "contextMenu" must be one of the following types: boolean, undefined, null/,
+    'contextMenu only accepts boolean or nil values');
+
+  panel = Panel();
+
+  assert.throws(() =>
+    panel.contextMenu = 1,
+    /The option "contextMenu" must be one of the following types: boolean, undefined, null/,
+    'contextMenu only accepts boolean or nil values');
+
+  loader.unload();
+}
+
+exports['test panel contextmenu enabled'] = function*(assert) {
+  const loader = Loader(module);
+  const { Panel } = loader.require('sdk/panel');
+  const { getActiveView } = loader.require('sdk/view/core');
+  const { getContentDocument } = loader.require('sdk/panel/utils');
+
+  let contextmenu = getMostRecentBrowserWindow().
+                      document.getElementById("contentAreaContextMenu");
+
+  let panel = Panel({contextMenu: true});
+
+  panel.show();
+
+  yield wait(panel, 'show');
+
+  let view = getActiveView(panel);
+  let window = getContentDocument(view).defaultView;
+
+  let { sendMouseEvent } = window.QueryInterface(Ci.nsIInterfaceRequestor).
+                                    getInterface(Ci.nsIDOMWindowUtils);
+
+  yield ready(window);
+
+  assert.equal(contextmenu.state, 'closed',
+    'contextmenu must be closed');
+
+  sendMouseEvent('contextmenu', 20, 20, 2, 1, 0);
+
+  yield wait(contextmenu, 'popupshown');
+
+  assert.equal(contextmenu.state, 'open',
+    'contextmenu is opened');
+
+  contextmenu.hidePopup();
+
+  loader.unload();
+}
+
+exports['test panel contextmenu disabled'] = function*(assert) {
+  const loader = Loader(module);
+  const { Panel } = loader.require('sdk/panel');
+  const { getActiveView } = loader.require('sdk/view/core');
+  const { getContentDocument } = loader.require('sdk/panel/utils');
+
+  let contextmenu = getMostRecentBrowserWindow().
+                      document.getElementById("contentAreaContextMenu");
+  let listener = () => assert.fail('popupshown should never be called');
+
+  let panel = Panel();
+
+  panel.show();
+
+  yield wait(panel, 'show');
+
+  let view = getActiveView(panel);
+  let window = getContentDocument(view).defaultView;
+
+  let { sendMouseEvent } = window.QueryInterface(Ci.nsIInterfaceRequestor).
+                                    getInterface(Ci.nsIDOMWindowUtils);
+
+  yield ready(window);
+
+  assert.equal(contextmenu.state, 'closed',
+    'contextmenu must be closed');
+
+  sendMouseEvent('contextmenu', 20, 20, 2, 1, 0);
+
+  contextmenu.addEventListener('popupshown', listener);
+
+  yield wait(1000);
+
+  contextmenu.removeEventListener('popupshown', listener);
+
+  assert.equal(contextmenu.state, 'closed',
+    'contextmenu was never open');
+
+  loader.unload();
+}
+
+exports["test panel addon global object"] = function*(assert) {
+  const { merge } = require("sdk/util/object");
+
+  let loader = Loader(module, null, null, {
+    modules: {
+      "sdk/self": merge({}, self, {
+        data: merge({}, self.data, {url: fixtures.url})
+      })
+    }
+  });
+
+  const { Panel } = loader.require('sdk/panel');
+
+  let panel = Panel({
+    contentURL: "./test-trusted-document.html"
+  });
+
+  panel.show();
+
+  yield wait(panel, "show");
+
+  panel.port.emit('addon-to-document', 'ok');
+
+  yield wait(panel.port, "document-to-addon");
+
+  assert.pass("Received an event from the document");
+
+  loader.unload();
+}
+
 if (isWindowPBSupported) {
   exports.testGetWindow = function(assert, done) {
     let activeWindow = getMostRecentBrowserWindow();
@@ -813,50 +1286,13 @@ if (isWindowPBSupported) {
       toolbar: true,
       chrome: true,
       private: true
-    } }).then(function(window) {
+    } }).then(window => {
       assert.ok(isPrivate(window), 'window is private');
       assert.equal(getWindow(window.gBrowser), null, 'private window elements returns null');
       assert.equal(getWindow(activeWindow.gBrowser), activeWindow, 'non-private window elements returns window');
-      close(window).then(done);
-    })
-  }
-}
-else if (isGlobalPBSupported) {
-  exports.testGetWindow = function(assert, done) {
-    let activeWindow = getMostRecentBrowserWindow();
-
-    assert.equal(getWindow(activeWindow.gBrowser), activeWindow, 'non-private window elements returns window');
-    pb.once('start', function() {
-      assert.ok(isPrivate(activeWindow), 'window is private');
-      assert.equal(getWindow(activeWindow.gBrowser), activeWindow, 'private window elements returns window');
-      open(null, { features: {
-        toolbar: true,
-        chrome: true
-      } }).then(function(window) {
-        assert.ok(isPrivate(window), 'window is private');
-        assert.equal(getWindow(window.gBrowser), window, 'private window elements returns window');
-        assert.equal(getWindow(activeWindow.gBrowser), activeWindow, 'active window elements returns window');
-        
-        pb.once('stop', done);
-        pb.deactivate();
-      })
-    });
-    pb.activate();
+      return window;
+    }).then(close).then(done).then(null, assert.fail);
   }
 }
 
-try {
-  require("sdk/panel");
-}
-catch (e) {
-  if (!/^Unsupported Application/.test(e.message))
-    throw e;
-
-  module.exports = {
-    "test Unsupported Application": function Unsupported (assert) {
-      assert.pass(e.message);
-    }
-  }
-}
-
-require("test").run(exports);
+require("sdk/test").run(exports);
