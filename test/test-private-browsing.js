@@ -16,8 +16,6 @@ const { LoaderWithHookedConsole } = require("sdk/test/loader");
 const { getMode, isWindowPBSupported, isTabPBSupported } = require('sdk/private-browsing/utils');
 const { pb } = require('./private-browsing/helper');
 const prefs = require('sdk/preferences/service');
-const { set: setPref } = require("sdk/preferences/service");
-const DEPRECATE_PREF = "devtools.errorconsole.deprecation_warnings";
 
 const { Services } = Cu.import("resource://gre/modules/Services.jsm", {});
 
@@ -49,14 +47,13 @@ exports.testIsPrivateDefaults = function(assert) {
 };
 
 exports.testWindowDefaults = function(assert) {
-  setPref(DEPRECATE_PREF, true);
   // Ensure that browserWindow still works while being deprecated
   let { loader, messages } = LoaderWithHookedConsole(module);
   let windows = loader.require("sdk/windows").browserWindows;
-  assert.equal(windows.activeWindow.isPrivateBrowsing, false,
-                   'window is not private browsing by default');
-  assert.ok(/DEPRECATED.+isPrivateBrowsing/.test(messages[0].msg),
-                     'isPrivateBrowsing is deprecated');
+  assert.equal(windows.activeWindow.isPrivateBrowsing, undefined,
+              'window.isPrivateBrowsing is undefined');
+  assert.equal(undefined, messages[0],
+               'isPrivateBrowsing is deprecated');
 
   let chromeWin = winUtils.getMostRecentBrowserWindow();
   assert.equal(getMode(chromeWin), false);
