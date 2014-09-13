@@ -1,14 +1,15 @@
-let data = require('sdk/self').data;
-let tabs = require('sdk/tabs');
-let notify = require('sdk/notifications').notify;
+"use strict";
 
-let { ActionButton } = require('sdk/ui');
-let { ToggleButton } = require('sdk/ui');
+var data = require('sdk/self').data;
+var tabs = require('sdk/tabs');
+var { notify } = require('sdk/notifications');
+var { ActionButton, ToggleButton } = require('sdk/ui');
 
-let icon = 'chrome://mozapps/skin/extensions/extensionGeneric.png';
+var icon = 'chrome://mozapps/skin/extensions/extensionGeneric.png';
+exports.icon = icon;
 
 // your basic action button
-let action = ActionButton({
+var action = ActionButton({
   id: 'test-action-button',
   label: 'Action Button',
   icon: icon,
@@ -19,15 +20,17 @@ let action = ActionButton({
     });
   }
 });
+exports.actionButton = action;
 
-let toggle = ToggleButton({
+var toggle = ToggleButton({
   id: 'test-toggle-button',
   label: 'Toggle Button',
   icon: icon,
   onClick: function (state) {
     notify({
       title: "Toggled!",
-      text: "The current state of the button is "+state.checked,
+      text: "The current state of the button is " + state.checked,
     });
   }
 });
+exports.toggleButton = toggle;
