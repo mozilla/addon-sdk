@@ -413,7 +413,7 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
             app_type, binary=None, profiledir=None, verbose=False,
             parseable=False, enforce_timeouts=False,
             logfile=None, addons=None, args=None, extra_environment={},
-            norun=None,
+            norun=None, noquit=None,
             used_files=None, enable_mobile=False,
             mobile_app_name=None,
             env_root=None,
@@ -767,7 +767,8 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
                     raise Timeout("Test run exceeded timeout (%ds)." %
                                   RUN_TIMEOUT, test_name, parseable)
     except:
-        runner.stop()
+        if not noquit:
+            runner.stop()
         raise
     else:
         runner.wait(10)
