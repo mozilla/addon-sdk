@@ -152,7 +152,7 @@ parser_groups = (
                                       "thunderbird"),
                                 metavar=None,
                                 type="choice",
-                                choices=["firefox", "fennec",
+                                choices=["firefox",
                                          "fennec-on-device", "thunderbird",
                                          "xulrunner"],
                                 default="firefox",

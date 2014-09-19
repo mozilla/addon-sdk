@@ -105,30 +105,6 @@ class FennecProfile(mozrunner.Profile):
     preferences = {}
     names = ['fennec']
 
-class FennecRunner(mozrunner.Runner):
-    profile_class = FennecProfile
-
-    names = ['fennec']
-
-    __DARWIN_PATH = '/Applications/Fennec.app/Contents/MacOS/fennec'
-
-    def __init__(self, binary=None, **kwargs):
-        if sys.platform == 'darwin' and binary and binary.endswith('.app'):
-            # Assume it's a Fennec app dir.
-            binary = os.path.join(binary, 'Contents/MacOS/fennec')
-
-        self.__real_binary = binary
-
-        mozrunner.Runner.__init__(self, **kwargs)
-
-    def find_binary(self):
-        if not self.__real_binary:
-            if sys.platform == 'darwin':
-                if os.path.exists(self.__DARWIN_PATH):
-                    return self.__DARWIN_PATH
-            self.__real_binary = mozrunner.Runner.find_binary(self)
-        return self.__real_binary
-
 FENNEC_REMOTE_PATH = '/mnt/sdcard/jetpack-profile'
 
 class RemoteFennecRunner(mozrunner.Runner):
@@ -444,7 +420,7 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
         preferences['browser.tabs.remote.autostart'] = True
 
     # For now, only allow running on Mobile with --force-mobile argument
-    if app_type in ["fennec", "fennec-on-device"] and not enable_mobile:
+    if app_type in ["fennec-on-device"] and not enable_mobile:
         print """
   WARNING: Firefox Mobile support is still experimental.
   If you would like to run an addon on this platform, use --force-mobile flag:
@@ -458,10 +434,6 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
         runner_class = RemoteFennecRunner
         # We pass the intent name through command arguments
         cmdargs.append(mobile_app_name)
-    elif enable_mobile or app_type == "fennec":
-        profile_class = FennecProfile
-        preferences.update(DEFAULT_FENNEC_PREFS)
-        runner_class = FennecRunner
     elif app_type == "xulrunner":
         profile_class = XulrunnerAppProfile
         runner_class = XulrunnerAppRunner
