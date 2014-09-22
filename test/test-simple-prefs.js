@@ -44,7 +44,7 @@ exports.testIterations = function(assert) {
 
   delete sp["test"];
   delete sp["test.test"];
-  let prefAry = [];
+  prefAry = [];
   for (var name in sp ) {
     prefAry.push(name);
   }
