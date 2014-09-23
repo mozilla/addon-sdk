@@ -334,6 +334,8 @@ exports["test:content is wrapped"] = WorkerTest(
   }
 );
 
+// ContentWorker is not for chrome
+/* 
 exports["test:chrome is unwrapped"] = function(assert, done) {
   let window = makeWindow();
 
@@ -354,6 +356,7 @@ exports["test:chrome is unwrapped"] = function(assert, done) {
 
   });
 }
+*/
 
 exports["test:nothing is leaked to content script"] = WorkerTest(
   DEFAULT_CONTENT_URL,
@@ -382,19 +385,20 @@ exports["test:nothing is leaked to content script"] = WorkerTest(
 exports["test:ensure console.xxx works in cs"] = WorkerTest(
   DEFAULT_CONTENT_URL,
   function(assert, browser, done) {
-    let { loader } = LoaderWithHookedConsole(module, onMessage);
+    const system = require("sdk/system/events");
+    const EXPECTED = ["time", "log", "info", "warn", "error", "error", "timeEnd"];
 
-    // Intercept all console method calls
     let calls = [];
-    function onMessage(type, msg) {
-      assert.equal(type, msg,
-        "console.xxx(\"xxx\"), i.e. message is equal to the " +
-        "console method name we are calling");
-      calls.push(msg);
+    let levels = [];
+
+    system.on('console-api-log-event', onMessage);
+
+    function onMessage({ subject }) {
+      calls.push(subject.wrappedJSObject.arguments[0]);
+      levels.push(subject.wrappedJSObject.level);
     }
 
-    // Finally, create a worker that will call all console methods
-    let worker =  loader.require("sdk/content/worker").Worker({
+    let worker =  Worker({
       window: browser.contentWindow,
       contentScript: "new " + function WorkerScope() {
         console.time("time");
@@ -403,17 +407,21 @@ exports["test:ensure console.xxx works in cs"] = WorkerTest(
         console.warn("warn");
         console.error("error");
         console.debug("debug");
-        console.exception("exception");
+        console.exception("error");
         console.timeEnd("timeEnd");
         self.postMessage();
       },
       onMessage: function() {
-        // Ensure that console methods are called in the same execution order
-        const EXPECTED_CALLS = ["time", "log", "info", "warn", "error",
-          "debug", "exception", "timeEnd"];
+        system.off('console-api-log-event', onMessage);
+
         assert.equal(JSON.stringify(calls),
-          JSON.stringify(EXPECTED_CALLS),
+          JSON.stringify(EXPECTED),
           "console methods have been called successfully, in expected order");
+
+        assert.equal(JSON.stringify(levels),
+          JSON.stringify(EXPECTED),
+          "console messages have correct log levels, in expected order");
+
         done();
       }
     });
@@ -886,17 +894,21 @@ exports["test:onDetach in contentScript on unload"] = WorkerTest(
 exports["test:console method log functions properly"] = WorkerTest(
   DEFAULT_CONTENT_URL,
   function(assert, browser, done) {
+    const system = require("sdk/system/events");
     let logs = [];
+
+    system.on('console-api-log-event', onMessage);
+
+    function onMessage({ subject }) {
+      logs.push(clean(subject.wrappedJSObject.arguments[0]));
+    }
 
     let clean = message =>
           message.trim().
           replace(/[\r\n]/g, " ").
           replace(/ +/g, " ");
 
-    let onMessage = (type, message) => logs.push(clean(message));
-    let { loader } = LoaderWithHookedConsole(module, onMessage);
-
-    let worker =  loader.require("sdk/content/worker").Worker({
+    let worker =  Worker({
       window: browser.contentWindow,
       contentScript: "new " + function WorkerScope() {
         console.log(Function);
@@ -906,6 +918,8 @@ exports["test:console method log functions properly"] = WorkerTest(
         self.postMessage();
       },
       onMessage: () => {
+        system.off('console-api-log-event', onMessage);
+
         assert.deepEqual(logs, [
           "function Function() { [native code] }",
           "(foo) => foo * foo",

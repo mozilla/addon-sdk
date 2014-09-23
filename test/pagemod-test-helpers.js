@@ -7,18 +7,15 @@ const { Loader } = require('sdk/test/loader');
 const { openTab, getBrowserForTab, closeTab } = require('sdk/tabs/utils');
 const { getMostRecentBrowserWindow } = require('sdk/window/utils');
 const { merge } = require("sdk/util/object");
-const self = require("sdk/self");
+
+const options = merge({}, require('@loader/options'),
+                      { prefixURI: require('./fixtures').url() });
 
 // an evil function enables the creation of tests
 // that depend on delicate event timing. DO NOT USE!
 function testPageMod(_, done, testURL, pageModOptions, testCallback) {
-  const loader = Loader(module, null, null, {
-    modules: {
-      "sdk/self": merge({}, self, {
-        data: merge({}, self.data, require("./fixtures"))
-      })
-    }
-  });
+
+  const loader = Loader(module, null, options);
   const { PageMod } = loader.require('sdk/page-mod');
 
   let pageMods = pageModOptions.map(opts => PageMod(opts));
