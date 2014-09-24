@@ -3,18 +3,15 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
-const { Cu } = require('chrome');
-const self = require('sdk/self');
-const { AddonManager } = Cu.import('resource://gre/modules/AddonManager.jsm', {});
+const { id } = require('sdk/self');
+const { getAddonByID } = require('sdk/addon/manager');
 
-exports["test add-on manifest was localized"] = (assert, done) => {
-  AddonManager.getAddonByID(self.id, addon => {
-    assert.equal(addon.name, "title-en", "title was translated");
-    assert.equal(addon.description, "description-en", "description was translated");
-    assert.equal(addon.creator, "author-en", "author was translated");
-    assert.equal(addon.homepageURL, "homepage-en", "homepage was translated");
-    done();
-  });
+exports["test add-on manifest was localized"] = function*(assert) {
+  let addon = yield getAddonByID(id);
+  assert.equal(addon.name, "title-en", "title was translated");
+  assert.equal(addon.description, "description-en", "description was translated");
+  assert.equal(addon.creator, "author-en", "author was translated");
+  assert.equal(addon.homepageURL, "homepage-en", "homepage was translated");
 };
 
 require("sdk/test/runner").runTestsFromModule(module);
