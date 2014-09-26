@@ -463,7 +463,7 @@ exports.testBufferConcat = function (assert) {
   assert.equal(flatZero.length, 0);
   assert.equal(flatOne.toString(), 'asdf');
   assert.equal(flatOne, one[0]);
-  assert.ok(flatLong.toString(), (new Array(10+1).join('asdf')));
+  assert.equal(flatLong.toString(), (new Array(10+1).join('asdf')));
   assert.equal(flatLongLen.toString(), (new Array(10+1).join('asdf')));
 };
 
