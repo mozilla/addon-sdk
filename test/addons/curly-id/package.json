@@ -8,5 +8,7 @@
         "type": "integer",
         "title": "test13",
         "value": 26
-    }]
+    }],
+
+    "preferences-branch": "invalid^branch*name"
 }
