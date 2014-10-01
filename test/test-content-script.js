@@ -564,20 +564,6 @@ exports["test Collections 2"] = createProxyTest(html, function (helper) {
 
 });
 
-exports["test valueOf"] = createProxyTest("", function (helper) {
-
-    helper.createWorker(
-      'new ' + function ContentScriptScope() {
-        // Bug 787013: Until this bug is fixed, we are missing some methods
-        // on JS objects that comes from global `Object` object
-        assert(!('valueOf' in window), "valueOf is missing");
-        assert(!('toLocateString' in window), "toLocaleString is missing");
-        done();
-      }
-    );
-
-});
-
 exports["test XMLHttpRequest"] = createProxyTest("", function (helper) {
 
   helper.createWorker(
