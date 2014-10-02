@@ -158,6 +158,35 @@ exports['test button added'] = function(assert) {
 
   loader.unload();
 }
+exports['test button is not garbaged'] = function (assert, done) {
+  let loader = Loader(module);
+  let { ToggleButton } = loader.require('sdk/ui');
+
+  ToggleButton({
+    id: 'my-button-1',
+    label: 'my button',
+    icon: './icon.png',
+    onClick: () => {
+      loader.unload();
+      done();
+    }
+  });
+
+  gc().then(() => {
+    let { node } = getWidget('my-button-1');
+
+    assert.ok(!!node, 'The button is in the navbar');
+
+    assert.equal('my button', node.getAttribute('label'),
+      'label is set');
+
+    assert.equal(data.url('icon.png'), node.getAttribute('image'),
+      'icon is set');
+
+    // ensure the listener is not gc'ed too
+    node.click();
+  }).catch(assert.fail);
+}
 
 exports['test button added with resource URI'] = function(assert) {
   let loader = Loader(module);
