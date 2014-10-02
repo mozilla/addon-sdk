@@ -17,9 +17,12 @@ const { Cu } = require('chrome');
 const { addDebuggerToGlobal } = Cu.import('resource://gre/modules/jsdebugger.jsm', {});
 addDebuggerToGlobal(this);
 
+const { testProgramExports } = require(root + "/addons/native-loader/shared");
+
+const NativeAddonTest = '/addons/native-loader/native-addon-test/';
 
 exports['test nodeResolve'] = function (assert) {
-  let rootURI = root + '/fixtures/native-addon-test/';
+  let rootURI = root + NativeAddonTest;
   let manifest = {};
   manifest.dependencies = {};
 
@@ -64,9 +67,9 @@ exports['test bundle'] = function (assert, done) {
 */
 
 exports['test generateMap()'] = function (assert, done) {
-  getJSON('/fixtures/native-addon-test/expectedmap.json').then(expected => {
+  getJSON(NativeAddonTest + 'expectedmap.json').then(expected => {
     generateMap({
-      rootURI: root + '/fixtures/native-addon-test/'
+      rootURI: root + NativeAddonTest
     }, map => {
       assert.deepEqual(map, expected, 'generateMap returns expected mappings');
       assert.equal(map['./index.js']['./dir/a'], './dir/a.js',
@@ -108,15 +111,15 @@ exports['test JSM loading'] = function (assert, done) {
 
 exports['test native Loader with mappings'] = function (assert, done) {
   all([
-    getJSON('/fixtures/native-addon-test/expectedmap.json'),
-    getJSON('/fixtures/native-addon-test/package.json')
+    getJSON(NativeAddonTest + 'expectedmap.json'),
+    getJSON(NativeAddonTest + 'package.json')
   ]).then(([expectedMap, manifest]) => {
 
     // Override dummy module and point it to `test-math` to see if the
     // require is pulling from the mapping
     expectedMap['./index.js']['./dir/dummy'] = './dir/a.js';
 
-    let rootURI = root + '/fixtures/native-addon-test/';
+    let rootURI = root + NativeAddonTest;
     let loader = Loader({
       paths: makePaths(rootURI),
       rootURI: rootURI,
@@ -129,15 +132,15 @@ exports['test native Loader with mappings'] = function (assert, done) {
     assert.equal(program.dummyModule, 'dir/a',
       'The lookup uses the information given in the mapping');
 
-    testLoader(program, assert);
+    testProgramExports(program, assert);
     unload(loader);
     done();
   }).then(null, (reason) => console.error(reason));
 };
 
 exports['test native Loader without mappings'] = function (assert, done) {
-  getJSON('/fixtures/native-addon-test/package.json').then(manifest => {
-    let rootURI = root + '/fixtures/native-addon-test/';
+  getJSON(NativeAddonTest + 'package.json').then(manifest => {
+    let rootURI = root + NativeAddonTest;
     let loader = Loader({
       paths: makePaths(rootURI),
       rootURI: rootURI,
@@ -146,15 +149,15 @@ exports['test native Loader without mappings'] = function (assert, done) {
     });
 
     let program = main(loader);
-    testLoader(program, assert);
+    testProgramExports(program, assert);
     unload(loader);
     done();
   }).then(null, (reason) => console.error(reason));
 };
 
 exports["test require#resolve with relative, dependencies"] = function(assert, done) {
-  getJSON('/fixtures/native-addon-test/package.json').then(manifest => {
-    let rootURI = root + '/fixtures/native-addon-test/';
+  getJSON(NativeAddonTest + 'package.json').then(manifest => {
+    let rootURI = root + NativeAddonTest;
     let loader = Loader({
       paths: makePaths(rootURI),
       rootURI: rootURI,
@@ -165,7 +168,7 @@ exports["test require#resolve with relative, dependencies"] = function(assert, d
     let program = main(loader);
     let fixtureRoot = program.require.resolve("./").replace(/native-addon-test\/(.*)/, "") + "native-addon-test/";
 
-    assert.equal(root + "/fixtures/native-addon-test/", fixtureRoot, "correct resolution root");
+    assert.equal(root + NativeAddonTest, fixtureRoot, "correct resolution root");
     assert.equal(program.require.resolve("test-math"), fixtureRoot + "node_modules/test-math/index.js", "works with node_modules");
     assert.equal(program.require.resolve("./newmodule"), fixtureRoot + "newmodule/lib/file.js", "works with directory mains");
     assert.equal(program.require.resolve("./dir/a"), fixtureRoot + "dir/a.js", "works with normal relative module lookups");
@@ -179,54 +182,6 @@ exports["test require#resolve with relative, dependencies"] = function(assert, d
     done();
   }).then(null, (reason) => console.error(reason));
 };
-
-function testLoader (program, assert) {
-  // Test 'main' entries
-  // no relative custom main `lib/index.js`
-  assert.equal(program.customMainModule, 'custom entry file',
-    'a node_module dependency correctly uses its `main` entry in manifest');
-  // relative custom main `./lib/index.js`
-  assert.equal(program.customMainModuleRelative, 'custom entry file relative',
-    'a node_module dependency correctly uses its `main` entry in manifest with relative ./');
-  // implicit './index.js'
-  assert.equal(program.defaultMain, 'default main',
-    'a node_module dependency correctly defautls to index.js for main');
-
-  // Test directory exports
-  assert.equal(program.directoryDefaults, 'utils',
-    '`require`ing a directory defaults to dir/index.js');
-  assert.equal(program.directoryMain, 'main from new module',
-    '`require`ing a directory correctly loads the `main` entry and not index.js');
-  assert.equal(program.resolvesJSoverDir, 'dir/a',
-    '`require`ing "a" resolves "a.js" over "a/index.js"');
-
-  // Test dependency's dependencies
-  assert.ok(program.math.add,
-    'correctly defaults to index.js of a module');
-  assert.equal(program.math.add(10, 5), 15,
-    'node dependencies correctly include their own dependencies');
-  assert.equal(program.math.subtract(10, 5), 5,
-    'node dependencies correctly include their own dependencies');
-  assert.equal(program.mathInRelative.subtract(10, 5), 5,
-    'relative modules can also include node dependencies');
-
-  // Test SDK natives
-  assert.ok(program.promise.defer, 'main entry can include SDK modules with no deps');
-  assert.ok(program.promise.resolve, 'main entry can include SDK modules with no deps');
-  assert.ok(program.eventCore.on, 'main entry can include SDK modules that have dependencies');
-  assert.ok(program.eventCore.off, 'main entry can include SDK modules that have dependencies');
-
-  // Test JSMs
-  assert.ok(program.promisejsm.defer, 'can require JSM files in path');
-  assert.equal(program.localJSM.test, 'this is a jsm',
-    'can require relative JSM files');
-
-  // Other tests
-  assert.equal(program.areModulesCached, true,
-    'modules are correctly cached');
-  assert.equal(program.testJSON.dependencies['test-math'], '*',
-    'correctly requires JSON files');
-}
 
 function getJSON (uri) {
   return readURI(root + uri).then(manifest => JSON.parse(manifest));
