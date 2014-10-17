@@ -16,11 +16,10 @@ const { setTimeout } = require("sdk/timers");
 const self = require('sdk/self');
 const { open, close, focus, ready } = require('sdk/window/helpers');
 const { isPrivate } = require('sdk/private-browsing');
-const { isWindowPBSupported, isGlobalPBSupported } = require('sdk/private-browsing/utils');
+const { isWindowPBSupported } = require('sdk/private-browsing/utils');
 const { defer, all } = require('sdk/core/promise');
 const { getMostRecentBrowserWindow } = require('sdk/window/utils');
 const { getWindow } = require('sdk/panel/window');
-const { pb } = require('./private-browsing/helper');
 const { URL } = require('sdk/url');
 const { wait } = require('./event/helpers');
 
@@ -282,17 +281,28 @@ exports["test Hide Before Show"] = function(assert, done) {
   const { Panel } = require('sdk/panel');
 
   let showCalled = false;
-  let panel = Panel({
+  let hideCalled = false;
+  let panel1 = Panel({
     onShow: function () {
       showCalled = true;
     },
     onHide: function () {
-      assert.ok(!showCalled, 'must not emit show if was hidden before');
-      done();
+      hideCalled = true;
     }
   });
-  panel.show();
-  panel.hide();
+  panel1.show();
+  panel1.hide();
+
+  let panel2 = Panel({
+    onShow: function () {
+      assert.ok(!showCalled, 'should not emit show');
+      assert.ok(!hideCalled, 'should not emit hide');
+      panel1.destroy();
+      panel2.destroy();
+      done();
+    },
+  });
+  panel2.show();
 };
 
 exports["test Several Show Hides"] = function(assert, done) {
@@ -1006,7 +1016,7 @@ exports['test panel CSS'] = function(assert, done) {
 
       assert.equal(div.clientHeight, 100,
         "Panel contentStyle worked");
-   
+
       assert.equal(div.offsetHeight, 120,
         "Panel contentStyleFile worked");
 
@@ -1044,7 +1054,7 @@ exports['test panel contentScriptFile'] = function(assert, done) {
 
   let panel = Panel({
     contentURL: './test.html',
-    contentScriptFile: "./test-contentScriptFile.js", 
+    contentScriptFile: "./test-contentScriptFile.js",
     onMessage: (message) => {
       assert.equal(message, "msg from contentScriptFile",
         "Panel contentScriptFile with relative path worked");
@@ -1155,7 +1165,7 @@ exports['test panel contextmenu validation'] = function(assert) {
 
   assert.equal(panel.contextMenu, false,
     'contextMenu option accepts boolean values');
-  
+
   assert.throws(() =>
     Panel({contextMenu: 1}),
     /The option "contextMenu" must be one of the following types: boolean, undefined, null/,
@@ -1235,7 +1245,7 @@ exports['test panel contextmenu disabled'] = function*(assert) {
 
   assert.equal(contextmenu.state, 'closed',
     'contextmenu must be closed');
-  
+
   sendMouseEvent('contextmenu', 20, 20, 2, 1, 0);
 
   contextmenu.addEventListener('popupshown', listener);
@@ -1247,7 +1257,7 @@ exports['test panel contextmenu disabled'] = function*(assert) {
   assert.equal(contextmenu.state, 'closed',
     'contextmenu was never open');
 
-  loader.unload();  
+  loader.unload();
 }
 
 exports["test panel addon global object"] = function*(assert) {
@@ -1274,9 +1284,50 @@ exports["test panel addon global object"] = function*(assert) {
   panel.port.emit('addon-to-document', 'ok');
 
   yield wait(panel.port, "document-to-addon");
- 
+
   assert.pass("Received an event from the document");
 
+  loader.unload();
+}
+
+exports["test panel load doesn't show"] = function*(assert) {
+  let loader = Loader(module);
+
+  let showCount = 0;
+  let panel = loader.require("sdk/panel").Panel({
+    contentScript: "addEventListener('load', function(event) { self.postMessage('load'); });",
+    contentScriptWhen: "start",
+    contentURL: "data:text/html;charset=utf-8,",
+  });
+
+  let shown = defer();
+  let messaged = defer();
+
+  panel.once("show", function() {
+    shown.resolve();
+  });
+
+  panel.once("message", function() {
+    messaged.resolve();
+  });
+
+  panel.show();
+  yield all([shown.promise, messaged.promise]);
+  assert.ok(true, "Saw panel display");
+
+  panel.on("show", function() {
+    assert.fail("Should not have seen another show event")
+  });
+
+  messaged = defer();
+  panel.once("message", function() {
+    assert.ok(true, "Saw panel reload");
+    messaged.resolve();
+  });
+
+  panel.contentURL = "data:text/html;charset=utf-8,<html/>";
+
+  yield messaged.promise;
   loader.unload();
 }
 
@@ -1295,28 +1346,5 @@ if (isWindowPBSupported) {
     }).then(close).then(done).then(null, assert.fail);
   }
 }
-else if (isGlobalPBSupported) {
-  exports.testGetWindow = function(assert, done) {
-    let activeWindow = getMostRecentBrowserWindow();
 
-    assert.equal(getWindow(activeWindow.gBrowser), activeWindow, 'non-private window elements returns window');
-    pb.once('start', function() {
-      assert.ok(isPrivate(activeWindow), 'window is private');
-      assert.equal(getWindow(activeWindow.gBrowser), activeWindow, 'private window elements returns window');
-      open(null, { features: {
-        toolbar: true,
-        chrome: true
-      } }).then(window => {
-        assert.ok(isPrivate(window), 'window is private');
-        assert.equal(getWindow(window.gBrowser), window, 'private window elements returns window');
-        assert.equal(getWindow(activeWindow.gBrowser), activeWindow, 'active window elements returns window');
-
-        pb.once('stop', done);
-        pb.deactivate();
-      })
-    });
-    pb.activate();
-  }
-}
-
-require("test").run(exports);
+require("sdk/test").run(exports);

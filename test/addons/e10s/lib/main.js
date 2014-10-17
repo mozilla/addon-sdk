@@ -3,10 +3,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
-const { getMostRecentBrowserWindow } = require('sdk/window/utils');
+const { getMostRecentBrowserWindow, isBrowser } = require('sdk/window/utils');
 const { promise: windowPromise, close, focus } = require('sdk/window/helpers');
 const { openTab, closeTab, getBrowserForTab } = require('sdk/tabs/utils');
-const { version } = require('sdk/system');
+const { WindowTracker } = require('sdk/deprecated/window-utils');
+const { version, platform } = require('sdk/system');
+const { when } = require('sdk/system/unload');
 const tabs = require('sdk/tabs');
 
 exports.testTabIsRemote = function(assert, done) {
@@ -29,30 +31,31 @@ if (!version.endsWith('a1')) {
   module.exports = {};
 }
 
-function openE10sWindow() {
-  let window = getMostRecentBrowserWindow().OpenBrowserWindow({ remote: true });
-  return windowPromise(window, 'load').then(focus);
-}
-
-function makeE10sTests(exports) {
-  let newExports = {};
-
-  for (let key of Object.keys(exports)) {
-    if (typeof(exports[key]) == "function" && key.substring(0, 4) == "test") {
-      let testFunction = exports[key];
-      newExports[key] = function(assert, done) {
-        openE10sWindow().then(window => {
-          testFunction(assert, () => {
-            close(window).then(done);
-          });
-        });
+function replaceWindow(remote) {
+  let next = null;
+  let old = getMostRecentBrowserWindow();
+  let promise = new Promise(resolve => {
+    let tracker = WindowTracker({
+      onTrack: window => {
+        if (window !== next)
+          return;
+        resolve(window);
+        tracker.unload();
       }
-    }
-  }
-
-  return newExports;
+    });
+  })
+  next = old.OpenBrowserWindow({ remote });
+  return promise.then(focus).then(_ => close(old));
 }
 
-module.exports = makeE10sTests(exports);
+// bug 1054482 - e10s test addons time out on linux
+if (platform === 'linux') {
+  module.exports = {};
+  require('sdk/test/runner').runTestsFromModule(module);
+}
+else {
+  replaceWindow(true).then(_ =>
+    require('sdk/test/runner').runTestsFromModule(module));
 
-require('sdk/test/runner').runTestsFromModule(module);
+  when(_ => replaceWindow(false));
+}

@@ -366,4 +366,12 @@ exports['test shared globals'] = function(assert) {
   unload(loader);
 }
 
+exports["test require#resolve"] = function(assert) {
+  let foundRoot = require.resolve("sdk/tabs").replace(/sdk\/tabs.js$/, "");
+  assert.ok(root, foundRoot, "correct resolution root");
+
+  assert.equal(foundRoot + "sdk/tabs.js", require.resolve("sdk/tabs"), "correct resolution of sdk module");
+  assert.equal(foundRoot + "toolkit/loader.js", require.resolve("toolkit/loader"), "correct resolution of sdk module");
+};
+
 require('test').run(exports);
