@@ -10,6 +10,11 @@ const globalMM = Components.classes["@mozilla.org/globalmessagemanager;1"].
 // Since this JSM will be loaded using require(), PATH will be
 // overridden while running tests, just like any other module.
 const PATH = __URI__.replace('FrameScriptManager.jsm', '');
+const LOADER = PATH + 'LoaderHelper.jsm';
+const EVENTS = PATH + 'tab-events.js';
+
+// provide the LoaderHelper.jsm path to framescript
+globalMM.addMessageListener('sdk/loader/helper', () => LOADER);
 
 // ensure frame scripts are loaded only once
 let loadedTabEvents = false;
@@ -19,7 +24,7 @@ function enableTabEvents() {
     return;
 
   loadedTabEvents = true;
-  globalMM.loadFrameScript(PATH + 'tab-events.js', true);
+  globalMM.loadFrameScript(EVENTS, true);
 }
 
 const EXPORTED_SYMBOLS = ['enableTabEvents'];

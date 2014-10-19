@@ -1298,7 +1298,7 @@ exports.testPageModcancelTimeout = function(assert, done) {
     onReady: function($) { tab = $ }
   })
 }
-/*
+
 exports.testExistingOnFrames = function(assert, done) {
   let subFrameURL = 'data:text/html;charset=utf-8,testExistingOnFrames-sub-frame';
   let subIFrame = '<iframe src="' + subFrameURL + '" />'
@@ -1367,7 +1367,7 @@ exports.testExistingOnFrames = function(assert, done) {
 
   window.addEventListener("load", wait4Iframes, false);
 };
-*/
+
 exports.testIFramePostMessage = function(assert, done) {
   let count = 0;
 
