@@ -9,15 +9,11 @@ const { Loader } = require('sdk/test/loader');
 const tabs = require("sdk/tabs");
 const { setTimeout } = require("sdk/timers");
 const { Cc, Ci, Cu } = require("chrome");
-const {
-  open,
-  getFrames,
-  getMostRecentBrowserWindow,
-  getInnerId
-} = require('sdk/window/utils');
+const system = require("sdk/system/events");
+const { open, getFrames, getMostRecentBrowserWindow, getInnerId } = require('sdk/window/utils');
 const { getTabContentWindow, getActiveTab, setTabURL, openTab, closeTab } = require('sdk/tabs/utils');
 const xulApp = require("sdk/system/xul-app");
-const { isPrivateBrowsingSupported, data: sdata } = require('sdk/self');
+const { isPrivateBrowsingSupported } = require('sdk/self');
 const { isPrivate } = require('sdk/private-browsing');
 const { openWebpage } = require('./private-browsing/helper');
 const { isTabPBSupported, isWindowPBSupported, isGlobalPBSupported } = require('sdk/private-browsing/utils');
@@ -58,15 +54,14 @@ exports.testPageMod1 = function(assert, done) {
       }
     }],
     function(win, done) {
-      setTimeout(_ => {
-        assert.equal(
-          win.document.body.getAttribute("JEP-107"),
-          "worked",
-          "PageMod.onReady test"
-        );
-        done();
-      })
-    }
+      assert.equal(
+        win.document.body.getAttribute("JEP-107"),
+        "worked",
+        "PageMod.onReady test"
+      );
+      done();
+    },
+    100
   );
 };
 
@@ -89,18 +84,18 @@ exports.testPageMod2 = function(assert, done) {
         }
       ]
     }], function(win, done) {
-      setTimeout(_ => {
-        assert.equal(win.document.documentElement.getAttribute("first"),
-                         "true",
-                         "PageMod test #2: first script has run");
-        assert.equal(win.document.documentElement.getAttribute("second"),
-                         "true",
-                         "PageMod test #2: second script has run");
-        assert.equal("AUQLUE" in win, false,
-                         "PageMod test #2: scripts get a wrapped window");
-        done();
-      })
-    });
+      assert.equal(win.document.documentElement.getAttribute("first"),
+                       "true",
+                       "PageMod test #2: first script has run");
+      assert.equal(win.document.documentElement.getAttribute("second"),
+                       "true",
+                       "PageMod test #2: second script has run");
+      assert.equal("AUQLUE" in win, false,
+                       "PageMod test #2: scripts get a wrapped window");
+      done();
+    },
+    100
+  );
 };
 
 exports.testPageModIncludes = function(assert, done) {
@@ -131,9 +126,9 @@ exports.testPageModIncludes = function(assert, done) {
   }
 
   testPageMod(assert, done, testPageURI, [
-      createPageModTest("resource:*", true),
       createPageModTest("*", false),
       createPageModTest("*.google.com", false),
+      createPageModTest("resource:*", true),
       createPageModTest("resource:", false),
       createPageModTest(testPageURI, true)
     ],
@@ -179,10 +174,10 @@ exports.testPageModExcludes = function(assert, done) {
   }
 
   testPageMod(assert, done, testPageURI, [
-      createPageModTest(testPageURI, "*.google.com", true),
       createPageModTest("*", testPageURI, false),
       createPageModTest(testPageURI, testPageURI, false),
       createPageModTest(testPageURI, "resource://*", false),
+      createPageModTest(testPageURI, "*.google.com", true)
     ],
     function (win, done) {
       waitUntil(() => win.localStorage[JSON.stringify([testPageURI, "*.google.com"])],
@@ -571,7 +566,6 @@ exports.testExistingOnlyFrameMatchesInclude = function(assert, done) {
   let iframeURL = 'data:text/html;charset=utf-8,UNIQUE-TEST-STRING-43';
   let iframe = '<iframe src="' + iframeURL + '" />';
   let url = 'data:text/html;charset=utf-8,' + encodeURIComponent(iframe);
-  let once = false;
   tabs.open({
     url: url,
     onReady: function onReady(tab) {
@@ -579,10 +573,6 @@ exports.testExistingOnlyFrameMatchesInclude = function(assert, done) {
         include: iframeURL,
         attachTo: ['existing', 'frame'],
         onAttach: function(worker) {
-          if (once)
-            return;
-          // bug 1056380
-          once = true;
           assert.equal(iframeURL, worker.url,
               "PageMod attached to existing iframe when only it matches include rules");
           pagemod.destroy();
@@ -1066,20 +1056,18 @@ exports.testPageModCss = function(assert, done) {
       contentStyleFile: [data.url("include-file.css"), "./border-style.css"]
     }],
     function(win, done) {
-      setTimeout(_ => {
-        let div = win.document.querySelector("div");
+      let div = win.document.querySelector("div");
 
-        assert.equal(div.clientHeight, 100,
-          "PageMod contentStyle worked");
-     
-        assert.equal(div.offsetHeight, 120,
-          "PageMod contentStyleFile worked");
+      assert.equal(div.clientHeight, 100,
+        "PageMod contentStyle worked");
 
-        assert.equal(win.getComputedStyle(div).borderTopStyle, "dashed",
-          "PageMod contentStyleFile with relative path worked");
+      assert.equal(div.offsetHeight, 120,
+        "PageMod contentStyleFile worked");
 
-        done();
-      })
+      assert.equal(win.getComputedStyle(div).borderTopStyle, "dashed",
+        "PageMod contentStyleFile with relative path worked");
+
+      done();
     }
   );
 };
@@ -1103,37 +1091,34 @@ exports.testPageModCssList = function(assert, done) {
       ]
     }],
     function(win, done) {
-      setTimeout(_ => {
+      let div = win.document.querySelector("div"),
+          style = win.getComputedStyle(div);
 
-        let div = win.document.querySelector("div"),
-            style = win.getComputedStyle(div);
+      assert.equal(
+       div.clientHeight,
+        100,
+        "PageMod contentStyle list works and is evaluated after contentStyleFile"
+      );
 
-        assert.equal(
-         div.clientHeight,
-          100,
-          "PageMod contentStyle list works and is evaluated after contentStyleFile"
-        );
+      assert.equal(
+        div.offsetHeight,
+        120,
+        "PageMod contentStyleFile list works"
+      );
 
-        assert.equal(
-          div.offsetHeight,
-          120,
-          "PageMod contentStyleFile list works"
-        );
+      assert.equal(
+        style.width,
+        "320px",
+        "PageMod add-on author/page author style sheet precedence works"
+      );
 
-        assert.equal(
-          style.width,
-          "320px",
-          "PageMod add-on author/page author style sheet precedence works"
-        );
+      assert.equal(
+        style.maxWidth,
+        "480px",
+        "PageMod add-on author/page author style sheet precedence with !important works"
+      );
 
-        assert.equal(
-          style.maxWidth,
-          "480px",
-          "PageMod add-on author/page author style sheet precedence with !important works"
-        );
-
-        done();
-      })
+      done();
     }
   );
 };
@@ -1157,15 +1142,13 @@ exports.testPageModCssDestroy = function(assert, done) {
 
       pageMod.destroy();
 
-      setTimeout(_ => {
-        assert.equal(
-          style.width,
-          "200px",
-          "PageMod contentStyle is removed after destroy"
-        );
+      assert.equal(
+        style.width,
+        "200px",
+        "PageMod contentStyle is removed after destroy"
+      );
 
-        done();
-      }, 100);
+      done();
     }
   );
 };
@@ -1182,31 +1165,27 @@ exports.testPageModCssAutomaticDestroy = function(assert, done) {
     url: "data:text/html;charset=utf-8,<div style='width:200px'>css test</div>",
 
     onReady: function onReady(tab) {
-      setTimeout(_ => {
-        let browserWindow = getMostRecentBrowserWindow();
-        let win = getTabContentWindow(getActiveTab(browserWindow));
+      let browserWindow = getMostRecentBrowserWindow();
+      let win = getTabContentWindow(getActiveTab(browserWindow));
 
-        let div = win.document.querySelector("div");
-        let style = win.getComputedStyle(div);
+      let div = win.document.querySelector("div");
+      let style = win.getComputedStyle(div);
 
-        assert.equal(
-          style.width,
-          "100px",
-          "PageMod contentStyle worked"
-        );
+      assert.equal(
+        style.width,
+        "100px",
+        "PageMod contentStyle worked"
+      );
 
-        loader.unload();
+      loader.unload();
 
-        setTimeout(_ => {
-          assert.equal(
-            style.width,
-            "200px",
-            "PageMod contentStyle is removed after loader's unload"
-          );
+      assert.equal(
+        style.width,
+        "200px",
+        "PageMod contentStyle is removed after loader's unload"
+      );
 
-          tab.close(done);
-        })
-      })
+      tab.close(done);
     }
   });
 };
@@ -1221,7 +1200,7 @@ exports.testPageModContentScriptFile = function(assert, done) {
           "PageMod contentScriptFile with relative path worked");
       }
     }],
-    (win, done) => setTimeout(done)
+    (win, done) => done()
   );
 
 };
@@ -1407,14 +1386,13 @@ exports.testEvents = function(assert, done) {
       }
     }],
     function(win, done) {
-      setTimeout(_ => {
-        assert.ok(
-          win.document.body.getAttribute("receivedEvent"),
-          "Content script sent an event and document received it"
-        );
-        done();
-      }, 500);
-    }
+      assert.ok(
+        win.document.body.getAttribute("receivedEvent"),
+        "Content script sent an event and document received it"
+      );
+      done();
+    },
+    100
   );
 };
 
@@ -1444,7 +1422,6 @@ exports["test page-mod on private tab"] = function (assert, done) {
 
       page1.close().
         then(page2.close).
-        // then(setTimeout(done, 9999), fail);
         then(done, fail);
     }
   });
@@ -1666,10 +1643,9 @@ exports.testDetachOnUnload = function(assert, done) {
 }
 
 exports.testConsole = function(assert, done) {
-  const TEST_URL = 'data:text/html;charset=utf-8,console';
-  const system = require("sdk/system/events");
-
   let innerID;
+  const TEST_URL = 'data:text/html;charset=utf-8,console';
+
   let seenMessage = false;
 
   system.on('console-api-log-event', onMessage);
@@ -1686,7 +1662,7 @@ exports.testConsole = function(assert, done) {
     contentScriptWhen: "ready",
     contentScript: Isolate(function() {
       console.log("Hello from the page mod");
-      setTimeout(_ => self.port.emit("done"), 5000);
+      self.port.emit("done");
     }),
     onAttach: function(worker) {
       worker.port.on("done", function() {
@@ -1725,14 +1701,13 @@ exports.testSyntaxErrorInContentScript = function(assert, done) {
     }],
 
     function(win, done) {
-      setTimeout(_ => {
-        assert.ok(attached, "The worker was attached.");
-        assert.notStrictEqual(hitError, null, "The syntax error was reported.");
-        if (hitError)
-          assert.equal(hitError.name, "SyntaxError", "The error thrown should be a SyntaxError");
-        done();
-      }, 3500);
-    }
+      assert.ok(attached, "The worker was attached.");
+      assert.notStrictEqual(hitError, null, "The syntax error was reported.");
+      if (hitError)
+        assert.equal(hitError.name, "SyntaxError", "The error thrown should be a SyntaxError");
+      done();
+    },
+    300
   );
 };
 
