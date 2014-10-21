@@ -66,18 +66,7 @@ DEFAULT_NO_CONNECTIONS_PREFS = {
     'extensions.update.url' : 'http://localhost/extensions-dummy/updateURL',
     'extensions.blocklist.url' : 'http://localhost/extensions-dummy/blocklistURL',
     # Make sure opening about:addons won't hit the network.
-    'extensions.webservice.discoverURL' : 'http://localhost/extensions-dummy/discoveryURL',
-
-    # disable download/install of GMP manager addon
-    'media.gmp-manager.url.override' : 'http://localhost/dummy.xml',
-
-    # shut up some warning on `about:` page
-    'app.releaseNotesURL': 'http://blah',
-    'app.vendorURL': 'http://blah',
-
-    # Disable about:newtab content fetch and ping
-    'browser.newtabpage.directory.source': 'data:application/json,{"jetpack":1}',
-    'browser.newtabpage.directory.ping': '',
+    'extensions.webservice.discoverURL' : 'http://localhost/extensions-dummy/discoveryURL'
 }
 
 DEFAULT_FENNEC_PREFS = {

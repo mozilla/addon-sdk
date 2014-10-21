@@ -20,7 +20,6 @@ const { isTabPBSupported, isWindowPBSupported, isGlobalPBSupported } = require('
 const promise = require("sdk/core/promise");
 const { pb } = require('./private-browsing/helper');
 const { URL } = require("sdk/url");
-const { LoaderWithHookedConsole } = require('sdk/test/loader');
 
 const { waitUntil } = require("sdk/test/utils");
 const data = require("./fixtures");

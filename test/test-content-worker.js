@@ -21,6 +21,7 @@ const { set: setPref } = require("sdk/preferences/service");
 const { isArray } = require("sdk/lang/type");
 const { URL } = require('sdk/url');
 const fixtures = require("./fixtures");
+const system = require("sdk/system/events");
 
 const DEPRECATE_PREF = "devtools.errorconsole.deprecation_warnings";
 
@@ -385,7 +386,6 @@ exports["test:nothing is leaked to content script"] = WorkerTest(
 exports["test:ensure console.xxx works in cs"] = WorkerTest(
   DEFAULT_CONTENT_URL,
   function(assert, browser, done) {
-    const system = require("sdk/system/events");
     const EXPECTED = ["time", "log", "info", "warn", "error", "error", "timeEnd"];
 
     let calls = [];
@@ -894,7 +894,6 @@ exports["test:onDetach in contentScript on unload"] = WorkerTest(
 exports["test:console method log functions properly"] = WorkerTest(
   DEFAULT_CONTENT_URL,
   function(assert, browser, done) {
-    const system = require("sdk/system/events");
     let logs = [];
 
     system.on('console-api-log-event', onMessage);
