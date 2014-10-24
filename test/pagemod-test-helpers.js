@@ -1,7 +1,6 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 "use strict";
 
 const {Cc,Ci} = require("chrome");
@@ -12,34 +11,19 @@ const { openTab, getBrowserForTab, closeTab } = require("sdk/tabs/utils");
 const self = require("sdk/self");
 const { merge } = require("sdk/util/object");
 
-/**
- * A helper function that creates a PageMod, then opens the specified URL
- * and checks the effect of the page mod on 'onload' event via testCallback.
- */
+// an evil function enables the creation of tests
+// that depend on delicate event timing. do not use.
 exports.testPageMod = function testPageMod(assert, done, testURL, pageModOptions,
                                            testCallback, timeout) {
-  if (!xulApp.versionInRange(xulApp.platformVersion, "1.9.3a3", "*") &&
-      !xulApp.versionInRange(xulApp.platformVersion, "1.9.2.7", "1.9.2.*")) {
-    assert.pass("Note: not testing PageMod, as it doesn't work on this platform version");
-    return null;
-  }
 
   var wm = Cc['@mozilla.org/appshell/window-mediator;1']
            .getService(Ci.nsIWindowMediator);
   var browserWindow = wm.getMostRecentWindow("navigator:browser");
-  if (!browserWindow) {
-    assert.pass("page-mod tests: could not find the browser window, so " +
-              "will not run. Use -a firefox to run the pagemod tests.")
-    return null;
-  }
 
-  let loader = Loader(module, null, null, {
-    modules: {
-      "sdk/self": merge({}, self, {
-        data: merge({}, self.data, require("./fixtures"))
-      })
-    }
-  });
+  let options = merge({}, require('@loader/options'),
+                      { prefixURI: require('./fixtures').url() });
+
+  let loader = Loader(module, null, options);
   let pageMod = loader.require("sdk/page-mod");
 
   var pageMods = [new pageMod.PageMod(opts) for each(opts in pageModOptions)];
@@ -55,7 +39,7 @@ exports.testPageMod = function testPageMod(assert, done, testURL, pageModOptions
     // load event. So page-mod actions may not be already done.
     // If we delay even more contentScriptWhen:'end', we may want to modify
     // this code again.
-    timer.setTimeout(testCallback, 0,
+    timer.setTimeout(testCallback, timeout,
       b.contentWindow.wrappedJSObject, 
       function () {
         pageMods.forEach(function(mod) mod.destroy());
@@ -76,7 +60,8 @@ exports.testPageMod = function testPageMod(assert, done, testURL, pageModOptions
  * based on the value of document.readyState at the time contentScript is attached
  */
 exports.handleReadyState = function(url, contentScriptWhen, callbacks) {
-  const { PageMod } = Loader(module).require('sdk/page-mod');
+  const loader = Loader(module);
+  const { PageMod } = loader.require('sdk/page-mod');
 
   let pagemod = PageMod({
     include: url,
@@ -86,12 +71,14 @@ exports.handleReadyState = function(url, contentScriptWhen, callbacks) {
     onAttach: worker => {
       let { tab } = worker;
       worker.on('message', readyState => {
-        pagemod.destroy();
         // generate event name from `readyState`, e.g. `"loading"` becomes `onLoading`.
         let type = 'on' + readyState[0].toUpperCase() + readyState.substr(1);
 
         if (type in callbacks)
           callbacks[type](tab); 
+
+        pagemod.destroy();
+        loader.unload();
       })
     }
   });

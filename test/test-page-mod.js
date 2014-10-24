@@ -9,12 +9,8 @@ const { Loader } = require('sdk/test/loader');
 const tabs = require("sdk/tabs");
 const { setTimeout } = require("sdk/timers");
 const { Cc, Ci, Cu } = require("chrome");
-const {
-  open,
-  getFrames,
-  getMostRecentBrowserWindow,
-  getInnerId
-} = require('sdk/window/utils');
+const system = require("sdk/system/events");
+const { open, getFrames, getMostRecentBrowserWindow, getInnerId } = require('sdk/window/utils');
 const { getTabContentWindow, getActiveTab, setTabURL, openTab, closeTab } = require('sdk/tabs/utils');
 const xulApp = require("sdk/system/xul-app");
 const { isPrivateBrowsingSupported } = require('sdk/self');
@@ -24,7 +20,6 @@ const { isTabPBSupported, isWindowPBSupported, isGlobalPBSupported } = require('
 const promise = require("sdk/core/promise");
 const { pb } = require('./private-browsing/helper');
 const { URL } = require("sdk/url");
-const { LoaderWithHookedConsole } = require('sdk/test/loader');
 
 const { waitUntil } = require("sdk/test/utils");
 const data = require("./fixtures");
@@ -64,7 +59,8 @@ exports.testPageMod1 = function(assert, done) {
         "PageMod.onReady test"
       );
       done();
-    }
+    },
+    100
   );
 };
 
@@ -96,7 +92,9 @@ exports.testPageMod2 = function(assert, done) {
       assert.equal("AUQLUE" in win, false,
                        "PageMod test #2: scripts get a wrapped window");
       done();
-    });
+    },
+    100
+  );
 };
 
 exports.testPageModIncludes = function(assert, done) {
@@ -622,7 +620,7 @@ exports.testContentScriptWhenDefault = function(assert) {
 // test timing for all 3 contentScriptWhen options (start, ready, end)
 // for new pages, or tabs opened after PageMod is created
 exports.testContentScriptWhenForNewTabs = function(assert, done) {
-  const url = "data:text/html;charset=utf-8,testContentScriptWhenForNewTabs";
+  const url = data.url('test-contentScriptWhen.html?ForNewTabs');
 
   let count = 0;
 
@@ -662,7 +660,7 @@ exports.testContentScriptWhenForNewTabs = function(assert, done) {
 // test timing for all 3 contentScriptWhen options (start, ready, end)
 // for PageMods created right as the tab is created (in tab.onOpen)
 exports.testContentScriptWhenOnTabOpen = function(assert, done) {
-  const url = "data:text/html;charset=utf-8,testContentScriptWhenOnTabOpen";
+  const url = data.url('test-contentScriptWhen.html?OnTabOpen');
 
   tabs.open({
     url: url,
@@ -706,10 +704,8 @@ exports.testContentScriptWhenOnTabOpen = function(assert, done) {
 // test timing for all 3 contentScriptWhen options (start, ready, end)
 // for PageMods created while the tab is interactive (in tab.onReady)
 exports.testContentScriptWhenOnTabReady = function(assert, done) {
-  // need a bit bigger document to get the right timing of events with e10s
-  let iframeURL = 'data:text/html;charset=utf-8,testContentScriptWhenOnTabReady';
-  let iframe = '<iframe src="' + iframeURL + '" />';
-  let url = 'data:text/html;charset=utf-8,' + encodeURIComponent(iframe);
+  const url = data.url('test-contentScriptWhen.html?OnTabReady');
+
   tabs.open({
     url: url,
     onReady: function(tab) {
@@ -1063,7 +1059,7 @@ exports.testPageModCss = function(assert, done) {
 
       assert.equal(div.clientHeight, 100,
         "PageMod contentStyle worked");
-   
+
       assert.equal(div.offsetHeight, 120,
         "PageMod contentStyleFile worked");
 
@@ -1144,6 +1140,7 @@ exports.testPageModCssDestroy = function(assert, done) {
       );
 
       pageMod.destroy();
+
       assert.equal(
         style.width,
         "200px",
@@ -1151,7 +1148,6 @@ exports.testPageModCssDestroy = function(assert, done) {
       );
 
       done();
-
     }
   );
 };
@@ -1194,7 +1190,6 @@ exports.testPageModCssAutomaticDestroy = function(assert, done) {
 };
 
 exports.testPageModContentScriptFile = function(assert, done) {
-
   testPageMod(assert, done, "about:license", [{
       include: "about:*",
       contentScriptWhen: "start",
@@ -1377,7 +1372,7 @@ exports.testIFramePostMessage = function(assert, done) {
 exports.testEvents = function(assert, done) {
   let content = "<script>\n new " + function DocumentScope() {
     window.addEventListener("ContentScriptEvent", function () {
-      window.receivedEvent = true;
+      window.document.body.setAttribute("receivedEvent", true);
     }, false);
   } + "\n</script>";
   let url = "data:text/html;charset=utf-8," + encodeURIComponent(content);
@@ -1391,11 +1386,12 @@ exports.testEvents = function(assert, done) {
     }],
     function(win, done) {
       assert.ok(
-        win.receivedEvent,
+        win.document.body.getAttribute("receivedEvent"),
         "Content script sent an event and document received it"
       );
       done();
-    }
+    },
+    100
   );
 };
 
@@ -1648,14 +1644,16 @@ exports.testDetachOnUnload = function(assert, done) {
 exports.testConsole = function(assert, done) {
   let innerID;
   const TEST_URL = 'data:text/html;charset=utf-8,console';
-  const { loader } = LoaderWithHookedConsole(module, onMessage);
-  const { PageMod } = loader.require('sdk/page-mod');
-  const system = require("sdk/system/events");
 
   let seenMessage = false;
-  function onMessage(type, msg, msgID) {
+
+  system.on('console-api-log-event', onMessage);
+
+  function onMessage({ subject: { wrappedJSObject: msg }}) {
+    if (msg.arguments[0] !== "Hello from the page mod")
+      return;
     seenMessage = true;
-    innerID = msgID;
+    innerID = msg.innerID;
   }
 
   let mod = PageMod({
@@ -1671,6 +1669,9 @@ exports.testConsole = function(assert, done) {
         let id = getInnerId(window);
         assert.ok(seenMessage, "Should have seen the console message");
         assert.equal(innerID, id, "Should have seen the right inner ID");
+
+        system.off('console-api-log-event', onMessage);
+        mod.destroy();
         closeTab(tab);
         done();
       });
@@ -1704,7 +1705,8 @@ exports.testSyntaxErrorInContentScript = function(assert, done) {
       if (hitError)
         assert.equal(hitError.name, "SyntaxError", "The error thrown should be a SyntaxError");
       done();
-    }
+    },
+    300
   );
 };
 
