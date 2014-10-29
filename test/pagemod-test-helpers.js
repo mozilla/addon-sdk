@@ -3,13 +3,15 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
-const {Cc,Ci} = require("chrome");
-const timer = require("sdk/timers");
-const xulApp = require("sdk/system/xul-app");
+const { Cc, Ci } = require("chrome");
+const { setTimeout } = require("sdk/timers");
 const { Loader } = require("sdk/test/loader");
 const { openTab, getBrowserForTab, closeTab } = require("sdk/tabs/utils");
-const self = require("sdk/self");
 const { merge } = require("sdk/util/object");
+const httpd = require("./lib/httpd");
+
+const PORT = 8099;
+const PATH = '/test-contentScriptWhen.html';
 
 // an evil function enables the creation of tests
 // that depend on delicate event timing. do not use.
@@ -39,7 +41,7 @@ exports.testPageMod = function testPageMod(assert, done, testURL, pageModOptions
     // load event. So page-mod actions may not be already done.
     // If we delay even more contentScriptWhen:'end', we may want to modify
     // this code again.
-    timer.setTimeout(testCallback, timeout,
+    setTimeout(testCallback, timeout,
       b.contentWindow.wrappedJSObject, 
       function () {
         pageMods.forEach(function(mod) mod.destroy());
@@ -82,4 +84,28 @@ exports.handleReadyState = function(url, contentScriptWhen, callbacks) {
       })
     }
   });
+}
+
+// serves a slow page which takes 1.5 seconds to load,
+// 0.5 seconds in each readyState: uninitialized, loading, interactive.
+exports.contentScriptWhenServer = function() {
+  const URL = 'http://localhost:' + PORT + PATH;
+
+  const HTML = `/* polyglot js
+    <script src="${URL}"></script>
+    delay both the "DOMContentLoaded"
+    <script async src="${URL}"></script>
+    and "load" events */`;
+
+  let srv = httpd.startServerAsync(PORT);
+
+  srv.registerPathHandler(PATH, (_, response) => {
+    response.processAsync();
+    response.setHeader('Content-Type', 'text/html', false);
+    setTimeout(_ => response.finish(), 500);
+    response.write(HTML);
+  })
+
+  srv.URL = URL;
+  return srv;
 }
