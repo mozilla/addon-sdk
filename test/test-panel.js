@@ -676,58 +676,57 @@ exports["test console.log in Panel"] = function(assert, done) {
 };
 
 if (isWindowPBSupported) {
-  exports.testPanelDoesNotShowInPrivateWindowNoAnchor = function(assert, done) {
-    let { loader } = LoaderWithHookedConsole(module, ignorePassingDOMNodeWarning);
+  exports.testPanelDoesNotShowInPrivateWindowNoAnchor = function*(assert) {
+    let { loader } = LoaderWithHookedConsole(module);
     let { Panel } = loader.require("sdk/panel");
     let browserWindow = getMostRecentBrowserWindow();
 
     assert.equal(isPrivate(browserWindow), false, 'open window is not private');
 
-    let panel = Panel({
-      contentURL: SVG_URL
+    const HTML = "<html><title>Test</title><p>This is a test.</p></html>";
+    const URL = "data:text/html;charset=utf-8," + encodeURI(HTML);
+    let panel = Panel({ contentURL: URL });
+
+    yield testShowPanel(assert, panel);
+    let window = yield makeEmptyPrivateBrowserWindow().then(focus);
+
+    assert.equal(isPrivate(window), true, 'opened window is private');
+
+    yield new Promise((resolve) => {
+      let showTries = 0;
+      let showCount = 0;
+
+      panel.on('show', function runTests() {
+        showCount++;
+
+        if (showTries > 1) {
+          panel.removeListener('show', runTests);
+          assert.equal(showCount, 1, 'show count is correct - 1');
+          resolve();
+        }
+      });
+      showTries++;
+      // without an anchor nothing happens
+      panel.show();
+
+      assert.equal(panel.isShowing, false, 'panel is hidden');
+
+      showTries++;
+      // with an explicit anchor it will work however
+      panel.show(null, browserWindow.gBrowser);
     });
 
-    testShowPanel(assert, panel).
-      then(makeEmptyPrivateBrowserWindow).
-      then(focus).
-      then(function(window) {
-        assert.equal(isPrivate(window), true, 'opened window is private');
-        assert.pass('private window was focused');
-        return window;
-      }).
-      then(function(window) {
-        let { promise, resolve } = defer();
-        let showTries = 0;
-        let showCount = 0;
+    assert.equal(panel.isShowing, true, 'panel is still showing');
 
-        panel.on('show', function runTests() {
-          showCount++;
+    panel.hide();
 
-          if (showTries == 2) {
-            panel.removeListener('show', runTests);
-            assert.equal(showCount, 1, 'show count is correct - 1');
-            resolve(window);
-          }
-        });
-        showTries++;
-        panel.show();
-        showTries++;
-        panel.show(null, browserWindow.gBrowser);
+    assert.equal(panel.isShowing, false, 'panel is hidden');
 
-        return promise;
-      }).
-      then(function(window) {
-        assert.equal(panel.isShowing, true, 'panel is still showing');
-        panel.hide();
-        assert.equal(panel.isShowing, false, 'panel is hidden');
-        return window;
-      }).
-      then(close).
-      then(function() {
-        assert.pass('private window was closed');
-      }).
-      then(testShowPanel.bind(null, assert, panel)).
-      then(done, assert.fail.bind(assert));
+    yield close(window);
+
+    assert.pass('private window was closed');
+
+    loader.unload();
   }
 
   exports.testPanelDoesNotShowInPrivateWindowWithAnchor = function(assert, done) {
@@ -737,9 +736,9 @@ if (isWindowPBSupported) {
 
     assert.equal(isPrivate(browserWindow), false, 'open window is not private');
 
-    let panel = Panel({
-      contentURL: SVG_URL
-    });
+    const HTML_CONTENT = "<html><title>Test</title><p>This is a test.</p></html>";
+    const URL = "data:text/html;charset=utf-8," + encodeURI(html);
+    let panel = Panel({ contentURL: URL });
 
     testShowPanel(assert, panel).
       then(makeEmptyPrivateBrowserWindow).
@@ -786,24 +785,22 @@ if (isWindowPBSupported) {
 }
 
 function testShowPanel(assert, panel) {
-  let { promise, resolve } = defer();
+  return new Promise((resolve) => {
+    assert.ok(!panel.isShowing, 'the panel is not showing [1]');
 
-  assert.ok(!panel.isShowing, 'the panel is not showing [1]');
+    panel.once('show', function() {
+      assert.ok(panel.isShowing, 'the panel is showing');
 
-  panel.once('show', function() {
-    assert.ok(panel.isShowing, 'the panel is showing');
+      panel.once('hide', function() {
+        assert.ok(!panel.isShowing, 'the panel is not showing [2]');
 
-    panel.once('hide', function() {
-      assert.ok(!panel.isShowing, 'the panel is not showing [2]');
+        resolve(null);
+      });
 
-      resolve(null);
-    });
-
-    panel.hide();
-  })
-  panel.show();
-
-  return promise;
+      panel.hide();
+    })
+    panel.show();
+  });
 }
 
 exports['test Style Applied Only Once'] = function (assert, done) {
