@@ -3519,7 +3519,7 @@ exports.testPredicateContextSelectionInPage = function (assert, done) {
     context: loader.cm.PredicateContext(function (data) {
       // since we might get whitespace
       assert.ok(data.selectionText && data.selectionText.search(/^\s*Some text.\s*$/) != -1,
-		'Expected "Some text.", got "' + data.selectionText + '"');
+      'Expected "Some text.", got "' + data.selectionText + '"');
       return true;
     })
   })];
@@ -3731,6 +3731,159 @@ exports.testPredicateContextTargetValueNotSet = function (assert, done) {
   });
 };
 
+// Tests that items appear in the tab context menu when context-clicked on a tab
+exports.testTabContextMatch = function (assert, done) {
+  let test = new TestHelper(assert, done);
+  let loader = test.newLoader();
+
+  let items = [
+    loader.cm.Item({
+      label: "test item",
+      parentMenu: loader.cm.tabContextMenu
+    })
+  ];
+
+  test.withNewTab(function (tab, win, doc) {
+    test.showMenu(tab, function (popup) {
+      test.checkMenu(items, [], [], true);
+      test.done();
+    });
+  });
+};
+
+// Tests that page context and tab context are mutually exclusive
+exports.testTabContextNoMatchWithPageContext = function (assert, done) {
+  let test = new TestHelper(assert, done);
+  let loader = test.newLoader();
+
+  let items = [
+    loader.cm.Item({
+      label: "test item",
+      parentMenu: loader.cm.tabContextMenu,
+      context: loader.cm.PageContext()
+    })
+  ];
+
+  test.withNewTab(function (tab, win, doc) {
+    test.showMenu(tab, function (popup) {
+      test.checkMenu(items, items, [], true);
+      test.done();
+    });
+  });
+};
+
+// Tests that content scripts are ignored when tab context is specified
+exports.testTabContextMatchContentScriptIgnore = function (assert, done) {
+  let test = new TestHelper(assert, done);
+  let loader = test.newLoader();
+
+  let items = [
+    loader.cm.Item({
+      label: "test item",
+      parentMenu: loader.cm.tabContextMenu,
+      contentScript: "self.on('context', function () false);"
+    })
+  ];
+
+  test.withNewTab(function (tab, win, doc) {
+    test.showMenu(tab, function (popup) {
+      test.checkMenu(items, [], [], true);
+      test.done();
+    });
+  });
+};
+
+// Tests that predicate context handler is passed correct information
+// about the tab element
+exports.testTabContextMatchWithPredicateContext = function (assert, done) {
+  let test = new TestHelper(assert, done);
+  let loader = test.newLoader();
+
+  let items = [
+    loader.cm.Item({
+      label: "test item",
+      parentMenu: loader.cm.tabContextMenu,
+      context: loader.cm.PredicateContext(function (data) {
+        return "tabData" in data && data.tabData.label == "Context menu test" &&
+        tabData.selected && data.documentType == "text/html";
+      })
+    })
+  ];
+
+  test.withNewTab(function (tab, win, doc) {
+    test.showMenu(tab, function (popup) {
+      test.checkMenu(items, [], [], true);
+      test.done();
+    });
+  });
+};
+
+// Tests that tab context works with URL context
+exports.testTabContextWithURLContext = function (assert, done) {
+  let test = new TestHelper(assert, done);
+  let loader = test.newLoader();
+
+  let item1 = loader.cm.Item({
+    label: "test item 0",
+    parentMenu: loader.cm.tabContextMenu,
+    context: loader.cm.URLContext(TEST_DOC_URL)
+  });
+  let item2 = loader.cm.Item({
+    label: "test item 1",
+    parentMenu: loader.cm.tabContextMenu,
+    context: loader.cm.URLContext("*.randomwebsite.org")
+  });
+
+  test.withNewTab(function (tab, win, doc) {
+    test.showMenu(tab, function (popup) {
+      test.checkMenu([item1, item2], [item2], [], true);
+      test.done();
+    });
+  });
+};
+
+// Tests that tab context works with selection context
+exports.testTabContextMatchWithSelectionContext = function (assert, done) {
+  let test = new TestHelper(assert, done);
+  let loader = test.newLoader();
+
+  let items = [
+    loader.cm.Item({
+      label: "test item",
+      parentMenu: loader.cm.tabContextMenu,
+      context: loader.cm.SelectionContext()
+    })
+  ];
+
+  test.withNewTab(function (tab, win, doc) {
+    win.getSelection().selectAllChildren(doc.body);
+    test.showMenu(tab, function (popup) {
+      test.checkMenu(items, [], [], true);
+      test.done();
+    });
+  });
+};
+
+// Tests that tab context works with selection context
+exports.testTabContextNoMatchWithSelectionContext = function (assert, done) {
+  let test = new TestHelper(assert, done);
+  let loader = test.newLoader();
+
+  let items = [
+    loader.cm.Item({
+      label: "test item",
+      parentMenu: loader.cm.tabContextMenu,
+      context: loader.cm.SelectionContext()
+    })
+  ];
+
+  test.withNewTab(function (tab, win, doc) {
+    test.showMenu(tab, function (popup) {
+      test.checkMenu(items, items, [], true);
+      test.done();
+    });
+  });
+};
 
 // NO TESTS BELOW THIS LINE! ///////////////////////////////////////////////////
 
@@ -3754,6 +3907,10 @@ function TestHelper(assert, done) {
 TestHelper.prototype = {
   get contextMenuPopup() {
     return this.browserWindow.document.getElementById("contentAreaContextMenu");
+  },
+
+  get tabContextMenuPopup() {
+    return this.browserWindow.document.getElementById("tabContextMenu")
   },
 
   get contextMenuSeparator() {
@@ -3843,8 +4000,9 @@ TestHelper.prototype = {
   // Asserts that the context menu looks OK given the arguments.  presentItems
   // are items that have been added to the menu.  absentItems are items that
   // shouldn't match the current context.  removedItems are items that have been
-  // removed from the menu.
-  checkMenu: function (presentItems, absentItems, removedItems) {
+  // removed from the menu. isTabMenu (optional) tells if the context menu is
+  // we're checking is a tab context menu.
+  checkMenu: function (presentItems, absentItems, removedItems, isTabMenu) {
     // Count up how many top-level items there are
     let total = 0;
     for (let item of presentItems) {
@@ -3862,7 +4020,7 @@ TestHelper.prototype = {
                        "separator should be present");
     }
 
-    let mainNodes = this.browserWindow.document.querySelectorAll("#contentAreaContextMenu > ." + ITEM_CLASS);
+    let mainNodes = this.browserWindow.document.querySelectorAll("#" + (isTabMenu ? "tabContextMenu" : "contentAreaContextMenu") +  " > ." + ITEM_CLASS);
     let overflowNodes = this.browserWindow.document.querySelectorAll("." + OVERFLOW_POPUP_CLASS + " > ." + ITEM_CLASS);
 
     this.assert.ok(mainNodes.length == 0 || overflowNodes.length == 0,
@@ -3983,14 +4141,19 @@ TestHelper.prototype = {
       }
     };
 
-    if (this.contextMenuPopup.state == "closed") {
+    // Only if both the popup menus are closed can we close the tab
+    if (this.contextMenuPopup.state == "closed" &&
+        this.tabContextMenuPopup.state == "closed") {
       closeBrowserWindow.call(this);
     }
     else {
-      this.delayedEventListener(this.contextMenuPopup, "popuphidden",
+      // Close the visible menu before closing the tab
+      let visiblePopupMenu = this.contextMenuPopup.state == "closed" ?
+                             this.tabContextMenuPopup : this.contextMenuPopup;
+      this.delayedEventListener(visiblePopupMenu, "popuphidden",
                                 function () closeBrowserWindow.call(this),
                                 false);
-      this.contextMenuPopup.hidePopup();
+      visiblePopupMenu.hidePopup();
     }
   },
 
@@ -4181,6 +4344,22 @@ TestHelper.prototype = {
     this.delayedEventListener(browser, "load", function () {
       this.tabBrowser.selectedTab = this.tab;
       onloadCallback.call(this, browser.contentWindow, browser.contentDocument);
+    }, true, function(evt) {
+      return evt.target.location == TEST_DOC_URL;
+    });
+  },
+
+  // Opens a new tab and calls the callback with a reference to the tab. The tab
+  // is closed automatically when done() is called.
+  withNewTab: function (onloadCallback) {
+    this.oldSelectedTab = this.tabBrowser.selectedTab;
+    this.tab = this.tabBrowser.addTab(TEST_DOC_URL);
+    let browser = this.tabBrowser.getBrowserForTab(this.tab);
+
+    this.delayedEventListener(browser, "load", function () {
+      this.tabBrowser.selectedTab = this.tab;
+      onloadCallback.call(this, this.tabBrowser.selectedTab,
+        browser.contentWindow, browser.contentDocument);
     }, true, function(evt) {
       return evt.target.location == TEST_DOC_URL;
     });
