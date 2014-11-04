@@ -11,7 +11,7 @@ function exec (args, options, callback) {
   options = options || {};
   var env = _.extend({}, options.env, process.env);
 
-  return child_process.exec("node " + path.join(__dirname, "../../node_modules/jpm/bin/jpm") + " " + args, {
+  return child_process.exec("node " + path.join(__dirname, "../../node_modules/jpm/bin/jpm") + " " + args + " -o " + path.join(__dirname, "../.."), {
     cwd: options.cwd || tmpOutputDir,
     env: env
   }, function (err, stdout, stderr) {

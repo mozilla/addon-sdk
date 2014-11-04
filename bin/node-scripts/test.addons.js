@@ -16,31 +16,6 @@ var addonsPath = path.join(__dirname, "..", "..", "test", "addons");
 
 var binary = process.env.JPM_FIREFOX_BINARY || "nightly";
 
-describe("jpm test sdk examples", function () {
-  //beforeEach(utils.setup);
-  //afterEach(utils.tearDown);
-
-  fs.readdirSync(examplesPath)
-  .filter(fileFilter.bind(null, examplesPath))
-  .forEach(function (file) {
-    it(file, function (done) {
-      var addonPath = path.join(examplesPath, file);
-      process.chdir(addonPath);
-
-      var options = { cwd: addonPath, env: { JPM_FIREFOX_BINARY: binary }};
-      if (process.env.DISPLAY) {
-        options.env.DISPLAY = process.env.DISPLAY;
-      }
-      var proc = exec("test -v", options, function (err, stdout, stderr) {
-        expect(err).to.not.be.ok;
-        expect(stderr).to.not.be.ok;
-        expect(stdout).to.contain("All tests passed!");
-        done();
-      });
-    });
-  });
-});
-
 describe("jpm test sdk addons", function () {
   //beforeEach(utils.setup);
   //afterEach(utils.tearDown);
@@ -67,7 +42,7 @@ describe("jpm test sdk addons", function () {
 });
 
 function fileFilter(root, file) {
-  if (/^(invalid|e10s)-/.test(file)) {
+  if (/^(l10n|e10s|layout|simple-prefs|page-mod-debugger)/.test(file)) {
     return false;
   }
   var stat = fs.statSync(path.join(root, file))
