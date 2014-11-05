@@ -19,7 +19,6 @@ const { isPrivate } = require('sdk/private-browsing');
 const { isWindowPBSupported } = require('sdk/private-browsing/utils');
 const { defer, all } = require('sdk/core/promise');
 const { getMostRecentBrowserWindow } = require('sdk/window/utils');
-const { getWindow } = require('sdk/panel/window');
 const { URL } = require('sdk/url');
 const { wait } = require('./event/helpers');
 
@@ -1329,22 +1328,6 @@ exports["test panel load doesn't show"] = function*(assert) {
 
   yield messaged.promise;
   loader.unload();
-}
-
-if (isWindowPBSupported) {
-  exports.testGetWindow = function(assert, done) {
-    let activeWindow = getMostRecentBrowserWindow();
-    open(null, { features: {
-      toolbar: true,
-      chrome: true,
-      private: true
-    } }).then(window => {
-      assert.ok(isPrivate(window), 'window is private');
-      assert.equal(getWindow(window.gBrowser), null, 'private window elements returns null');
-      assert.equal(getWindow(activeWindow.gBrowser), activeWindow, 'non-private window elements returns window');
-      return window;
-    }).then(close).then(done).then(null, assert.fail);
-  }
 }
 
 require("sdk/test").run(exports);
