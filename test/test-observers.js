@@ -120,4 +120,43 @@ exports["test weak observers are GC-ed on unload"] = (assert, end) => {
   });
 };
 
+exports["test weak observer unsubscribe"] = (assert, end) => {
+  const loader = Loader(module);
+  const { Observer, observe, subscribe, unsubscribe } = loader.require("sdk/core/observer");
+  const { WeakReference } = loader.require("sdk/core/reference");
+
+  let sawNotification = false;
+
+  const WeakObserver = Class({
+    extends: Observer,
+    implements: [WeakReference],
+    observe: function() {
+      sawNotification = true;
+    }
+  });
+  observe.define(WeakObserver, (x, ...rest) => x.observe(...rest));
+
+  let observer = new WeakObserver;
+  subscribe(observer, "test-topic");
+
+  notifyObservers(null, "test-topic", null);
+  assert.ok(sawNotification, "Should have seen notification before GC");
+  sawNotification = false;
+
+  loader.require("sdk/test/memory").gc();
+
+  notifyObservers(null, "test-topic", null);
+  assert.ok(sawNotification, "Should have seen notification after GC");
+  sawNotification = false;
+
+  try {
+    unsubscribe(observer, "test-topic");
+    assert.ok(true, "Should not have seen an exception");
+  }
+  catch (e) {
+    assert.ok(false, "Should not have seen an exception");
+  }
+  end();
+};
+
 require("sdk/test").run(exports);
