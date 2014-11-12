@@ -93,7 +93,7 @@ exports.testGetAndSet = function(assert) {
     assert.throws(
       () => prefs.set("test_set_pref", value),
       new RegExp("can't set pref test_set_pref to value '" + value + "'; " +
-       "it isn't a string, integer, or boolean"),
+       "it isn't a string, number, or boolean", "i"),
       "Setting a pref to " + uneval(value) + " should raise error"
     );
   });
