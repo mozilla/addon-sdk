@@ -9,15 +9,14 @@ const {Item, Menu, Seperator, Contexts, Readers } = require("sdk/context-menu@2"
 
 const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
-exports["test create / destroy menu item"] = function*(assert) {
+exports["test create / destroy menu item"] = withTab(function*(assert) {
   const item = new Item({
     label: "test-1"
   });
 
-  const tab = yield openTab(`data:text/html,<h1>hello</h1>`);
-  const menu1 = yield openContextMenu(tab, "h1");
+  const before = yield captureContextMenu("h1");
 
-  assert.deepEqual(readNode(menu1.querySelector(".sdk-context-menu-extension")), {
+  assert.deepEqual(before, {
     tagName: "menugroup",
     namespaceURI: XUL_NS,
     style: "-moz-box-orient: vertical;",
@@ -31,86 +30,63 @@ exports["test create / destroy menu item"] = function*(assert) {
                 label: "test-1"}]
   }, "context menu contains seperator & added item");
 
-  yield closeContextMenu(menu1);
-
   item.destroy();
 
-  const menu2 = yield openContextMenu(tab, "h1");
-  assert.deepEqual(readNode(menu2.querySelector(".sdk-context-menu-extension")), {
+  const after = yield captureContextMenu("h1");
+  assert.deepEqual(after, {
     tagName: "menugroup",
     namespaceURI: XUL_NS,
     style: "-moz-box-orient: vertical;",
     className: "sdk-context-menu-extension",
   }, "all items were removed children are present");
-
-  yield closeContextMenu(menu2);
-
-
-  yield closeTab(tab);
-};
+}, "data:text/html,<h1>hello</h1>");
 
 
 exports["test menu item in new window"] = function*(assert) {
+  const isMenuPopulated = function*(tab) {
+    const state = yield captureContextMenu("h1", tab);
+    assert.deepEqual(state, {
+      tagName: "menugroup",
+      namespaceURI: XUL_NS,
+      style: "-moz-box-orient: vertical;",
+      className: "sdk-context-menu-extension",
+      children: [{tagName: "menuseparator",
+                  namespaceURI: XUL_NS,
+                  className: "sdk-context-menu-separator"},
+                 {tagName: "menuitem",
+                  namespaceURI: XUL_NS,
+                  className: "sdk-context-menu-item menuitem-iconic",
+                  label: "multi-window"}]
+    }, "created menu item is present");
+  }
+
+  const isMenuEmpty = function*(tab) {
+    const state = yield captureContextMenu("h1", tab);
+    assert.deepEqual(state, {
+      tagName: "menugroup",
+      namespaceURI: XUL_NS,
+      style: "-moz-box-orient: vertical;",
+      className: "sdk-context-menu-extension",
+    }, "no sdk items present");
+  };
+
   const item = new Item({ label: "multi-window" });
 
-  const expectItem = {
-    tagName: "menugroup",
-    namespaceURI: XUL_NS,
-    style: "-moz-box-orient: vertical;",
-    className: "sdk-context-menu-extension",
-    children: [{tagName: "menuseparator",
-                namespaceURI: XUL_NS,
-                className: "sdk-context-menu-separator"},
-               {tagName: "menuitem",
-                namespaceURI: XUL_NS,
-                className: "sdk-context-menu-item menuitem-iconic",
-                label: "multi-window"}]
-  };
-
   const tab1 = yield openTab(`data:text/html,<h1>hello</h1>`);
-  const menu1 = yield openContextMenu(tab1, "h1");
-
-  assert.deepEqual(readNode(menu1.querySelector(".sdk-context-menu-extension")),
-                   expectItem,
-                   "context menu has additional seperator & item");
+  yield* isMenuPopulated(tab1);
 
   const window2 = yield openWindow();
-
   const tab2 = yield openTab(`data:text/html,<h1>hello window-2</h1>`, window2);
 
-  const menu2 = yield openContextMenu(tab2, "h1");
+  yield* isMenuPopulated(tab2);
 
-  assert.deepEqual(readNode(menu1.querySelector(".sdk-context-menu-extension")),
-                   expectItem,
-                   "context menu has additional seperator & item");
-
-  yield closeContextMenu(menu2);
   item.destroy();
 
-  const expectEmpty = {
-    tagName: "menugroup",
-    namespaceURI: XUL_NS,
-    style: "-moz-box-orient: vertical;",
-    className: "sdk-context-menu-extension",
-  };
-
-  const menu3 = yield openContextMenu(tab2, "h1");
-
-  assert.deepEqual(readNode(menu3.querySelector(".sdk-context-menu-extension")),
-                   expectEmpty,
-                   "items were removed");
-
-  yield closeContextMenu(menu3);
+  yield* isMenuEmpty(tab2);
   yield closeWindow(window2);
 
-  const menu4 = yield openContextMenu(tab1, "h1");
+  yield* isMenuEmpty(tab1);
 
-  assert.deepEqual(readNode(menu4.querySelector(".sdk-context-menu-extension")),
-                   expectEmpty,
-                   "items were removed");
-
-
-  yield closeContextMenu(menu4);
   yield closeTab(tab1);
 };
 
