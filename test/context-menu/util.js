@@ -1,25 +1,53 @@
 "use strict";
 
+const {Cc, Ci} = require("chrome");
 const {getMostRecentBrowserWindow, open} = require("sdk/window/utils");
-const {openTab, closeTab, getBrowserForTab} = require("sdk/tabs/utils");
+const tabUtils = require("sdk/tabs/utils");
+const { map, filter, object, reduce, keys, symbols,
+        pairs, values, each, some, isEvery, count } = require("sdk/util/sequence");
+const { Task } = require("resource://gre/modules/Task.jsm");
+
 const {when} = require("sdk/dom/events");
+
+
+var observerService = Cc["@mozilla.org/observer-service;1"]
+                      .getService(Ci.nsIObserverService);
 
 const framescriptURI = require.resolve("./framescript");
 
 const _target = ({target}) => target;
 
-exports.openWindow = () => when(open(), "load", true).then(_target);
+exports.openWindow = () => {
+  const window = open();
+  return new Promise((resolve) => {
+    observerService.addObserver({
+      observe(subject, topic) {
+        if (subject === window) {
+          observerService.removeObserver(this, topic);
+          resolve(subject);
+        }
+      }
+    }, "browser-delayed-startup-finished", false);
+  });
+};
 
-exports.openTab = (url, window=getMostRecentBrowserWindow()) => {
-  const tab = openTab(window, url);
-  const browser = getBrowserForTab(tab);
+exports.closeWindow = (window) => {
+  const closed = when(window, "unload", true).then(_target);
+  window.close();
+  return closed;
+};
+
+const openTab = (url, window=getMostRecentBrowserWindow()) => {
+  const tab = tabUtils.openTab(window, url);
+  const browser = tabUtils.getBrowserForTab(tab);
   browser.messageManager.loadFrameScript(framescriptURI, false);
 
   return when(browser, "load", true).then(_ => tab);
 };
+exports.openTab = openTab;
 
-exports.openContextMenu = (tab, selector) => {
-  const browser = getBrowserForTab(tab);
+const openContextMenu = (tab, selector) => {
+  const browser = tabUtils.getBrowserForTab(tab);
   browser.
     messageManager.
     sendAsyncMessage("sdk/test/context-menu/open",
@@ -28,18 +56,64 @@ exports.openContextMenu = (tab, selector) => {
   return when(tab.ownerDocument.defaultView, "popupshown").
           then(_target);
 };
+exports.openContextMenu = openContextMenu;
 
-exports.closeContextMenu = (menu) => {
+const closeContextMenu = (menu) => {
   const result = when(menu.ownerDocument.defaultView, "popuphidden").
                   then(_target);
 
   menu.hidePopup();
   return result;
 };
+exports.closeContextMenu = closeContextMenu;
 
-exports.closeTab = (tab) => {
+const closeTab = (tab) => {
   const result = when(tab, "TabClose").then(_ => tab);
-  closeTab(tab);
+  tabUtils.closeTab(tab);
 
   return result;
 };
+exports.closeTab = closeTab;
+
+const attributeBlacklist = new Set(["data-component-path"]);
+const attributeRenameTable = Object.assign(Object.create(null), {
+  class: "className"
+});
+const readAttributes = node =>
+  object(...map(({name, value}) => [attributeRenameTable[name] || name, value],
+                filter(({name}) => !attributeBlacklist.has(name),
+                       node.attributes)));
+exports.readAttributes = readAttributes;
+
+const readNode = node =>
+  Object.assign(readAttributes(node),
+                {tagName: node.tagName, namespaceURI: node.namespaceURI},
+                node.children.length ?
+                  {children: [...map(readNode, node.children)]} :
+                  {});
+exports.readNode = readNode;
+
+const captureContextMenu = (target=":root", options={}) => Task.spawn(function*() {
+  const window = options.window || getMostRecentBrowserWindow();
+  const tab = options.tab || tabUtils.getActiveTab(window);
+
+  const menu = yield openContextMenu(tab, target);
+  const tree = readNode(menu.querySelector(".sdk-context-menu-extension"));
+  yield closeContextMenu(menu);
+  return tree;
+});
+exports.captureContextMenu = captureContextMenu;
+
+const withTab = (test, uri="about:blank") => function*(assert) {
+  const tab = yield openTab(uri);
+  yield* test(assert, tab);
+  yield closeTab(tab);
+};
+exports.withTab = withTab;
+
+const withWindow = () => function*(assert) {
+  const window = yield openWindow();
+  yield* test(assert, window);
+  yield closeWindow(window);
+};
+exports.withWindow = withWindow;
