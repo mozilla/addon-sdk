@@ -308,4 +308,34 @@ exports["test selection context"] = withTab(function*(assert) {
   });
 }, `data:text/html,<i>one</i><b>two</b>`);
 
+exports["test selection context in textarea"] = withTab(function*(assert) {
+  yield* withItems({
+    item: new Item({
+      label: "selection",
+      context: [new Contexts.Selection()]
+    })
+  }, function*({item}) {
+    assert.deepEqual((yield captureContextMenu()),
+                     menugroup(),
+                     "does not match if there's no selection");
+
+    yield select({target:"textarea", start:0, end:5});
+
+    assert.deepEqual((yield captureContextMenu("b")),
+                 menugroup(),
+                 "does not match if target isn't input with selection");
+
+    assert.deepEqual((yield captureContextMenu("textarea")),
+                     menugroup(menuseparator(),
+                               menuitem({label: "selection"})),
+                     "matches if target is input with selected text");
+
+    yield select({target: "textarea", start: 0, end: 0});
+
+    assert.deepEqual((yield captureContextMenu("textarea")),
+                 menugroup(),
+                 "does not match when selection is cleared");
+  });
+}, `data:text/html,<textarea>Hello World</textarea><b>!!</b>`);
+
 require("test").run(exports);

@@ -83,7 +83,7 @@ const select = (target, tab=getActiveTab()) =>
     const {messageManager} = tabUtils.getBrowserForTab(tab);
     messageManager.
       sendAsyncMessage("sdk/test/context-menu/select",
-                       {target: target});
+                       target);
 
     messageManager.addMessageListener("sdk/test/context-menu/selected", {
       receiveMessage({name}) {

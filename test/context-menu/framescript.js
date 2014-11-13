@@ -20,9 +20,15 @@ addMessageListener("sdk/test/context-menu/open", message => {
 addMessageListener("sdk/test/context-menu/select", message => {
   const {data, name} = message;
   const {document} = content;
-  if (data.target) {
-    const target = document.querySelector(data.target);
-    document.getSelection().selectAllChildren(target);
+  if (data) {
+    if (typeof(data) === "string") {
+      const target = document.querySelector(data);
+      document.getSelection().selectAllChildren(target);
+    } else {
+      const target = document.querySelector(data.target);
+      target.focus();
+      target.setSelectionRange(data.start, data.end);
+    }
   } else {
     document.getSelection().collapse(document.documentElement, 0);
   }
