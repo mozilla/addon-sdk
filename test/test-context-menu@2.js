@@ -288,4 +288,24 @@ exports["test page context doesn't match on selection"] = withTab(function*(asse
   });
 }, `data:text/html,<body><i>one</i><b>two</b></body>`);
 
+exports["test selection context"] = withTab(function*(assert) {
+  yield* withItems({
+    item: new Item({
+      label: "selection",
+      context: [new Contexts.Selection()]
+    })
+  }, function*({item}) {
+    assert.deepEqual((yield captureContextMenu()),
+                     menugroup(),
+                     "item does not match if there is no selection");
+
+    yield select("b");
+
+    assert.deepEqual((yield captureContextMenu()),
+                     menugroup(menuseparator(),
+                               menuitem({label: "selection"})),
+                     "item matches if there is a selection");
+  });
+}, `data:text/html,<i>one</i><b>two</b>`);
+
 require("test").run(exports);
