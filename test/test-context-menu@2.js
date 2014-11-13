@@ -379,4 +379,38 @@ exports["test url contexts"] = withTab(function*(assert) {
   });
 }, testPageURI);
 
+exports["test iframe context"] = withTab(function*(assert) {
+  yield* withItems({
+    page: new Item({
+      label: "page",
+      context: [new Contexts.Page()]
+    }),
+    iframe: new Item({
+      label: "iframe",
+      context: [new Contexts.Frame()]
+    }),
+    h2: new Item({
+      label: "element",
+      context: [new Contexts.Selector("*")]
+    })
+  }, function(_) {
+    assert.deepEqual((yield captureContextMenu("iframe")),
+                     menugroup(menuseparator(),
+                               menuitem({label: "page"}),
+                               menuitem({label: "iframe"}),
+                               menuitem({label: "element"})),
+                     "matching items are present");
+
+    assert.deepEqual((yield captureContextMenu("h1")),
+                     menugroup(menuseparator(),
+                               menuitem({label: "page"}),
+                               menuitem({label: "element"})),
+                     "only matching items are present");
+
+  });
+
+}, `data:text/html,
+<h1>hello</h1>
+<iframe src='data:text/html,<body>Bye</body>' />`);
+
 require("test").run(exports);
