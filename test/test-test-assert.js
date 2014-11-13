@@ -27,7 +27,7 @@ exports["test createAssertTest initial state"] = function(assert) {
   assert.equal(exceptions.length, 0, "0 exception logs");
 }
 
-exports["test assert ok(true)"] = (assert) => {
+exports["test assert.ok(true)"] = (assert) => {
   let { test, failures, successes, exceptions } = createAssertTest();
 
   assert.strictEqual(test.ok(true), true, "assert ok(true) strictEquals true");
@@ -43,7 +43,7 @@ exports["test assert ok(true)"] = (assert) => {
   assert.equal(exceptions.length, 0, "0 exception logs");
 }
 
-exports["test assert ok(false)"] = (assert) => {
+exports["test assert.ok(false)"] = (assert) => {
   let { test, failures, successes, exceptions } = createAssertTest();
 
   assert.strictEqual(test.ok(false), false, "assert ok(false) strictEquals false");
@@ -59,7 +59,19 @@ exports["test assert ok(false)"] = (assert) => {
   assert.equal(exceptions.length, 0, "0 exception logs");
 }
 
-exports["test assert equal"] = (assert) => {
+exports["test assert.ok(false) failure message"] = (assert) => {
+  let { test, failures, successes, exceptions } = createAssertTest();
+
+  test.ok(false, "XYZ");
+
+  assert.equal(successes.length, 0, "0 success log");
+  assert.equal(failures.length, 1, "1 failure logs");
+  assert.equal(exceptions.length, 0, "0 exception logs");
+
+  assert.equal(failures[0], "XYZ - true == false");
+}
+
+exports["test assert.equal"] = (assert) => {
   let { test, failures, successes, exceptions } = createAssertTest();
 
   assert.strictEqual(test.equal(true, true), true, "assert equal(true, true) strictEquals true");
@@ -71,7 +83,19 @@ exports["test assert equal"] = (assert) => {
   assert.equal(exceptions.length, 0, "0 exception logs");
 }
 
-exports["test assert strictEqual"] = (assert) => {
+exports["test assert.equal failure message"] = (assert) => {
+  let { test, failures, successes, exceptions } = createAssertTest();
+
+  test.equal("foo", "bar", "XYZ");
+
+  assert.equal(successes.length, 0, "0 success log");
+  assert.equal(failures.length, 1, "1 failure logs");
+  assert.equal(exceptions.length, 0, "0 exception logs");
+
+  assert.equal(failures[0], "XYZ - \"bar\" == \"foo\"");
+}
+
+exports["test assert.strictEqual"] = (assert) => {
   let { test, failures, successes, exceptions } = createAssertTest();
 
   assert.strictEqual(test.strictEqual(true, true), true, "assert strictEqual(true, true) strictEquals true");
@@ -87,7 +111,19 @@ exports["test assert strictEqual"] = (assert) => {
   assert.equal(exceptions.length, 0, "0 exception logs");
 }
 
-exports["test assert throws with string matches"] = (assert) => {
+exports["test assert.strictEqual failure message"] = (assert) => {
+  let { test, failures, successes, exceptions } = createAssertTest();
+
+  test.strictEqual("foo", "bar", "XYZ");
+
+  assert.equal(successes.length, 0, "0 success log");
+  assert.equal(failures.length, 1, "1 failure logs");
+  assert.equal(exceptions.length, 0, "0 exception logs");
+
+  assert.equal(failures[0], "XYZ - \"bar\" === \"foo\"");
+}
+
+exports["test assert.throws(func, string, string) matches"] = (assert) => {
   let { test, failures, successes, exceptions } = createAssertTest();
 
   assert.ok(
@@ -118,7 +154,22 @@ exports["test assert throws with string matches"] = (assert) => {
   assert.equal(exceptions.length, 0, "0 exception logs");
 }
 
-exports["test assert throws with regex matches"] = (assert) => {
+exports["test assert.throws(func, string, string) failure message"] = (assert) => {
+  let { test, failures, successes, exceptions } = createAssertTest();
+
+  test.throws(
+    () => { throw new Error("foo") },
+    "bar",
+    "XYZ");
+
+  assert.equal(successes.length, 0, "0 success log");
+  assert.equal(failures.length, 1, "1 failure logs");
+  assert.equal(exceptions.length, 0, "0 exception logs");
+
+  assert.equal(failures[0], "XYZ - \"bar\" matches \"foo\"");
+}
+
+exports["test assert.throws(func, regex, string) matches"] = (assert) => {
   let { test, failures, successes, exceptions } = createAssertTest();
 
   assert.ok(
@@ -147,6 +198,21 @@ exports["test assert throws with regex matches"] = (assert) => {
 
   assert.equal(failures.length, 0, "0 failure logs");
   assert.equal(exceptions.length, 0, "0 exception logs");
+}
+
+exports["test assert.throws(func, regex, string) failure message"] = (assert) => {
+  let { test, failures, successes, exceptions } = createAssertTest();
+
+  test.throws(
+    () => { throw new Error("foo") },
+    /bar/i,
+    "XYZ");
+
+  assert.equal(successes.length, 0, "0 success log");
+  assert.equal(failures.length, 1, "1 failure logs");
+  assert.equal(exceptions.length, 0, "0 exception logs");
+
+  assert.equal(failures[0], "XYZ - \"/bar/i\" matches \"foo\"");
 }
 
 require('sdk/test').run(exports);
