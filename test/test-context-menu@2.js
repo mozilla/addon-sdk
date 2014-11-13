@@ -2,7 +2,7 @@
 
 const { Cc, Ci } = require("chrome");
 const {openWindow, closeWindow, openTab, closeTab,
-       openContextMenu, closeContextMenu,
+       openContextMenu, closeContextMenu, select,
        readNode, captureContextMenu, withTab, withItems } = require("./context-menu/util");
 const {when} = require("sdk/dom/events");
 const {Item, Menu, Separator, Contexts, Readers } = require("sdk/context-menu@2");
@@ -253,5 +253,39 @@ exports["test page context match"] = withTab(function*(assert) {
   <div><audio width=10 height=10 controls /></div>
   <div><applet width=10 height=10 /></div>
 </body>`);
+
+// Page context does not match if if there is a selection.
+exports["test page context doesn't match on selection"] = withTab(function*(assert) {
+  const isPageMatch = (tree, description="page context matched") =>
+    assert.deepEqual(tree,
+                     menugroup(menuseparator(),
+                               menuitem({label: "page match"}),
+                               menuitem({label: "any match"})),
+                     description);
+
+  const isntPageMatch = (tree, description="page context did not match") =>
+    assert.deepEqual(tree,
+                     menugroup(menuseparator(),
+                               menuitem({label: "any match"})),
+                    description);
+
+  yield* withItems({
+    pageMatch: new Item({
+      label: "page match",
+      context: [new Contexts.Page()],
+    }),
+    anyMatch: new Item({
+      label: "any match"
+    })
+  }, function*({pageMatch, anyMatch}) {
+    yield select("b");
+    isntPageMatch((yield captureContextMenu("i")),
+                  "page context does not match if there is a selection");
+
+    yield select(null);
+    isPageMatch((yield captureContextMenu("i")),
+                "page context match if there is no selection");
+  });
+}, `data:text/html,<body><i>one</i><b>two</b></body>`);
 
 require("test").run(exports);

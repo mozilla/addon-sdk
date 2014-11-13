@@ -78,6 +78,22 @@ const closeTab = (tab) => {
 };
 exports.closeTab = closeTab;
 
+const select = (target, tab=getActiveTab()) =>
+  new Promise(resolve => {
+    const {messageManager} = tabUtils.getBrowserForTab(tab);
+    messageManager.
+      sendAsyncMessage("sdk/test/context-menu/select",
+                       {target: target});
+
+    messageManager.addMessageListener("sdk/test/context-menu/selected", {
+      receiveMessage({name}) {
+        messageManager.removeMessageListener(name, this);
+        resolve();
+      }
+    });
+  });
+exports.select = select;
+
 const attributeBlacklist = new Set(["data-component-path"]);
 const attributeRenameTable = Object.assign(Object.create(null), {
   class: "className"

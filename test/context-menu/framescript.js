@@ -16,3 +16,16 @@ addMessageListener("sdk/test/context-menu/open", message => {
                    rect.top + (rect.height / 2),
                    2, 1, 0);
 });
+
+addMessageListener("sdk/test/context-menu/select", message => {
+  const {data, name} = message;
+  const {document} = content;
+  if (data.target) {
+    const target = document.querySelector(data.target);
+    document.getSelection().selectAllChildren(target);
+  } else {
+    document.getSelection().collapse(document.documentElement, 0);
+  }
+
+  sendAsyncMessage("sdk/test/context-menu/selected");
+});
