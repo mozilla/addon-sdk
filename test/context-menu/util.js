@@ -17,6 +17,9 @@ const framescriptURI = require.resolve("./framescript");
 
 const _target = ({target}) => target;
 
+const getActiveTab = (window=getMostRecentBrowserWindow()) =>
+  tabUtils.getActiveTab(window)
+
 exports.openWindow = () => {
   const window = open();
   return new Promise((resolve) => {
@@ -46,7 +49,7 @@ const openTab = (url, window=getMostRecentBrowserWindow()) => {
 };
 exports.openTab = openTab;
 
-const openContextMenu = (tab, selector) => {
+const openContextMenu = (selector, tab=getActiveTab()) => {
   const browser = tabUtils.getBrowserForTab(tab);
   browser.
     messageManager.
@@ -97,7 +100,7 @@ const captureContextMenu = (target=":root", options={}) => Task.spawn(function*(
   const window = options.window || getMostRecentBrowserWindow();
   const tab = options.tab || tabUtils.getActiveTab(window);
 
-  const menu = yield openContextMenu(tab, target);
+  const menu = yield openContextMenu(target, tab);
   const tree = readNode(menu.querySelector(".sdk-context-menu-extension"));
   yield closeContextMenu(menu);
   return tree;
@@ -106,14 +109,31 @@ exports.captureContextMenu = captureContextMenu;
 
 const withTab = (test, uri="about:blank") => function*(assert) {
   const tab = yield openTab(uri);
-  yield* test(assert, tab);
-  yield closeTab(tab);
+  try {
+    yield* test(assert, tab);
+  }
+  finally {
+    yield closeTab(tab);
+  }
 };
 exports.withTab = withTab;
 
 const withWindow = () => function*(assert) {
   const window = yield openWindow();
-  yield* test(assert, window);
-  yield closeWindow(window);
+  try {
+    yield* test(assert, window);
+  }
+  finally {
+    yield closeWindow(window);
+  }
 };
 exports.withWindow = withWindow;
+
+const withItems = (items, body) => function*() {
+  try {
+    yield* body(items);
+  } finally {
+      Object.keys(items).forEach(key => items[key].destroy());
+  }
+}();
+exports.withItems = withItems;
