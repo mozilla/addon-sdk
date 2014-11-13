@@ -6,6 +6,7 @@ const {openWindow, closeWindow, openTab, closeTab,
        readNode, captureContextMenu, withTab, withItems } = require("./context-menu/util");
 const {when} = require("sdk/dom/events");
 const {Item, Menu, Separator, Contexts, Readers } = require("sdk/context-menu@2");
+const testPageURI = require.resolve("./test-context-menu").replace(".js", ".html");
 
 const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
@@ -337,5 +338,45 @@ exports["test selection context in textarea"] = withTab(function*(assert) {
                  "does not match when selection is cleared");
   });
 }, `data:text/html,<textarea>Hello World</textarea><b>!!</b>`);
+
+exports["test url contexts"] = withTab(function*(assert) {
+  yield* withItems({
+    a: new Item({
+      label: "a",
+      context: [new Contexts.URL(testPageURI)]
+    }),
+    b: new Item({
+      label: "b",
+      context: [new Contexts.URL("*.bogus.com")]
+    }),
+    c: new Item({
+      label: "c",
+      context: [new Contexts.URL("*.bogus.com"),
+                new Contexts.URL(testPageURI)]
+    }),
+    d: new Item({
+      label: "d",
+      context: [new Contexts.URL(/.*\.html/)]
+    }),
+    e: new Item({
+      label: "e",
+      context: [new Contexts.URL("http://*"),
+                new Contexts.URL(testPageURI)]
+    }),
+    f: new Item({
+      label: "f",
+      context: [new Contexts.URL("http://*").required,
+                new Contexts.URL(testPageURI)]
+    }),
+  }, function*(_) {
+    assert.deepEqual((yield captureContextMenu()),
+                     menugroup(menuseparator(),
+                               menuitem({label: "a"}),
+                               menuitem({label: "c"}),
+                               menuitem({label: "d"}),
+                               menuitem({label: "e"})),
+                     "shows only matching items");
+  });
+}, testPageURI);
 
 require("test").run(exports);
