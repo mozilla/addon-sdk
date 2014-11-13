@@ -413,4 +413,28 @@ exports["test iframe context"] = withTab(function*(assert) {
 <h1>hello</h1>
 <iframe src='data:text/html,<body>Bye</body>' />`);
 
+exports["test link context"] = withTab(function*(assert) {
+  yield* withItems({
+    item: new Item({
+      label: "link",
+      context: [new Contexts.Link()]
+    })
+  }, function*(_) {
+    assert.deepEqual((yield captureContextMenu("h1")),
+                     menugroup(menuseparator(),
+                               menuitem({label: "link"})),
+                     "matches anchor child");
+
+    assert.deepEqual((yield captureContextMenu("i")),
+                     menugroup(menuseparator(),
+                               menuitem({label: "link"})),
+                     "matches anchor decedent");
+
+    assert.deepEqual((yield captureContextMenu("h2")),
+                     menugroup(),
+                     "does not match if not under anchor");
+  });
+}, `data:text/html,
+<a href="/link"><h1>Hello <i>World</i></h1></a><h2>miss</h2>`);
+
 require("test").run(exports);
