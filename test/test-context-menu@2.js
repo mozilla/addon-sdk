@@ -10,6 +10,9 @@ const testPageURI = require.resolve("./test-context-menu").replace(".js", ".html
 
 const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
+const data = input =>
+  `data:text/html;charset=utf-8,${encodeURIComponent(input)}`
+
 const menugroup = (...children) => Object.assign({
   tagName: "menugroup",
   namespaceURI: XUL_NS,
@@ -35,6 +38,7 @@ const menu = (properties, ...children) => Object.assign({
   className: "sdk-context-menu menu-iconic"
 }, properties, children.length ? {children} : {});
 
+
 // Destroying items that were previously created should cause them to be absent
 // from the menu.
 exports["test create / destroy menu item"] = withTab(function*(assert) {
@@ -54,7 +58,7 @@ exports["test create / destroy menu item"] = withTab(function*(assert) {
   const after = yield captureContextMenu("h1");
   assert.deepEqual(after, menugroup(),
                    "all items were removed children are present");
-}, "data:text/html,<h1>hello</h1>");
+}, data`<h1>hello</h1>`);
 
 
 // Items created should be present on all browser windows.
@@ -125,7 +129,7 @@ exports["test multiple items"] = withTab(function*(assert) {
 
   const step4 = yield captureContextMenu("h1");
   assert.deepEqual(step4, menugroup(), "no items left");
-}, "data:text/html,<h1>Multiple Items</h1>");
+}, data`<h1>Multiple Items</h1>`);
 
 // Destroying an item twice should not cause an error.
 exports["test destroy twice"] = withTab(function*(assert) {
@@ -166,7 +170,7 @@ exports["test selector context"] = withTab(function*(assert) {
 
   const cleared = yield captureContextMenu("b");
   assert.deepEqual(cleared, menugroup(), "item was removed");
-}, "data:text/html,<body><i>one</i><b>two</b></body>");
+}, data`<body><i>one</i><b>two</b></body>`);
 
 // CSS selector contexts should cause their items to be absent in the menu
 // when the menu is invoked even on nodes that have ancestors that match the
@@ -190,7 +194,7 @@ exports["test parent selector don't match children"] = withTab(function*(assert)
 
   const destroyed = yield captureContextMenu("a");
   assert.deepEqual(destroyed, menugroup(), "no items left");
-}, "data:text/html,<a href='/foo'>This text must be long & <strong>bold!</strong></a>");
+}, data`<a href='/foo'>This text must be long & <strong>bold!</strong></a>`);
 
 // Page contexts should cause their items to be present in the menu when the
 // menu is not invoked on an active element.
@@ -236,8 +240,8 @@ exports["test page context match"] = withTab(function*(assert) {
                     `Page context does not match decedents of active element`);
     }
   });
-}, `data:text/html,
-<body>
+},
+data`<body>
   <div><p>paragraph</p></div>
   <div><a href=./link><span>link</span></a></div>
   <h3>hi</h3>
@@ -287,7 +291,7 @@ exports["test page context doesn't match on selection"] = withTab(function*(asse
     isPageMatch((yield captureContextMenu("i")),
                 "page context match if there is no selection");
   });
-}, `data:text/html,<body><i>one</i><b>two</b></body>`);
+}, data`<body><i>one</i><b>two</b></body>`);
 
 exports["test selection context"] = withTab(function*(assert) {
   yield* withItems({
@@ -307,7 +311,7 @@ exports["test selection context"] = withTab(function*(assert) {
                                menuitem({label: "selection"})),
                      "item matches if there is a selection");
   });
-}, `data:text/html,<i>one</i><b>two</b>`);
+}, data`<i>one</i><b>two</b>`);
 
 exports["test selection context in textarea"] = withTab(function*(assert) {
   yield* withItems({
@@ -337,7 +341,7 @@ exports["test selection context in textarea"] = withTab(function*(assert) {
                  menugroup(),
                  "does not match when selection is cleared");
   });
-}, `data:text/html,<textarea>Hello World</textarea><b>!!</b>`);
+}, data`<textarea>Hello World</textarea><b>!!</b>`);
 
 exports["test url contexts"] = withTab(function*(assert) {
   yield* withItems({
@@ -409,8 +413,8 @@ exports["test iframe context"] = withTab(function*(assert) {
 
   });
 
-}, `data:text/html,
-<h1>hello</h1>
+},
+data`<h1>hello</h1>
 <iframe src='data:text/html,<body>Bye</body>' />`);
 
 exports["test link context"] = withTab(function*(assert) {
@@ -429,12 +433,11 @@ exports["test link context"] = withTab(function*(assert) {
                      menugroup(menuseparator(),
                                menuitem({label: "link"})),
                      "matches anchor decedent");
-
     assert.deepEqual((yield captureContextMenu("h2")),
                      menugroup(),
                      "does not match if not under anchor");
   });
-}, `data:text/html,
-<a href="/link"><h1>Hello <i>World</i></h1></a><h2>miss</h2>`);
+}, data`<a href="/link"><h1>Hello <i>World</i></h1></a><h2>miss</h2>`);
+
 
 require("test").run(exports);
