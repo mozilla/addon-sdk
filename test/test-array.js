@@ -1,9 +1,10 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-'use strict'
+"use strict";
 
-const array = require('sdk/util/array');
+const array = require("sdk/util/array");
+const { Collection } = require("sdk/util/collection");
 
 exports.testHas = function(assert) {
   var testAry = [1, 2, 3];
@@ -15,7 +16,7 @@ exports.testHas = function(assert) {
   assert.equal(array.has(testAry, 2), true);
   assert.equal(array.has(testAry, 3), true);
   assert.equal(array.has(testAry, 4), false);
-  assert.equal(array.has(testAry, '1'), false);
+  assert.equal(array.has(testAry, "1"), false);
 };
 exports.testHasAny = function(assert) {
   var testAry = [1, 2, 3];
@@ -33,7 +34,7 @@ exports.testHasAny = function(assert) {
   assert.equal(array.hasAny(testAry, [3]), true);
   assert.equal(array.hasAny(testAry, [4]), false);
   assert.equal(array.hasAny(testAry), false);
-  assert.equal(array.hasAny(testAry, '1'), false);
+  assert.equal(array.hasAny(testAry, "1"), false);
 };
 
 exports.testAdd = function(assert) {
@@ -93,11 +94,18 @@ exports.testUnion = function(assert) {
   assert.deepEqual(array.union([A, D], [A, E], [E, D, A], [A, C]), [A, D, E, C]);
 };
 
-exports.testFind = function(assert) {
+exports["test find on array"] = function(assert) {
   let isOdd = (x) => x % 2;
-  assert.equal(array.find([2, 4, 5, 7, 8, 9], isOdd), 5);
-  assert.equal(array.find([2, 4, 6, 8], isOdd), undefined);
-  assert.equal(array.find([2, 4, 6, 8], isOdd, null), null);
+  assert.equal(array.find([ 2, 4, 5, 7, 8, 9 ], isOdd), 5);
+  assert.equal(array.find([ 2, 4, 6, 8 ], isOdd), undefined);
+  assert.equal(array.find([ 2, 4, 6, 8 ], isOdd, null), null);
 };
 
-require('test').run(exports);
+exports["test find on collection"] = function(assert) {
+  let isOdd = (x) => x % 2;
+  assert.equal(array.find(new Collection([ 2, 4, 5, 7, 8, 9 ]), isOdd), 5);
+  assert.equal(array.find(new Collection([ 2, 4, 6, 8 ]), isOdd), undefined);
+  assert.equal(array.find(new Collection([ 2, 4, 6, 8 ]), isOdd, null), null);
+};
+
+require("sdk/test").run(exports);
