@@ -440,4 +440,48 @@ exports["test link context"] = withTab(function*(assert) {
 }, data`<a href="/link"><h1>Hello <i>World</i></h1></a><h2>miss</h2>`);
 
 
+exports["test editable context"] = withTab(function*(assert) {
+  const isntEditable = function*(selector) {
+    assert.deepEqual((yield captureContextMenu(selector)),
+                     menugroup(),
+                     `${selector} isn't editable`);
+  };
+
+  const isEditable = function*(selector) {
+    assert.deepEqual((yield captureContextMenu(selector)),
+                     menugroup(menuseparator(),
+                               menuitem({label: "editable"})),
+                     `${selector} is editable`);
+  };
+
+  yield* withItems({
+    item: new Item({
+      label: "editable",
+      context: [new Contexts.Editable()]
+    })
+  }, function*(_) {
+    yield* isntEditable("h1");
+    yield* isEditable("input[id=text]");
+    yield* isntEditable("input[disabled=true]");
+    yield* isntEditable("input[readonly=true]");
+    yield* isntEditable("input[type=submit]");
+    yield* isntEditable("input[type=radio]");
+    yield* isntEditable("input[type=checkbox]");
+    yield* isEditable("input[type=foo]");
+    yield* isEditable("textarea");
+    yield* isEditable("[contenteditable=true]");
+  });
+}, data`<body>
+<h1>examles</h1>
+<pre contenteditable="true">This content is editable.</pre>
+<input type="text" readonly="true" value="readonly value">
+<input type="text" disabled="true" value="disabled value">
+<input type="text" id=text value="test value">
+<input type="submit" />
+<input type="radio" />
+<input type="foo" />
+<input type="checkbox" />
+<textarea>A text field,
+with some text.</textarea>
+</body>`);
 require("test").run(exports);
