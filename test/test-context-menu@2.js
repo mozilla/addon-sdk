@@ -484,4 +484,73 @@ exports["test editable context"] = withTab(function*(assert) {
 <textarea>A text field,
 with some text.</textarea>
 </body>`);
+
+exports["test image context"] = withTab(function*(assert) {
+  yield withItems({
+    item: new Item({
+      label: "image",
+      context: [new Contexts.Image()]
+    })
+  }, function*(_) {
+    assert.deepEqual((yield captureContextMenu("img")),
+                     menugroup(menuseparator(), menuitem({label: "image"})),
+                     `<img/> matches image context`);
+
+    assert.deepEqual((yield captureContextMenu("p image")),
+                     menugroup(),
+                     `<image/> does not image context`);
+
+    assert.deepEqual((yield captureContextMenu("svg image")),
+                     menugroup(menuseparator(), menuitem({label: "image"})),
+                     `<svg:image/> matches image context`);
+  });
+}, data`<body>
+<p><image style="width: 50px; height: 50px" /></p>
+<img src='' />
+<div>
+<svg xmlns="http://www.w3.org/2000/svg"
+     xmlns:xlink= "http://www.w3.org/1999/xlink">
+  <image x="0" y="0" height="50px" width="50px" xlink:href=""/>
+</svg>
+<div>
+</body>`);
+
+
+exports["test audiot & video contexts"] = withTab(function*(assert) {
+  yield withItems({
+    audio: new Item({
+      label: "audio",
+      context: [new Contexts.Audio()]
+    }),
+    video: new Item({
+      label: "video",
+      context: [new Contexts.Video()]
+    }),
+    media: new Item({
+      label: "media",
+      context: [new Contexts.Audio(),
+                new Contexts.Video()]
+    })
+  }, function*(_) {
+    assert.deepEqual((yield captureContextMenu("img")),
+                     menugroup(),
+                     `<img/> does not match video or audio context`);
+
+    assert.deepEqual((yield captureContextMenu("audio")),
+                     menugroup(menuseparator(),
+                               menuitem({label: "audio"}),
+                               menuitem({label: "media"})),
+                     `<audio/> matches audio context`);
+
+    assert.deepEqual((yield captureContextMenu("video")),
+                     menugroup(menuseparator(),
+                               menuitem({label: "video"}),
+                               menuitem({label: "media"})),
+                     `<video/> matches video context`);
+  })
+}, data`<body>
+<div><video width=10 height=10 controls /></div>
+<div><audio width=10 height=10 controls /></div>
+<div><image style="width: 50px; height: 50px" /></div>
+</body>`);
 require("test").run(exports);
