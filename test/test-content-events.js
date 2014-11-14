@@ -6,7 +6,7 @@
 
 const { Loader } = require("sdk/test/loader");
 const { getMostRecentBrowserWindow, getInnerId } = require("sdk/window/utils");
-const { openTab, closeTab, getBrowserForTab } = require("sdk/tabs/utils");
+const { openTab, closeTab, getBrowserForTab } = require("sdk/tab/utils");
 const { defer } = require("sdk/core/promise");
 const { curry, identity, partial } = require("sdk/lang/functional");
 

@@ -1,7 +1,7 @@
 'use strict';
 
 const { Ci } = require('chrome');
-const { openTab, closeTab } = require('sdk/tabs/utils');
+const { openTab, closeTab } = require('sdk/tab/utils');
 const { browserWindows } = require('sdk/windows');
 const { isPrivate } = require('sdk/private-browsing');
 
