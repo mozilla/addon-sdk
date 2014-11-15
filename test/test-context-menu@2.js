@@ -553,4 +553,492 @@ exports["test audiot & video contexts"] = withTab(function*(assert) {
 <div><audio width=10 height=10 controls /></div>
 <div><image style="width: 50px; height: 50px" /></div>
 </body>`);
+
+const predicateTestURL = data`<html>
+  <head>
+    <style>
+      p, object, embed { display: inline-block; }
+    </style>
+  </head>
+  <body>
+    <strong><p>paragraph</p></strong>
+    <p><a href=./link><span>link</span></a></p>
+    <p><h3>hi</h3></p>
+    <p><button>button</button></p>
+    <p><canvas height=50 width=50 /></p>
+    <p><img height=50 width=50 src="./no.png" /></p>
+    <p><code contenteditable="true">This content is editable.</code></p>
+    <p><input type="text" readonly="true" value="readonly value"></p>
+    <p><input type="text" disabled="true" value="disabled value"></p>
+    <p><input type="text" id=text value="test value" /></p>
+    <p><input type="submit" /></p>
+    <p><input type="radio" /></p>
+    <p><input type="foo" /></p>
+    <p><input type="checkbox" /></p>
+    <p><textarea>A text field,
+    with some text.</textarea></p>
+    <p><iframe src='data:text/html,<body style="height:100%">Bye</body>'></iframe></p>
+    <p><select><option>one</option><option>two</option></select></p>
+    <p><menu><button>item</button></menu></p>
+    <p><object width=10 height=10><param name=foo value=bar /></object></p>
+    <p><embed width=10 height=10/></p>
+    <p><video width=50 height=50 controls /></p>
+    <p><audio width=10 height=10 controls /></p>
+    <p><applet width=30 height=30 /></p>
+  </body>
+</html>`;
+exports["test predicate context"] = withTab(function*(assert) {
+  const test = function*(selector, expect) {
+    var isMatch = false;
+    test.return = (target) => {
+      return isMatch = expect(target);
+    }
+    assert.deepEqual((yield captureContextMenu(selector)),
+                     isMatch ? menugroup(menuseparator(),
+                                         menuitem({label:"predicate"})) :
+                               menugroup(),
+                     isMatch ? `predicate item matches ${selector}` :
+                     `predicate item doesn't match ${selector}`);
+  };
+  test.predicate = target => test.return(target);
+
+  yield* withItems({
+    item: new Item({
+      label: "predicate",
+      read: {
+        mediaType: new Readers.MediaType(),
+        link: new Readers.LinkURL(),
+        isPage: new Readers.isPage(),
+        isFrame: new Readers.isFrame(),
+        isEditable: new Readers.isEditable(),
+        tagName: new Readers.Query("tagName"),
+        appCodeName: new Readers.Query("ownerDocument.defaultView.navigator.appCodeName"),
+        width: new Readers.Attribute("width"),
+        src: new Readers.SrcURL(),
+        url: new Readers.PageURL(),
+        selection: new Readers.Selection()
+      },
+      context: [Contexts.Predicate(test.predicate)]
+    })
+  }, function*(items) {
+    yield* test("strong p", target => {
+      assert.deepEqual(target, {
+        mediaType: null,
+        link: null,
+        isPage: true,
+        isFrame: false,
+        isEditable: false,
+        tagName: "P",
+        appCodeName: "Mozilla",
+        width: null,
+        src: null,
+        url: predicateTestURL,
+        selection: null,
+      }, "pagraph read test");
+      return true;
+    });
+
+    yield* test("a span", target => {
+      assert.deepEqual(target, {
+        mediaType: null,
+        link: "./link",
+        isPage: false,
+        isFrame: false,
+        isEditable: false,
+        tagName: "SPAN",
+        appCodeName: "Mozilla",
+        width: null,
+        src: null,
+        url: predicateTestURL,
+        selection: null,
+      }, "video tag test");
+      return false;
+    });
+
+    yield* test("h3", target => {
+      assert.deepEqual(target, {
+        mediaType: null,
+        link: null,
+        isPage: true,
+        isFrame: false,
+        isEditable: false,
+        tagName: "H3",
+        appCodeName: "Mozilla",
+        width: null,
+        src: null,
+        url: predicateTestURL,
+        selection: null,
+      }, "video tag test");
+      return false;
+    });
+
+    yield select("h3");
+
+    yield* test("a span", target => {
+      assert.deepEqual(target, {
+        mediaType: null,
+        link: "./link",
+        isPage: false,
+        isFrame: false,
+        isEditable: false,
+        tagName: "SPAN",
+        appCodeName: "Mozilla",
+        width: null,
+        src: null,
+        url: predicateTestURL,
+        selection: "hi",
+      }, "test selection with link");
+      return true;
+    });
+
+    yield select(null);
+
+
+    yield* test("button", target => {
+      assert.deepEqual(target, {
+        mediaType: null,
+        link: null,
+        isPage: false,
+        isFrame: false,
+        isEditable: false,
+        tagName: "BUTTON",
+        appCodeName: "Mozilla",
+        width: null,
+        src: null,
+        url: predicateTestURL,
+        selection: null,
+      }, "test button");
+      return true;
+    });
+
+    yield* test("canvas", target => {
+      assert.deepEqual(target, {
+        mediaType: null,
+        link: null,
+        isPage: false,
+        isFrame: false,
+        isEditable: false,
+        tagName: "CANVAS",
+        appCodeName: "Mozilla",
+        width: "50",
+        src: null,
+        url: predicateTestURL,
+        selection: null,
+      }, "test button");
+      return true;
+    });
+
+    yield* test("img", target => {
+      assert.deepEqual(target, {
+        mediaType: "image",
+        link: null,
+        isPage: false,
+        isFrame: false,
+        isEditable: false,
+        tagName: "IMG",
+        appCodeName: "Mozilla",
+        width: "50",
+        src: "./no.png",
+        url: predicateTestURL,
+        selection: null,
+      }, "test image");
+      return true;
+    });
+
+    yield* test("code", target => {
+      assert.deepEqual(target, {
+        mediaType: null,
+        link: null,
+        isPage: false,
+        isFrame: false,
+        isEditable: true,
+        tagName: "CODE",
+        appCodeName: "Mozilla",
+        width: null,
+        src: null,
+        url: predicateTestURL,
+        selection: null,
+      }, "test content editable");
+      return false;
+    });
+
+    yield* test("input[readonly=true]", target => {
+      assert.deepEqual(target, {
+        mediaType: null,
+        link: null,
+        isPage: false,
+        isFrame: false,
+        isEditable: false,
+        tagName: "INPUT",
+        appCodeName: "Mozilla",
+        width: null,
+        src: null,
+        url: predicateTestURL,
+        selection: null,
+      }, "test readonly input");
+      return false;
+    });
+
+    yield* test("input[disabled=true]", target => {
+      assert.deepEqual(target, {
+        mediaType: null,
+        link: null,
+        isPage: false,
+        isFrame: false,
+        isEditable: false,
+        tagName: "INPUT",
+        appCodeName: "Mozilla",
+        width: null,
+        src: null,
+        url: predicateTestURL,
+        selection: null,
+      }, "test disabled input");
+      return false;
+    });
+
+    yield select({target: "input#text", start: 0, end: 5 });
+
+    yield* test("input#text", target => {
+      assert.deepEqual(target, {
+        mediaType: null,
+        link: null,
+        isPage: false,
+        isFrame: false,
+        isEditable: true,
+        tagName: "INPUT",
+        appCodeName: "Mozilla",
+        width: null,
+        src: null,
+        url: predicateTestURL,
+        selection: "test ",
+      }, "test editable input");
+      return false;
+    });
+
+    yield select({target: "input#text", start:0, end: 0});
+
+    yield* test("input[type=submit]", target => {
+      assert.deepEqual(target, {
+        mediaType: null,
+        link: null,
+        isPage: false,
+        isFrame: false,
+        isEditable: false,
+        tagName: "INPUT",
+        appCodeName: "Mozilla",
+        width: null,
+        src: null,
+        url: predicateTestURL,
+        selection: null,
+      }, "test submit input");
+      return false;
+    });
+
+    yield* test("input[type=radio]", target => {
+      assert.deepEqual(target, {
+        mediaType: null,
+        link: null,
+        isPage: false,
+        isFrame: false,
+        isEditable: false,
+        tagName: "INPUT",
+        appCodeName: "Mozilla",
+        width: null,
+        src: null,
+        url: predicateTestURL,
+        selection: null,
+      }, "test radio input");
+      return false;
+    });
+
+    yield* test("input[type=checkbox]", target => {
+      assert.deepEqual(target, {
+        mediaType: null,
+        link: null,
+        isPage: false,
+        isFrame: false,
+        isEditable: false,
+        tagName: "INPUT",
+        appCodeName: "Mozilla",
+        width: null,
+        src: null,
+        url: predicateTestURL,
+        selection: null,
+      }, "test checkbox input");
+      return false;
+    });
+
+    yield* test("input[type=foo]", target => {
+      assert.deepEqual(target, {
+        mediaType: null,
+        link: null,
+        isPage: false,
+        isFrame: false,
+        isEditable: true,
+        tagName: "INPUT",
+        appCodeName: "Mozilla",
+        width: null,
+        src: null,
+        url: predicateTestURL,
+        selection: null,
+      }, "test unrecognized input");
+      return false;
+    });
+
+    yield* test("textarea", target => {
+      assert.deepEqual(target, {
+        mediaType: null,
+        link: null,
+        isPage: false,
+        isFrame: false,
+        isEditable: true,
+        tagName: "TEXTAREA",
+        appCodeName: "Mozilla",
+        width: null,
+        src: null,
+        url: predicateTestURL,
+        selection: null,
+      }, "test textarea");
+      return false;
+    });
+
+
+    yield* test("iframe", target => {
+      assert.deepEqual(target, {
+        mediaType: null,
+        link: null,
+        isPage: true,
+        isFrame: true,
+        isEditable: false,
+        tagName: "BODY",
+        appCodeName: "Mozilla",
+        width: null,
+        src: null,
+        url: `data:text/html,<body%20style="height:100%">Bye</body>`,
+        selection: null,
+      }, "test iframe");
+      return true;
+    });
+
+    yield* test("select", target => {
+      assert.deepEqual(target, {
+        mediaType: null,
+        link: null,
+        isPage: false,
+        isFrame: false,
+        isEditable: false,
+        tagName: "SELECT",
+        appCodeName: "Mozilla",
+        width: null,
+        src: null,
+        url: predicateTestURL,
+        selection: null,
+      }, "test select");
+      return true;
+    });
+
+    yield* test("menu", target => {
+      assert.deepEqual(target, {
+        mediaType: null,
+        link: null,
+        isPage: false,
+        isFrame: false,
+        isEditable: false,
+        tagName: "MENU",
+        appCodeName: "Mozilla",
+        width: null,
+        src: null,
+        url: predicateTestURL,
+        selection: null,
+      }, "test menu");
+      return false;
+    });
+
+    yield* test("video", target => {
+      assert.deepEqual(target, {
+        mediaType: "video",
+        link: null,
+        isPage: false,
+        isFrame: false,
+        isEditable: false,
+        tagName: "VIDEO",
+        appCodeName: "Mozilla",
+        width: "50",
+        src: null,
+        url: predicateTestURL,
+        selection: null,
+      }, "test video");
+      return true;
+    });
+
+    yield* test("audio", target => {
+      assert.deepEqual(target, {
+        mediaType: "audio",
+        link: null,
+        isPage: false,
+        isFrame: false,
+        isEditable: false,
+        tagName: "AUDIO",
+        appCodeName: "Mozilla",
+        width: "10",
+        src: null,
+        url: predicateTestURL,
+        selection: null,
+      }, "test audio");
+      return true;
+    });
+
+    yield* test("object", target => {
+      assert.deepEqual(target, {
+        mediaType: null,
+        link: null,
+        isPage: false,
+        isFrame: false,
+        isEditable: false,
+        tagName: "OBJECT",
+        appCodeName: "Mozilla",
+        width: "10",
+        src: null,
+        url: predicateTestURL,
+        selection: null,
+      }, "test object");
+      return true;
+    });
+
+    yield* test("embed", target => {
+      assert.deepEqual(target, {
+        mediaType: null,
+        link: null,
+        isPage: false,
+        isFrame: false,
+        isEditable: false,
+        tagName: "EMBED",
+        appCodeName: "Mozilla",
+        width: "10",
+        src: null,
+        url: predicateTestURL,
+        selection: null,
+      }, "test embed");
+      return true;
+    });
+
+    yield* test("applet", target => {
+      assert.deepEqual(target, {
+        mediaType: null,
+        link: null,
+        isPage: false,
+        isFrame: false,
+        isEditable: false,
+        tagName: "APPLET",
+        appCodeName: "Mozilla",
+        width: "30",
+        src: null,
+        url: predicateTestURL,
+        selection: null,
+      }, "test applet");
+      return false;
+    });
+
+  });
+}, predicateTestURL);
 require("test").run(exports);
