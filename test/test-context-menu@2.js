@@ -1041,4 +1041,77 @@ exports["test predicate context"] = withTab(function*(assert) {
 
   });
 }, predicateTestURL);
+
+exports["test extractor reader"] = withTab(function*(assert) {
+  const test = function*(selector, expect) {
+    var isMatch = false;
+    test.return = (target) => {
+      return isMatch = expect(target);
+    }
+    assert.deepEqual((yield captureContextMenu(selector)),
+                     isMatch ? menugroup(menuseparator(),
+                                         menuitem({label:"extractor"})) :
+                               menugroup(),
+                     isMatch ? `predicate item matches ${selector}` :
+                     `predicate item doesn't match ${selector}`);
+  };
+  test.predicate = target => test.return(target);
+
+
+  yield* withItems({
+    item: new Item({
+      label: "extractor",
+      context: [Contexts.Predicate(test.predicate)],
+      read: {
+        tagName: Readers.Query("tagName"),
+        selector: Readers.Extractor(target => {
+          let node = target;
+          let path = [];
+          while (node) {
+            if (node.id) {
+              path.unshift(`#${node.id}`);
+              node = null;
+            }
+            else {
+              path.unshift(node.localName);
+              node = node.parentElement;
+            }
+          }
+          return path.join(" > ");
+        })
+      }
+    })
+  }, function*(_) {
+    yield* test("footer", target => {
+      assert.deepEqual(target, {
+        tagName: "FOOTER",
+        selector: "html > body > nav > footer"
+      }, "test footer");
+      return false;
+    });
+
+
+  });
+}, data`<html>
+  <body>
+    <nav>
+      <header>begin</header>
+      <footer>end</footer>
+    </nav>
+    <article data-index=1>
+      <header>First title</header>
+      <div>
+        <p>First paragraph</p>
+        <p>Second paragraph</p>
+      </div>
+    </article>
+    <article data-index=2>
+      <header>Second title</header>
+      <div>
+        <p>First <strong id=foo>paragraph</strong></p>
+        <p>Second paragraph</p>
+      </div>
+    </article>
+  </body>
+</html>`);
 require("test").run(exports);
