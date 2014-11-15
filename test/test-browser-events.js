@@ -26,19 +26,13 @@ exports["test browser events"] = function(assert, done) {
     if (e.type === "close") {
       // Unload the module so that all listeners set by observer are removed.
 
-      let [ ready, load, deactivate, activate, close ] = actual;
+      let [ ready, load, close ] = actual;
 
       assert.equal(ready.type, "DOMContentLoaded");
       assert.equal(ready.target, window, "window ready");
 
       assert.equal(load.type, "load");
       assert.equal(load.target, window, "window load");
-
-      assert.equal(deactivate.type, "deactivate", "deactivate window")
-      assert.notEqual(deactivate.target, window, "other window deactivated")
-
-      assert.equal(activate.type, "activate", "activate event")
-      assert.equal(activate.target, window, "target is window")
 
       assert.equal(close.type, "close");
       assert.equal(close.target, window, "window load");
@@ -72,28 +66,19 @@ exports["test browser events ignore other wins"] = function(assert, done) {
     // `browserEventHandler` will be invoked.
     if (e.type === "load") setTimeout(window.close);
     if (e.type === "close") {
-      // Ignore "deactivate" events since browser may have a focus.
-      assert.deepEqual(actualBrowser.filter(e => e.type !== "deactivate"), [],
-                       "browser events were not triggered");
-      let [ open, ready, load, deactivate, activate, close ] = actualWindow;
+      assert.deepEqual(actualBrowser, [], "browser events were not triggered");
+      let [ open, ready, load, close ] = actualWindow;
 
       assert.equal(open.type, "open");
       assert.equal(open.target, window, "window is open");
 
-      assert.equal(deactivate.type, "deactivate", "deactivate window")
-      assert.notEqual(deactivate.target, window, "other window deactivated")
+
 
       assert.equal(ready.type, "DOMContentLoaded");
       assert.equal(ready.target, window, "window ready");
 
       assert.equal(load.type, "load");
       assert.equal(load.target, window, "window load");
-
-      assert.equal(deactivate.type, "deactivate", "deactivate window")
-      assert.notEqual(deactivate.target, window, "other window deactivated")
-
-      assert.equal(activate.type, "activate", "activate event")
-      assert.equal(activate.target, window, "target is window")
 
       assert.equal(close.type, "close");
       assert.equal(close.target, window, "window load");
