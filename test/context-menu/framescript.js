@@ -5,8 +5,12 @@ const Ci = Components.interfaces;
 addMessageListener("sdk/test/context-menu/open", message => {
   const {data, name} = message;
   const target = data.target && content.document.querySelector(data.target);
+  if (target) {
+    target.scrollIntoView();
+  }
   const rect = target ? target.getBoundingClientRect() :
                {left:0, top:0, width:0, height:0};
+
 
   content.
     QueryInterface(Ci.nsIInterfaceRequestor).
