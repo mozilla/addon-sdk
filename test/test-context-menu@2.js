@@ -6,6 +6,8 @@ const {openWindow, closeWindow, openTab, closeTab,
        readNode, captureContextMenu, withTab, withItems } = require("./context-menu/util");
 const {when} = require("sdk/dom/events");
 const {Item, Menu, Separator, Contexts, Readers } = require("sdk/context-menu@2");
+const prefs = require("sdk/preferences/service");
+
 const testPageURI = require.resolve("./test-context-menu").replace(".js", ".html");
 
 const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
@@ -36,8 +38,10 @@ const menu = (properties, ...children) => Object.assign({
   tagName: "menu",
   namespaceURI: XUL_NS,
   className: "sdk-context-menu menu-iconic"
-}, properties, children.length ? {children} : {});
-
+}, properties, {
+  children: [Object.assign({tagName: "menupopup", namespaceURI: XUL_NS},
+                           children.length ? {children} : {})]
+});
 
 // Destroying items that were previously created should cause them to be absent
 // from the menu.
@@ -1114,4 +1118,80 @@ exports["test extractor reader"] = withTab(function*(assert) {
     </article>
   </body>
 </html>`);
+
+exports["test items overflow"] = withTab(function*(assert) {
+  yield* withItems({
+    i1: new Item({label: "item-1"}),
+    i2: new Item({label: "item-2"}),
+    i3: new Item({label: "item-3"}),
+    i4: new Item({label: "item-4"}),
+    i5: new Item({label: "item-5"}),
+    i6: new Item({label: "item-6"}),
+    i7: new Item({label: "item-7"}),
+    i8: new Item({label: "item-8"}),
+    i9: new Item({label: "item-9"}),
+    i10: new Item({label: "item-10"}),
+  }, function*(_) {
+    assert.deepEqual((yield captureContextMenu("p")),
+                     menugroup(menu({
+                                className: "addon-content-menu-overflow-menu",
+                                label: "Add-ons",
+                                accesskey: "A",
+                              }, menuitem({label: "item-1"}),
+                                 menuitem({label: "item-2"}),
+                                 menuitem({label: "item-3"}),
+                                 menuitem({label: "item-4"}),
+                                 menuitem({label: "item-5"}),
+                                 menuitem({label: "item-6"}),
+                                 menuitem({label: "item-7"}),
+                                 menuitem({label: "item-8"}),
+                                 menuitem({label: "item-9"}),
+                                 menuitem({label: "item-10"}))),
+                     "context menu has an overflow");
+  });
+
+  prefs.set("extensions.addon-sdk.context-menu.overflowThreshold", 3);
+
+  yield* withItems({
+    i1: new Item({label: "item-1"}),
+    i2: new Item({label: "item-2"}),
+  }, function*(_) {
+    assert.deepEqual((yield captureContextMenu("p")),
+                     menugroup(menuseparator(),
+                               menuitem({label: "item-1"}),
+                               menuitem({label: "item-2"})),
+                     "two items do not overflow");
+  });
+
+  yield* withItems({
+    one: new Item({label: "one"}),
+    two: new Item({label: "two"}),
+    three: new Item({label: "three"})
+  }, function*(_) {
+    assert.deepEqual((yield captureContextMenu("p")),
+                     menugroup(menu({className: "addon-content-menu-overflow-menu",
+                                     label: "Add-ons",
+                                     accesskey: "A"},
+                                     menuitem({label: "one"}),
+                                     menuitem({label: "two"}),
+                                     menuitem({label: "three"}))),
+                     "three items overflow");
+  });
+
+  prefs.reset("extensions.addon-sdk.context-menu.overflowThreshold");
+
+  yield* withItems({
+    one: new Item({label: "one"}),
+    two: new Item({label: "two"}),
+    three: new Item({label: "three"})
+  }, function*(_) {
+    assert.deepEqual((yield captureContextMenu("p")),
+                     menugroup(menuseparator(),
+                               menuitem({label: "one"}),
+                               menuitem({label: "two"}),
+                               menuitem({label: "three"})),
+                     "three items no longer overflow");
+  });
+}, data`<p>Hello</p>`);
+
 require("test").run(exports);
