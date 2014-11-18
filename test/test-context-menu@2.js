@@ -1291,4 +1291,30 @@ exports["test context menus"] = withTab(function*(assert) {
 
 }, data`<body><h1>Title</h1><p>Content</p></body>`);
 
+exports["test unloading"] = withTab(function*(assert) {
+  const { Loader } = require("sdk/test/loader");
+  const loader = Loader(module);
+
+  const {Item, Menu, Separator, Contexts, Readers } = loader.require("sdk/context-menu@2");
+
+  const item = new Item({label: "item"});
+  const group = new Menu({label: "menu"},
+                         [new Separator(),
+                          new Item({label: "sub-item"})]);
+  assert.deepEqual((yield captureContextMenu()),
+                   menugroup(menuseparator(),
+                             menuitem({label: "item"}),
+                             menu({label: "menu"},
+                                  menuseparator(),
+                                  menuitem({label: "sub-item"}))),
+                   "all items rendered");
+
+
+  loader.unload();
+
+  assert.deepEqual((yield captureContextMenu()),
+                 menugroup(),
+                 "all items disposed");
+}, data`<body></body>`);
+
 require("test").run(exports);
