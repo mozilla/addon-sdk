@@ -68,7 +68,7 @@ exports["test assert.ok(false) failure message"] = (assert) => {
   assert.equal(failures.length, 1, "1 failure logs");
   assert.equal(exceptions.length, 0, "0 exception logs");
 
-  assert.equal(failures[0], "XYZ - true == false");
+  assert.equal(failures[0], "XYZ - false == true");
 }
 
 exports["test assert.equal"] = (assert) => {
@@ -92,7 +92,7 @@ exports["test assert.equal failure message"] = (assert) => {
   assert.equal(failures.length, 1, "1 failure logs");
   assert.equal(exceptions.length, 0, "0 exception logs");
 
-  assert.equal(failures[0], "XYZ - \"bar\" == \"foo\"");
+  assert.equal(failures[0], "XYZ - \"foo\" == \"bar\"");
 }
 
 exports["test assert.strictEqual"] = (assert) => {
@@ -120,7 +120,7 @@ exports["test assert.strictEqual failure message"] = (assert) => {
   assert.equal(failures.length, 1, "1 failure logs");
   assert.equal(exceptions.length, 0, "0 exception logs");
 
-  assert.equal(failures[0], "XYZ - \"bar\" === \"foo\"");
+  assert.equal(failures[0], "XYZ - \"foo\" === \"bar\"");
 }
 
 exports["test assert.throws(func, string, string) matches"] = (assert) => {
@@ -166,7 +166,7 @@ exports["test assert.throws(func, string, string) failure message"] = (assert) =
   assert.equal(failures.length, 1, "1 failure logs");
   assert.equal(exceptions.length, 0, "0 exception logs");
 
-  assert.equal(failures[0], "XYZ - \"bar\" matches \"foo\"");
+  assert.equal(failures[0], "XYZ - \"foo\" matches \"bar\"");
 }
 
 exports["test assert.throws(func, regex, string) matches"] = (assert) => {
@@ -212,7 +212,7 @@ exports["test assert.throws(func, regex, string) failure message"] = (assert) =>
   assert.equal(failures.length, 1, "1 failure logs");
   assert.equal(exceptions.length, 0, "0 exception logs");
 
-  assert.equal(failures[0], "XYZ - \"/bar/i\" matches \"foo\"");
+  assert.equal(failures[0], "XYZ - \"foo\" matches \"/bar/i\"");
 }
 
-require('sdk/test').run(exports);
+require("sdk/test").run(exports);
