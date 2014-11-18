@@ -1194,4 +1194,101 @@ exports["test items overflow"] = withTab(function*(assert) {
   });
 }, data`<p>Hello</p>`);
 
+
+exports["test context menus"] = withTab(function*(assert) {
+  const one = new Item({
+    label: "one",
+    context: [Contexts.Selector("p")],
+    read: {tagName: Readers.Query("tagName")}
+  });
+
+  assert.deepEqual((yield captureContextMenu("p")),
+                    menugroup(menuseparator(),
+                              menuitem({label: "one"})),
+                    "item is present");
+
+  const two = new Item({
+    label: "two",
+    read: {tagName: Readers.Query("tagName")}
+  });
+
+
+  assert.deepEqual((yield captureContextMenu("p")),
+                   menugroup(menuseparator(),
+                             menuitem({label: "one"}),
+                             menuitem({label: "two"})),
+                   "both items are present");
+
+  const groupLevel1 = new Menu({label: "Level 1"},
+                          [one]);
+
+  assert.deepEqual((yield captureContextMenu("p")),
+                   menugroup(menuseparator(),
+                             menuitem({label: "two"}),
+                             menu({label: "Level 1"},
+                                  menuitem({label: "one"}))),
+                   "first item moved to group");
+
+  assert.deepEqual((yield captureContextMenu("h1")),
+                   menugroup(menuseparator(),
+                             menuitem({label: "two"})),
+                   "menu is hidden since only item does not match");
+
+
+  const groupLevel2 = new Menu({label: "Level 2" }, [groupLevel1]);
+
+  assert.deepEqual((yield captureContextMenu("p")),
+                   menugroup(menuseparator(),
+                             menuitem({label: "two"}),
+                             menu({label: "Level 2"},
+                                  menu({label: "Level 1"},
+                                       menuitem({label: "one"})))),
+                   "top level menu moved to submenu");
+
+  assert.deepEqual((yield captureContextMenu("h1")),
+                   menugroup(menuseparator(),
+                             menuitem({label: "two"})),
+                   "menu is hidden since only item does not match");
+
+
+  const contextGroup = new Menu({
+    label: "H1 Group",
+    context: [Contexts.Selector("h1")]
+  }, [
+    two,
+    new Separator(),
+    new Item({ label: "three" })
+  ]);
+
+
+  assert.deepEqual((yield captureContextMenu("p")),
+                   menugroup(menuseparator(),
+                             menu({label: "Level 2"},
+                                  menu({label: "Level 1"},
+                                       menuitem({label: "one"})))),
+                   "nested menu is rendered");
+
+  assert.deepEqual((yield captureContextMenu("h1")),
+                   menugroup(menuseparator(),
+                             menu({label: "H1 Group"},
+                                  menuitem({label: "two"}),
+                                  menuseparator(),
+                                  menuitem({label: "three"}))),
+                   "new contextual menu rendered");
+
+  yield* withItems({one, two,
+                    groupLevel1, groupLevel2, contextGroup}, function*() {
+
+  });
+
+  assert.deepEqual((yield captureContextMenu("p")),
+                   menugroup(),
+                   "everyhing matching p was desposed");
+
+  assert.deepEqual((yield captureContextMenu("h1")),
+                 menugroup(),
+                 "everyhing matching h1 was desposed");
+
+}, data`<body><h1>Title</h1><p>Content</p></body>`);
+
 require("test").run(exports);
