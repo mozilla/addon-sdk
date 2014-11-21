@@ -10,6 +10,11 @@
   "scripts": {
     "test": "node ./bin/jpm-test.js"
   },
+  "homepage": "https://github.com/mozilla/addon-sdk",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/mozilla/addon-sdk.git"
+  },
   "devDependencies": {
     "async": "0.2.10",
     "chai": "1.9.2",
