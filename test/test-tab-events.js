@@ -5,7 +5,7 @@
 "use strict";
 
 const { Loader } = require("sdk/test/loader");
-const utils = require("sdk/tab/utils");
+const utils = require("sdk/tabs/utils");
 const { open, close } = require("sdk/window/helpers");
 const { getMostRecentBrowserWindow } = require("sdk/window/utils");
 const { events } = require("sdk/tab/events");
@@ -50,7 +50,7 @@ function test(options) {
 
       // Execute here for synchronous FF events, as the handlers
       // were called before tabs were pushed to `tabs`
-      runIfReady();
+      runIfReady(); 
       return promise;
     }).then(function() {
       off(events, "data", handler);

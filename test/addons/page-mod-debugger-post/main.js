@@ -6,7 +6,7 @@
 const { Cu } = require('chrome');
 const { PageMod } = require('sdk/page-mod');
 const tabs = require('sdk/tabs');
-const { closeTab } = require('sdk/tab/utils');
+const { closeTab } = require('sdk/tabs/utils');
 const promise = require('sdk/core/promise')
 const { getMostRecentBrowserWindow } = require('sdk/window/utils');
 const { data } = require('sdk/self');

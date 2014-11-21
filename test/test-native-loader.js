@@ -40,7 +40,7 @@ exports['test nodeResolve'] = function (assert) {
   resolveTest('test-math/lib/sqrt', './utils/index.js', './node_modules/test-math/lib/sqrt.js',
     'Dependencies\' files can be consumed via "/"');
 
-  resolveTest('sdk/tab/utils', './index.js', undefined,
+  resolveTest('sdk/tabs/utils', './index.js', undefined,
     'correctly ignores SDK references in paths');
   resolveTest('fs', './index.js', undefined,
     'correctly ignores built in node modules in paths');

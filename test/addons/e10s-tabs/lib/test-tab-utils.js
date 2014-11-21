@@ -1,11 +1,11 @@
 'use strict';
 
-const { getTabs } = require('sdk/tab/utils');
+const { getTabs } = require('sdk/tabs/utils');
 const { isGlobalPBSupported, isWindowPBSupported, isTabPBSupported } = require('sdk/private-browsing/utils');
 const { browserWindows } = require('sdk/windows');
 const tabs = require('sdk/tabs');
 const { isPrivate } = require('sdk/private-browsing');
-const { openTab, closeTab, getTabContentWindow, getOwnerWindow } = require('sdk/tab/utils');
+const { openTab, closeTab, getTabContentWindow, getOwnerWindow } = require('sdk/tabs/utils');
 const { open, close } = require('sdk/window/helpers');
 const { windows } = require('sdk/window/utils');
 const { getMostRecentBrowserWindow } = require('sdk/window/utils');
