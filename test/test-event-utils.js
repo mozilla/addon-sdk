@@ -1,11 +1,11 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
-'use strict';
+"use strict";
 
 const { on, emit } = require("sdk/event/core");
-const { filter, map, merge, expand, pipe, stripListeners } = require("sdk/event/utils");
+const { filter, map, merge, expand, pipe,
+        stripListeners, spawn } = require("sdk/event/utils");
 const $ = require("./event/helpers");
 
 function isEven(x) !(x % 2)
@@ -255,7 +255,7 @@ exports["test pipe multiple targets"] = function (assert) {
   assert.equal(src2Fired, 1, 'event does not fire on alternative chain routes');
 };
 
-exports['test stripListeners'] = function (assert) {
+exports["test stripListeners"] = function (assert) {
   var options = {
     onAnEvent: noop1,
     onMessage: noop2,
@@ -279,4 +279,26 @@ exports['test stripListeners'] = function (assert) {
   function noop2 () {}
 };
 
-require('test').run(exports);
+exports["test spawn"] = function (assert, done) {
+  let target = {};
+  let count = 0
+
+  spawn(() => {
+    if (++count == 2) {
+      assert.pass("spawn called more than once!");
+      done();
+    }
+    else if (count > 2) {
+      assert.fail("something is wrong!");
+    }
+    else {
+      assert.pass("spawn first call!")
+    }
+  }, target);
+
+
+  emit(target, "data", 1);
+  emit(target, "data", 2);
+}
+
+require("sdk/test").run(exports);
