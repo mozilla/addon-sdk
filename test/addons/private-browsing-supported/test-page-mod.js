@@ -1,6 +1,6 @@
 const { getMostRecentBrowserWindow } = require('sdk/window/utils');
 const { PageMod } = require("sdk/page-mod");
-const { getActiveTab, setTabURL, openTab, closeTab } = require('sdk/tab/utils');
+const { getActiveTab, setTabURL, openTab, closeTab } = require('sdk/tabs/utils');
 const xulApp = require('sdk/system/xul-app');
 const windowHelpers = require('sdk/window/helpers');
 const { defer } = require("sdk/core/promise");

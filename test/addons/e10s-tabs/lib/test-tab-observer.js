@@ -11,7 +11,7 @@ module.metadata = {
   }
 }
 
-const { openTab, closeTab } = require("sdk/tab/utils");
+const { openTab, closeTab } = require("sdk/tabs/utils");
 const { Loader } = require("sdk/test/loader");
 const { setTimeout } = require("sdk/timers");
 

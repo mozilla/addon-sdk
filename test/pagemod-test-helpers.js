@@ -6,7 +6,7 @@
 const { Cc, Ci } = require("chrome");
 const { setTimeout } = require("sdk/timers");
 const { Loader } = require("sdk/test/loader");
-const { openTab, getBrowserForTab, closeTab } = require("sdk/tab/utils");
+const { openTab, getBrowserForTab, closeTab } = require("sdk/tabs/utils");
 const { merge } = require("sdk/util/object");
 const httpd = require("./lib/httpd");
 
@@ -42,7 +42,7 @@ exports.testPageMod = function testPageMod(assert, done, testURL, pageModOptions
     // If we delay even more contentScriptWhen:'end', we may want to modify
     // this code again.
     setTimeout(testCallback, timeout,
-      b.contentWindow.wrappedJSObject,
+      b.contentWindow.wrappedJSObject, 
       function () {
         pageMods.forEach(function(mod) mod.destroy());
         // XXX leaks reported if we don't close the tab?
@@ -77,7 +77,7 @@ exports.handleReadyState = function(url, contentScriptWhen, callbacks) {
         let type = 'on' + readyState[0].toUpperCase() + readyState.substr(1);
 
         if (type in callbacks)
-          callbacks[type](tab);
+          callbacks[type](tab); 
 
         pagemod.destroy();
         loader.unload();

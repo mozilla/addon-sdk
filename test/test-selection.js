@@ -24,7 +24,7 @@ const FRAME_URL = "data:text/html;charset=utf-8," + encodeURIComponent(FRAME_HTM
 
 const { defer } = require("sdk/core/promise");
 const tabs = require("sdk/tabs");
-const { getActiveTab, getTabContentWindow, closeTab, setTabURL } = require("sdk/tab/utils")
+const { getActiveTab, getTabContentWindow, closeTab, setTabURL } = require("sdk/tabs/utils")
 const { getMostRecentBrowserWindow } = require("sdk/window/utils");
 const { open: openNewWindow, close: closeWindow } = require("sdk/window/helpers");
 const { Loader } = require("sdk/test/loader");

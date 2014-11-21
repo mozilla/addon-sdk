@@ -19,7 +19,7 @@ const { open } = require('sdk/preferences/utils');
 const { toFilename } = require('sdk/url');
 const { getAddonByID } = require('sdk/addon/manager');
 const { ZipWriter } = require('./zip/utils');
-const { getTabForId } = require('sdk/tab/utils');
+const { getTabForId } = require('sdk/tabs/utils');
 const { preferencesBranch, id } = require('sdk/self');
 const { Tab } = require('sdk/tabs/tab');
 require('sdk/tabs');

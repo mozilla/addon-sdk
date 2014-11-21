@@ -21,7 +21,7 @@ const { defer } = require("sdk/core/promise");
 const { browserWindows } = require("sdk/windows");
 const tabs = require("sdk/tabs");
 const { setTabURL, getActiveTab, getTabContentWindow, closeTab, getTabs,
-  getTabTitle } = require("sdk/tab/utils");
+  getTabTitle } = require("sdk/tabs/utils");
 const { getMostRecentBrowserWindow, isFocused } = require("sdk/window/utils");
 const { open: openNewWindow, close: closeWindow, focus } = require("sdk/window/helpers");
 const { Loader } = require("sdk/test/loader");
