@@ -5,7 +5,7 @@
 
 const { getMostRecentBrowserWindow, isBrowser } = require('sdk/window/utils');
 const { promise: windowPromise, close, focus } = require('sdk/window/helpers');
-const { openTab, closeTab, getBrowserForTab } = require('sdk/tabs/utils');
+const { openTab, closeTab, getBrowserForTab } = require('sdk/tab/utils');
 const { WindowTracker } = require('sdk/deprecated/window-utils');
 const { version, platform } = require('sdk/system');
 const { when } = require('sdk/system/unload');

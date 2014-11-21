@@ -5,7 +5,8 @@
 'use strict';
 
 let {
-  Loader, main, unload, parseStack, generateMap, resolve, join
+  Loader, main, unload, parseStack, generateMap, resolve, join,
+  Require, Module
 } = require('toolkit/loader');
 let { readURI } = require('sdk/net/url');
 
@@ -331,7 +332,7 @@ exports['test console global by default'] = function (assert) {
   let uri = root + '/fixtures/loader/globals/';
   let loader = Loader({ paths: { '': uri }});
   let program = main(loader, 'main');
- 
+
   assert.ok(typeof program.console === 'object', 'global `console` exists');
   assert.ok(typeof program.console.log === 'function', 'global `console.log` exists');
 
@@ -372,6 +373,25 @@ exports["test require#resolve"] = function(assert) {
 
   assert.equal(foundRoot + "sdk/tabs.js", require.resolve("sdk/tabs"), "correct resolution of sdk module");
   assert.equal(foundRoot + "toolkit/loader.js", require.resolve("toolkit/loader"), "correct resolution of sdk module");
+};
+
+const modulesURI = require.resolve("toolkit/loader").replace("toolkit/loader.js", "");
+exports["test loading a loader"] = function(assert) {
+  const loader = Loader({ paths: { "": modulesURI } });
+
+  const require = Require(loader, module);
+
+  const requiredLoader = require("toolkit/loader");
+
+  assert.equal(requiredLoader.Loader, Loader,
+               "got the same Loader instance");
+
+  const jsmLoader = Cu.import(require.resolve("toolkit/loader"), {}).Loader;
+
+  assert.equal(jsmLoader.Loader, requiredLoader.Loader,
+               "loading loader via jsm returns same loader");
+
+  unload(loader);
 };
 
 require('test').run(exports);
