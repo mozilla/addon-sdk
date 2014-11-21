@@ -42,7 +42,7 @@ describe("jpm test sdk addons", function () {
 });
 
 function fileFilter(root, file) {
-  if (/^(l10n|e10s|layout|simple-prefs|page-mod-debugger)/.test(file)) {
+  if (/^(l10n|e10s|layout|simple-prefs|page-mod-debugger|private-browsing)/.test(file)) {
     return false;
   }
   var stat = fs.statSync(path.join(root, file))

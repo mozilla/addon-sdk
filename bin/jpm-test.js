@@ -12,13 +12,15 @@ var mocha = new Mocha({
   timeout: 20000
 });
 
+var type = process.argv[2] || "";
+
 process.env.NODE_ENV = "test";
 
 [
-  //path.join(__dirname, "..", "node-scripts", "test.modules.js"),
-  path.join(__dirname, "..", "bin", "node-scripts", "test.addons.js")
+  (type == "modules" || type == "") ? path.join(__dirname, "..", "bin", "node-scripts", "test.modules.js") : "",
+  (type == "addons" || type == "") ? path.join(__dirname, "..", "bin", "node-scripts", "test.addons.js") : ""
 ].forEach(function(filepath) {
-  mocha.addFile(filepath);
+  filepath && mocha.addFile(filepath);
 })
 
 mocha.run(function (failures) {

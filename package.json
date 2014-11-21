@@ -8,13 +8,17 @@
   "license": "MPL 2.0",
   "unpack": true,
   "scripts": {
-    "test": "node ./bin/jpm-test.js"
+    "test": "node ./bin/jpm-test.js",
+    "modules": "node ./bin/jpm-test.js modules",
+    "addons": "node ./bin/jpm-test.js addons"
   },
   "homepage": "https://github.com/mozilla/addon-sdk",
   "repository": {
     "type": "git",
     "url": "git://github.com/mozilla/addon-sdk.git"
   },
+  "version": "0.1.18",
+  "main": "./lib/index.js",
   "devDependencies": {
     "async": "0.2.10",
     "chai": "1.9.2",
