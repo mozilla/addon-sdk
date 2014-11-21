@@ -20,7 +20,7 @@
   "system": "sdk/system",
   "system/events": "sdk/system/events",
   "tabs/tab": "sdk/tabs/tab",
-  "tabs/utils": "sdk/tabs/utils",
+  "tabs/utils": "sdk/tab/utils",
   "timer": "sdk/timers",
   "traits": "sdk/deprecated/traits",
   "unload": "sdk/system/unload",

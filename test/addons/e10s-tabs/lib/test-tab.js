@@ -10,7 +10,7 @@ const { getTabForWindow } = require('sdk/tabs/helpers');
 const app = require("sdk/system/xul-app");
 const { viewFor } = require("sdk/view/core");
 const { modelFor } = require("sdk/model/core");
-const { getTabId, isTab } = require("sdk/tabs/utils");
+const { getTabId, isTab } = require("sdk/tab/utils");
 const { defer } = require("sdk/lang/functional");
 
 // The primary test tab

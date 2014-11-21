@@ -5,7 +5,7 @@
 
 const xulApp = require("sdk/system/xul-app");
 const { open: openWindow, getMostRecentBrowserWindow } = require('sdk/window/utils');
-const { openTab, getTabContentWindow, getActiveTab, setTabURL, closeTab } = require('sdk/tabs/utils');
+const { openTab, getTabContentWindow, getActiveTab, setTabURL, closeTab } = require('sdk/tab/utils');
 const promise = require("sdk/core/promise");
 const windowHelpers = require('sdk/window/helpers');
 const events = require("sdk/system/events");
