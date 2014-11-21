@@ -1,5 +1,6 @@
 'use strict';
 
+const { LoaderWithHookedConsole } = require('sdk/test/loader');
 const { getTabs } = require('sdk/tab/utils');
 const { isWindowPBSupported, isTabPBSupported } = require('sdk/private-browsing/utils');
 const { browserWindows } = require('sdk/windows');
@@ -9,7 +10,10 @@ const { openTab, closeTab, getTabContentWindow, getOwnerWindow } = require('sdk/
 const { open, close } = require('sdk/window/helpers');
 const { windows } = require('sdk/window/utils');
 const { getMostRecentBrowserWindow } = require('sdk/window/utils');
+const { set: setPref, get: getPref } = require('sdk/preferences/service');
 const { fromIterator } = require('sdk/util/array');
+
+const DEPRECATE_PREF = 'devtools.errorconsole.deprecation_warnings';
 
 if (isWindowPBSupported) {
   exports.testGetTabs = function(assert, done) {
@@ -61,6 +65,32 @@ else if (isTabPBSupported) {
 
     done();
   };
+}
+
+exports['test sdk/tabs/utils deprecration message'] = function(assert) {
+  let oldPrefValue = getPref(DEPRECATE_PREF, false);
+  setPref(DEPRECATE_PREF, true);
+
+  let { loader, messages } = LoaderWithHookedConsole();
+  let tabs = loader.require('sdk/tabs/utils');
+  let msg = new RegExp("DEPRECATED: Module 'sdk/tabs/utils' is deprecated use 'sdk/tab/utils' instead");
+
+  // TODO: remove need for this test by implementing the favicon feature
+  assert.ok(
+    msg.test(messages[0].msg),
+    "sdk/tabs/utils throws a deprecation message");
+  assert.equal(messages.length, 1, "the length is one");
+
+  let tab = loader.require('sdk/tab/utils');
+  assert.equal(messages.length, 1, "the length is still one");
+
+  assert.equal(Object.keys(tabs).join(""), Object.keys(tab).join(""), "the keys are the same");
+
+  assert.deepEqual(tabs.getTabId, tab.getTabId, "getTabId is the same");
+
+  loader.unload();
+
+  setPref(DEPRECATE_PREF, oldPrefValue);
 }
 
 require('sdk/test').run(exports);
