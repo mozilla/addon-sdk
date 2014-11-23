@@ -28,6 +28,10 @@ except ImportError:
 
 import logging
 logger = logging.getLogger(__name__)
+# Avoid message: No handlers could be found for logger "mozrunner"
+logging.basicConfig()
+###logger.addHandler(logging.NullHandler())  # add permanently, across runs
+###logger.removeHandler(logging.NullHandler())  # remove permanently, across runs
 
 # Use dir_util for copy/rm operations because shutil is all kinds of broken
 copytree = dir_util.copy_tree
