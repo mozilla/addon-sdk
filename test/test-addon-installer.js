@@ -12,6 +12,7 @@ const system = require("sdk/system");
 
 const testFolderURL = module.uri.split('test-addon-installer.js')[0];
 const ADDON_URL = testFolderURL + "fixtures/addon-install-unit-test@mozilla.com.xpi";
+console.log(ADDON_URL)
 const ADDON_PATH = tmp.createFromURL(ADDON_URL);
 
 exports["test Install"] = function (assert, done) {
