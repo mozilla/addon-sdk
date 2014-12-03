@@ -3,7 +3,7 @@ node_js:
   - "0.10"
 
 notifications:
-  irc: "irc.mozilla.org#jpm"
+  irc: "irc.mozilla.org#jetpack"
 
 before_install:
   - "export DISPLAY=:99.0"
