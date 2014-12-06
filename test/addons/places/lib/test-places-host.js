@@ -23,7 +23,7 @@ require('sdk/places/host/host-query');
 const {
   invalidResolve, invalidReject, createTree,
   compareWithHost, createBookmark, createBookmarkTree, resetPlaces
-} = require('../places-helper');
+} = require('./places-helper');
 
 const bmsrv = Cc['@mozilla.org/browser/nav-bookmarks-service;1'].
                     getService(Ci.nsINavBookmarksService);

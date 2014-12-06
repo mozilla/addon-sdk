@@ -11,12 +11,12 @@ const app = require("sdk/system/xul-app");
 // module.metadata.engines
 if (app.is('Firefox')) {
   merge(module.exports,
-    require('./lib/test-places-events'),
-    require('./lib/test-places-bookmarks'),
-    require('./lib/test-places-favicon'),
-    require('./lib/test-places-history'),
-    require('./lib/test-places-host'),
-    require('./lib/test-places-utils')
+    require('./test-places-events'),
+    require('./test-places-bookmarks'),
+    require('./test-places-favicon'),
+    require('./test-places-history'),
+    require('./test-places-host'),
+    require('./test-places-utils')
   );
 } else {
   exports['test unsupported'] = (assert) => {

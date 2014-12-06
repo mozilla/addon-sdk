@@ -16,12 +16,12 @@ const { setTimeout } = require('sdk/timers');
 const { before, after } = require('sdk/test/utils');
 const { set } = require('sdk/preferences/service');
 const {
-  search 
+  search
 } = require('sdk/places/history');
 const {
   invalidResolve, invalidReject, createTree,
   compareWithHost, addVisits, resetPlaces
-} = require('../places-helper');
+} = require('./places-helper');
 const { promisedEmitter } = require('sdk/places/utils');
 
 exports.testEmptyQuery = function (assert, done) {
@@ -236,7 +236,7 @@ exports.testEmitters = function (assert, done) {
 function toBeWithin (range) {
   range = range || 2000;
   var current = new Date() * 1000; // convert to microseconds
-  return compared => { 
+  return compared => {
     return compared - current < range;
   };
 }
