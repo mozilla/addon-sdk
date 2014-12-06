@@ -9,7 +9,7 @@ var Mocha = require("mocha");
 var mocha = new Mocha({
   ui: "bdd",
   reporter: "spec",
-  timeout: 200000
+  timeout: 600000
 });
 
 var type = process.argv[2] || "";
@@ -17,8 +17,8 @@ var type = process.argv[2] || "";
 process.env.NODE_ENV = "test";
 
 [
-  (type == "modules") ? require.resolve("../bin/node-scripts/test.modules") : "",
-  (type == "addons" || type == "") ? path.join(__dirname, "..", "bin", "node-scripts", "test.addons.js") : ""
+  (type == "addons" || type == "") ? require.resolve("../bin/node-scripts/test.addons") : "",
+  (type == "modules"|| type == "") ? require.resolve("../bin/node-scripts/test.modules") : ""
 ].forEach(function(filepath) {
   filepath && mocha.addFile(filepath);
 })
