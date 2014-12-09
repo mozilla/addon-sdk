@@ -30,7 +30,7 @@ const {
   invalidResolve, invalidReject, createTree, createBookmark,
   compareWithHost, addVisits, resetPlaces, createBookmarkItem,
   removeVisits
-} = require('../places-helper');
+} = require('./places-helper');
 const { save, MENU, UNSORTED } = require('sdk/places/bookmarks');
 const { promisedEmitter } = require('sdk/places/utils');
 
@@ -310,7 +310,7 @@ exports['test history-delete-visits'] = function (assert) {
 // completion of a result for events. For example, when creating a bookmark,
 // a `bookmark-item-added` event is fired, listened to by the first test here,
 // while constructing the bookmark item requires subsequent calls to that bookmark item.
-// If we destroy the underlying bookmark immediately, these calls will fail. 
+// If we destroy the underlying bookmark immediately, these calls will fail.
 //
 // The places SDK abstraction around this alleviates it, but these are low level events.
 after(exports, (name, assert, done) => setTimeout(() => resetPlaces(done), 1));
