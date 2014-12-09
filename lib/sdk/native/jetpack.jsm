@@ -5,7 +5,7 @@
 
 var EXPORTED_SYMBOLS = ["Jetpack"];
 
-const { utils: Cu, interfaces: Ci, classes: Cc } = Components;
+const { utils: Cu, interfaces: Ci, classes: Cc, Constructor: CC } = Components;
 const { Services } = Cu.import("resource://gre/modules/Services.jsm", {});
 
 const ioService = Cc['@mozilla.org/network/io-service;1'].
