@@ -14,14 +14,13 @@ const { Theme, LightTheme } = require("dev/theme");
 /**
  * This object represents a new theme registered within the Toolbox
  * You can activate it by clicking on "My Light Theme" in the Options
- * panel.
+ * panel. The theme derives styles from built-in Light theme.
  */
-const MyTheme = Class({
-  extends: LightTheme,
+const MyTheme = Theme({
+  name: "mytheme",
   label: "My Light Theme",
-  styles: Style({
-    uri: self.data.url("theme.css")
-  }),
+  styles: [LightTheme, self.data.url("theme.css")],
+
   onEnable: function(window, oldTheme) {
     console.log("myTheme.onEnable; method override " +
       window.location.href);
@@ -31,18 +30,6 @@ const MyTheme = Class({
       window.location.href);
   },
 });
-
-/* Example of functional API
-onEnable.define(MyTheme, (theme, {window, oldTheme}) => {
-  console.log("myTheme.onEnable; functional override " +
-    window.location.href);
-});
-
-onDisable.define(MyTheme, (theme, {window, newTheme}) => {
-  console.log("myTheme.onDisable; functional override " +
-    window.location.href);
-});
-*/
 
 // Registration
 
