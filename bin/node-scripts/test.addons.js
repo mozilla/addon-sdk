@@ -10,11 +10,13 @@ var chai = require("chai");
 var expect = chai.expect;
 var assert = chai.assert;
 var exec = utils.exec;
+var readParam = utils.readParam;
 
 var examplesPath = path.join(__dirname, "..", "..", "examples");
 var addonsPath = path.join(__dirname, "..", "..", "test", "addons");
 
 var binary = process.env.JPM_FIREFOX_BINARY || "nightly";
+var filterPattern = readParam("filter");
 
 describe("jpm test sdk addons", function () {
   fs.readdirSync(addonsPath)
@@ -38,7 +40,11 @@ describe("jpm test sdk addons", function () {
 });
 
 function fileFilter(root, file) {
+  var matcher = filterPattern && new RegExp(filterPattern)
   if (/^(l10n|e10s|layout|simple-prefs|page-mod-debugger|private-browsing)/.test(file)) {
+    return false;
+  }
+  if (matcher && !matcher.test(file)) {
     return false;
   }
   var stat = fs.statSync(path.join(root, file))

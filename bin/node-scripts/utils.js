@@ -22,3 +22,9 @@ function exec (args, options, callback) {
   });
 }
 exports.exec = exec;
+
+function readParam(name) {
+  var index = process.argv.indexOf("--" + name)
+  return index >= 0 && process.argv[index + 1]
+}
+exports.readParam = readParam;
