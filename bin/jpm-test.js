@@ -10,7 +10,7 @@ var Mocha = require("mocha");
 var mocha = new Mocha({
   ui: "bdd",
   reporter: "spec",
-  timeout: 200000
+  timeout: 600000
 });
 
 var type = readParam("type")

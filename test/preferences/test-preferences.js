@@ -10,4 +10,5 @@ var testPrefs = require("./test.json");
 var fxPrefs = require("./firefox.json");
 var disconnectionPrefs = require("./no-connections.json");
 
-exports = extend({}, commonPrefs, testPrefs, disconnectionPrefs, fxPrefs)
+var prefs = extend({}, commonPrefs, testPrefs, disconnectionPrefs, fxPrefs);
+module.exports = prefs;
