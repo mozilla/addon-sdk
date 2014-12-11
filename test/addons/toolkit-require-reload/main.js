@@ -38,9 +38,6 @@ exports.testReload = function*(assert) {
   const v2 = toolkit.require(moduleURI, {reload: true});
   assert.equal(v2.version(), 2, "module was updated");
 
-  assert.ok(Cu.isDeadWrapper(v1.version),
-            "previous module was unloaded");
-
   yield remove(modulePath);
 };
 
@@ -65,12 +62,10 @@ exports.testReloadAll = function*(assert) {
   const parent2 = toolkit.require(parentURI, {reload: true});
   assert.equal(parent2.greet(), "Hello child!",
                "only parent changes were picked up");
-  assert.ok(Cu.isDeadWrapper(parent1.greet), "previous parent was unloaded");
 
   const parent3 = toolkit.require(parentURI, {reload: true, all: true});
   assert.equal(parent3.greet(), "Hello father!",
                "all changes were picked up");
-  assert.ok(Cu.isDeadWrapper(parent2.greet), "previous parent was unloaded");
 
   yield remove(childPath);
   yield remove(parentPath);
