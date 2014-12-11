@@ -4,6 +4,7 @@
 "use strict";
 
 var utils = require("./utils");
+var readParam = utils.readParam;
 var path = require("path");
 var fs = require("fs");
 var chai = require("chai");
@@ -13,6 +14,8 @@ var spawn = utils.spawn;
 var sdk = path.join(__dirname, "..", "..");
 var binary = process.env.JPM_FIREFOX_BINARY || "nightly";
 
+var filter = readParam("filter");
+
 describe("jpm test sdk modules", function () {
   it("SDK Modules", function (done) {
     process.chdir(sdk);
@@ -21,6 +24,8 @@ describe("jpm test sdk modules", function () {
     if (process.env.DISPLAY) {
       options.env.DISPLAY = process.env.DISPLAY;
     }
+
+    options.filter = filter;
 
     var proc = spawn("test", options);
 

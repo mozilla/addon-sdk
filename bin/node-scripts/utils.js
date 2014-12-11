@@ -32,7 +32,12 @@ function spawn (cmd, options) {
   options = options || {};
   var env = _.extend({}, options.env, process.env);
 
-  return child_process.spawn("node", [jpm, cmd, "-v", "--prefs", prefsPath, "-o", sdk], {
+  return child_process.spawn("node", [
+    jpm, cmd, "-v",
+    "--prefs", prefsPath,
+    "-o", sdk,
+    "-f", options.filter || ""
+  ], {
     cwd: options.cwd || tmpOutputDir,
     env: env
   });
