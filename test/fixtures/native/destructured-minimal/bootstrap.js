@@ -3,5 +3,5 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
-const { Jetpack } = Components.utils.import(NATIVE_JETPACK_JSM, {});
-Jetpack(this);
+const { require } = Components.utils.import(NATIVE_REQUIRE, {});
+const { install, uninstall, startup, shutdown } = require("sdk/native/jetpack").Jetpack();

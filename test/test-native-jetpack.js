@@ -3,72 +3,68 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
-const { Cu, Cc, Ci } = require("chrome");
-
+const { makeBootstrapScope } = require("./native/scope");
 const { evaluate } = require("sdk/loader/sandbox");
 
-const NATIVE_JETPACK_JSM = require.resolve("sdk/native/jetpack.jsm");
-const NATIVE_BOOTSTRAP = require.resolve("./fixtures/native/bootstrap.js");
-
-// Note: much of this test code is from
-// http://dxr.mozilla.org/mozilla-central/source/toolkit/mozapps/extensions/internal/XPIProvider.jsm
-const BOOTSTRAP_REASONS = {
-  APP_STARTUP     : 1,
-  APP_SHUTDOWN    : 2,
-  ADDON_ENABLE    : 3,
-  ADDON_DISABLE   : 4,
-  ADDON_INSTALL   : 5,
-  ADDON_UNINSTALL : 6,
-  ADDON_UPGRADE   : 7,
-  ADDON_DOWNGRADE : 8
-};
+const NATIVE_REQUIRE = require.resolve("toolkit/require.js");
 
 exports["test minimal bootstrap.js"] = function(assert) {
-  let aId = "test-min-boot@jetpack";
-  let uri = NATIVE_BOOTSTRAP;
+  let uri = require.resolve("./fixtures/native/minimal/bootstrap.js");
 
-  let principal = Cc["@mozilla.org/systemprincipal;1"].
-                  createInstance(Ci.nsIPrincipal);
+  let bootstrapScope = makeBootstrapScope({
+    id: "test-min-boot@jetpack",
+    uri: uri,
+    globals: {
+      NATIVE_REQUIRE: NATIVE_REQUIRE
+    }
+  })
 
-  let bootstrapScope = new Cu.Sandbox(principal, {
-    sandboxName: uri,
-    wantGlobalProperties: ["indexedDB"],
-    addonId: aId,
-    metadata: { addonID: aId, URI: uri }
-  });
+  assert.equal(typeof bootstrapScope.install, "undefined", "install DNE");
+  assert.equal(typeof bootstrapScope.startup, "undefined", "startup DNE");
+  assert.equal(typeof bootstrapScope.shutdown, "undefined", "shutdown DNE");
+  assert.equal(typeof bootstrapScope.uninstall, "undefined", "uninstall DNE");
 
-  try {
-    // Copy the reason values from the global object into the bootstrap scope.
-    for (let name in BOOTSTRAP_REASONS)
-      bootstrapScope[name] = BOOTSTRAP_REASONS[name];
+  evaluate(bootstrapScope,
+    "Comp" + "onents.classes['@mozilla.org/moz/jssubscript-loader;1'] \
+               .createInstance(Compo" + "nents.interfaces.mozIJSSubScriptLoader) \
+               .loadSubScript(__SCRIPT_URI_SPEC__);", "ECMAv5");
 
-    // As we don't want our caller to control the JS version used for the
-    // bootstrap file, we run loadSubScript within the context of the
-    // sandbox with the latest JS version set explicitly.
-    bootstrapScope.__SCRIPT_URI_SPEC__ = uri;
-    bootstrapScope.NATIVE_JETPACK_JSM = NATIVE_JETPACK_JSM;
+  assert.equal(typeof bootstrapScope.install, "function", "install exists");
+  assert.equal(typeof bootstrapScope.startup, "function", "startup exists");
+  assert.equal(typeof bootstrapScope.shutdown, "function", "shutdown exists");
+  assert.equal(typeof bootstrapScope.uninstall, "function", "uninstall exists");
 
-    assert.equal(typeof bootstrapScope.install, "undefined", "install DNE");
-    assert.equal(typeof bootstrapScope.startup, "undefined", "startup DNE");
-    assert.equal(typeof bootstrapScope.shutdown, "undefined", "shutdown DNE");
-    assert.equal(typeof bootstrapScope.uninstall, "undefined", "uninstall DNE");
+  bootstrapScope.shutdown(null, BOOTSTRAP_REASONS.ADDON_DISABLE);
+}
 
-    evaluate(bootstrapScope,
-      "Comp" + "onents.classes['@mozilla.org/moz/jssubscript-loader;1'] \
-                 .createInstance(Compo" + "nents.interfaces.mozIJSSubScriptLoader) \
-                 .loadSubScript(__SCRIPT_URI_SPEC__);", "ECMAv5");
 
-    assert.equal(typeof bootstrapScope.install, "function", "install exists");
-    assert.equal(typeof bootstrapScope.startup, "function", "startup exists");
-    assert.equal(typeof bootstrapScope.shutdown, "function", "shutdown exists");
-    assert.equal(typeof bootstrapScope.uninstall, "function", "uninstall exists");
+exports["test destructured minimal bootstrap.js"] = function(assert) {
+  let uri = require.resolve("./fixtures/native/destructured-minimal/bootstrap.js");
 
-    bootstrapScope.shutdown(null, BOOTSTRAP_REASONS.ADDON_DISABLE);
-  }
-  catch(e) {
-    console.exception(e)
-    assert.fail(e)
-  }
+  let bootstrapScope = makeBootstrapScope({
+    id: "test-de-min-boot@jetpack",
+    uri: uri,
+    globals: {
+      NATIVE_REQUIRE: NATIVE_REQUIRE
+    }
+  })
+
+  assert.equal(typeof bootstrapScope.install, "undefined", "install DNE");
+  assert.equal(typeof bootstrapScope.startup, "undefined", "startup DNE");
+  assert.equal(typeof bootstrapScope.shutdown, "undefined", "shutdown DNE");
+  assert.equal(typeof bootstrapScope.uninstall, "undefined", "uninstall DNE");
+
+  evaluate(bootstrapScope,
+    "Comp" + "onents.classes['@mozilla.org/moz/jssubscript-loader;1'] \
+               .createInstance(Compo" + "nents.interfaces.mozIJSSubScriptLoader) \
+               .loadSubScript(__SCRIPT_URI_SPEC__);", "ECMAv5");
+
+  assert.equal(typeof bootstrapScope.install, "function", "install exists");
+  assert.equal(typeof bootstrapScope.startup, "function", "startup exists");
+  assert.equal(typeof bootstrapScope.shutdown, "function", "shutdown exists");
+  assert.equal(typeof bootstrapScope.uninstall, "function", "uninstall exists");
+
+  bootstrapScope.shutdown(null, BOOTSTRAP_REASONS.ADDON_DISABLE);
 }
 
 require("sdk/test").run(exports);
