@@ -4,6 +4,7 @@
 "use strict";
 
 var BLACKLIST = [];
+var readParam = require("./node-scripts/utils").readParam;
 var path = require("path");
 var Mocha = require("mocha");
 var mocha = new Mocha({
@@ -12,13 +13,13 @@ var mocha = new Mocha({
   timeout: 600000
 });
 
-var type = process.argv[2] || "";
+var type = readParam("type")
 
 process.env.NODE_ENV = "test";
-
 [
-  (type == "addons" || type == "") ? require.resolve("../bin/node-scripts/test.addons") : "",
-  (type == "modules"|| type == "") ? require.resolve("../bin/node-scripts/test.modules") : ""
+  type == "modules" && require.resolve("../bin/node-scripts/test.modules"),
+  type == "addons" && require.resolve("../bin/node-scripts/test.addons"),
+  !type && require.resolve("../bin/node-scripts/test.addons"),
 ].forEach(function(filepath) {
   filepath && mocha.addFile(filepath);
 })

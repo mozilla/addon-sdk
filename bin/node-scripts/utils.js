@@ -38,3 +38,10 @@ function spawn (cmd, options) {
   });
 }
 exports.spawn = spawn;
+
+function readParam(name) {
+  var index = process.argv.indexOf("--" + name)
+  return index >= 0 && process.argv[index + 1]
+}
+exports.readParam = readParam;
+

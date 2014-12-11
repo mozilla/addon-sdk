@@ -9,8 +9,8 @@
   "unpack": true,
   "scripts": {
     "test": "node ./bin/jpm-test.js",
-    "modules": "node ./bin/jpm-test.js modules",
-    "addons": "node ./bin/jpm-test.js addons"
+    "modules": "node ./bin/jpm-test.js --type modules",
+    "addons": "node ./bin/jpm-test.js --type addons"
   },
   "homepage": "https://github.com/mozilla/addon-sdk",
   "repository": {
