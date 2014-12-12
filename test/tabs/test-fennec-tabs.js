@@ -602,3 +602,5 @@ exports.testOnLoadEventWithDOM = function(assert, done) {
     }
   });
 };
+
+require("sdk/test").run(exports);
