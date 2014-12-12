@@ -10,6 +10,7 @@ if (packaging.isNative) {
   module.exports = {
     "test skip on jpm": (assert) => assert.pass("skipping this file with jpm")
   };
+  require("sdk/test").run(exports);
 }
 else if (app.is("Firefox")) {
   module.exports = require("./windows/test-firefox-windows");
@@ -25,6 +26,5 @@ else {
         "In the future we would like it to support other applications, however.");
     }
   };
+  require("sdk/test").run(exports);
 }
-
-require("sdk/test").run(module.exports);
