@@ -1134,7 +1134,7 @@ exports["test items overflow"] = withTab(function*(assert) {
   }, function*(_) {
     assert.deepEqual((yield captureContextMenu("p")),
                      menugroup(menu({
-                                className: "addon-content-menu-overflow-menu",
+                                className: "sdk-context-menu-overflow-menu",
                                 label: "Add-ons",
                                 accesskey: "A",
                               }, menuitem({label: "item-1"}),
@@ -1169,7 +1169,7 @@ exports["test items overflow"] = withTab(function*(assert) {
     three: new Item({label: "three"})
   }, function*(_) {
     assert.deepEqual((yield captureContextMenu("p")),
-                     menugroup(menu({className: "addon-content-menu-overflow-menu",
+                     menugroup(menu({className: "sdk-context-menu-overflow-menu",
                                      label: "Add-ons",
                                      accesskey: "A"},
                                      menuitem({label: "one"}),
