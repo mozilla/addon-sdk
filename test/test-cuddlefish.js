@@ -1,13 +1,13 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 'use strict';
 
 const packaging = require('@loader/options');
+const get = require;
 
 exports['test loader'] = function(assert) {
-  const { Loader, Require, unload, override } = require('sdk/loader/cuddlefish');
+  let { Loader, Require, unload, override } = get('sdk/loader/cuddlefish');
   var prints = [];
   function print(message) {
     prints.push(message);
