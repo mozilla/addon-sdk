@@ -29,7 +29,7 @@ describe("jpm test sdk addons", function () {
       if (process.env.DISPLAY) {
         options.env.DISPLAY = process.env.DISPLAY;
       }
-      options.filter = filter;
+      options.filter = filterPattern;
       var proc = exec("run -v", options, function (err, stdout, stderr) {
         expect(err).to.not.be.ok;
         expect(stdout).to.contain("All tests passed!");
