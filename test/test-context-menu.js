@@ -12,6 +12,7 @@ const timer = require("sdk/timers");
 const { merge } = require("sdk/util/object");
 const { defer } = require("sdk/core/promise");
 const observers = require("sdk/system/events");
+const packaging = require('@loader/options');
 
 // These should match the same constants in the module.
 const ITEM_CLASS = "addon-context-menu-item";
@@ -4278,5 +4279,11 @@ TestHelper.prototype = {
     });
   }
 };
+
+if (packaging.isNative) {
+  module.exports = {
+    "test skip on jpm": (assert) => assert.pass("skipping this file with jpm")
+  };
+}
 
 require('sdk/test').run(exports);

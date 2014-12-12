@@ -4,10 +4,10 @@
 
 'use strict';
 
-const { Loader, Require, unload, override } = require('sdk/loader/cuddlefish');
 const packaging = require('@loader/options');
 
 exports['test loader'] = function(assert) {
+  const { Loader, Require, unload, override } = require('sdk/loader/cuddlefish');
   var prints = [];
   function print(message) {
     prints.push(message);
@@ -44,4 +44,10 @@ exports['test loader'] = function(assert) {
                'loader.unload() must call listeners in LIFO order.');
 };
 
-require('test').run(exports);
+if (packaging.isNative) {
+  module.exports = {
+    "test skip on jpm": (assert) => assert.pass("skipping this file with jpm")
+  };
+}
+
+require('sdk/test').run(exports);
