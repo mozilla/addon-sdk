@@ -9,7 +9,7 @@ var fs = require("fs");
 var chai = require("chai");
 var expect = chai.expect;
 var assert = chai.assert;
-var exec = utils.exec;
+var spawn = utils.spawn;
 var readParam = utils.readParam;
 
 var addonsPath = path.join(__dirname, "..", "..", "test", "addons");
@@ -30,9 +30,12 @@ describe("jpm test sdk addons", function () {
         options.env.DISPLAY = process.env.DISPLAY;
       }
       options.filter = filterPattern;
-      var proc = exec("run -v", options, function (err, stdout, stderr) {
-        expect(err).to.not.be.ok;
-        expect(stdout).to.contain("All tests passed!");
+
+      var proc = spawn("run", options);
+      proc.stderr.pipe(process.stderr);
+      proc.stdout.pipe(process.stdout);
+      proc.on("close", function(code) {
+        expect(code).to.equal(0);
         done();
       });
     });
