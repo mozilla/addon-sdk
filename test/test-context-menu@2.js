@@ -245,7 +245,12 @@ exports["test page context match"] = withTab(function*(assert) {
     }
   });
 },
-data`<body>
+data`<head>
+  <style>
+    p, object, embed { display: inline-block; }
+  </style>
+</head>
+<body>
   <div><p>paragraph</p></div>
   <div><a href=./link><span>link</span></a></div>
   <h3>hi</h3>
