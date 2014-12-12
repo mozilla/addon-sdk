@@ -4,4 +4,4 @@
 "use strict";
 
 const { require } = Components.utils.import(NATIVE_REQUIRE, {});
-const { install, uninstall, startup, shutdown } = require("sdk/native/jetpack").Jetpack();
+const { install, uninstall, startup, shutdown } = require("sdk/addon/bootstrap").Bootstrap();

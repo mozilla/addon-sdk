@@ -4,5 +4,4 @@
 "use strict";
 
 const { require } = Components.utils.import(NATIVE_REQUIRE, {});
-const { Jetpack } = require("sdk/native/jetpack").Jetpack();
-Jetpack(this);
+require("sdk/addon/bootstrap").Bootstrap(this);
