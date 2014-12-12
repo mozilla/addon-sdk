@@ -29,15 +29,10 @@ describe("jpm test sdk modules", function () {
 
     var proc = spawn("test", options);
 
-    var stdout = "";
-    proc.stdout.on("data", function (data) {
-      stdout += data;
-    });
-
     proc.stderr.pipe(process.stderr);
     proc.stdout.pipe(process.stdout);
     proc.on("close", function(code) {
-      expect(stdout).to.contain("All tests passed!");
+      expect(code).to.equal(0);
       done();
     });
   });
