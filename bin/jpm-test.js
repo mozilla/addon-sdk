@@ -19,7 +19,7 @@ process.env.NODE_ENV = "test";
 [
   (!type || type == "modules") && require.resolve("../bin/node-scripts/test.modules"),
   (!type || type == "addons") && require.resolve("../bin/node-scripts/test.addons"),
-  (type == "examples") && require.resolve("../bin/node-scripts/test.examples"),
+  (!type || type == "examples") && require.resolve("../bin/node-scripts/test.examples"),
 ].sort().forEach(function(filepath) {
   filepath && mocha.addFile(filepath);
 })
