@@ -1,4 +1,4 @@
-# Mozilla Add-on SDK
+# Mozilla Add-on SDK [![Build Status](https://travis-ci.org/mozilla/addon-sdk.png)](https://travis-ci.org/mozilla/addon-sdk)
 
 Using the Add-on SDK you can create Firefox add-ons using standard Web technologies: JavaScript, HTML, and CSS. The SDK includes JavaScript APIs which you can use to create add-ons, and tools for creating, running, testing, and packaging add-ons.
 
