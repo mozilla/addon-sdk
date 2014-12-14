@@ -22,6 +22,7 @@ const { ZipWriter } = require('./zip/utils');
 const { getTabForId } = require('sdk/tabs/utils');
 const { preferencesBranch, id } = require('sdk/self');
 const { Tab } = require('sdk/tabs/tab');
+const packaging = require("@loader/options");
 require('sdk/tabs');
 
 const prefsrv = Cc['@mozilla.org/preferences-service;1'].
@@ -39,8 +40,8 @@ exports.testIterations = function(assert) {
   assert.ok("test" in sp);
   assert.ok(!sp.getPropertyDescriptor);
   assert.ok(Object.prototype.hasOwnProperty.call(sp, "test"));
-  assert.equal(["test", "test.test"].toString(), prefAry.sort().toString(), "for (x in y) part 1/2 works");
-  assert.equal(["test", "test.test"].toString(), Object.keys(sp).sort().toString(), "Object.keys works");
+  assert.equal(["test", "test.test"].toString(), prefAry.filter((i) => !/^sdk\./.test(i)).sort().toString(), "for (x in y) part 1/2 works");
+  assert.equal(["test", "test.test"].toString(), Object.keys(sp).filter((i) => !/^sdk\./.test(i)).sort().toString(), "Object.keys works");
 
   delete sp["test"];
   delete sp["test.test"];
@@ -48,7 +49,7 @@ exports.testIterations = function(assert) {
   for (var name in sp ) {
     prefAry.push(name);
   }
-  assert.equal([].toString(), prefAry.toString(), "for (x in y) part 2/2 works");
+  assert.equal([].toString(), prefAry.filter((i) => !/^sdk\./.test(i)).toString(), "for (x in y) part 2/2 works");
 }
 
 exports.testSetGetBool = function(assert) {
@@ -327,6 +328,12 @@ exports.testUnloadOfDynamicPrefGeneration = function*(assert) {
 
   // delete the pref branch
   branch.deleteBranch('');
+}
+
+if (packaging.isNative) {
+  module.exports = {
+    "test skip on jpm": (assert) => assert.pass("skipping this file with jpm")
+  };
 }
 
 require("sdk/test").run(exports);
