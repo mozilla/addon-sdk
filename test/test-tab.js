@@ -1,7 +1,6 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 "use strict";
 
 const tabs = require("sdk/tabs"); // From addon-kit
@@ -12,6 +11,7 @@ const { viewFor } = require("sdk/view/core");
 const { modelFor } = require("sdk/model/core");
 const { getTabId, isTab } = require("sdk/tabs/utils");
 const { defer } = require("sdk/lang/functional");
+const packaging = require("@loader/options");
 
 // The primary test tab
 var primaryTab;
@@ -190,4 +190,10 @@ exports["test tab.readyState"] = (assert, done) => {
   });
 }
 
-require("sdk/test").run(exports);
+if (packaging.isNative) {
+  module.exports = {
+    "test skip on jpm": (assert) => assert.pass("skipping this file with jpm")
+  };
+}
+
+require("sdk/test").run(module.exports);

@@ -1,13 +1,13 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 'use strict';
 
-const { Loader, Require, unload, override } = require('sdk/loader/cuddlefish');
 const packaging = require('@loader/options');
+const get = require;
 
 exports['test loader'] = function(assert) {
+  let { Loader, Require, unload, override } = get('sdk/loader/cuddlefish');
   var prints = [];
   function print(message) {
     prints.push(message);
@@ -44,4 +44,10 @@ exports['test loader'] = function(assert) {
                'loader.unload() must call listeners in LIFO order.');
 };
 
-require('test').run(exports);
+if (packaging.isNative) {
+  module.exports = {
+    "test skip on jpm": (assert) => assert.pass("skipping this file with jpm")
+  };
+}
+
+require('sdk/test').run(exports);

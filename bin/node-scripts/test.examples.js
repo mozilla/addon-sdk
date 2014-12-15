@@ -12,17 +12,17 @@ var assert = chai.assert;
 var spawn = utils.spawn;
 var readParam = utils.readParam;
 
-var addonsPath = path.join(__dirname, "..", "..", "test", "addons");
+var examplesPath = path.join(__dirname, "..", "..", "examples");
 
 var binary = process.env.JPM_FIREFOX_BINARY || "nightly";
 var filterPattern = readParam("filter");
 
-describe("jpm test sdk addons", function () {
-  fs.readdirSync(addonsPath)
-  .filter(fileFilter.bind(null, addonsPath))
+describe("jpm test sdk examples", function () {
+  fs.readdirSync(examplesPath)
+  .filter(fileFilter.bind(null, examplesPath))
   .forEach(function (file) {
     it(file, function (done) {
-      var addonPath = path.join(addonsPath, file);
+      var addonPath = path.join(examplesPath, file);
       process.chdir(addonPath);
 
       var options = { cwd: addonPath, env: { JPM_FIREFOX_BINARY: binary }};
@@ -31,7 +31,8 @@ describe("jpm test sdk addons", function () {
       }
       options.filter = filterPattern;
 
-      var proc = spawn("run", options);
+      var proc = spawn("test", options);
+
       proc.stderr.pipe(process.stderr);
       proc.stdout.pipe(process.stdout);
       proc.on("close", function(code) {
@@ -44,9 +45,6 @@ describe("jpm test sdk addons", function () {
 
 function fileFilter(root, file) {
   var matcher = filterPattern && new RegExp(filterPattern)
-  if (/^(l10n|e10s|layout|simple-prefs|page-mod-debugger|private-browsing)/.test(file)) {
-    return false;
-  }
   if (matcher && !matcher.test(file)) {
     return false;
   }

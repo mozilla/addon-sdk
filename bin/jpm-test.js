@@ -10,17 +10,17 @@ var Mocha = require("mocha");
 var mocha = new Mocha({
   ui: "bdd",
   reporter: "spec",
-  timeout: 600000
+  timeout: 900000
 });
 
 var type = readParam("type")
 
 process.env.NODE_ENV = "test";
 [
-  type == "modules" && require.resolve("../bin/node-scripts/test.modules"),
-  type == "addons" && require.resolve("../bin/node-scripts/test.addons"),
-  !type && require.resolve("../bin/node-scripts/test.addons"),
-].forEach(function(filepath) {
+  (!type || type == "modules") && require.resolve("../bin/node-scripts/test.modules"),
+  (!type || type == "addons") && require.resolve("../bin/node-scripts/test.addons"),
+  (type == "examples") && require.resolve("../bin/node-scripts/test.examples"),
+].sort().forEach(function(filepath) {
   filepath && mocha.addFile(filepath);
 })
 

@@ -14,7 +14,7 @@ var spawn = utils.spawn;
 var sdk = path.join(__dirname, "..", "..");
 var binary = process.env.JPM_FIREFOX_BINARY || "nightly";
 
-var filter = readParam("filter");
+var filterPattern = readParam("filter");
 
 describe("jpm test sdk modules", function () {
   it("SDK Modules", function (done) {
@@ -25,19 +25,14 @@ describe("jpm test sdk modules", function () {
       options.env.DISPLAY = process.env.DISPLAY;
     }
 
-    options.filter = filter;
+    options.filter = filterPattern;
 
     var proc = spawn("test", options);
-
-    var stdout = "";
-    proc.stdout.on("data", function (data) {
-      stdout += data;
-    });
 
     proc.stderr.pipe(process.stderr);
     proc.stdout.pipe(process.stdout);
     proc.on("close", function(code) {
-      expect(stdout).to.contain("All tests passed!");
+      expect(code).to.equal(0);
       done();
     });
   });

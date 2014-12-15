@@ -1078,4 +1078,4 @@ function openBrowserWindow(callback, url) {
   return window;
 }
 
-require('sdk/test').run(exports);
+require("sdk/test").run(exports);

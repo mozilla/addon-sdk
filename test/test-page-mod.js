@@ -20,6 +20,7 @@ const { isTabPBSupported, isWindowPBSupported, isGlobalPBSupported } = require('
 const promise = require("sdk/core/promise");
 const { pb } = require('./private-browsing/helper');
 const { URL } = require("sdk/url");
+const packaging = require('@loader/options');
 
 const { waitUntil } = require("sdk/test/utils");
 const data = require("./fixtures");
@@ -1705,5 +1706,11 @@ exports.testSyntaxErrorInContentScript = function(assert, done) {
     300
   );
 };
+
+if (packaging.isNative) {
+  module.exports = {
+    "test skip on jpm": (assert) => assert.pass("skipping this file with jpm")
+  };
+}
 
 require('sdk/test').run(exports);
