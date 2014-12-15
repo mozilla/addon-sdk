@@ -1322,4 +1322,10 @@ exports["test unloading"] = withTab(function*(assert) {
                  "all items disposed");
 }, data`<body></body>`);
 
-require("test").run(exports);
+if (require("@loader/options").isNative) {
+  module.exports = {
+    "test skip on jpm": (assert) => assert.pass("skipping this file with jpm")
+  };
+}
+
+require("sdk/test").run(module.exports);
