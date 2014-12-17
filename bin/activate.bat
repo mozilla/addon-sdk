@@ -104,30 +104,38 @@ rem (but note the word "default" will be localized.
 rem On XP, the last line of output is:
 rem   <NO NAME>\tREG_SZ\tthe_value
 rem (not sure if "NO NAME" is localized or not!)
-rem SO: we use ")>" as the tokens to split on, then nuke
-rem the REG_SZ and any tabs or spaces.
-FOR /F "usebackq tokens=2 delims=)>" %%A IN (`%reg% QUERY HKLM\%key% /ve 2^>NUL`) DO SET "%~1=%%A"
-rem Remove the REG_SZ
-set PYTHONINSTALL=%PYTHONINSTALL:REG_SZ=%
-rem Remove tabs (note the literal \t in the next line
-set PYTHONINSTALL=%PYTHONINSTALL:	=%
-rem Remove spaces.
-set PYTHONINSTALL=%PYTHONINSTALL: =%
-if exist %PYTHONINSTALL%\python.exe goto :EOF
+rem So: 
+rem Replace the only guaranteed word in query result, "REG_SZ", with a unique single character, e.g. "?".
+rem Then use that unique char, if found, to split query result in 2 tokens and get the 2nd one, if any. 
+rem Finally, trim tabs and spaces from the left of such token, to get the_value.
+
+rem Try HKLM first
+SET QueryResult=
+FOR /F "usebackq delims=" %%r IN (`%reg% QUERY HKLM\%key% /ve 2^>NUL`) DO @SET QueryResult=%%r
+
+SET ReplacedResult=%QueryResult:REG_SZ=?%
+FOR /F "tokens=2 delims=?" %%t IN ("%ReplacedResult%") DO SET "%~1=%%t"
+
+rem trim tabs and spaces from the left (note: there's a literal tab in next line)
+FOR /F "tokens=* delims=	 " %%v IN ("%PYTHONINSTALL%") DO SET PYTHONINSTALL=%%v
+
+if exist "%PYTHONINSTALL%\python.exe" goto :EOF
 rem It may be a 32bit Python directory built from source, in which case the
 rem executable is in the PCBuild directory.
-if exist %PYTHONINSTALL%\PCBuild\python.exe (set "PYTHONINSTALL=%PYTHONINSTALL%\PCBuild" & goto :EOF)
+if exist "%PYTHONINSTALL%\PCBuild\python.exe" (set "PYTHONINSTALL=%PYTHONINSTALL%\PCBuild" & goto :EOF)
 rem Or maybe a 64bit build directory.
-if exist %PYTHONINSTALL%\PCBuild\amd64\python.exe (set "PYTHONINSTALL=%PYTHONINSTALL%\PCBuild\amd64" & goto :EOF)
+if exist "%PYTHONINSTALL%\PCBuild\amd64\python.exe" (set "PYTHONINSTALL=%PYTHONINSTALL%\PCBuild\amd64" & goto :EOF)
 
 rem And try HKCU
-FOR /F "usebackq tokens=2 delims=)>" %%A IN (`%reg% QUERY HKCU\%key% /ve 2^>NUL`) DO SET "%~1=%%A"
-set PYTHONINSTALL=%PYTHONINSTALL:REG_SZ=%
-set PYTHONINSTALL=%PYTHONINSTALL:	=%
-set PYTHONINSTALL=%PYTHONINSTALL: =%
-if exist %PYTHONINSTALL%\python.exe goto :EOF
-if exist %PYTHONINSTALL%\PCBuild\python.exe (set "PYTHONINSTALL=%PYTHONINSTALL%\PCBuild" & goto :EOF)
-if exist %PYTHONINSTALL%\PCBuild\amd64\python.exe (set "PYTHONINSTALL=%PYTHONINSTALL%\PCBuild\amd64" & goto :EOF)
+SET QueryResult=
+FOR /F "usebackq delims=" %%r IN (`%reg% QUERY HKLM\%key% /ve 2^>NUL`) DO @SET QueryResult=%%r
+SET ReplacedResult=%QueryResult:REG_SZ=?%
+FOR /F "tokens=2 delims=?" %%t IN ("%ReplacedResult%") DO SET "%~1=%%t"
+FOR /F "tokens=* delims=	 " %%v IN ("%PYTHONINSTALL%") DO SET PYTHONINSTALL=%%v
+
+if exist "%PYTHONINSTALL%\python.exe" goto :EOF
+if exist "%PYTHONINSTALL%\PCBuild\python.exe" (set "PYTHONINSTALL=%PYTHONINSTALL%\PCBuild" & goto :EOF)
+if exist "%PYTHONINSTALL%\PCBuild\amd64\python.exe" (set "PYTHONINSTALL=%PYTHONINSTALL%\PCBuild\amd64" & goto :EOF)
 rem can't find it here, so arrange to try the next key
 set PYTHONINSTALL=
 
