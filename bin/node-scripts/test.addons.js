@@ -44,7 +44,7 @@ describe("jpm test sdk addons", function () {
 
 function fileFilter(root, file) {
   var matcher = filterPattern && new RegExp(filterPattern)
-  if (/^(l10n|e10s|layout|simple-prefs|page-mod-debugger|private-browsing)/.test(file)) {
+  if (/^(l10n|e10s|layout|simple-prefs|page-mod-debugger)/.test(file)) {
     return false;
   }
   if (matcher && !matcher.test(file)) {
