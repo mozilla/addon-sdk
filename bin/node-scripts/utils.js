@@ -9,7 +9,6 @@ var child_process = require("child_process");
 var jpm = require.resolve("../../node_modules/jpm/bin/jpm");
 
 var sdk = path.join(__dirname, "..", "..");
-
 var prefsPath = path.join(sdk, "test", "preferences", "test-preferences.js");
 
 function spawn (cmd, options) {
@@ -33,4 +32,3 @@ function readParam(name) {
   return index >= 0 && process.argv[index + 1]
 }
 exports.readParam = readParam;
-
