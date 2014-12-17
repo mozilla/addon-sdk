@@ -258,22 +258,21 @@ exports.testUnloadOfDynamicPrefGeneration = function*(assert) {
 
   // zip the add-on
   let zip = new ZipWriter(xpi_path);
-  assert.pass("start creating the xpi");
+  assert.pass("start creating the blank xpi");
   zip.addFile("", toFilename(fixtures.url("bootstrap-addon/")));
   yield zip.close();
 
   // insatll the add-on
   let id = yield install(xpi_path);
+  assert.pass('installed');
 
   // get the addon
   let addon = yield getAddonByID(id);
+  assert.equal(id, addon.id, 'addon id: ' + id);
 
-  assert.pass('installed');
-
-  assert.pass('addon id: ' + addon.id);
   addon.userDisabled = false;
   assert.ok(!addon.userDisabled, 'the add-on is enabled');
-  assert.ok(addon.isActive, 'the add-on is enabled');
+  assert.ok(addon.isActive, 'the add-on is active');
 
   // setup dynamic prefs
   yield enable({
@@ -293,19 +292,19 @@ exports.testUnloadOfDynamicPrefGeneration = function*(assert) {
     }]
   });
 
-  assert.pass('enabled');
+  assert.pass('enabled prefs');
 
   // show inline prefs
   let { tabId, document } = yield open(addon);
-
   assert.pass('opened');
+
   // confirm dynamic pref generation did occur
   let results = document.querySelectorAll("*[data-jetpack-id=\"" + id + "\"]");
   assert.ok(results.length > 0, "the prefs were setup");
 
   // unload dynamic prefs
   loader.unload();
-  assert.pass('unload');
+  assert.pass('unload');;
 
   // hide and show the inline prefs
   let { promise, resolve } = defer();
