@@ -22,7 +22,6 @@ const { ZipWriter } = require('./zip/utils');
 const { getTabForId } = require('sdk/tabs/utils');
 const { preferencesBranch, id } = require('sdk/self');
 const { Tab } = require('sdk/tabs/tab');
-const packaging = require("@loader/options");
 require('sdk/tabs');
 
 const prefsrv = Cc['@mozilla.org/preferences-service;1'].
@@ -328,12 +327,6 @@ exports.testUnloadOfDynamicPrefGeneration = function*(assert) {
 
   // delete the pref branch
   branch.deleteBranch('');
-}
-
-if (packaging.isNative) {
-  module.exports = {
-    "test skip on jpm": (assert) => assert.pass("skipping this file with jpm")
-  };
 }
 
 require("sdk/test").run(exports);
