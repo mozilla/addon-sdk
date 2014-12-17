@@ -13,9 +13,8 @@ var mocha = new Mocha({
   timeout: 900000
 });
 
-var type = readParam("type")
+var type = readParam("type");
 
-process.env.NODE_ENV = "test";
 [
   (!type || type == "modules") && require.resolve("../bin/node-scripts/test.modules"),
   (!type || type == "addons") && require.resolve("../bin/node-scripts/test.addons"),
