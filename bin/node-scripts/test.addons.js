@@ -37,9 +37,18 @@ describe("jpm test sdk addons", function () {
 
       var proc = spawn("run", options);
       proc.stderr.pipe(process.stderr);
-      proc.stdout.pipe(process.stdout);
+      var output = [];
+      proc.stdout.on("data", function (data) {
+        output.push(data);
+      });
       proc.on("close", function(code) {
-        expect(code).to.equal(0);
+        var out = output.join("");
+        var hasFailure = /There were test failures\.\.\./.test(out);
+        if (hasFailure || code != 0) {
+          process.stdout.write(out);
+        }
+        expect(code).to.equal(hasFailure ? 1 : 0);
+        expect(hasFailure).to.equal(false);
         done();
       });
     });
