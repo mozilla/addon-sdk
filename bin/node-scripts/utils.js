@@ -7,6 +7,10 @@ var _ = require("lodash");
 var path = require("path");
 var child_process = require("child_process");
 var jpm = require.resolve("../../node_modules/jpm/bin/jpm");
+var Promise = require("promise");
+var chai = require("chai");
+var expect = chai.expect;
+var assert = chai.assert;
 
 var sdk = path.join(__dirname, "..", "..");
 var prefsPath = path.join(sdk, "test", "preferences", "test-preferences.js");
@@ -28,6 +32,32 @@ function spawn (cmd, options) {
   });
 }
 exports.spawn = spawn;
+
+function run (cmd, options) {
+  return new Promise(function(resolve) {
+    var output = [];
+    var proc = spawn(cmd, options);
+    proc.stderr.pipe(process.stderr);
+    proc.stdout.on("data", function (data) {
+      output.push(data);
+    });
+    proc.on("close", function(code) {
+      var out = output.join("");
+      var noTests = /No tests were run/.test(out);
+      var hasSuccess = /All tests passed!/.test(out);
+      var hasFailure = /There were test failures\.\.\./.test(out);
+      if (noTests || hasFailure || !hasSuccess || code != 0) {
+        process.stdout.write(out);
+      }
+      expect(code).to.equal(hasFailure ? 1 : 0);
+      expect(hasFailure).to.equal(false);
+      expect(hasSuccess).to.equal(true);
+      expect(noTests).to.equal(false);
+      resolve();
+    });
+  });
+}
+exports.run = run;
 
 function readParam(name) {
   var index = process.argv.indexOf("--" + name)

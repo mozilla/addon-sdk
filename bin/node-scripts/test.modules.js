@@ -7,10 +7,7 @@ var utils = require("./utils");
 var readParam = utils.readParam;
 var path = require("path");
 var fs = require("fs");
-var chai = require("chai");
-var expect = chai.expect;
-var assert = chai.assert;
-var spawn = utils.spawn;
+var jpm = utils.run;
 var sdk = path.join(__dirname, "..", "..");
 var binary = process.env.JPM_FIREFOX_BINARY || "nightly";
 
@@ -24,16 +21,8 @@ describe("jpm test sdk modules", function () {
     if (process.env.DISPLAY) {
       options.env.DISPLAY = process.env.DISPLAY;
     }
-
     options.filter = filterPattern;
 
-    var proc = spawn("test", options);
-
-    proc.stderr.pipe(process.stderr);
-    proc.stdout.pipe(process.stdout);
-    proc.on("close", function(code) {
-      expect(code).to.equal(0);
-      done();
-    });
+    jpm("test", options).then(done);
   });
 });

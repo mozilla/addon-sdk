@@ -12,7 +12,7 @@ const { when } = require('sdk/system/unload');
 const tabs = require('sdk/tabs');
 
 const SKIPPING_TESTS = {
-  "skipping this test": (assert) => assert.pass("nothing to test here")
+  "test skip": (assert) => assert.pass("nothing to test here")
 };
 
 exports.testTabIsRemote = function(assert, done) {

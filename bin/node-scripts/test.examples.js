@@ -6,10 +6,7 @@
 var utils = require("./utils");
 var path = require("path");
 var fs = require("fs");
-var chai = require("chai");
-var expect = chai.expect;
-var assert = chai.assert;
-var spawn = utils.spawn;
+var jpm = utils.run;
 var readParam = utils.readParam;
 
 var examplesPath = path.join(__dirname, "..", "..", "examples");
@@ -29,22 +26,17 @@ describe("jpm test sdk examples", function () {
       if (process.env.DISPLAY) {
         options.env.DISPLAY = process.env.DISPLAY;
       }
-      options.filter = filterPattern;
 
-      var proc = spawn("test", options);
-
-      proc.stderr.pipe(process.stderr);
-      proc.stdout.pipe(process.stdout);
-      proc.on("close", function(code) {
-        expect(code).to.equal(0);
-        done();
-      });
+      jpm("test", options).then(done);
     });
   });
 });
 
 function fileFilter(root, file) {
-  var matcher = filterPattern && new RegExp(filterPattern)
+  var matcher = filterPattern && new RegExp(filterPattern);
+  if (/^(reading-data)/.test(file)) {
+    return false;
+  }
   if (matcher && !matcher.test(file)) {
     return false;
   }
