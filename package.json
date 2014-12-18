@@ -10,7 +10,8 @@
   "scripts": {
     "test": "node ./bin/jpm-test.js",
     "modules": "node ./bin/jpm-test.js --type modules",
-    "addons": "node ./bin/jpm-test.js --type addons"
+    "addons": "node ./bin/jpm-test.js --type addons",
+    "examples": "node ./bin/jpm-test.js --type examples"
   },
   "homepage": "https://github.com/mozilla/addon-sdk",
   "repository": {
@@ -27,6 +28,7 @@
     "jpm": "0.0.20",
     "lodash": "2.4.1",
     "mocha": "1.21.5",
+    "promise": "6.0.1",
     "rimraf": "2.2.8",
     "unzip": "0.1.9",
     "xmldom": "0.1.19"

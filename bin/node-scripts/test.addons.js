@@ -6,10 +6,7 @@
 var utils = require("./utils");
 var path = require("path");
 var fs = require("fs");
-var chai = require("chai");
-var expect = chai.expect;
-var assert = chai.assert;
-var spawn = utils.spawn;
+var jpm = utils.run;
 var readParam = utils.readParam;
 
 var addonsPath = path.join(__dirname, "..", "..", "test", "addons");
@@ -29,34 +26,17 @@ describe("jpm test sdk addons", function () {
       if (process.env.DISPLAY) {
         options.env.DISPLAY = process.env.DISPLAY;
       }
-      options.filter = filterPattern;
-
       if (/^e10s/.test(file)) {
         options.e10s = true;
       }
 
-      var proc = spawn("run", options);
-      proc.stderr.pipe(process.stderr);
-      var output = [];
-      proc.stdout.on("data", function (data) {
-        output.push(data);
-      });
-      proc.on("close", function(code) {
-        var out = output.join("");
-        var hasFailure = /There were test failures\.\.\./.test(out);
-        if (hasFailure || code != 0) {
-          process.stdout.write(out);
-        }
-        expect(code).to.equal(hasFailure ? 1 : 0);
-        expect(hasFailure).to.equal(false);
-        done();
-      });
+      jpm("run", options).then(done).catch(done);
     });
   });
 });
 
 function fileFilter(root, file) {
-  var matcher = filterPattern && new RegExp(filterPattern)
+  var matcher = filterPattern && new RegExp(filterPattern);
   if (/^(l10n|layout|simple-prefs|page-mod-debugger)/.test(file)) {
     return false;
   }
