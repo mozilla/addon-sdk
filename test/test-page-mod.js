@@ -4,7 +4,8 @@
 "use strict";
 
 const { PageMod } = require("sdk/page-mod");
-const { testPageMod, handleReadyState, contentScriptWhenServer } = require("./pagemod-test-helpers");
+const { testPageMod, handleReadyState, openNewTab,
+        contentScriptWhenServer, createLoader } = require("./pagemod-test-helpers");
 const { Loader } = require('sdk/test/loader');
 const tabs = require("sdk/tabs");
 const { setTimeout } = require("sdk/timers");
@@ -21,6 +22,7 @@ const promise = require("sdk/core/promise");
 const { pb } = require('./private-browsing/helper');
 const { URL } = require("sdk/url");
 const packaging = require('@loader/options');
+const { defer, all } = require('sdk/core/promise');
 
 const { waitUntil } = require("sdk/test/utils");
 const data = require("./fixtures");
@@ -28,6 +30,7 @@ const data = require("./fixtures");
 const { devtools } = Cu.import("resource://gre/modules/devtools/Loader.jsm", {});
 const { require: devtoolsRequire } = devtools;
 const contentGlobals = devtoolsRequire("devtools/server/content-globals");
+const { cleanUI } = require("sdk/test/utils");
 
 const testPageURI = data.url("test.html");
 
@@ -1678,33 +1681,29 @@ exports.testConsole = function(assert, done) {
   let tab = openTab(getMostRecentBrowserWindow(), TEST_URL);
 }
 
-exports.testSyntaxErrorInContentScript = function(assert, done) {
+exports.testSyntaxErrorInContentScript = function *(assert) {
   const url = "data:text/html;charset=utf-8,testSyntaxErrorInContentScript";
-  let hitError = null;
-  let attached = false;
+  const loader = createLoader();
+  const { PageMod } = loader.require("sdk/page-mod");
+  let attached = defer();
+  let errored = defer();
 
-  testPageMod(assert, done, url, [{
-      include: url,
-      contentScript: 'console.log(23',
+  let mod = PageMod({
+    include: url,
+    contentScript: 'console.log(23',
+    onAttach: attached.resolve,
+    onError: errored.resolve
+  });
+  openNewTab(url);
 
-      onAttach: function() {
-        attached = true;
-      },
+  yield attached.promise;
+  let hitError = yield errored.promise;
 
-      onError: function(e) {
-        hitError = e;
-      }
-    }],
+  assert.notStrictEqual(hitError, null, "The syntax error was reported.");
+  assert.equal(hitError.name, "SyntaxError", "The error thrown should be a SyntaxError");
 
-    function(win, done) {
-      assert.ok(attached, "The worker was attached.");
-      assert.notStrictEqual(hitError, null, "The syntax error was reported.");
-      if (hitError)
-        assert.equal(hitError.name, "SyntaxError", "The error thrown should be a SyntaxError");
-      done();
-    },
-    300
-  );
+  loader.unload();
+  yield cleanUI();
 };
 
 if (packaging.isNative) {
