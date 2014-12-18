@@ -31,6 +31,10 @@ describe("jpm test sdk addons", function () {
       }
       options.filter = filterPattern;
 
+      if (/^e10s/.test(file)) {
+        options.e10s = true;
+      }
+
       var proc = spawn("run", options);
       proc.stderr.pipe(process.stderr);
       proc.stdout.pipe(process.stdout);
@@ -44,7 +48,7 @@ describe("jpm test sdk addons", function () {
 
 function fileFilter(root, file) {
   var matcher = filterPattern && new RegExp(filterPattern)
-  if (/^(l10n|e10s|layout|simple-prefs|page-mod-debugger)/.test(file)) {
+  if (/^(l10n|layout|simple-prefs|page-mod-debugger)/.test(file)) {
     return false;
   }
   if (matcher && !matcher.test(file)) {

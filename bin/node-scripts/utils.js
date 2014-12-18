@@ -10,14 +10,16 @@ var jpm = require.resolve("../../node_modules/jpm/bin/jpm");
 
 var sdk = path.join(__dirname, "..", "..");
 var prefsPath = path.join(sdk, "test", "preferences", "test-preferences.js");
+var e10sPrefsPath = path.join(sdk, "test", "preferences", "test-e10s-preferences.js");
 
 function spawn (cmd, options) {
   options = options || {};
   var env = _.extend({}, options.env, process.env);
+  var e10s = options.e10s || false;
 
   return child_process.spawn("node", [
     jpm, cmd, "-v",
-    "--prefs", prefsPath,
+    "--prefs", e10s ? e10sPrefsPath : prefsPath,
     "-o", sdk,
     "-f", options.filter || ""
   ], {
