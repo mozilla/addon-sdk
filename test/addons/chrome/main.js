@@ -77,14 +77,9 @@ exports.testChromeInPanel = function(assert, done) {
     assert.pass('panel shown');
     panel.port.once('echo', _ => {
       assert.pass('got echo');
-      panel.once('hide', _ => {
-        assert.pass('panel hidden');
-        panel.destroy();
-        assert.pass('panel is destroyed');
-        done();
-      });
-      panel.hide();
-      assert.pass("called panel.hide()");
+      panel.destroy();
+      assert.pass('panel is destroyed');
+      done();
     });
     panel.port.emit('echo');
   });
