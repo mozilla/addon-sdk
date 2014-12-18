@@ -11,7 +11,7 @@ const { close, focus } = require('sdk/window/helpers');
 const { when } = require('sdk/system/unload');
 
 const SKIPPING_TESTS = {
-  "skipping this test": (assert) => assert.pass("nothing to test here")
+  "test skip": (assert) => assert.pass("nothing to test here")
 };
 
 function replaceWindow(remote) {
