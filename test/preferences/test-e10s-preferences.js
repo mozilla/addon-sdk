@@ -5,11 +5,11 @@
 
 var extend = require("lodash").extend
 
-var e10sOff = require("./e10s-off.json");
+var e10sOn = require("./e10s-on.json");
 var commonPrefs = require("./common.json");
 var testPrefs = require("./test.json");
 var fxPrefs = require("./firefox.json");
 var disconnectionPrefs = require("./no-connections.json");
 
-var prefs = extend({}, e10sOff, commonPrefs, testPrefs, disconnectionPrefs, fxPrefs);
+var prefs = extend({}, e10sOn, commonPrefs, testPrefs, disconnectionPrefs, fxPrefs);
 module.exports = prefs;

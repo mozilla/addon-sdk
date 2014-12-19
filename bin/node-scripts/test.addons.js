@@ -6,10 +6,7 @@
 var utils = require("./utils");
 var path = require("path");
 var fs = require("fs");
-var chai = require("chai");
-var expect = chai.expect;
-var assert = chai.assert;
-var spawn = utils.spawn;
+var jpm = utils.run;
 var readParam = utils.readParam;
 
 var addonsPath = path.join(__dirname, "..", "..", "test", "addons");
@@ -29,22 +26,18 @@ describe("jpm test sdk addons", function () {
       if (process.env.DISPLAY) {
         options.env.DISPLAY = process.env.DISPLAY;
       }
-      options.filter = filterPattern;
+      if (/^e10s/.test(file)) {
+        options.e10s = true;
+      }
 
-      var proc = spawn("run", options);
-      proc.stderr.pipe(process.stderr);
-      proc.stdout.pipe(process.stdout);
-      proc.on("close", function(code) {
-        expect(code).to.equal(0);
-        done();
-      });
+      jpm("run", options).then(done).catch(done);
     });
   });
 });
 
 function fileFilter(root, file) {
-  var matcher = filterPattern && new RegExp(filterPattern)
-  if (/^(l10n|e10s|layout|simple-prefs|page-mod-debugger|private-browsing)/.test(file)) {
+  var matcher = filterPattern && new RegExp(filterPattern);
+  if (/^(l10n|layout|simple-prefs|page-mod-debugger)/.test(file)) {
     return false;
   }
   if (matcher && !matcher.test(file)) {

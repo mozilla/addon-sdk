@@ -12,8 +12,5 @@
   "extensions.installDistroAddons": false,
   "extensions.autoDisableScopes": 10,
   "app.releaseNotesURL": "http://localhost/app-dummy/",
-  "app.vendorURL": "http://localhost/app-dummy/",
-  "browser.tabs.remote.autostart": false,
-  "browser.tabs.remote.autostart.1": false,
-  "browser.tabs.remote.autostart.2": false
+  "app.vendorURL": "http://localhost/app-dummy/"
 }

@@ -10,6 +10,10 @@ const { WindowTracker } = require('sdk/deprecated/window-utils');
 const { close, focus } = require('sdk/window/helpers');
 const { when } = require('sdk/system/unload');
 
+const SKIPPING_TESTS = {
+  "test skip": (assert) => assert.pass("nothing to test here")
+};
+
 function replaceWindow(remote) {
   let next = null;
   let old = getMostRecentBrowserWindow();
@@ -34,12 +38,12 @@ merge(module.exports, require('./test-tab-utils'));
 
 // run e10s tests only on builds from trunk, fx-team, Nightly..
 if (!version.endsWith('a1')) {
-  module.exports = {};
+  module.exports = SKIPPING_TESTS;
 }
 
 // bug 1054482 - e10s test addons time out on linux
 if (platform === 'linux') {
-  module.exports = {};
+  module.exports = SKIPPING_TESTS;
   require('sdk/test/runner').runTestsFromModule(module);
 }
 else {
