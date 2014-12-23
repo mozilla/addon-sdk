@@ -79,6 +79,36 @@ exports.testPreferedLocalizedLocale = function(assert) {
   prefs.reset(PREF_ACCEPT_LANGUAGES);
 }
 
+// On Linux the PREF_ACCEPT_LANGUAGES pref can be a localized pref.
+exports.testPreferedContentLocale = function(assert) {
+  prefs.set(PREF_MATCH_OS_LOCALE, false);
+  let noLocale = "",
+      bundleURL = "chrome://global/locale/intl.properties";
+  prefs.set(PREF_SELECTED_LOCALE, noLocale);
+  prefs.setLocalized(PREF_ACCEPT_LANGUAGES, bundleURL);
+
+  // Read manually the expected locale value from the property file
+  let expectedLocale = BundleService.createBundle(bundleURL).
+    GetStringFromName(PREF_ACCEPT_LANGUAGES).
+    toLowerCase().split(",");
+
+  // Add the content locales
+  let expectedLocaleList = expectedLocale.map((locale) => {
+    return locale.replace(/(^\s+)|(\s+$)/g, "");
+  });
+
+  // Add default "en-us" fallback if the main language is not already en-us
+  if (expectedLocaleList.indexOf("en-us") == -1)
+    expectedLocaleList.push("en-us");
+
+  assertPrefered(assert, expectedLocaleList, "test localized content locale pref value");
+
+  // Reset what we have changed
+  prefs.reset(PREF_MATCH_OS_LOCALE);
+  prefs.reset(PREF_SELECTED_LOCALE);
+  prefs.reset(PREF_ACCEPT_LANGUAGES);
+}
+
 exports.testPreferedOsLocale = function(assert) {
   prefs.set(PREF_MATCH_OS_LOCALE, true);
   prefs.set(PREF_SELECTED_LOCALE, "");
