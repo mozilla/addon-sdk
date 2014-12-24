@@ -304,7 +304,7 @@ exports.testUnloadOfDynamicPrefGeneration = function*(assert) {
 
   // unload dynamic prefs
   loader.unload();
-  assert.pass('unload');;
+  assert.pass('unload');
 
   // hide and show the inline prefs
   let { promise, resolve } = defer();
