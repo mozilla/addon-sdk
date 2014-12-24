@@ -98,16 +98,16 @@ exports.testDeprecateEvent = function(assert, done) {
   emit(testObj, 'fire');
 }
 
-exports.testDeprecateSettingToggle = function (assert, done) {
+exports.testDeprecateSettingToggle = function (assert) {
   let { loader, messages } = LoaderWithHookedConsole(module);
   let deprecate = loader.require("sdk/util/deprecate");
-  
+
   function fn () { deprecate.deprecateUsage("foo"); }
 
   set(PREFERENCE, false);
   fn();
   assert.equal(messages.length, 0, 'no deprecation warnings');
-  
+
   set(PREFERENCE, true);
   fn();
   assert.equal(messages.length, 1, 'deprecation warnings when toggled');
@@ -115,7 +115,6 @@ exports.testDeprecateSettingToggle = function (assert, done) {
   set(PREFERENCE, false);
   fn();
   assert.equal(messages.length, 1, 'no new deprecation warnings');
-  done();
 };
 
 exports.testDeprecateSetting = function (assert, done) {
