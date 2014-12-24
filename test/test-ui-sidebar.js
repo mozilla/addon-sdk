@@ -100,7 +100,7 @@ exports.testSidebarBasicLifeCycle = function(assert, done) {
   assert.pass('showing sidebar..');
 }
 
-exports.testSideBarIsInNewWindows = function(assert, done) {
+exports.testSideBarIsInNewWindows = function*(assert) {
   const { Sidebar } = require('sdk/ui/sidebar');
   let testName = 'testSideBarIsInNewWindows';
   let sidebar = Sidebar({
@@ -113,19 +113,19 @@ exports.testSideBarIsInNewWindows = function(assert, done) {
   let ele = startWindow.document.getElementById(makeID(testName));
   assert.ok(ele, 'sidebar element was added');
 
-  open().then(function(window) {
-      let ele = window.document.getElementById(makeID(testName));
-      assert.ok(ele, 'sidebar element was added');
+  let window = yield open();
 
-      // calling destroy twice should not matter
-      sidebar.destroy();
-      sidebar.destroy();
+  let ele = window.document.getElementById(makeID(testName));
+  assert.ok(ele, 'sidebar element was added');
 
-      assert.ok(!window.document.getElementById(makeID(testName)), 'sidebar id DNE');
-      assert.ok(!startWindow.document.getElementById(makeID(testName)), 'sidebar id DNE');
+  // calling destroy twice should not matter
+  sidebar.destroy();
+  sidebar.destroy();
 
-      close(window).then(done, assert.fail);
-  })
+  assert.ok(!window.document.getElementById(makeID(testName)), 'sidebar id DNE');
+  assert.ok(!startWindow.document.getElementById(makeID(testName)), 'sidebar id DNE');
+
+  yield close(window);
 }
 
 exports.testSideBarIsShowingInNewWindows = function(assert, done) {
@@ -611,7 +611,7 @@ exports.testDestroyEdgeCaseBug = function(assert, done) {
   });
 }
 
-exports.testClickingACheckedMenuitem = function(assert, done) {
+exports.testClickingACheckedMenuitem = function*(assert) {
   const { Sidebar } = require('sdk/ui/sidebar');
   const testName = 'testClickingACheckedMenuitem';
   let sidebar = Sidebar({
@@ -621,23 +621,23 @@ exports.testClickingACheckedMenuitem = function(assert, done) {
   });
   assert.pass('sidebar was created');
 
-  open().then(focus).then(window => {
-    return sidebar.show().then(_ => {
-      assert.pass('the show callback works');
+  let window = yield open().then(focus);
+  yield sidebar.show();
+  assert.pass('the show callback works');
 
-      sidebar.once('hide', _ => {
-        assert.pass('clicking the menuitem after the sidebar has shown hides it.');
-        sidebar.destroy();
-        close(window).then(done, assert.fail);
-      });
+  let waitForHide = defer();
+  sidebar.once('hide', waitForHide.resolve);
+  let menuitem = window.document.getElementById(makeID(sidebar.id));
+  simulateCommand(menuitem);
 
-      let menuitem = window.document.getElementById(makeID(sidebar.id));
-      simulateCommand(menuitem);
-    });
-  }).catch(assert.fail);
+  yield waitForHide.promise;
+
+  assert.pass('clicking the menuitem after the sidebar has shown hides it.');
+  sidebar.destroy();
+  yield close(window);
 };
 
-exports.testTitleSetter = function(assert, done) {
+exports.testTitleSetter = function*(assert) {
   const { Sidebar } = require('sdk/ui/sidebar');
   let testName = 'testTitleSetter';
   let { document } = getMostRecentBrowserWindow();
@@ -650,26 +650,24 @@ exports.testTitleSetter = function(assert, done) {
 
   assert.equal(sidebar1.title, testName, 'title getter works');
 
-  sidebar1.show().then(function() {
-    assert.equal(document.getElementById(makeID(sidebar1.id)).getAttribute('label'),
-                 testName,
-                 'the menuitem label is correct');
+  yield sidebar1.show();
+  assert.equal(document.getElementById(makeID(sidebar1.id)).getAttribute('label'),
+               testName,
+               'the menuitem label is correct');
 
-    assert.equal(document.getElementById('sidebar-title').value, testName, 'the menuitem label is correct');
+  assert.equal(document.getElementById('sidebar-title').value, testName, 'the menuitem label is correct');
 
-    sidebar1.title = 'foo';
+  sidebar1.title = 'foo';
 
-    assert.equal(sidebar1.title, 'foo', 'title getter works');
+  assert.equal(sidebar1.title, 'foo', 'title getter works');
 
-    assert.equal(document.getElementById(makeID(sidebar1.id)).getAttribute('label'),
-                 'foo',
-                 'the menuitem label was updated');
+  assert.equal(document.getElementById(makeID(sidebar1.id)).getAttribute('label'),
+               'foo',
+               'the menuitem label was updated');
 
-    assert.equal(document.getElementById('sidebar-title').value, 'foo', 'the sidebar title was updated');
+  assert.equal(document.getElementById('sidebar-title').value, 'foo', 'the sidebar title was updated');
 
-    sidebar1.destroy();
-    done();
-  }, assert.fail);
+  sidebar1.destroy();
 }
 
 exports.testURLSetter = function(assert, done) {
