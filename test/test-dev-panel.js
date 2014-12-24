@@ -301,7 +301,6 @@ exports["test createView panel"] = test(function*(assert) {
     }
   });
 
-
   const toolbox = yield openToolbox(MyPanel);
   const myPanel = yield getCurrentPanel(toolbox);
 
@@ -317,6 +316,4 @@ exports["test createView panel"] = test(function*(assert) {
   yield closeToolbox();
 });
 
-
-require("test").run(exports);
-
+require("sdk/test").run(exports);

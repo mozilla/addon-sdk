@@ -526,4 +526,4 @@ function isDestroyed(page) {
   return false;
 }
 
-require("test").run(exports);
+require("sdk/test").run(exports);

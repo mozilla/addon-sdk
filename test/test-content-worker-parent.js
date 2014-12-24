@@ -1,7 +1,6 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 "use strict";
 
 // Skipping due to window creation being unsupported in Fennec
@@ -336,7 +335,7 @@ exports["test:content is wrapped"] = WorkerTest(
 );
 
 // ContentWorker is not for chrome
-/* 
+/*
 exports["test:chrome is unwrapped"] = function(assert, done) {
   let window = makeWindow();
 
@@ -979,4 +978,4 @@ exports["test:destroy unbinds listeners from port"] = WorkerTest(
 );
 
 
-require("test").run(exports);
+require("sdk/test").run(exports);

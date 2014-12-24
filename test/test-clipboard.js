@@ -218,4 +218,4 @@ exports["test Set Image Type Wrong Data"] = function(assert) {
   }, "Unable to decode data given in a valid image.");
 };
 
-require("test").run(exports)
+require("sdk/test").run(exports)

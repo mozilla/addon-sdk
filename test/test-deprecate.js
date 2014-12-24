@@ -1,8 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
-'use strict';
+"use strict";
 
 const deprecate = require("sdk/util/deprecate");
 const { LoaderWithHookedConsole } = require("sdk/test/loader");
@@ -86,6 +85,7 @@ exports.testDeprecateEvent = function(assert, done) {
     assert.equal(messages.length, 1, "only one error is dispatched");
     emit(testObj, 'water');
   });
+
   assert.equal(messages.length, 1, "only one error is dispatched");
   assert.equal(messages[0].type, "error", "the console message is an error");
   let msg = messages[0].msg;
@@ -157,4 +157,5 @@ exports.testDeprecateSetting = function (assert, done) {
 
   emit(testObj, 'fire');
 }
-require("test").run(exports);
+
+require("sdk/test").run(exports);

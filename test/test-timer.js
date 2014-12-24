@@ -174,4 +174,4 @@ exports.testUnload = function(assert, end) {
   }, 2);
 };
 
-require("test").run(exports);
+require("sdk/test").run(exports);

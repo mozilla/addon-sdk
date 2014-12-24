@@ -141,4 +141,4 @@ exports["test not satisfies version range"] = function (assert) {
   });
 }
 
-require("test").run(exports);
+require("sdk/test").run(exports);
