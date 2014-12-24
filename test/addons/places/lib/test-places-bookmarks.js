@@ -545,7 +545,7 @@ exports.testResolution = function (assert, done) {
   }).then((results) => {
     let result = results[0];
     assert.equal(result.title, 'a new title', 'resolve handles results');
-  }).then(done).catch(assert.fail);;
+  }).then(done).catch(assert.fail);
 };
 
 /*
@@ -814,7 +814,7 @@ exports.testSearchCount = function (assert, done) {
   .then(testCount(5))
   .then(testCount(10))
   .then(done)
-  .catch(assert.fail);;
+  .catch(assert.fail);
 
   function testCount (n) {
     return function () {
@@ -891,7 +891,7 @@ exports.testSearchSort = function (assert, done) {
   }).then(results => {
     assert.equal(results[0].url, 'http://mozilla.com/webfwd/',
       'last modified should be first');
-  }).then(done).catch(assert.fail);;
+  }).then(done).catch(assert.fail);
 
   function checkOrder (results, nums) {
     assert.equal(results.length, nums.length, 'expected return count');
@@ -914,7 +914,7 @@ exports.testSearchComplexQueryWithOptions = function (assert, done) {
     ];
     for (let i = 0; i < expected.length; i++)
       assert.equal(results[i].url, expected[i], 'correct ordering and item');
-  }).then(done).catch(assert.fail);;
+  }).then(done).catch(assert.fail);
 };
 
 exports.testCheckSaveOrder = function (assert, done) {
@@ -930,7 +930,7 @@ exports.testCheckSaveOrder = function (assert, done) {
     for (let i = 0; i < bookmarks.length; i++)
       assert.equal(results[i].url, bookmarks[i].url,
         'correct ordering of bookmark results');
-  }).then(done).catch(assert.fail);;
+  }).then(done).catch(assert.fail);
 };
 
 before(exports, (name, assert, done) => resetPlaces(done));

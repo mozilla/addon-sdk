@@ -100,7 +100,7 @@ exports["test Panel communication"] = test(function*(assert) {
         if (event.source === window) {
           var port = event.ports[0];
           port.start();
-          port.postMessage("ping");;
+          port.postMessage("ping");
           port.onmessage = (event) => {
             if (event.data === "pong") {
               port.postMessage("bye");
