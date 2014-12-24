@@ -6,13 +6,7 @@
 const app = require("sdk/system/xul-app");
 const packaging = require("@loader/options");
 
-if (packaging.isNative) {
-  module.exports = {
-    "test skip on jpm": (assert) => assert.pass("skipping this file with jpm")
-  };
-  require("sdk/test").run(exports);
-}
-else if (app.is("Firefox")) {
+if (app.is("Firefox")) {
   module.exports = require("./windows/test-firefox-windows");
 }
 else if (app.is("Fennec")) {
