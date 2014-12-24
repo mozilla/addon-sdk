@@ -87,15 +87,11 @@ exports.testPreferedContentLocale = function(assert) {
   prefs.set(PREF_SELECTED_LOCALE, noLocale);
   prefs.setLocalized(PREF_ACCEPT_LANGUAGES, bundleURL);
 
-  // Read manually the expected locale value from the property file
-  let expectedLocale = BundleService.createBundle(bundleURL).
+  // Read the expected locale values from the property file
+  let expectedLocaleList = BundleService.createBundle(bundleURL).
     GetStringFromName(PREF_ACCEPT_LANGUAGES).
-    toLowerCase().split(",");
-
-  // Add the content locales
-  let expectedLocaleList = expectedLocale.map((locale) => {
-    return locale.replace(/(^\s+)|(\s+$)/g, "");
-  });
+    split(",").
+    map(locale => locale.trim().toLowerCase());
 
   // Add default "en-us" fallback if the main language is not already en-us
   if (expectedLocaleList.indexOf("en-us") == -1)
