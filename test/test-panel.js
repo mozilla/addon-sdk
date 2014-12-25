@@ -820,17 +820,18 @@ exports['test Style Applied Only Once'] = function (assert, done) {
   }
 };
 
-exports['test Only One Panel Open Concurrently'] = function (assert, done) {
+exports['test Only One Panel Open Concurrently'] = function(assert, done) {
   const loader = Loader(module);
-  const { Panel } = loader.require('sdk/panel')
+  const { Panel } = loader.require('sdk/panel');
 
   let panelA = Panel({
     contentURL: 'about:buildconfig'
   });
+  assert.pass("made panelA");
 
   let panelB = Panel({
     contentURL: 'about:buildconfig',
-    onShow: function () {
+    onShow: () => {
       // When loading two panels simulataneously, only the second
       // should be shown, never showing the first
       assert.equal(panelA.isShowing, false, 'First panel is hidden');
@@ -838,19 +839,25 @@ exports['test Only One Panel Open Concurrently'] = function (assert, done) {
       panelC.show();
     }
   });
+  assert.pass("made panelB");
 
   let panelC = Panel({
     contentURL: 'about:buildconfig',
-    onShow: function () {
+    onShow: () => {
       assert.equal(panelA.isShowing, false, 'First panel is hidden');
       assert.equal(panelB.isShowing, false, 'Second panel is hidden');
       assert.equal(panelC.isShowing, true, 'Third panel is showing');
+      loader.unload();
       done();
     }
   });
+  assert.pass("made panelC");
 
   panelA.show();
+  assert.pass("show panelA");
+
   panelB.show();
+  assert.pass("show panelB");
 };
 
 exports['test passing DOM node as first argument'] = function (assert, done) {
