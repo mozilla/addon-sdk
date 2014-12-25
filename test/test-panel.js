@@ -357,6 +357,7 @@ exports["test Anchor And Arrow"] = function(assert, done) {
   }
 
   function next () {
+    assert.pass("next was called");
     if (!queue.length) {
       assert.pass("All anchored panel test displayed");
       cleanUI().then(done);
