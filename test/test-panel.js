@@ -393,7 +393,7 @@ exports["test Anchor And Arrow"] = function(assert, done) {
   });
 };
 
-exports["test Panel Focus True"] = function(assert, done) {
+exports["test Panel Focus True"] = function*(assert) {
   const { Panel } = require('sdk/panel');
 
   const FM = Cc["@mozilla.org/focus-manager;1"].
@@ -407,16 +407,20 @@ exports["test Panel Focus True"] = function(assert, done) {
   // Get the current focused element
   let focusedElement = FM.focusedElement;
 
-  let panel = Panel({
-    contentURL: "about:buildconfig",
-    focus: true,
-    onShow: function () {
-      assert.ok(focusedElement !== FM.focusedElement,
-        "The panel takes the focus away.");
-      done();
-    }
+  let panel;
+  yield new Promise(resolve => {
+    panel = Panel({
+      contentURL: "about:buildconfig",
+      focus: true,
+      onShow: resolve
+    });
+    panel.show();
   });
-  panel.show();
+
+  assert.ok(focusedElement !== FM.focusedElement,
+    "The panel takes the focus away.");
+
+  panel.destroy();
 };
 
 exports["test Panel Focus False"] = function(assert, done) {
