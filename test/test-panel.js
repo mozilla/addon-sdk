@@ -348,6 +348,7 @@ exports["test Anchor And Arrow"] = function(assert, done) {
       width: 200,
       height: 100,
       onShow: () => {
+        assert.pass("onShow was called for " + anchor.id);
         panel.destroy();
         next();
       }
@@ -377,16 +378,26 @@ exports["test Anchor And Arrow"] = function(assert, done) {
 
   tabs.open({
     url: url,
-    onReady: function(_tab) {
+    onReady: (_tab) => {
       assert.pass("a new tab is ready");
       tab = _tab;
       let browserWindow = getMostRecentBrowserWindow();
       let window = browserWindow.content;
+
       newPanel(window.document.getElementById('tl'));
+      assert.equal(queue.length, 1, 'tl panel created');
+
       newPanel(window.document.getElementById('tr'));
+      assert.equal(queue.length, 2, 'tr panel created');
+
       newPanel(window.document.getElementById('bl'));
+      assert.equal(queue.length, 3, 'bl panel created');
+
       newPanel(window.document.getElementById('br'));
-      newPanel(browserWindow.document.getElementById("identity-box"));
+      assert.equal(queue.length, 4, 'br panel created');
+
+      newPanel(browserWindow.document.getElementById('identity-box'));
+      assert.equal(queue.length, 5, 'identity panel created');
 
       next();
     }
