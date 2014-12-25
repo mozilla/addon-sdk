@@ -21,6 +21,7 @@ const { defer, all } = require('sdk/core/promise');
 const { getMostRecentBrowserWindow } = require('sdk/window/utils');
 const { URL } = require('sdk/url');
 const { wait } = require('./event/helpers');
+const { cleanUI } = require('sdk/test/utils');
 
 const fixtures = require('./fixtures')
 
@@ -327,8 +328,13 @@ exports["test Several Show Hides"] = function(assert, done) {
 };
 
 exports["test Anchor And Arrow"] = function(assert, done) {
+  let tabs = require("sdk/tabs");
+
   let { loader } = LoaderWithHookedConsole(module, ignorePassingDOMNodeWarning);
+  assert.pass("created loader");
+
   let { Panel } = loader.require('sdk/panel');
+  assert.pass("required sdk/panel");
 
   let count = 0;
   let queue = [];
@@ -341,7 +347,7 @@ exports["test Anchor And Arrow"] = function(assert, done) {
                   anchor.id + "</body></html>",
       width: 200,
       height: 100,
-      onShow: function () {
+      onShow: () => {
         panel.destroy();
         next();
       }
@@ -352,16 +358,13 @@ exports["test Anchor And Arrow"] = function(assert, done) {
   function next () {
     if (!queue.length) {
       assert.pass("All anchored panel test displayed");
-      tab.close(function () {
-        done();
-      });
+      cleanUI().then(done);
       return;
     }
     let { panel, anchor } = queue.shift();
     panel.show(null, anchor);
   }
 
-  let tabs = require("sdk/tabs");
   let url = 'data:text/html;charset=utf-8,' +
     '<html><head><title>foo</title></head><body>' +
     '<style>div {background: gray; position: absolute; width: 300px; ' +
@@ -375,6 +378,7 @@ exports["test Anchor And Arrow"] = function(assert, done) {
   tabs.open({
     url: url,
     onReady: function(_tab) {
+      assert.pass("a new tab is ready");
       tab = _tab;
       let browserWindow = getMostRecentBrowserWindow();
       let window = browserWindow.content;
