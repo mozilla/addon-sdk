@@ -317,6 +317,7 @@ exports["test Several Show Hides"] = function(assert, done) {
         panel.show();
       else {
         assert.pass("onHide called three times as expected");
+        panel.destroy();
         done();
       }
     }
