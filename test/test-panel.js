@@ -236,10 +236,7 @@ exports["test Resize Panel"] = function(assert, done) {
   let activeWindow = Cc["@mozilla.org/embedcomp/window-watcher;1"].
                       getService(Ci.nsIWindowWatcher).
                       activeWindow;
-  let browserWindow = Cc["@mozilla.org/appshell/window-mediator;1"].
-                      getService(Ci.nsIWindowMediator).
-                      getMostRecentWindow("navigator:browser");
-
+  let browserWindow = getMostRecentBrowserWindow();
 
   function onFocus() {
     browserWindow.removeEventListener("focus", onFocus, true);
@@ -398,9 +395,7 @@ exports["test Panel Focus True"] = function(assert, done) {
   const FM = Cc["@mozilla.org/focus-manager;1"].
                 getService(Ci.nsIFocusManager);
 
-  let browserWindow = Cc["@mozilla.org/appshell/window-mediator;1"].
-                      getService(Ci.nsIWindowMediator).
-                      getMostRecentWindow("navigator:browser");
+  let browserWindow = getMostRecentBrowserWindow();
 
   // Make sure there is a focused element
   browserWindow.document.documentElement.focus();
@@ -426,9 +421,7 @@ exports["test Panel Focus False"] = function(assert, done) {
   const FM = Cc["@mozilla.org/focus-manager;1"].
                 getService(Ci.nsIFocusManager);
 
-  let browserWindow = Cc["@mozilla.org/appshell/window-mediator;1"].
-                      getService(Ci.nsIWindowMediator).
-                      getMostRecentWindow("navigator:browser");
+  let browserWindow = getMostRecentBrowserWindow();
 
   // Make sure there is a focused element
   browserWindow.document.documentElement.focus();
@@ -454,9 +447,7 @@ exports["test Panel Focus Not Set"] = function(assert, done) {
   const FM = Cc["@mozilla.org/focus-manager;1"].
                 getService(Ci.nsIFocusManager);
 
-  let browserWindow = Cc["@mozilla.org/appshell/window-mediator;1"].
-                      getService(Ci.nsIWindowMediator).
-                      getMostRecentWindow("navigator:browser");
+  let browserWindow = getMostRecentBrowserWindow();
 
   // Make sure there is a focused element
   browserWindow.document.documentElement.focus();
