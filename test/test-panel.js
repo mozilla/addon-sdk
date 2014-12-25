@@ -223,8 +223,9 @@ exports["test Parent Resize Hack"] = function(assert, done) {
 }
 */
 
-exports["test Resize Panel"] = function(assert, done) {
+exports["test Resize Panel"] = function*(assert) {
   const { Panel } = require('sdk/panel');
+  let panel;
 
   // These tests fail on Linux if the browser window in which the panel
   // is displayed is not active.  And depending on what other tests have run
@@ -233,16 +234,11 @@ exports["test Resize Panel"] = function(assert, done) {
   // is focused by focusing it before running the tests.  Then, to be the best
   // possible test citizen, we refocus whatever window was focused before we
   // started running these tests.
+  yield focus(getMostRecentBrowserWindow());
 
-  let activeWindow = Cc["@mozilla.org/embedcomp/window-watcher;1"].
-                      getService(Ci.nsIWindowWatcher).
-                      activeWindow;
-  let browserWindow = getMostRecentBrowserWindow();
-
-  function onFocus() {
-    browserWindow.removeEventListener("focus", onFocus, true);
-
-    let panel = Panel({
+  // create panel, show it, resize it, then hide it
+  yield new Promise(resolve => {
+    panel = Panel({
       contentScript: "self.postMessage('')",
       contentScriptWhen: "end",
       contentURL: "data:text/html;charset=utf-8,",
@@ -255,23 +251,17 @@ exports["test Resize Panel"] = function(assert, done) {
         panel.resize(100,100);
         panel.hide();
       },
-      onHide: function () {
-        assert.ok((panel.width == 100) && (panel.height == 100),
-          "The panel was resized.");
-        if (activeWindow)
-          activeWindow.focus();
-        done();
-      }
+      onHide: resolve
     });
-  }
+  });
 
-  if (browserWindow === activeWindow) {
-    onFocus();
-  }
-  else {
-    browserWindow.addEventListener("focus", onFocus, true);
-    browserWindow.focus();
-  }
+  assert.equal(panel.width, 100, "The panel width was resized.");
+  assert.equal(panel.height, 100, "The panel height was resized.");
+
+  panel.destroy();
+  assert.pass("the panel was destroyed");
+
+  yield cleanUI();
 };
 
 exports["test Hide Before Show"] = function(assert, done) {
