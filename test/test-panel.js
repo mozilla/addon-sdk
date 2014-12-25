@@ -364,7 +364,7 @@ exports["test Anchor And Arrow"] = function(assert, done) {
     panel.show(null, anchor);
   }
 
-  let tabs= require("sdk/tabs");
+  let tabs = require("sdk/tabs");
   let url = 'data:text/html;charset=utf-8,' +
     '<html><head><title>foo</title></head><body>' +
     '<style>div {background: gray; position: absolute; width: 300px; ' +
@@ -379,16 +379,13 @@ exports["test Anchor And Arrow"] = function(assert, done) {
     url: url,
     onReady: function(_tab) {
       tab = _tab;
-      let browserWindow = Cc["@mozilla.org/appshell/window-mediator;1"].
-                      getService(Ci.nsIWindowMediator).
-                      getMostRecentWindow("navigator:browser");
+      let browserWindow = getMostRecentBrowserWindow();
       let window = browserWindow.content;
       newPanel(window.document.getElementById('tl'));
       newPanel(window.document.getElementById('tr'));
       newPanel(window.document.getElementById('bl'));
       newPanel(window.document.getElementById('br'));
-      let anchor = browserWindow.document.getElementById("identity-box");
-      newPanel(anchor);
+      newPanel(browserWindow.document.getElementById("identity-box"));
 
       next();
     }
@@ -600,25 +597,24 @@ exports["test Content URL Option"] = function(assert) {
   const URL_STRING = "about:buildconfig";
   const HTML_CONTENT = "<html><title>Test</title><p>This is a test.</p></html>";
 
-  let (panel = Panel({ contentURL: URL_STRING })) {
-    assert.pass("contentURL accepts a string URL.");
-    assert.equal(panel.contentURL, URL_STRING,
-                "contentURL is the string to which it was set.");
-  }
+  let panel = Panel({ contentURL: URL_STRING });
+  assert.pass("contentURL accepts a string URL.");
+  assert.equal(panel.contentURL, URL_STRING,
+              "contentURL is the string to which it was set.");
+  panel.destroy();
 
   let dataURL = "data:text/html;charset=utf-8," + encodeURIComponent(HTML_CONTENT);
-  let (panel = Panel({ contentURL: dataURL })) {
-    assert.pass("contentURL accepts a data: URL.");
-  }
+  panel = Panel({ contentURL: dataURL });
+  assert.pass("contentURL accepts a data: URL.");
+  panel.destroy();
 
-  let (panel = Panel({})) {
-    assert.ok(panel.contentURL == null,
-                "contentURL is undefined.");
-  }
+  panel = Panel({});
+  assert.ok(panel.contentURL == null, "contentURL is undefined.");
+  panel.destroy();
 
-  assert.throws(function () Panel({ contentURL: "foo" }),
-                    /The `contentURL` option must be a valid URL./,
-                    "Panel throws an exception if contentURL is not a URL.");
+  assert.throws(() => Panel({ contentURL: "foo" }),
+                /The `contentURL` option must be a valid URL./,
+                "Panel throws an exception if contentURL is not a URL.");
 };
 
 exports["test SVG Document"] = function(assert) {
