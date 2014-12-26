@@ -7,7 +7,7 @@ const { create: makeFrame } = require("sdk/frame/utils");
 const { window } = require("sdk/addon/window");
 const { Loader } = require('sdk/test/loader');
 const loader = Loader(module);
-const Worker = loader.require("sdk/content/worker").Worker;
+const Worker = loader.require("sdk/deprecated/sync-worker").Worker;
 
 exports.testMembranelessMode = function(assert, done) {
 

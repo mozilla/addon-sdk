@@ -14,7 +14,7 @@ const { Cc, Ci } = require("chrome");
 const { on } = require("sdk/event/core");
 const { setTimeout } = require("sdk/timers");
 const { LoaderWithHookedConsole } = require("sdk/test/loader");
-const { Worker } = require("sdk/content/worker");
+const { Worker } = require("sdk/deprecated/sync-worker");
 const { close } = require("sdk/window/helpers");
 const { set: setPref } = require("sdk/preferences/service");
 const { isArray } = require("sdk/lang/type");
@@ -393,7 +393,7 @@ exports["test:ensure console.xxx works in cs"] = WorkerTest(
     }
 
     // Finally, create a worker that will call all console methods
-    let worker =  loader.require("sdk/content/worker").Worker({
+    let worker =  loader.require("sdk/deprecated/sync-worker").Worker({
       window: browser.contentWindow,
       contentScript: "new " + function WorkerScope() {
         console.time("time");
@@ -863,7 +863,7 @@ exports["test:onDetach in contentScript on unload"] = WorkerTest(
   "data:text/html;charset=utf-8,foo#detach",
   function(assert, browser, done) {
     let { loader } = LoaderWithHookedConsole(module);
-    let worker = loader.require("sdk/content/worker").Worker({
+    let worker = loader.require("sdk/deprecated/sync-worker").Worker({
       window: browser.contentWindow,
       contentScript: 'new ' + function WorkerScope() {
         self.port.on('detach', function(reason) {
@@ -893,7 +893,7 @@ exports["test:console method log functions properly"] = WorkerTest(
     let onMessage = (type, message) => logs.push(clean(message));
     let { loader } = LoaderWithHookedConsole(module, onMessage);
 
-    let worker =  loader.require("sdk/content/worker").Worker({
+    let worker =  loader.require("sdk/deprecated/sync-worker").Worker({
       window: browser.contentWindow,
       contentScript: "new " + function WorkerScope() {
         console.log(Function);
@@ -924,7 +924,7 @@ exports["test:global postMessage"] = WorkerTest(
                         "});" +
                         "postMessage('from -> content-script', '*');";
     let { loader } = LoaderWithHookedConsole(module);
-    let worker =  loader.require("sdk/content/worker").Worker({
+    let worker =  loader.require("sdk/deprecated/sync-worker").Worker({
       window: browser.contentWindow,
       contentScriptWhen: "ready",
       contentScript: contentScript
