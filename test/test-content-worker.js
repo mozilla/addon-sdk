@@ -14,7 +14,7 @@ const { Cc, Ci } = require("chrome");
 const { on } = require("sdk/event/core");
 const { setTimeout } = require("sdk/timers");
 const { LoaderWithHookedConsole } = require("sdk/test/loader");
-const { Worker } = require("sdk/content/worker-parent");
+const { Worker } = require("sdk/content/worker");
 const { close } = require("sdk/window/helpers");
 const { set: setPref } = require("sdk/preferences/service");
 const { isArray } = require("sdk/lang/type");
@@ -873,7 +873,7 @@ exports["test:onDetach in contentScript on unload"] = WorkerTest(
   "data:text/html;charset=utf-8,foo#detach",
   function(assert, browser, done) {
     let { loader } = LoaderWithHookedConsole(module);
-    let worker = loader.require("sdk/content/worker-parent").Worker({
+    let worker = loader.require("sdk/content/worker").Worker({
       window: browser.contentWindow,
       contentScript: 'new ' + function WorkerScope() {
         self.port.on('detach', function(reason) {
@@ -939,7 +939,7 @@ exports["test:global postMessage"] = WorkerTest(
                         "});" +
                         "postMessage('from -> content-script', '*');";
     let { loader } = LoaderWithHookedConsole(module);
-    let worker =  loader.require("sdk/content/worker-parent").Worker({
+    let worker =  loader.require("sdk/content/worker").Worker({
       window: browser.contentWindow,
       contentScriptWhen: "ready",
       contentScript: contentScript
