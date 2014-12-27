@@ -359,15 +359,7 @@ exports["test Anchor And Arrow"] = function*(assert) {
     });
   }
 
-  let url = 'data:text/html;charset=utf-8,' +
-    '<html><head><title>foo</title></head><body>' +
-    '<style>div {background: gray; position: absolute; width: 300px; ' +
-           'border: 2px solid black;}</style>' +
-    '<div id="tl" style="top: 0px; left: 0px;">Top Left</div>' +
-    '<div id="tr" style="top: 0px; right: 0px;">Top Right</div>' +
-    '<div id="bl" style="bottom: 0px; left: 0px;">Bottom Left</div>' +
-    '<div id="br" style="bottom: 0px; right: 0px;">Bottom right</div>' +
-    '</body></html>';
+  let url = require.resolve("./panel/anchors.html");
 
   yield openAndActivate{{ url: url });
   assert.pass("a new tab is ready");
