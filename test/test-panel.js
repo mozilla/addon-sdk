@@ -22,6 +22,7 @@ const { getMostRecentBrowserWindow } = require('sdk/window/utils');
 const { URL } = require('sdk/url');
 const { wait } = require('./event/helpers');
 const { cleanUI } = require('sdk/test/utils');
+const { openAndActivate } = require('./tabs/utils')
 
 const fixtures = require('./fixtures')
 
@@ -368,12 +369,7 @@ exports["test Anchor And Arrow"] = function*(assert) {
     '<div id="br" style="bottom: 0px; right: 0px;">Bottom right</div>' +
     '</body></html>';
 
-  yield new Promise(resolve => {
-    return tabs.open({
-      url: url,
-      onReady: resolve
-    });
-  });
+  yield openAndActivate{{ url: url });
   assert.pass("a new tab is ready");
 
   let { document } = browserWindow.content;
