@@ -423,7 +423,7 @@ exports.testWindowIteratorPrivateDefault = function*(assert) {
   yield focus(window);
 
   // test that there is a private window opened
-  assert.equal(isPrivate(window), isWindowPBSupported, 'there is a private window open');
+  assert.equal(isPrivate(window), true, 'there is a private window open');
   assert.strictEqual(window, winUtils.activeWindow);
   assert.strictEqual(window, getMostRecentWindow());
 
@@ -435,8 +435,9 @@ exports.testWindowIteratorPrivateDefault = function*(assert) {
   assert.equal(windows(null, { includePrivate: true }).length, 2);
 
   // test that all windows in iterator are not private
-  for (let window of browserWindows)
+  for (let window of browserWindows) {
     assert.ok(!isPrivate(window), 'no window in browserWindows is private');
+  }
 
   yield close(window);
 };
