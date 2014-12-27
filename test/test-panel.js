@@ -340,9 +340,12 @@ exports["test Anchor And Arrow"] = function(assert, done) {
       height: 100,
       onShow: () => {
         assert.pass("onShow was called for " + anchor.id);
-        panel.destroy();
-        next();
       }
+    });
+    panel.once("show", () => {
+      assert.pass("show event was emitted on panel");
+      panel.destroy();
+      next();
     });
     queue.push({ panel: panel, anchor: anchor });
   }
