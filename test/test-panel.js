@@ -355,7 +355,7 @@ exports["test Anchor And Arrow"] = function(assert, done) {
       return;
     }
     let { panel, anchor } = queue.shift();
-    panel.show(null, anchor);
+    panel.show({ position: anchor });
   }
 
   let url = 'data:text/html;charset=utf-8,' +
