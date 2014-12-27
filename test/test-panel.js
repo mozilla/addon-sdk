@@ -22,7 +22,6 @@ const { getMostRecentBrowserWindow } = require('sdk/window/utils');
 const { URL } = require('sdk/url');
 const { wait } = require('./event/helpers');
 const { cleanUI } = require('sdk/test/utils');
-const { openAndActivate } = require('./tabs/utils')
 
 const fixtures = require('./fixtures')
 
@@ -331,57 +330,25 @@ exports["test Anchor And Arrow"] = function*(assert) {
   let { Panel } = loader.require('sdk/panel');
   assert.pass("required sdk/panel");
 
-  function newPanel(anchor) {
-    return new Promise(resolve => {
-      let panel = Panel({
-        contentURL: "data:text/html;charset=utf-8,<html><body style='padding: 0; margin: 0; " +
-                    "background: gray; text-align: center;'>Anchor: " +
-                    anchor.id + "</body></html>",
-        width: 200,
-        height: 100,
-        onShow: () => {
-          assert.pass("onShow was called for " + anchor.id);
-        }
-      });
-      resolve({ panel: panel, anchor: anchor });
-    });
-  }
+  let anchor = browserWindow.document.getElementById('identity-box');
+  let panel = Panel({
+    contentURL: "data:text/html;charset=utf-8,<html><body>" +
+                "TEST</body></html>",
+    width: 200,
+    height: 100,
+    onShow: () => {
+      assert.pass("onShow was called for " + anchor.id);
+    }
+  });
 
-  function tryToShow({ panel, anchor }) {
-    return new Promise(resolve => {
-      panel.once("show", () => {
-        assert.pass("show event was emitted on panel");
-        panel.hide();
-        panel.destroy();
-        resolve();
-      });
-      panel.show(null, anchor);
-    });
-  }
+  assert.pass('identity-box panel created');
+  yield new Promise(resolve => {
+    panel.once("show", resolve);
+    panel.show(null, anchor);
+  });
+  assert.pass('identity-box panel showen');
 
-  let url = require.resolve("./panel/anchors.html");
-
-  yield openAndActivate{{ url: url });
-  assert.pass("a new tab is ready");
-
-  let { document } = browserWindow.content;
-
-  yield newPanel(document.getElementById('tl')).then(tryToShow);
-  assert.pass('tl panel created');
-
-  yield newPanel(document.getElementById('tr')).then(tryToShow);
-  assert.pass('tr panel created');
-
-  yield newPanel(document.getElementById('bl')).then(tryToShow);
-  assert.pass('bl panel created');
-
-  yield newPanel(document.getElementById('br')).then(tryToShow);
-  assert.pass('br panel created');
-
-  yield tryToShow(newPanel(browserWindow.document.getElementById('identity-box')));
-  assert.equal(queue.length, 5, 'identity panel created');
-
-  yield cleanUI();
+  panel.destroy();
 };
 
 exports["test Panel Focus True"] = function*(assert) {
