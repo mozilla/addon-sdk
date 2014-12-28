@@ -11,6 +11,7 @@ const SKIPPING_TESTS = {
 };
 
 merge(module.exports, require('./test-content-worker'));
+merge(module.exports, require('./test-page-worker'));
 
 // run e10s tests only on builds from trunk, fx-team, Nightly..
 if (!version.endsWith('a1')) {
