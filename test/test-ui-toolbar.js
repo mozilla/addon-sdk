@@ -20,7 +20,6 @@ const { object } = require("sdk/util/sequence");
 const { CustomizationInput } = require("sdk/input/customizable-ui");
 const { OutputPort } = require("sdk/output/system");
 const output = new OutputPort({ id: "toolbar-change" });
-const packaging = require("@loader/options");
 
 const wait = (toolbar, event) => {
   let { promise, resolve } = defer();
@@ -474,11 +473,5 @@ exports["test button are attached to toolbar"] = function*(assert) {
 
   toolbar.destroy();
 };
-
-if (packaging.isNative) {
-  module.exports = {
-    "test skip on jpm": (assert) => assert.pass("skipping this file with jpm")
-  };
-}
 
 require("sdk/test").run(module.exports);
