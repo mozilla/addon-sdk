@@ -394,32 +394,40 @@ exports["test loading a loader"] = function(assert) {
   unload(loader);
 };
 
-exports['test loader on unsupported modules'] = function(assert) {
-  let loader = Loader({ checkCompatibility: true });
-  let err = "";
+exports['test loader on unsupported modules with checkCompatibility true'] = function(assert) {
+  let loader = Loader({
+    paths: { '': root + "/" },
+    checkCompatibility: true
+  });
+  let require = Require(loader, module);
+
   assert.throws(() => {
     if (!app.is('Firefox')) {
-      require('./fixtures/loader/unsupported/firefox');
+      require('fixtures/loader/unsupported/firefox');
     }
     else {
-      require('./fixtures/loader/unsupported/fennec');
+      require('fixtures/loader/unsupported/fennec');
     }
   }, /^Unsupported Application/, "throws Unsupported Application");
 
   unload(loader);
 };
 
-exports['test loader on unsupported modules'] = function(assert) {
-  let loader = Loader({});
-  let err = "";
+exports['test loader on unsupported modules with checkCompatibility false'] = function(assert) {
+  let loader = Loader({
+    paths: { '': root + "/" },
+    checkCompatibility: false
+  });
+  let require = Require(loader, module);
+
   try {
     if (!app.is('Firefox')) {
-      require('./fixtures/loader/unsupported/firefox');
+      require('fixtures/loader/unsupported/firefox');
     }
     else {
-      require('./fixtures/loader/unsupported/fennec');
+      require('fixtures/loader/unsupported/fennec');
     }
-    assert.pass("");
+    assert.pass("loaded unsupported module without an error");
   }
   catch(e) {
     assert.fail(e);
@@ -427,5 +435,26 @@ exports['test loader on unsupported modules'] = function(assert) {
 
   unload(loader);
 };
+
+exports['test loader on unsupported modules with checkCompatibility default'] = function(assert) {
+  let loader = Loader({ paths: { '': root + "/" } });
+  let require = Require(loader, module);
+
+  try {
+    if (!app.is('Firefox')) {
+      require('fixtures/loader/unsupported/firefox');
+    }
+    else {
+      require('fixtures/loader/unsupported/fennec');
+    }
+    assert.pass("loaded unsupported module without an error");
+  }
+  catch(e) {
+    assert.fail(e);
+  }
+
+  unload(loader);
+};
+
 
 require('sdk/test').run(exports);

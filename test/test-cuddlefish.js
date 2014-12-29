@@ -45,22 +45,6 @@ exports['test loader'] = function(assert) {
                'loader.unload() must call listeners in LIFO order.');
 };
 
-exports['test loader on unsupported modules'] = function(assert) {
-  let { Loader, Require, unload, override } = get('sdk/loader/cuddlefish');
-  let loader = Loader({});
-  let err = "";
-  assert.throws(() => {
-    if (!app.is('Firefox')) {
-      require('./fixtures/loader/unsupported/firefox');
-    }
-    else {
-      require('./fixtures/loader/unsupported/fennec');
-    }
-  }, /^Unsupported Application/, "throws Unsupported Application");
-
-  unload(loader);
-};
-
 if (packaging.isNative) {
   module.exports = {
     "test skip on jpm": (assert) => assert.pass("skipping this file with jpm")
