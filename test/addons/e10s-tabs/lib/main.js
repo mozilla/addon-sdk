@@ -4,32 +4,11 @@
 'use strict';
 
 const { merge } = require('sdk/util/object');
-const { version, platform } = require('sdk/system');
-const { getMostRecentBrowserWindow, isBrowser } = require('sdk/window/utils');
-const { WindowTracker } = require('sdk/deprecated/window-utils');
-const { close, focus } = require('sdk/window/helpers');
-const { when } = require('sdk/system/unload');
+const { version } = require('sdk/system');
 
 const SKIPPING_TESTS = {
   "test skip": (assert) => assert.pass("nothing to test here")
 };
-
-function replaceWindow(remote) {
-  let next = null;
-  let old = getMostRecentBrowserWindow();
-  let promise = new Promise(resolve => {
-    let tracker = WindowTracker({
-      onTrack: window => {
-        if (window !== next)
-          return;
-        resolve(window);
-        tracker.unload();
-      }
-    });
-  })
-  next = old.OpenBrowserWindow({ remote });
-  return promise.then(focus).then(_ => close(old));
-}
 
 // merge(module.exports, require('./test-tab'));
 merge(module.exports, require('./test-tab-events'));
@@ -41,14 +20,4 @@ if (!version.endsWith('a1')) {
   module.exports = SKIPPING_TESTS;
 }
 
-// bug 1054482 - e10s test addons time out on linux
-if (platform === 'linux') {
-  module.exports = SKIPPING_TESTS;
-  require('sdk/test/runner').runTestsFromModule(module);
-}
-else {
-  replaceWindow(true).then(_ =>
-    require('sdk/test/runner').runTestsFromModule(module));
-
-  when(_ => replaceWindow(false));
-}
+require('sdk/test/runner').runTestsFromModule(module);
