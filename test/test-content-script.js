@@ -66,7 +66,7 @@ function createProxyTest(html, callback) {
 
 function createWorker(assert, xrayWindow, contentScript, done) {
   let loader = Loader(module);
-  let Worker = loader.require("sdk/deprecated/sync-worker").Worker;
+  let Worker = loader.require("sdk/content/worker").Worker;
   let worker = Worker({
     window: xrayWindow,
     contentScript: [
