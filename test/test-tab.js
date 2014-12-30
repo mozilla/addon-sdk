@@ -11,7 +11,6 @@ const { viewFor } = require("sdk/view/core");
 const { modelFor } = require("sdk/model/core");
 const { getTabId, isTab } = require("sdk/tabs/utils");
 const { defer } = require("sdk/lang/functional");
-const packaging = require("@loader/options");
 
 // The primary test tab
 var primaryTab;
@@ -188,12 +187,6 @@ exports["test tab.readyState"] = (assert, done) => {
       tab.close(defer(done));
     }
   });
-}
-
-if (packaging.isNative) {
-  module.exports = {
-    "test skip on jpm": (assert) => assert.pass("skipping this file with jpm")
-  };
 }
 
 require("sdk/test").run(module.exports);
