@@ -44,7 +44,7 @@ exports.testSideBarIsInNewPrivateWindows = function(assert, done) {
   }).then(done).then(null, assert.fail);
 }
 
-exports.testSidebarMigration = function(assert, done) {
+exports.testSidebarMigration = function*(assert) {
   const { Sidebar } = require('sdk/ui/sidebar');
   let testName = 'testSidebarIsOpenInNewPrivateWindow';
   let window = getMostRecentBrowserWindow();
@@ -57,47 +57,31 @@ exports.testSidebarMigration = function(assert, done) {
 
   assert.equal(isPrivate(window), false, 'the window is not private');
 
-  sidebar.once('show', function() {
-    assert.equal(isSidebarShowing(window), true, 'the sidebar is showing');
-    assert.equal(isShowing(sidebar), true, 'the sidebar is showing');
+  yield sidebar.show();
+  assert.equal(isSidebarShowing(window), true, 'the sidebar is showing');
+  assert.equal(isShowing(sidebar), true, 'the sidebar is showing');
 
-    windowPromise(window.OpenBrowserWindow({private: true}), 'load').then(function(window2) {
-      assert.equal(isPrivate(window2), true, 'the new window2 is private');
+  let window2 = yield windowPromise(window.OpenBrowserWindow({ private: true }), 'load');
+  assert.equal(isPrivate(window2), true, 'the new window2 is private');
 
-      assert.equal(isSidebarShowing(window), true, 'the sidebar is showing in old window still');
-      assert.equal(isSidebarShowing(window2), false, 'the sidebar is showing in the new private window');
-      assert.equal(isShowing(sidebar), false, 'the sidebar is showing');
+  assert.equal(isSidebarShowing(window), true, 'the sidebar is showing in old window still');
+  assert.equal(isSidebarShowing(window2), false, 'the sidebar is showing in the new private window');
+  assert.equal(isShowing(sidebar), false, 'the sidebar is showing');
 
-      sidebar.once('show', function() {
-        assert.equal(isSidebarShowing(window), true, 'the sidebar is showing');
-        assert.equal(isShowing(sidebar), true, 'the sidebar is showing');
+  yield sidebar.show();
+  assert.equal(isSidebarShowing(window), true, 'the sidebar is showing');
+  assert.equal(isShowing(sidebar), true, 'the sidebar is showing');
 
+  let window3 = yield windowPromise(window2.OpenBrowserWindow({ private: true }), 'load');
+  assert.equal(isPrivate(window3), true, 'the new window3 is private');
+  assert.equal(isSidebarShowing(window), true, 'the sidebar is showing in old window still');
+  assert.equal(isSidebarShowing(window2), true, 'the sidebar is showing in old window still');
+  assert.equal(isSidebarShowing(window3), true, 'the sidebar is showing in the new private window');
+  assert.equal(isShowing(sidebar), true, 'the sidebar is showing');
 
-        let { promise, resolve } = defer();
-        sidebar.once('show', resolve.bind(null, window3));
-
-        let window3;
-        windowPromise(window2.OpenBrowserWindow({private: true}), 'load').then(function(w) {
-          window3 = w;
-          return promise;
-        }).then(function() {
-          assert.equal(isPrivate(window3), true, 'the new window3 is private');
-
-          assert.equal(isSidebarShowing(window), true, 'the sidebar is showing in old window still');
-          assert.equal(isSidebarShowing(window2), true, 'the sidebar is showing in old window still');
-          assert.equal(isSidebarShowing(window3), true, 'the sidebar is showing in the new private window');
-          assert.equal(isShowing(sidebar), true, 'the sidebar is showing');
-
-          sidebar.destroy();
-          close(window2).then(function() close(window3)).then(done, assert.fail);
-        }).then(null, assert.fail);
-      });
-
-      sidebar.show();
-    }).then(null, assert.fail);
-  });
-
-  sidebar.show();
+  sidebar.destroy();
+  yield close(window2);
+  yield close(window3);
 }
 
 // TEST: edge case where web panel is destroyed while loading
