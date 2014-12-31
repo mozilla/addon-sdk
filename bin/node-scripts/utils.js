@@ -11,6 +11,7 @@ var Promise = require("promise");
 var chai = require("chai");
 var expect = chai.expect;
 var assert = chai.assert;
+var DEFAULT_PROCESS = process;
 
 var sdk = path.join(__dirname, "..", "..");
 var prefsPath = path.join(sdk, "test", "preferences", "test-preferences.js");
@@ -33,7 +34,7 @@ function spawn (cmd, options) {
 }
 exports.spawn = spawn;
 
-function run (cmd, options) {
+function run (cmd, options, p) {
   return new Promise(function(resolve) {
     var output = [];
     var proc = spawn(cmd, options);
@@ -41,13 +42,16 @@ function run (cmd, options) {
     proc.stdout.on("data", function (data) {
       output.push(data);
     });
+    if (p) {
+      proc.stdout.pipe(p.stdout);
+    }
     proc.on("close", function(code) {
       var out = output.join("");
       var noTests = /No tests were run/.test(out);
       var hasSuccess = /All tests passed!/.test(out);
       var hasFailure = /There were test failures\.\.\./.test(out);
       if (noTests || hasFailure || !hasSuccess || code != 0) {
-        process.stdout.write(out);
+        DEFAULT_PROCESS.stdout.write(out);
       }
       expect(code).to.equal(hasFailure ? 1 : 0);
       expect(hasFailure).to.equal(false);
