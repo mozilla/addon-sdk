@@ -4,7 +4,7 @@
 'use strict';
 
 const traceback = require('sdk/console/traceback');
-const REQUIRE_LINE_NO = 30;
+const REQUIRE_LINE_NO = 29;
 
 exports.test_no_args = function(assert) {
   let passed = tryRequireModule(assert);
