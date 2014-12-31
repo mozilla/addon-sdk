@@ -4,6 +4,7 @@
 'use strict';
 
 const packaging = require('@loader/options');
+const app = require('sdk/system/xul-app');
 const get = require;
 
 exports['test loader'] = function(assert) {
