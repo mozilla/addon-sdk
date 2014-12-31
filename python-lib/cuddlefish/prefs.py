@@ -70,7 +70,15 @@ DEFAULT_NO_CONNECTIONS_PREFS = {
 
     # Location services
     'geo.wifi.uri': 'http://localhost/location-dummy/locationURL',
-    'browser.search.geoip.url': 'http://localhost/location-dummy/locationURL'
+    'browser.search.geoip.url': 'http://localhost/location-dummy/locationURL',
+
+    # Tell the search service we are running in the US.  This also has the
+    # desired side-effect of preventing our geoip lookup.
+    'browser.search.isUS' : True,
+    'browser.search.countryCode' : 'US',
+
+    'geo.wifi.uri' : 'http://localhost/extensions-dummy/geowifiURL',
+    'geo.wifi.scan' : False
 }
 
 DEFAULT_FENNEC_PREFS = {

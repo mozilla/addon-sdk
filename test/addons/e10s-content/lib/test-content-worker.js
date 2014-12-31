@@ -978,4 +978,4 @@ exports["test:destroy unbinds listeners from port"] = WorkerTest(
 );
 
 
-require("sdk/test").run(exports);
+// require("sdk/test").run(exports);

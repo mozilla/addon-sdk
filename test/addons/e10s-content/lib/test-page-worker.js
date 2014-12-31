@@ -270,22 +270,14 @@ exports.testLoadContentPage = function(assert, done) {
         return done();
       assert[msg].apply(assert, message);
     },
-    contentURL: fixtures.url("addon-sdk/data/test-page-worker.html"),
-    contentScriptFile: fixtures.url("addon-sdk/data/test-page-worker.js"),
+    contentURL: fixtures.url("test-page-worker.html"),
+    contentScriptFile: fixtures.url("test-page-worker.js"),
     contentScriptWhen: "ready"
   });
 }
 
 exports.testLoadContentPageRelativePath = function(assert, done) {
-  const self = require("sdk/self");
-  const { merge } = require("sdk/util/object");
-
-  const options = merge({}, require('@loader/options'),
-      { prefixURI: require('./fixtures').url() });
-
-  let loader = Loader(module, null, options);
-
-  let page = loader.require("sdk/page-worker").Page({
+  let page = require("sdk/page-worker").Page({
     onMessage: function(message) {
       // The message is an array whose first item is the test method to call
       // and the rest of whose items are arguments to pass it.
@@ -529,4 +521,4 @@ function isDestroyed(page) {
   return false;
 }
 
-require("sdk/test").run(exports);
+// require("sdk/test").run(exports);

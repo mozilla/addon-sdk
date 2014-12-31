@@ -3,10 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
-module.metadata = {
-  "stability": "experimental"
-};
+const { data } = require('sdk/self');
 
-const { XulApp } = require("./xul-app.jsm");
-
-Object.keys(XulApp).forEach(k => exports[k] = XulApp[k]);
+exports.url = data.url;

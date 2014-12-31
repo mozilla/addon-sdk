@@ -20,5 +20,9 @@
   "extensions.blocklist.url": "http://localhost/extensions-dummy/blocklistURL",
   "extensions.webservice.discoverURL": "http://localhost/extensions-dummy/discoveryURL",
   "geo.wifi.uri": "http://localhost/location-dummy/locationURL",
-  "browser.search.geoip.url": "http://localhost/location-dummy/locationURL"
+  "browser.search.geoip.url": "http://localhost/location-dummy/locationURL",
+  "browser.search.isUS": true,
+  "browser.search.countryCode": "US",
+  "geo.wifi.uri": "http://localhost/extensions-dummy/geowifiURL",
+  "geo.wifi.scan": false
 }

@@ -553,6 +553,7 @@ exports["test Content URL Option"] = function(assert) {
 
   const URL_STRING = "about:buildconfig";
   const HTML_CONTENT = "<html><title>Test</title><p>This is a test.</p></html>";
+  let dataURL = "data:text/html;charset=utf-8," + encodeURIComponent(HTML_CONTENT);
 
   let panel = Panel({ contentURL: URL_STRING });
   assert.pass("contentURL accepts a string URL.");
@@ -560,7 +561,6 @@ exports["test Content URL Option"] = function(assert) {
               "contentURL is the string to which it was set.");
   panel.destroy();
 
-  let dataURL = "data:text/html;charset=utf-8," + encodeURIComponent(HTML_CONTENT);
   panel = Panel({ contentURL: dataURL });
   assert.pass("contentURL accepts a data: URL.");
   panel.destroy();

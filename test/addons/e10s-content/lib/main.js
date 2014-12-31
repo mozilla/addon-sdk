@@ -10,10 +10,8 @@ const SKIPPING_TESTS = {
   "test skip": (assert) => assert.pass("nothing to test here")
 };
 
-merge(module.exports, require('./test-tab'));
-merge(module.exports, require('./test-tab-events'));
-merge(module.exports, require('./test-tab-observer'));
-merge(module.exports, require('./test-tab-utils'));
+merge(module.exports, require('./test-content-worker'));
+merge(module.exports, require('./test-page-worker'));
 
 // run e10s tests only on builds from trunk, fx-team, Nightly..
 if (!version.endsWith('a1')) {
