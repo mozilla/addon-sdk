@@ -23,6 +23,6 @@ describe("jpm test sdk modules", function () {
     }
     options.filter = filterPattern;
 
-    jpm("test", options).then(done);
+    jpm("test", options, process).then(done);
   });
 });
