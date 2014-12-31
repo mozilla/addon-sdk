@@ -10,9 +10,8 @@ require("sdk/context-menu");
 const { Loader } = require('sdk/test/loader');
 const timer = require("sdk/timers");
 const { merge } = require("sdk/util/object");
-const { defer } = require("sdk/core/promise");
+const { defer, all } = require("sdk/core/promise");
 const observers = require("sdk/system/events");
-const packaging = require('@loader/options');
 
 // These should match the same constants in the module.
 const ITEM_CLASS = "addon-context-menu-item";
@@ -835,7 +834,6 @@ exports.testContentContextMatchString = function (assert, done) {
 exports.testContentScriptFile = function (assert, done) {
   let test = new TestHelper(assert, done);
   let loader = test.newLoader();
-  let { defer, all } = require("sdk/core/promise");
   let itemScript = [defer(), defer()];
   let menuShown = defer();
   let menuPromises = itemScript.concat(menuShown).map(({promise}) => promise);
@@ -4279,11 +4277,5 @@ TestHelper.prototype = {
     });
   }
 };
-
-if (packaging.isNative) {
-  module.exports = {
-    "test skip on jpm": (assert) => assert.pass("skipping this file with jpm")
-  };
-}
 
 require('sdk/test').run(exports);
