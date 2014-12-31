@@ -18,7 +18,6 @@ const { getMostRecentBrowserWindow } = require('sdk/window/utils');
 const { partial } = require('sdk/lang/functional');
 const { wait } = require('./event/helpers');
 const { gc } = require('sdk/test/memory');
-const packaging = require("@loader/options");
 
 const openBrowserWindow = partial(open, null, {features: {toolbar: true}});
 const openPrivateBrowserWindow = partial(open, null,
@@ -264,6 +263,7 @@ exports['test button global state updated'] = function(assert) {
     label: 'my button',
     icon: './icon.png',
   });
+  assert.pass('the button was created.');
 
   // Tried to use `getWidgetIdsInArea` but seems undefined, not sure if it
   // was removed or it's not in the UX build yet
@@ -373,10 +373,12 @@ exports['test button global state updated on multiple windows'] = function*(asse
     label: 'my button',
     icon: './icon.png'
   });
+  assert.pass('the button was created');
 
-  let nodes = [getWidget(button.id).node];
+  let nodes = [ getWidget(button.id).node ];
 
   let window = yield openBrowserWindow();
+  assert.pass('the window was created');
 
   nodes.push(getWidget(button.id, window).node);
 
@@ -1127,12 +1129,6 @@ exports['test button badge color'] = function(assert) {
     'badge color overrides the default one');
 
   loader.unload();
-}
-
-if (packaging.isNative) {
-  module.exports = {
-    "test skip on jpm": (assert) => assert.pass("skipping this file with jpm")
-  };
 }
 
 require("sdk/test").run(module.exports);
