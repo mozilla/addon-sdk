@@ -21,6 +21,7 @@ const { CustomizationInput } = require("sdk/input/customizable-ui");
 const { OutputPort } = require("sdk/output/system");
 const output = new OutputPort({ id: "toolbar-change" });
 const { cleanUI } = require('sdk/test/utils');
+const tabs = require("sdk/tabs");
 
 const wait = (toolbar, event) => {
   let { promise, resolve } = defer();
@@ -370,6 +371,15 @@ exports["test toolbar is not customizable"] = function*(assert, done) {
   const customized = defer();
   const customizedEnd = defer();
 
+  // open a new tab so that the customize tab replaces it
+  // and does not replace the start tab.
+  yield new Promise(resolve => {
+    tabs.open({
+      url: "about:blank",
+      onReady: resolve
+    });
+  });
+
   new Reactor({ onStep: value => {
     if (value[outerId] === true)
       customized.resolve();
@@ -378,7 +388,6 @@ exports["test toolbar is not customizable"] = function*(assert, done) {
   }}).run(input);
 
   const toolbar = new Toolbar({ title: "foo" });
-
   yield wait(toolbar, "attach");
 
   let view = document.getElementById(toolbar.id);
