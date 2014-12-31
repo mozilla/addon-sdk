@@ -176,7 +176,7 @@ exports["test tab.readyState"] = (assert, done) => {
   tabs.open({
     url: "data:text/html;charset=utf-8,test_readyState",
     onOpen: (tab) => {
-      assert.notEqual(["unitialized", "loading"].indexOf(tab.readyState), -1,
+      assert.notEqual(["uninitialized", "loading"].indexOf(tab.readyState), -1,
         "tab is either uninitialized or loading when onOpen");
     },
     onReady: (tab) => {
