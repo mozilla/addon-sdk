@@ -15,7 +15,6 @@ const { isPrivate } = require('sdk/private-browsing');
 const { isWindowPBSupported } = require('sdk/private-browsing/utils');
 const { viewFor } = require("sdk/view/core");
 const { defer } = require("sdk/lang/functional");
-const { cleanUI } = require("sdk/test/utils");
 
 // TEST: open & close window
 exports.testOpenAndCloseWindow = function(assert, done) {
@@ -148,7 +147,7 @@ exports.testWindowTabsObject = function(assert, done) {
     },
     onClose: function onClose(window) {
       assert.equal(window.tabs.length, 0, "No more tabs on closed window");
-      cleanUI().then(done);
+      done();
     }
   });
 };
@@ -403,7 +402,7 @@ exports.testWindowOpenPrivateDefault = function(assert, done) {
         assert.equal(tab.url, 'about:mozilla', 'opened correct tab');
         assert.equal(isPrivate(tab), false, 'tab is not private');
 
-        cleanUI().then(done);
+        window.close(done);
       });
     }
   });
