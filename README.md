@@ -9,9 +9,10 @@ If you find a problem, please [report the bug here](https://bugzilla.mozilla.org
 These resources should provide some help:
 
 * [Add-on SDK Documentation](https://developer.mozilla.org/en-US/Add-ons/SDK)
+* [Community Developed Modules](https://github.com/mozilla/addon-sdk/wiki/Community-developed-modules)
 * [Jetpack FAQ](https://wiki.mozilla.org/Jetpack/FAQ)
 * [StackOverflow Questions](http://stackoverflow.com/questions/tagged/firefox-addon-sdk)
-* [Mailing list](https://wiki.mozilla.org/Jetpack#Mailing_list)
+* [Mailing List](https://wiki.mozilla.org/Jetpack#Mailing_list)
 * #jetpack on irc.mozilla.org
 
 ## Contributing Code
@@ -27,4 +28,4 @@ We use [bugzilla](https://bugzilla.mozilla.org/) as our issue tracker, here are 
 
 * [File a bug](https://bugzilla.mozilla.org/enter_bug.cgi?product=Add-on%20SDK)
 * [Open bugs](https://bugzilla.mozilla.org/buglist.cgi?bug_status=UNCONFIRMED&bug_status=NEW&bug_status=ASSIGNED&bug_status=REOPENED&columnlist=bug_severity%2Cpriority%2Cassigned_to%2Cbug_status%2Ctarget_milestone%2Cresolution%2Cshort_desc%2Cchangeddate&product=Add-on%20SDK&query_format=advanced&order=priority)
-* [good first bugs](https://bugzilla.mozilla.org/buglist.cgi?status_whiteboard=[good+first+bug]&&resolution=---&product=Add-on+SDK)
+* [Good first bugs](https://bugzilla.mozilla.org/buglist.cgi?status_whiteboard=[good+first+bug]&&resolution=---&product=Add-on+SDK)
