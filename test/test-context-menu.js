@@ -12,6 +12,7 @@ const timer = require("sdk/timers");
 const { merge } = require("sdk/util/object");
 const { defer, all } = require("sdk/core/promise");
 const observers = require("sdk/system/events");
+const { getMostRecentBrowserWindow } = require('sdk/window/utils');
 
 // These should match the same constants in the module.
 const ITEM_CLASS = "addon-context-menu-item";
@@ -2186,11 +2187,11 @@ exports.testContentCommunication = function (assert, done) {
   let item = new loader.cm.Item({
     label: "item",
     contentScript: 'var potato;' +
-                   'self.on("context", function () {' +
+                   'self.on("context", () => {' +
                    '  potato = "potato";' +
                    '  return true;' +
                    '});' +
-                   'self.on("click", function () {' +
+                   'self.on("click", () => {' +
                    '  self.postMessage(potato);' +
                    '});',
   });
@@ -2200,10 +2201,14 @@ exports.testContentCommunication = function (assert, done) {
     test.done();
   });
 
-  test.showMenu(null, function (popup) {
+  test.showMenu(null, (popup) => {
+    assert.pass("the menu was shown");
+
     test.checkMenu([item], [], []);
-    let elt = test.getItemElt(popup, item);
-    elt.click();
+    assert.pass("the menu was checked");
+
+    test.getItemElt(popup, item).click();
+    assert.pass("the menu was clicked");
   });
 };
 
@@ -3770,9 +3775,7 @@ function TestHelper(assert, done) {
   this.assert = assert;
   this.end = done;
   this.loaders = [];
-  this.browserWindow = Cc["@mozilla.org/appshell/window-mediator;1"].
-                       getService(Ci.nsIWindowMediator).
-                       getMostRecentWindow("navigator:browser");
+  this.browserWindow = getMostRecentBrowserWindow();
   this.overflowThreshValue = require("sdk/preferences/service").
                              get(OVERFLOW_THRESH_PREF, OVERFLOW_THRESH_DEFAULT);
   this.done = this.done.bind(this);
