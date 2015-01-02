@@ -17,6 +17,7 @@ exports.dummyModule = require('./dir/dummy');
 exports.eventCore = require('sdk/event/core');
 exports.promise = require('sdk/core/promise');
 
+
 exports.localJSM  = require('./dir/test.jsm');
 exports.promisejsm = require('modules/Promise.jsm').Promise;
 exports.require = require;
