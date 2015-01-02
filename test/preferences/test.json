@@ -1,4 +1,5 @@
 {
   "general.useragent.locale": "en-US",
-  "intl.locale.matchOS": "en-US"
+  "intl.locale.matchOS": "en-US",
+  "dom.indexedDB.experimental": true
 }

@@ -158,5 +158,6 @@ DEFAULT_THUNDERBIRD_PREFS = {
 
 DEFAULT_TEST_PREFS = {
     'general.useragent.locale': "en-US",
-    'intl.locale.matchOS': "en-US"
+    'intl.locale.matchOS': "en-US",
+    'dom.indexedDB.experimental': True
 }
