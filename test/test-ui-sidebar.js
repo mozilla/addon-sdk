@@ -22,6 +22,8 @@ const { URL } = require('sdk/url');
 const { once, off, emit } = require('sdk/event/core');
 const { defer, all } = require('sdk/core/promise');
 const { modelFor } = require('sdk/model/core');
+const { cleanUI } = require("sdk/test/utils")
+
 require('sdk/windows');
 
 const { BUILTIN_SIDEBAR_MENUITEMS, isSidebarShowing,
@@ -115,7 +117,7 @@ exports.testSideBarIsInNewWindows = function*(assert) {
 
   let window = yield open();
 
-  let ele = window.document.getElementById(makeID(testName));
+  ele = window.document.getElementById(makeID(testName));
   assert.ok(ele, 'sidebar element was added');
 
   // calling destroy twice should not matter
@@ -350,7 +352,7 @@ exports.testSidebarUnload = function*(assert) {
     url:  'data:text/html;charset=utf-8,'+ testName
   });
 
-  yield show(sidebar);
+  yield sidebar.show();
   assert.pass('showing the sidebar');
 
   loader.unload();
@@ -683,8 +685,8 @@ exports.testURLSetter = function*(assert) {
                'the menuitem is not checked');
   assert.equal(isSidebarShowing(window), false, 'the new window sidebar is not showing');
 
-  let window = yield windowPromise(window.OpenBrowserWindow(), 'load');
-  let { document } = window;
+  window = yield windowPromise(window.OpenBrowserWindow(), 'load');
+  document = window.document;
   assert.pass('new window was opened');
 
   yield sidebar1.show();
@@ -705,14 +707,15 @@ exports.testURLSetter = function*(assert) {
   assert.pass('setting the sidebar.url causes a show event');
 
   assert.equal(isShowing(sidebar1), true, 'the sidebar is showing');
-  assert.ok(isSidebarShowing(window), 'the new window sidebar is still showing');
+  assert.equal(isSidebarShowing(window), true, 'the new window sidebar is still showing');
 
   assert.ok(isChecked(document.getElementById(makeID(sidebar1.id))),
                'the menuitem is still checked');
 
   sidebar1.destroy();
+  assert.equal(isSidebarShowing(window), false, 'the new window sidebar is not showing');
 
-  yield close(window);
+  yield cleanUI();
 }
 
 exports.testDuplicateID = function(assert) {
@@ -1120,7 +1123,7 @@ exports.testSidebarLeakCheckUnloadAfterAttach = function*(assert) {
     url: 'data:text/html;charset=utf-8,'+testName
   });
 
-  let window = open().then(focus);
+  let window = yield open().then(focus);
 
   yield new Promise(resolve => {
     sidebar.on('attach', resolve);
@@ -1300,7 +1303,7 @@ exports.testDestroyWhileNonBrowserWindowIsOpen = function*(assert) {
     url: url
   });
 
-  let window = open('chrome://browser/content/preferences/preferences.xul');
+  let window = yield open('chrome://browser/content/preferences/preferences.xul');
 
   yield sidebar.show();
   assert.equal(isSidebarShowing(getMostRecentBrowserWindow()), true, 'the sidebar is showing');
@@ -1309,6 +1312,7 @@ exports.testDestroyWhileNonBrowserWindowIsOpen = function*(assert) {
   assert.pass('sidebar was destroyed while a non browser window was open');
 
   yield close(window);
+  yield cleanUI();
   assert.equal(isSidebarShowing(getMostRecentBrowserWindow()), false, 'the sidebar is not showing');
 }
 
