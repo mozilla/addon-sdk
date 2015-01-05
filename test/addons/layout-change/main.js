@@ -1,7 +1,6 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 "use strict";
 
 const { LoaderWithHookedConsole } = require('sdk/test/loader');
@@ -14,6 +13,8 @@ const app = require("sdk/system/xul-app");
 // https://docs.google.com/spreadsheet/ccc?key=0ApEBy-GRnGxzdHlRMHJ5RXN1aWJ4RGhINkxSd0FCQXc#gid=0
 
 exports["test compatibility"] = function(assert) {
+  let { require } = loader;
+
   assert.equal(require("self"),
                require("sdk/self"), "sdk/self -> self");
 
