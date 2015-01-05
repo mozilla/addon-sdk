@@ -600,22 +600,21 @@ exports["test Content URL Option"] = function(assert) {
 
   const URL_STRING = "about:buildconfig";
   const HTML_CONTENT = "<html><title>Test</title><p>This is a test.</p></html>";
-
-  let (panel = Panel({ contentURL: URL_STRING })) {
-    assert.pass("contentURL accepts a string URL.");
-    assert.equal(panel.contentURL, URL_STRING,
-                "contentURL is the string to which it was set.");
-  }
-
   let dataURL = "data:text/html;charset=utf-8," + encodeURIComponent(HTML_CONTENT);
-  let (panel = Panel({ contentURL: dataURL })) {
-    assert.pass("contentURL accepts a data: URL.");
-  }
 
-  let (panel = Panel({})) {
-    assert.ok(panel.contentURL == null,
-                "contentURL is undefined.");
-  }
+  let panel = Panel({ contentURL: URL_STRING });
+  assert.pass("contentURL accepts a string URL.");
+  assert.equal(panel.contentURL, URL_STRING,
+              "contentURL is the string to which it was set.");
+  panel.destroy();
+
+  panel = Panel({ contentURL: dataURL });
+  assert.pass("contentURL accepts a data: URL.");
+  panel.destroy();
+
+  panel = Panel({});
+  assert.ok(panel.contentURL == null, "contentURL is undefined.");
+  panel.destroy();
 
   assert.throws(function () Panel({ contentURL: "foo" }),
                     /The `contentURL` option must be a valid URL./,

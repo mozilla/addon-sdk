@@ -11,15 +11,8 @@ module.metadata = {
 };
 
 const app = require('sdk/system/xul-app');
-const packaging = require("@loader/options");
 
-if (packaging.isNative) {
-  module.exports = {
-    "test skip on jpm": (assert) => assert.pass("skipping this file with jpm")
-  };
-  require("sdk/test").run(exports);
-}
-else if (app.is('Fennec')) {
+if (app.is('Fennec')) {
   module.exports = require('./tabs/test-fennec-tabs');
 }
 else {
