@@ -456,5 +456,4 @@ exports['test loader on unsupported modules with checkCompatibility default'] = 
   unload(loader);
 };
 
-
 require('sdk/test').run(exports);
