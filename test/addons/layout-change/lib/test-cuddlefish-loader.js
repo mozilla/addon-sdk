@@ -180,5 +180,3 @@ exports["test compatibility"] = function(assert) {
                require("sdk/deprecated/cortex"),
                "api-utils/cortex -> sdk/deprecated/cortex");
 };
-
-require("sdk/test/runner").runTestsFromModule(module);
