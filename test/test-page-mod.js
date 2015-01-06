@@ -21,7 +21,6 @@ const { isTabPBSupported, isWindowPBSupported, isGlobalPBSupported } = require('
 const promise = require("sdk/core/promise");
 const { pb } = require('./private-browsing/helper');
 const { URL } = require("sdk/url");
-const packaging = require('@loader/options');
 const { defer, all } = require('sdk/core/promise');
 
 const { waitUntil } = require("sdk/test/utils");
@@ -35,8 +34,7 @@ const { cleanUI } = require("sdk/test/utils");
 const testPageURI = data.url("test.html");
 
 // The following adds Debugger constructor to the global namespace.
-const { addDebuggerToGlobal } =
-  Cu.import('resource://gre/modules/jsdebugger.jsm', {});
+const { addDebuggerToGlobal } = require('resource://gre/modules/jsdebugger.jsm');
 addDebuggerToGlobal(this);
 
 function Isolate(worker) {
@@ -1705,11 +1703,5 @@ exports.testSyntaxErrorInContentScript = function *(assert) {
   loader.unload();
   yield cleanUI();
 };
-
-if (packaging.isNative) {
-  module.exports = {
-    "test skip on jpm": (assert) => assert.pass("skipping this file with jpm")
-  };
-}
 
 require('sdk/test').run(exports);
