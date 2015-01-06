@@ -23,7 +23,6 @@ const { object } = require("sdk/util/sequence");
 const { OutputPort } = require("sdk/output/system");
 const { Task } = Cu.import("resource://gre/modules/Task.jsm", {});
 const output = new OutputPort({ id: "toolbar-change" });
-const packaging = require("@loader/options");
 
 const wait = (toolbar, event, times) => {
   let { promise, resolve } = defer();
@@ -249,11 +248,5 @@ exports["test direct messaging"] = function* (assert) {
 
   yield wait(t1, "detach");
 };
-
-if (packaging.isNative) {
-  module.exports = {
-    "test skip on jpm": (assert) => assert.pass("skipping this file with jpm")
-  };
-}
 
 require("sdk/test").run(module.exports);
