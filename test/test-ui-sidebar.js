@@ -839,15 +839,7 @@ exports.testShowingInOneWindowDoesNotAffectOtherWindows = function*(assert) {
   // check state of old window
   checkSidebarShowing(window1, false);
 
-  // waiting for show using url setter
-  yield new Promise(resolve => {
-    sidebar1.once('show', resolve);
-    assert.pass('setting sidebar1.url');
-    sidebar1.url += '1';
-    assert.pass('set sidebar1.url');
-  });
-
-  assert.pass('setting the sidebar.url causes a new show event');
+  yield sidebar1.show();
 
   // check state of the new window
   assert.equal(isShowing(sidebar1), true, 'the sidebar is showing');
