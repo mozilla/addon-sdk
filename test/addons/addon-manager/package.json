@@ -1,6 +1,6 @@
 {
   "id": "test-addon-manager@jetpack",
-  "main": "./main.js",
+  "main": "./lib/main.js",
   "name": "test-addon-manager",
   "version": "0.0.1",
   "author": "Erik Vold"
