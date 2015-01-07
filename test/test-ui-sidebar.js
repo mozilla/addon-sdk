@@ -22,7 +22,8 @@ const { URL } = require('sdk/url');
 const { once, off, emit } = require('sdk/event/core');
 const { defer, all } = require('sdk/core/promise');
 const { modelFor } = require('sdk/model/core');
-const { cleanUI } = require("sdk/test/utils")
+const { cleanUI } = require("sdk/test/utils");
+const { before, after } = require('sdk/test/utils');
 
 require('sdk/windows');
 
@@ -1557,5 +1558,13 @@ exports.testShowHideSDKWindowArg = function*(assert) {
 
   yield close(newWindow);
 }
+
+before(exports, (name, assert) => {
+  assert.equal(isSidebarShowing(), false, 'no sidebar is showing');
+});
+
+after(exports, (name, assert) => {
+  assert.equal(isSidebarShowing(), false, 'no sidebar is showing');
+});
 
 require('sdk/test').run(exports);
