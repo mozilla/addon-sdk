@@ -10,6 +10,7 @@ const SKIPPING_TESTS = {
   "test skip": (assert) => assert.pass("nothing to test here")
 };
 
+merge(module.exports, require('./test-content-script'));
 merge(module.exports, require('./test-content-worker'));
 merge(module.exports, require('./test-page-worker'));
 
