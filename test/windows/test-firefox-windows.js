@@ -463,4 +463,29 @@ exports["test getView(window)"] = function(assert, done) {
   browserWindows.open({ url: "data:text/html,<title>yo</title>" });
 };
 
+// Bug 839983 Explicit test that window.title is undefined after closing
+exports["test window.title is undefined after window.close"] = function*(assert) {
+  let sdkWindow = yield new Promise(resolve => {
+    browserWindows.once("open", resolve);
+    open('chrome://browser/content/browser.xul', {
+      features: {
+        chrome: true
+      }
+    });
+  });
+  let rawWindow = viewFor(sdkWindow);
+
+  assert.pass("the window was opened");
+  assert.ok(sdkWindow.title, "title is not undefined");
+
+  yield focus(rawWindow);
+
+  assert.pass("the window was focused");
+
+  yield close(rawWindow);
+
+  assert.pass("the window was closed");
+  assert.strictEqual(sdkWindow.title, undefined, "window.title is undefined");
+}
+
 require('sdk/test').run(exports);
