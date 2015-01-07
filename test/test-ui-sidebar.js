@@ -22,7 +22,8 @@ const { URL } = require('sdk/url');
 const { once, off, emit } = require('sdk/event/core');
 const { defer, all } = require('sdk/core/promise');
 const { modelFor } = require('sdk/model/core');
-const { cleanUI } = require("sdk/test/utils")
+const { cleanUI } = require("sdk/test/utils");
+const { before, after } = require('sdk/test/utils');
 
 require('sdk/windows');
 
@@ -129,8 +130,6 @@ exports.testSideBarIsInNewWindows = function*(assert) {
 
   assert.ok(!window.document.getElementById(makeID(testName)), 'sidebar id DNE');
   assert.ok(!startWindow.document.getElementById(makeID(testName)), 'sidebar id DNE');
-
-  yield close(window);
 }
 
 exports.testSideBarIsShowingInNewWindows = function*(assert) {
@@ -196,8 +195,6 @@ exports.testSideBarIsShowingInNewWindows = function*(assert) {
   assert.ok(!isSidebarShowing(startWindow), 'sidebar in most start window is not showing');
   assert.ok(!window.document.getElementById(makeID(testName)), 'sidebar id DNE');
   assert.ok(!startWindow.document.getElementById(makeID(testName)), 'sidebar id DNE');
-
-  yield cleanUI();
 }
 
 // TODO: determine if this is acceptable..
@@ -633,7 +630,6 @@ exports.testClickingACheckedMenuitem = function*(assert) {
 
   assert.pass('clicking the menuitem after the sidebar has shown hides it.');
   sidebar.destroy();
-  yield close(window);
 };
 
 exports.testTitleSetter = function*(assert) {
@@ -717,8 +713,6 @@ exports.testURLSetter = function*(assert) {
 
   sidebar1.destroy();
   assert.equal(isSidebarShowing(window), false, 'the new window sidebar is not showing');
-
-  yield cleanUI();
 }
 
 exports.testDuplicateID = function(assert) {
@@ -794,8 +788,6 @@ exports.testURLSetterToSameValueReloadsSidebar = function*(assert) {
                'the menuitem is still checked');
 
   sidebar1.destroy();
-
-  yield cleanUI();
 }
 
 exports.testShowingInOneWindowDoesNotAffectOtherWindows = function*(assert) {
@@ -858,8 +850,6 @@ exports.testShowingInOneWindowDoesNotAffectOtherWindows = function*(assert) {
 
   // check state of old window
   checkSidebarShowing(window1, undefined);
-
-  yield cleanUI();
 }
 
 exports.testHidingAHiddenSidebarRejects = function*(assert) {
@@ -1147,7 +1137,6 @@ exports.testSidebarLeakCheckUnloadAfterAttach = function*(assert) {
   });
 
   assert.pass('the sidebar web panel was unloaded properly');
-  yield close(window);
 }
 
 exports.testTwoSidebarsWithSameTitleAndURL = function(assert) {
@@ -1311,7 +1300,6 @@ exports.testDestroyWhileNonBrowserWindowIsOpen = function*(assert) {
   sidebar.destroy();
   assert.pass('sidebar was destroyed while a non browser window was open');
 
-  yield close(window);
   yield cleanUI();
   assert.equal(isSidebarShowing(getMostRecentBrowserWindow()), false, 'the sidebar is not showing');
 }
@@ -1520,8 +1508,6 @@ exports.testShowHideRawWindowArg = function*(assert) {
   assert.ok(!isSidebarShowing(mainWindow), 'sidebar is not showing in main window');
   assert.ok(!isSidebarShowing(newWindow), 'sidebar is not showing in new window');
   sidebar.destroy();
-
-  yield close(newWindow);
 }
 
 exports.testShowHideSDKWindowArg = function*(assert) {
@@ -1554,8 +1540,15 @@ exports.testShowHideSDKWindowArg = function*(assert) {
   assert.ok(!isSidebarShowing(mainWindow), 'sidebar is not showing in main window');
   assert.ok(!isSidebarShowing(newWindow), 'sidebar is not showing in new window');
   sidebar.destroy();
-
-  yield close(newWindow);
 }
+
+before(exports, (name, assert) => {
+  assert.equal(isSidebarShowing(), false, 'no sidebar is showing');
+});
+
+after(exports, function*(name, assert) {
+  yield cleanUI();
+  assert.equal(isSidebarShowing(), false, 'no sidebar is showing');
+});
 
 require('sdk/test').run(exports);
