@@ -738,7 +738,7 @@ exports["testGlobalScope"] = createProxyTest("", function (helper) {
 // Create an http server in order to simulate real cross domain documents
 exports["test Cross Domain Iframe"] = createProxyTest("", function (helper) {
   let serverPort = 8099;
-  let server = require("./lib/httpd").startServerAsync(serverPort);
+  let server = require("./httpd").startServerAsync(serverPort);
   server.registerPathHandler("/", function handle(request, response) {
     // Returns the webpage that receive a message and forward it back to its
     // parent document by appending ' world'.
@@ -853,4 +853,4 @@ exports["test nsEp for content-script"] = createProxyTest(html, function (helper
 
 });
 
-require("sdk/test").run(exports);
+// require("sdk/test").run(exports);
