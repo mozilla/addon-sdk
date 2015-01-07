@@ -1,11 +1,15 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-'use strict';
+"use strict";
+
+// NOTE: this test is explictly testing non-normal,
+//       generator functions.
+
 
 const { defer: async } = require('sdk/lang/functional');
 const { before, after } = require('sdk/test/utils');
-const { resolve } = require('sdk/core/promise');
+const { resolve } = require("sdk/core/promise");
 
 let AFTER_RUN = 0;
 let BEFORE_RUN = 0;
@@ -55,26 +59,14 @@ exports.testSyncAfter = function (assert) {
   AFTER_RUN = 0;
 };
 
-exports.testGeneratorBefore = function*(assert) {
-  assert.equal(BEFORE_RUN, 1, 'before function was called for generator test');
-  BEFORE_RUN = 0;
-  AFTER_RUN = 0;
+before(exports, function*(name, assert) {
   yield resolve();
-}
-
-exports.testGeneratorAfter = function*(assert) {
-  assert.equal(AFTER_RUN, 1, 'after function was called for generator test');
-  BEFORE_RUN = 0;
-  AFTER_RUN = 0;
-  yield resolve();
-};
-
-before(exports, (name, assert) => {
   BEFORE_RUN = (name === 'testABeforeNameAsync') ? 2 : 1;
   assert.pass('assert passed into before function');
 });
 
-after(exports, (name, assert) => {
+after(exports, function*(name, assert) {
+  yield resolve();
   // testAfterName runs after testAfter, which is where this
   // check occurs in the assertation
   AFTER_RUN = (name === 'testAfterAsync') ? 2 : 1;
