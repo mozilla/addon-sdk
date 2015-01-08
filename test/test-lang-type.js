@@ -6,28 +6,39 @@
 var utils = require("sdk/lang/type");
 
 exports["test function"] = function (assert) {
-  assert.ok(utils.isFunction(function(){}), "value is function");
-  assert.ok(utils.isFunction(Object), "Object is function");
-  assert.ok(utils.isFunction(new Function("")), "Genertaed value is function");
-  assert.ok(!utils.isFunction({}), "object is not a function");
-  assert.ok(!utils.isFunction(4), "number is not a function");
+  assert.equal(utils.isFunction(function(){}), true, "value is a function");
+  assert.equal(utils.isFunction(Object), true, "Object is a function");
+  assert.equal(utils.isFunction(new Function("")), true, "Genertaed value is a function");
+  assert.equal(utils.isFunction({}), false, "object is not a function");
+  assert.equal(utils.isFunction(4), false, "number is not a function");
 };
 
 exports["test atoms"] = function (assert) {
-  assert.ok(utils.isPrimitive(2), "number is primitive");
-  assert.ok(utils.isPrimitive(NaN), "`NaN` is primitve");
-  assert.ok(utils.isPrimitive(undefined), "`undefined` is primitive");
-  assert.ok(utils.isPrimitive(null), "`null` is primitive");
-  assert.ok(utils.isPrimitive(Infinity), "`Infinity` is primitive");
-  assert.ok(utils.isPrimitive("foo"), "strings are primitive");
+  assert.equal(utils.isPrimitive(2), true, "number is a primitive");
+  assert.equal(utils.isPrimitive(NaN), true, "`NaN` is a primitve");
+  assert.equal(utils.isPrimitive(undefined), true, "`undefined` is a primitive");
+  assert.equal(utils.isPrimitive(null), true, "`null` is a primitive");
+  assert.equal(utils.isPrimitive(Infinity), true, "`Infinity` is a primitive");
+  assert.equal(utils.isPrimitive("foo"), true, "strings are a primitive");
   assert.ok(utils.isPrimitive(true) && utils.isPrimitive(false),
             "booleans are primitive");
 };
 
 exports["test object"] = function (assert) {
-  assert.ok(utils.isObject({}), "`{}` is object");
+  assert.equal(utils.isObject({}), true, "`{}` is an object");
   assert.ok(!utils.isObject(null), "`null` is not an object");
   assert.ok(!utils.isObject(Object), "functions is not an object");
+};
+
+exports["test generator"] = function (assert) {
+  assert.equal(utils.isGenerator(function*(){}), true, "`function*(){}` is a generator");
+  assert.equal(utils.isGenerator(function(){}), false, "`function(){}` is not a generator");
+  assert.equal(utils.isGenerator(() => {}), false, "`() => {}` is not a generator");
+  assert.equal(utils.isGenerator({}), false, "`{}` is not a generator");
+  assert.equal(utils.isGenerator(1), false, "`1` is not a generator");
+  assert.equal(utils.isGenerator([]), false, "`[]` is not a generator");
+  assert.equal(utils.isGenerator(null), false, "`null` is not a generator");
+  assert.equal(utils.isGenerator(undefined), false, "`undefined` is not a generator");
 };
 
 exports["test flat objects"] = function (assert) {
