@@ -1,14 +1,17 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
-const {Cc, Ci} = require("chrome");
-const {getMostRecentBrowserWindow, open} = require("sdk/window/utils");
+const { Cc, Ci } = require("chrome");
+const { getMostRecentBrowserWindow } = require("sdk/window/utils");
+const { open: openWindow, close: closeWindow } = require("sdk/window/helpers");
 const tabUtils = require("sdk/tabs/utils");
 const { map, filter, object, reduce, keys, symbols,
         pairs, values, each, some, isEvery, count } = require("sdk/util/sequence");
+const { when } = require("sdk/dom/events");
+
 const { Task } = require("resource://gre/modules/Task.jsm");
-
-const {when} = require("sdk/dom/events");
-
 
 var observerService = Cc["@mozilla.org/observer-service;1"]
                       .getService(Ci.nsIObserverService);
@@ -17,28 +20,11 @@ const framescriptURI = require.resolve("./framescript");
 
 const _target = ({target}) => target;
 
+exports.openWindow = openWindow;
+exports.closeWindow = closeWindow;
+
 const getActiveTab = (window=getMostRecentBrowserWindow()) =>
   tabUtils.getActiveTab(window)
-
-exports.openWindow = () => {
-  const window = open();
-  return new Promise((resolve) => {
-    observerService.addObserver({
-      observe(subject, topic) {
-        if (subject === window) {
-          observerService.removeObserver(this, topic);
-          resolve(subject);
-        }
-      }
-    }, "browser-delayed-startup-finished", false);
-  });
-};
-
-exports.closeWindow = (window) => {
-  const closed = when(window, "unload", true).then(_target);
-  window.close();
-  return closed;
-};
 
 const openTab = (url, window=getMostRecentBrowserWindow()) => {
   const tab = tabUtils.openTab(window, url);
