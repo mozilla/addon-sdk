@@ -15,6 +15,7 @@ const { browserWindows } = require('sdk/windows');
 const { set: setPref } = require("sdk/preferences/service");
 const DEPRECATE_PREF = "devtools.errorconsole.deprecation_warnings";
 const fixtures = require("../fixtures");
+const { base64jpeg } = fixtures;
 
 // Bug 682681 - tab.title should never be empty
 exports.testBug682681_aboutURI = function(assert, done) {
@@ -1019,7 +1020,7 @@ exports.testOnLoadEventWithImage = function(assert, done) {
   let count = 0;
 
   tabs.open({
-    url: fixtures.url('Firefox.jpg'),
+    url: base64jpeg,
     inBackground: true,
     onLoad: function(tab) {
       if (++count > 1) {
