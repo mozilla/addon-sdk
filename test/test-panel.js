@@ -587,6 +587,10 @@ exports["test Show Then Destroy"] = makeEventOrderTest({
   }
 });
 
+
+// TODO: Re-enable and fix this intermittent test
+// See Bug 1111695 https://bugzilla.mozilla.org/show_bug.cgi?id=1111695
+/*
 exports["test Show Then Hide Then Destroy"] = makeEventOrderTest({
   test: function(assert, done, expect, panel) {
     panel.show();
@@ -594,6 +598,7 @@ exports["test Show Then Hide Then Destroy"] = makeEventOrderTest({
       then('hide', function() { panel.destroy(); done(); });
   }
 });
+*/
 
 exports["test Content URL Option"] = function(assert) {
   const { Panel } = require('sdk/panel');
