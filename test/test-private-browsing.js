@@ -16,7 +16,6 @@ const { LoaderWithHookedConsole } = require("sdk/test/loader");
 const { getMode, isWindowPBSupported, isTabPBSupported } = require('sdk/private-browsing/utils');
 const { pb } = require('./private-browsing/helper');
 const prefs = require('sdk/preferences/service');
-const packaging = require("@loader/options");
 
 const { Services } = Cu.import("resource://gre/modules/Services.jsm", {});
 
@@ -82,11 +81,5 @@ exports.testNewGlobalPBService = function(assert) {
   prefs.set(kAutoStartPref, false);
   assert.equal(isPrivate(), false, 'isPrivate() is false again');
 };
-
-if (packaging.isNative) {
-  module.exports = {
-    "test skip on jpm": (assert) => assert.pass("skipping this file with jpm")
-  };
-}
 
 require('sdk/test').run(module.exports);
