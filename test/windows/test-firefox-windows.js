@@ -16,6 +16,7 @@ const { isWindowPBSupported } = require('sdk/private-browsing/utils');
 const { viewFor } = require("sdk/view/core");
 const { defer } = require("sdk/lang/functional");
 const { cleanUI } = require("sdk/test/utils");
+const { after } = require("sdk/test/utils");
 
 // TEST: open & close window
 exports.testOpenAndCloseWindow = function(assert, done) {
@@ -52,7 +53,7 @@ exports.testNeWindowIsFocused = function(assert, done) {
         assert.ok(isFocused(window), 'the new window is focused');
         assert.ok(isFocused(browserWindows.activeWindow), 'the active window is focused');
         assert.ok(!isFocused(mainWindow), 'the main window is not focused');
-        close(window).then(done).catch(assert.fail);
+        done();
       })
     }
   });
@@ -78,8 +79,7 @@ exports.testOpenRelativePathWindow = function(assert, done) {
       window.tabs.activeTab.once("ready", (tab) => {
         assert.equal(tab.title, "foo",
           "tab opened a document with relative path");
-
-        window.close(done);
+        done();
       });
     }
   })
@@ -105,8 +105,7 @@ exports.testAutomaticDestroy = function(assert, done) {
     onOpen: function(window) {
       setTimeout(function () {
         assert.ok(!called, "Unloaded windows instance is destroyed and inactive");
-
-        window.close(done);
+        done();
       });
     }
   });
@@ -148,7 +147,7 @@ exports.testWindowTabsObject = function(assert, done) {
     },
     onClose: function onClose(window) {
       assert.equal(window.tabs.length, 0, "No more tabs on closed window");
-      cleanUI().then(done);
+      done();
     }
   });
 };
@@ -403,7 +402,7 @@ exports.testWindowOpenPrivateDefault = function(assert, done) {
         assert.equal(tab.url, 'about:mozilla', 'opened correct tab');
         assert.equal(isPrivate(tab), false, 'tab is not private');
 
-        cleanUI().then(done);
+        done();
       });
     }
   });
@@ -439,8 +438,6 @@ exports.testWindowIteratorPrivateDefault = function*(assert) {
   for (let window of browserWindows) {
     assert.ok(!isPrivate(window), 'no window in browserWindows is private');
   }
-
-  yield close(window);
 };
 
 exports["test getView(window)"] = function(assert, done) {
@@ -462,5 +459,9 @@ exports["test getView(window)"] = function(assert, done) {
 
   browserWindows.open({ url: "data:text/html,<title>yo</title>" });
 };
+
+after(exports, function*(name, assert) {
+  yield cleanUI();
+});
 
 require('sdk/test').run(exports);
