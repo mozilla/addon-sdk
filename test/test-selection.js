@@ -144,15 +144,9 @@ function hideAndShowFrame(window) {
   iframe.style.display = "none";
 
   Cu.schedulePreciseGC(function() {
-    events.on("document-shown", function shown(event) {
-      if (iframe.contentWindow !== event.subject.defaultView)
-        return;
-
-      events.off("document-shown", shown);
-      setTimeout(resolve, 0, window);
-    }, true);
-
     iframe.style.display = "";
+    // can't observe "document-shown" with e10s, so just wait a bit
+    setTimeout(resolve, 100, window);
   });
 
   return promise;
