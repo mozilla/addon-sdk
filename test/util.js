@@ -4,7 +4,7 @@
 "use strict";
 
 const {Cc, Ci} = require("chrome");
-const {getMostRecentBrowserWindow, open} = require("sdk/window/utils");
+const {getMostRecentBrowserWindow} = require("sdk/window/utils");
 const tabUtils = require("sdk/tabs/utils");
 const {when} = require("sdk/dom/events");
 
@@ -15,8 +15,8 @@ var observerService = Cc["@mozilla.org/observer-service;1"]
 const getActiveTab = (window=getMostRecentBrowserWindow()) =>
   tabUtils.getActiveTab(window)
 
-const openWindow = () => {
-  const window = open();
+const openWindow = (options={}) => {
+  const window = getMostRecentBrowserWindow().OpenBrowserWindow(options);
   return new Promise((resolve) => {
     observerService.addObserver({
       observe(subject, topic) {

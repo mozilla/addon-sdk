@@ -13,7 +13,7 @@ const { Loader } = require('sdk/test/loader');
 const { show, hide } = require('sdk/ui/sidebar/actions');
 const { isShowing } = require('sdk/ui/sidebar/utils');
 const { getMostRecentBrowserWindow, isWindowPrivate } = require('sdk/window/utils');
-const { open, close, focus, promise: windowPromise } = require('sdk/window/helpers');
+const { close, focus, promise: windowPromise } = require('sdk/window/helpers');
 const { setTimeout } = require('sdk/timers');
 const { isPrivate } = require('sdk/private-browsing');
 const { data } = require('sdk/self');
@@ -22,6 +22,8 @@ const { URL } = require('sdk/url');
 const { BUILTIN_SIDEBAR_MENUITEMS, isSidebarShowing,
         getSidebarMenuitems, getExtraSidebarMenuitems, makeID, simulateCommand,
         simulateClick, isChecked } = require('./sidebar/utils');
+
+const { openWindow } = require('./util');
 
 exports.testSideBarIsNotInNewPrivateWindows = function(assert, done) {
   const { Sidebar } = require('sdk/ui/sidebar');
@@ -36,7 +38,7 @@ exports.testSideBarIsNotInNewPrivateWindows = function(assert, done) {
   let ele = startWindow.document.getElementById(makeID(testName));
   assert.ok(ele, 'sidebar element was added');
 
-  open(null, { features: { private: true } }).then(function(window) {
+  openWindow({ private: true }).then(function(window) {
       let ele = window.document.getElementById(makeID(testName));
       assert.ok(isPrivate(window), 'the new window is private');
       assert.equal(ele, null, 'sidebar element was not added');
@@ -104,7 +106,7 @@ exports.testDestroyEdgeCaseBugWithPrivateWindow = function(assert, done) {
 
   //assert.equal(isShowing(sidebar), true, 'the sidebar is showing');
 
-  open(null, { features: { private: true } }).then(focus).then(function(window2) {
+  openWindow({ private: true }).then(focus).then(function(window2) {
     assert.equal(isPrivate(window2), true, 'the new window is private');
     assert.equal(isSidebarShowing(window2), false, 'the sidebar is not showing');
     assert.equal(isShowing(sidebar), false, 'the sidebar is not showing');
