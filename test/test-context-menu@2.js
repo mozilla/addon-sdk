@@ -86,7 +86,10 @@ exports["test menu item in new window"] = function*(assert) {
   yield* isMenuPopulated(tab1);
 
   const window2 = yield openWindow();
+  assert.pass("window is ready");
+
   const tab2 = yield openTab(`data:text/html,<h1>hello window-2</h1>`, window2);
+  assert.pass("tab is ready");
 
   yield* isMenuPopulated(tab2);
 
