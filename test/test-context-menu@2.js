@@ -65,6 +65,8 @@ exports["test create / destroy menu item"] = withTab(function*(assert) {
 }, data`<h1>hello</h1>`);
 
 
+/* Bug 1115419 - Disable occasionally failing test until we
+                 figure out why it fails.
 // Items created should be present on all browser windows.
 exports["test menu item in new window"] = function*(assert) {
   const isMenuPopulated = function*(tab) {
@@ -102,6 +104,7 @@ exports["test menu item in new window"] = function*(assert) {
 
   yield closeTab(tab1);
 };
+*/
 
 
 // Multilpe items can be created and destroyed at different points
