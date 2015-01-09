@@ -17,7 +17,7 @@ const xulApp = require("sdk/system/xul-app");
 const { isPrivateBrowsingSupported } = require('sdk/self');
 const { isPrivate } = require('sdk/private-browsing');
 const { openWebpage } = require('./private-browsing/helper');
-const { isTabPBSupported, isWindowPBSupported, isGlobalPBSupported } = require('sdk/private-browsing/utils');
+const { isTabPBSupported, isWindowPBSupported } = require('sdk/private-browsing/utils');
 const promise = require("sdk/core/promise");
 const { pb } = require('./private-browsing/helper');
 const { URL } = require("sdk/url");
@@ -1428,48 +1428,6 @@ exports["test page-mod on private tab"] = function (assert, done) {
   page1.ready.then(function() {
     page2 = openWebpage(nonPrivateUri, false);
   }, fail);
-}
-
-exports["test page-mod on private tab in global pb"] = function (assert, done) {
-  if (!isGlobalPBSupported) {
-    assert.pass();
-    return done();
-  }
-
-  let privateUri = "data:text/html;charset=utf-8," +
-                   "<iframe%20src=\"data:text/html;charset=utf-8,frame\"/>";
-
-  let pageMod = new PageMod({
-    include: privateUri,
-    onAttach: function(worker) {
-      assert.equal(worker.tab.url,
-                       privateUri,
-                       "page-mod should attach");
-      assert.equal(isPrivateBrowsingSupported,
-                       false,
-                       "private browsing is not supported");
-      assert.ok(isPrivate(worker),
-                  "The worker is really non-private");
-      assert.ok(isPrivate(worker.tab),
-                  "The document is really non-private");
-      pageMod.destroy();
-
-      worker.tab.close(function() {
-        pb.once('stop', function() {
-          assert.pass('global pb stop');
-          done();
-        });
-        pb.deactivate();
-      });
-    }
-  });
-
-  let page1;
-  pb.once('start', function() {
-    assert.pass('global pb start');
-    tabs.open({ url: privateUri });
-  });
-  pb.activate();
 }
 
 // Bug 699450: Calling worker.tab.close() should not lead to exception
