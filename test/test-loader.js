@@ -456,4 +456,38 @@ exports['test loader on unsupported modules with checkCompatibility default'] = 
   unload(loader);
 };
 
+exports["test Cu.import of toolkit/loader"] = (assert) => {
+  const toolkitLoaderURI = require.resolve("toolkit/loader");
+  const loaderModule = Cu.import(toolkitLoaderURI).Loader;
+  const { Loader, Require, Main } = loaderModule;
+  const version = "0.1.0";
+  const id = `fxos_${version.replace(".", "_")}_simulator@mozilla.org`;
+  const uri = `resource://${encodeURIComponent(id.replace("@", "at"))}/`;
+
+  const loader = Loader({
+    paths: {
+      "./": uri + "lib/",
+      // Can't just put `resource://gre/modules/commonjs/` as it
+      // won't take module overriding into account.
+      "": toolkitLoaderURI.replace("toolkit/loader.js", "")
+    },
+    globals: {
+      console: console
+    },
+    modules: {
+      "toolkit/loader": loaderModule,
+      addon: {
+        id: "simulator",
+        version: "0.1",
+        uri: uri
+      }
+    }
+  });
+
+  let require_ = Require(loader, { id: "./addon" });
+  assert.equal(typeof(loaderModule),
+               typeof(require_("toolkit/loader")),
+               "module returned is whatever was mapped to it");
+};
+
 require('sdk/test').run(exports);
