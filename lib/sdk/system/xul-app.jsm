@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
-var EXPORTED_SYMBOLS = ["XulApp"];
+this.EXPORTED_SYMBOLS = ["XulApp"];
 
 var { classes: Cc, interfaces: Ci } = Components;
 
