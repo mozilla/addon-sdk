@@ -3,6 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
+this.EXPORTED_SYMBOLS = [ 'enableTabEvents', 'enableCMEvents' ];
+
 const globalMM = Components.classes["@mozilla.org/globalmessagemanager;1"].
                  getService(Components.interfaces.nsIMessageListenerManager);
 
@@ -21,6 +23,7 @@ function enableTabEvents() {
   loadedTabEvents = true;
   globalMM.loadFrameScript(PATH + 'tab-events.js', true);
 }
+this.enableTabEvents = enableTabEvents;
 
 let loadedCMEvents = false;
 
@@ -31,5 +34,4 @@ function enableCMEvents() {
   loadedCMEvents = true;
   globalMM.loadFrameScript(PATH + 'contextmenu-events.js', true);
 }
-
-const EXPORTED_SYMBOLS = ['enableTabEvents', 'enableCMEvents'];
+this.enableCMEvents = enableCMEvents;
