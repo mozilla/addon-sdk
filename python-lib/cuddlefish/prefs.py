@@ -241,5 +241,6 @@ DEFAULT_TEST_PREFS = {
     'browser.search.highlightCount': 0,
     'general.useragent.locale': "en-US",
     'intl.locale.matchOS': "en-US",
-    'dom.indexedDB.experimental': True
+    'dom.indexedDB.experimental': True,
+    'jsloader.reuseGlobal': True
 }

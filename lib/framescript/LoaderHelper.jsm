@@ -3,6 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
+this.EXPORTED_SYMBOLS = [ 'loader' ];
+
 const { utils: Cu, classes: Cc, interfaces: Ci } = Components;
 const { Loader } = Cu.import('resource://gre/modules/commonjs/toolkit/loader.js', {});
 const cpmm = Cc['@mozilla.org/childprocessmessagemanager;1'].getService(Ci.nsISyncMessageSender);
@@ -29,5 +31,4 @@ function loader(options) {
   }
   return addon;
 }
-
-const EXPORTED_SYMBOLS = ['loader'];
+this.loader = loader;

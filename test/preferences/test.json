@@ -47,5 +47,6 @@
   "browser.search.highlightCount": 0,
   "general.useragent.locale": "en-US",
   "intl.locale.matchOS": "en-US",
-  "dom.indexedDB.experimental": true
+  "dom.indexedDB.experimental": true,
+  "jsloader.reuseGlobal": true
 }
