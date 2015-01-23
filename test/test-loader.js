@@ -490,4 +490,18 @@ exports["test Cu.import of toolkit/loader"] = (assert) => {
                "module returned is whatever was mapped to it");
 };
 
+exports["test Cu.import in b2g style"] = (assert) => {
+  const {Utils} = require("./loader/b2g");
+  const toolkitLoaderURI = require.resolve("toolkit/loader");
+  const b2g = new Utils();
+
+  const exported = {};
+  const loader = b2g.import(toolkitLoaderURI, exported);
+
+  assert.ok(typeof(exported.Loader) == "function",
+            "loader is a function");
+  assert.ok(typeof(exported.Loader.Loader) == "function",
+            "Loader.Loader is a funciton");
+};
+
 require('sdk/test').run(exports);
