@@ -33,4 +33,20 @@ exports.testSameRequire = (assert) => {
                "require function is same in both contexts");
 };
 
-require("sdk/test").run(exports)
+exports["test Cu.import in b2g style"] = (assert) => {
+  const {FakeCu} = require("./loader/b2g");
+  const b2g = new FakeCu();
+
+  const exported = {};
+  const imported = b2g.import(requireURI, exported);
+
+  assert.equal(typeof(exported.require),
+               "function",
+               "require funciton was exported");
+  assert.equal(typeof(imported.require),
+               "function",
+               "require function was imported");
+};
+
+require('sdk/test').run(exports);
+

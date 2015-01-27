@@ -19,6 +19,9 @@ FakeCu.prototype = {
     const {sandbox} = this;
     sandbox.__URI__ = url;
     const target = Cu.createObjectIn(sandbox);
+    target.toString = function() {
+      return "[object FakeBackstagePass]"
+    }
     target.toString = sandbox.toString;
     Cu.evalInSandbox(`(function(){` + readURISync(url) + `\n})`,
                      sandbox, "1.8", url).call(target);
