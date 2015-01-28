@@ -316,4 +316,97 @@ exports["test createView panel"] = test(function*(assert) {
   yield closeToolbox();
 });
 
+exports["test destroy tool"] = test(function*(assert) {
+  const MyPanel = Class({
+    extends: Panel,
+    label: "destroy-tool",
+    tooltip: "destroy-tool",
+    icon: iconURI,
+    url: "data:text/html;charset=utf-8,destroy-tool"
+  });
+
+  const myTool = new Tool({
+    panels: {
+      myPanel: MyPanel
+    }
+  });
+
+  const toolbox = yield openToolbox(MyPanel);
+  const myPanel = yield getCurrentPanel(toolbox);
+
+  assert.ok(myPanel instanceof MyPanel,
+            "current panel is instance of MyPanel");
+
+  myTool.destroy();
+
+  const otherPanel = yield getCurrentPanel(toolbox);
+  assert.ok(!(otherPanel instanceof MyPanel),
+            "current panel is not instance of MyPanel");
+
+  yield closeToolbox();
+
+  // At the moment devtools won't throw if requested panel isn't
+  // present and will just open different one, but we still use
+  // try catch since we don't care if it's exception or different
+  // panel and devtools may start throwing in a future.
+  try {
+    const toolbox = yield openToolbox(MyPanel);
+    const otherPanel = yield getCurrentPanel(toolbox);
+
+    assert.ok(!(otherPanel instanceof MyPanel),
+              "requested panel was not open as it was unregistered");
+  } catch (error) {
+    assert.pass("failed to open toolbox with panel that was unregistered");
+  }
+});
+
+
+exports["test add-on unload"] = test(function*(assert) {
+  const loader = require("sdk/test/loader").Loader(module);
+  const { Tool } = loader.require("dev/toolbox");
+  const { Panel } = loader.require("dev/panel");
+
+  const MyPanel = Class({
+    extends: Panel,
+    label: "addon-unload",
+    tooltip: "addon-unload",
+    icon: iconURI,
+    url: "data:text/html;charset=utf-8,addon-unload"
+  });
+
+  const myTool = new Tool({
+    panels: {
+      myPanel: MyPanel
+    }
+  });
+
+  const toolbox = yield openToolbox(MyPanel);
+  const myPanel = yield getCurrentPanel(toolbox);
+
+  assert.ok(myPanel instanceof MyPanel,
+            "current panel is instance of MyPanel");
+
+  loader.unload();
+
+  const otherPanel = yield getCurrentPanel(toolbox);
+  assert.ok(!(otherPanel instanceof MyPanel),
+            "current panel is not instance of MyPanel");
+
+  yield closeToolbox();
+
+  // At the moment devtools won't throw if requested panel isn't
+  // present and will just open different one, but we still use
+  // try catch since we don't care if it's exception or different
+  // panel and devtools may start throwing in a future.
+  try {
+    const toolbox = yield openToolbox(MyPanel);
+    const otherPanel = yield getCurrentPanel(toolbox);
+
+    assert.ok(!(otherPanel instanceof MyPanel),
+              "requested panel was not open as it was unregistered");
+  } catch (error) {
+    assert.pass("failed to open toolbox with panel that was unregistered");
+  }
+});
+
 require("sdk/test").run(exports);
