@@ -316,4 +316,54 @@ exports["test createView panel"] = test(function*(assert) {
   yield closeToolbox();
 });
 
+
+exports["test ports is an optional"] = test(function*(assert) {
+  const MyPanel = Class({
+    extends: Panel,
+    label: "no-port",
+    icon: iconURI,
+    url: makeHTML(() => {
+      window.addEventListener("message", event => {
+        if (event.ports.length) {
+          event.ports[0].postMessage(window.firstPacket);
+        } else {
+          window.firstPacket = event.data;
+        }
+      });
+    })
+  });
+
+
+  const myTool = new Tool({
+    panels: {
+      myPanel: MyPanel
+    }
+  });
+
+
+  const toolbox = yield openToolbox(MyPanel);
+  const panel = yield getCurrentPanel(toolbox);
+  assert.ok(panel instanceof MyPanel, "is instance of MyPanel");
+
+  assert.isRendered(panel, toolbox);
+
+  yield panel.ready();
+
+  const { port1, port2 } = new MessageChannel();
+  port1.start();
+
+  panel.postMessage("hi");
+  panel.postMessage("bye", [port2]);
+
+  const packet = yield when(port1, "message");
+
+  assert.equal(packet.data, "hi", "got first packet back");
+
+  yield closeToolbox();
+
+  assert.equal(panel.readyState, "destroyed", "panel is destroyed");
+
+  myTool.destroy();
+});
+
 require("sdk/test").run(exports);
