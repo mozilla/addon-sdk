@@ -456,4 +456,22 @@ exports['test loader on unsupported modules with checkCompatibility default'] = 
   unload(loader);
 };
 
+exports['test user global'] = function(assert) {
+  // Test case for bug 827792
+  let com = {};
+  let loader = require('toolkit/loader');
+  let loadOptions = require('@loader/options');
+  let options = loader.override(loadOptions,
+                                {globals: loader.override(loadOptions.globals,
+                                                          {com: com,
+                                                           console: console,
+                                                           dump: dump})});
+  let subloader = loader.Loader(options);
+  let userRequire = loader.Require(subloader, module);
+  let userModule = userRequire("./loader/user-global");
+
+  assert.equal(userModule.getCom(), com,
+               "user module returns expected `com` global");
+};
+
 require('sdk/test').run(exports);
