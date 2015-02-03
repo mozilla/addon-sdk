@@ -21,7 +21,7 @@ const { defer, all } = require('sdk/core/promise');
 const { getMostRecentBrowserWindow } = require('sdk/window/utils');
 const { URL } = require('sdk/url');
 const { wait } = require('./event/helpers');
-const packaging = require('@loader/options');
+const { cleanUI } = require('sdk/test/utils');
 
 const fixtures = require('./fixtures')
 
@@ -223,8 +223,9 @@ exports["test Parent Resize Hack"] = function(assert, done) {
 }
 */
 
-exports["test Resize Panel"] = function(assert, done) {
+exports["test Resize Panel"] = function*(assert) {
   const { Panel } = require('sdk/panel');
+  let panel;
 
   // These tests fail on Linux if the browser window in which the panel
   // is displayed is not active.  And depending on what other tests have run
@@ -233,19 +234,11 @@ exports["test Resize Panel"] = function(assert, done) {
   // is focused by focusing it before running the tests.  Then, to be the best
   // possible test citizen, we refocus whatever window was focused before we
   // started running these tests.
+  yield focus(getMostRecentBrowserWindow());
 
-  let activeWindow = Cc["@mozilla.org/embedcomp/window-watcher;1"].
-                      getService(Ci.nsIWindowWatcher).
-                      activeWindow;
-  let browserWindow = Cc["@mozilla.org/appshell/window-mediator;1"].
-                      getService(Ci.nsIWindowMediator).
-                      getMostRecentWindow("navigator:browser");
-
-
-  function onFocus() {
-    browserWindow.removeEventListener("focus", onFocus, true);
-
-    let panel = Panel({
+  // create panel, show it, resize it, then hide it
+  yield new Promise(resolve => {
+    panel = Panel({
       contentScript: "self.postMessage('')",
       contentScriptWhen: "end",
       contentURL: "data:text/html;charset=utf-8,",
@@ -258,23 +251,17 @@ exports["test Resize Panel"] = function(assert, done) {
         panel.resize(100,100);
         panel.hide();
       },
-      onHide: function () {
-        assert.ok((panel.width == 100) && (panel.height == 100),
-          "The panel was resized.");
-        if (activeWindow)
-          activeWindow.focus();
-        done();
-      }
+      onHide: resolve
     });
-  }
+  });
 
-  if (browserWindow === activeWindow) {
-    onFocus();
-  }
-  else {
-    browserWindow.addEventListener("focus", onFocus, true);
-    browserWindow.focus();
-  }
+  assert.equal(panel.width, 100, "The panel width was resized.");
+  assert.equal(panel.height, 100, "The panel height was resized.");
+
+  panel.destroy();
+  assert.pass("the panel was destroyed");
+
+  yield cleanUI();
 };
 
 exports["test Hide Before Show"] = function(assert, done) {
@@ -320,6 +307,7 @@ exports["test Several Show Hides"] = function(assert, done) {
         panel.show();
       else {
         assert.pass("onHide called three times as expected");
+        panel.destroy();
         done();
       }
     }
@@ -330,81 +318,46 @@ exports["test Several Show Hides"] = function(assert, done) {
   panel.show();
 };
 
-exports["test Anchor And Arrow"] = function(assert, done) {
+exports["test Anchor And Arrow"] = function*(assert) {
+  let tabs = require("sdk/tabs");
+  let browserWindow = getMostRecentBrowserWindow();
+
+  yield focus(browserWindow);
+
   let { loader } = LoaderWithHookedConsole(module, ignorePassingDOMNodeWarning);
+  assert.pass("created loader");
+
   let { Panel } = loader.require('sdk/panel');
+  assert.pass("required sdk/panel");
 
-  let count = 0;
-  let queue = [];
-  let tab;
-
-  function newPanel(anchor) {
-    let panel = Panel({
-      contentURL: "data:text/html;charset=utf-8,<html><body style='padding: 0; margin: 0; " +
-                  "background: gray; text-align: center;'>Anchor: " +
-                  anchor.id + "</body></html>",
-      width: 200,
-      height: 100,
-      onShow: function () {
-        panel.destroy();
-        next();
-      }
-    });
-    queue.push({ panel: panel, anchor: anchor });
-  }
-
-  function next () {
-    if (!queue.length) {
-      assert.pass("All anchored panel test displayed");
-      tab.close(function () {
-        done();
-      });
-      return;
-    }
-    let { panel, anchor } = queue.shift();
-    panel.show(null, anchor);
-  }
-
-  let tabs= require("sdk/tabs");
-  let url = 'data:text/html;charset=utf-8,' +
-    '<html><head><title>foo</title></head><body>' +
-    '<style>div {background: gray; position: absolute; width: 300px; ' +
-           'border: 2px solid black;}</style>' +
-    '<div id="tl" style="top: 0px; left: 0px;">Top Left</div>' +
-    '<div id="tr" style="top: 0px; right: 0px;">Top Right</div>' +
-    '<div id="bl" style="bottom: 0px; left: 0px;">Bottom Left</div>' +
-    '<div id="br" style="bottom: 0px; right: 0px;">Bottom right</div>' +
-    '</body></html>';
-
-  tabs.open({
-    url: url,
-    onReady: function(_tab) {
-      tab = _tab;
-      let browserWindow = Cc["@mozilla.org/appshell/window-mediator;1"].
-                      getService(Ci.nsIWindowMediator).
-                      getMostRecentWindow("navigator:browser");
-      let window = browserWindow.content;
-      newPanel(window.document.getElementById('tl'));
-      newPanel(window.document.getElementById('tr'));
-      newPanel(window.document.getElementById('bl'));
-      newPanel(window.document.getElementById('br'));
-      let anchor = browserWindow.document.getElementById("identity-box");
-      newPanel(anchor);
-
-      next();
+  let anchor = browserWindow.document.getElementById('identity-box');
+  let panel = Panel({
+    contentURL: "data:text/html;charset=utf-8,<html><body>" +
+                "TEST</body></html>",
+    width: 200,
+    height: 100,
+    onShow: () => {
+      assert.pass("onShow was called for " + anchor.id);
     }
   });
+
+  assert.pass('identity-box panel created');
+  yield new Promise(resolve => {
+    panel.once("show", resolve);
+    panel.show(null, anchor);
+  });
+  assert.pass('identity-box panel showen');
+
+  panel.destroy();
 };
 
-exports["test Panel Focus True"] = function(assert, done) {
+exports["test Panel Focus True"] = function*(assert) {
   const { Panel } = require('sdk/panel');
 
   const FM = Cc["@mozilla.org/focus-manager;1"].
                 getService(Ci.nsIFocusManager);
 
-  let browserWindow = Cc["@mozilla.org/appshell/window-mediator;1"].
-                      getService(Ci.nsIWindowMediator).
-                      getMostRecentWindow("navigator:browser");
+  let browserWindow = getMostRecentBrowserWindow();
 
   // Make sure there is a focused element
   browserWindow.document.documentElement.focus();
@@ -412,16 +365,20 @@ exports["test Panel Focus True"] = function(assert, done) {
   // Get the current focused element
   let focusedElement = FM.focusedElement;
 
-  let panel = Panel({
-    contentURL: "about:buildconfig",
-    focus: true,
-    onShow: function () {
-      assert.ok(focusedElement !== FM.focusedElement,
-        "The panel takes the focus away.");
-      done();
-    }
+  let panel;
+  yield new Promise(resolve => {
+    panel = Panel({
+      contentURL: "about:buildconfig",
+      focus: true,
+      onShow: resolve
+    });
+    panel.show();
   });
-  panel.show();
+
+  assert.ok(focusedElement !== FM.focusedElement,
+    "The panel takes the focus away.");
+
+  panel.destroy();
 };
 
 exports["test Panel Focus False"] = function(assert, done) {
@@ -430,9 +387,7 @@ exports["test Panel Focus False"] = function(assert, done) {
   const FM = Cc["@mozilla.org/focus-manager;1"].
                 getService(Ci.nsIFocusManager);
 
-  let browserWindow = Cc["@mozilla.org/appshell/window-mediator;1"].
-                      getService(Ci.nsIWindowMediator).
-                      getMostRecentWindow("navigator:browser");
+  let browserWindow = getMostRecentBrowserWindow();
 
   // Make sure there is a focused element
   browserWindow.document.documentElement.focus();
@@ -458,9 +413,7 @@ exports["test Panel Focus Not Set"] = function(assert, done) {
   const FM = Cc["@mozilla.org/focus-manager;1"].
                 getService(Ci.nsIFocusManager);
 
-  let browserWindow = Cc["@mozilla.org/appshell/window-mediator;1"].
-                      getService(Ci.nsIWindowMediator).
-                      getMostRecentWindow("navigator:browser");
+  let browserWindow = getMostRecentBrowserWindow();
 
   // Make sure there is a focused element
   browserWindow.document.documentElement.focus();
@@ -621,9 +574,9 @@ exports["test Content URL Option"] = function(assert) {
   assert.ok(panel.contentURL == null, "contentURL is undefined.");
   panel.destroy();
 
-  assert.throws(function () Panel({ contentURL: "foo" }),
-                    /The `contentURL` option must be a valid URL./,
-                    "Panel throws an exception if contentURL is not a URL.");
+  assert.throws(() => Panel({ contentURL: "foo" }),
+                /The `contentURL` option must be a valid URL./,
+                "Panel throws an exception if contentURL is not a URL.");
 };
 
 exports["test SVG Document"] = function(assert) {
@@ -838,17 +791,18 @@ exports['test Style Applied Only Once'] = function (assert, done) {
   }
 };
 
-exports['test Only One Panel Open Concurrently'] = function (assert, done) {
+exports['test Only One Panel Open Concurrently'] = function(assert, done) {
   const loader = Loader(module);
-  const { Panel } = loader.require('sdk/panel')
+  const { Panel } = loader.require('sdk/panel');
 
   let panelA = Panel({
     contentURL: 'about:buildconfig'
   });
+  assert.pass("made panelA");
 
   let panelB = Panel({
     contentURL: 'about:buildconfig',
-    onShow: function () {
+    onShow: () => {
       // When loading two panels simulataneously, only the second
       // should be shown, never showing the first
       assert.equal(panelA.isShowing, false, 'First panel is hidden');
@@ -856,19 +810,25 @@ exports['test Only One Panel Open Concurrently'] = function (assert, done) {
       panelC.show();
     }
   });
+  assert.pass("made panelB");
 
   let panelC = Panel({
     contentURL: 'about:buildconfig',
-    onShow: function () {
+    onShow: () => {
       assert.equal(panelA.isShowing, false, 'First panel is hidden');
       assert.equal(panelB.isShowing, false, 'Second panel is hidden');
       assert.equal(panelC.isShowing, true, 'Third panel is showing');
+      loader.unload();
       done();
     }
   });
+  assert.pass("made panelC");
 
   panelA.show();
+  assert.pass("show panelA");
+
   panelB.show();
+  assert.pass("show panelB");
 };
 
 exports['test passing DOM node as first argument'] = function (assert, done) {
@@ -1333,12 +1293,6 @@ exports["test panel load doesn't show"] = function*(assert) {
 
   yield messaged.promise;
   loader.unload();
-}
-
-if (packaging.isNative) {
-  module.exports = {
-    "test skip on jpm": (assert) => assert.pass("skipping this file with jpm")
-  };
 }
 
 require("sdk/test").run(exports);
