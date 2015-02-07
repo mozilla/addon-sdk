@@ -1192,18 +1192,28 @@ exports.testPageModCssAutomaticDestroy = function(assert, done) {
 };
 
 exports.testPageModContentScriptFile = function(assert, done) {
-  testPageMod(assert, done, "about:license", [{
-      include: "about:*",
-      contentScriptWhen: "start",
-      contentScriptFile: "./test-contentScriptFile.js",
-      onMessage: message => {
-        assert.equal(message, "msg from contentScriptFile",
-          "PageMod contentScriptFile with relative path worked");
-      }
-    }],
-    (win, done) => done()
-  );
+  let loader = createLoader();
+  let { PageMod } = loader.require("sdk/page-mod");
 
+  tabs.open({
+    url: "about:license",
+    onReady: function(tab) {
+      let mod = PageMod({
+        include: "about:*",
+        attachTo: ["existing", "top"],
+        contentScriptFile: "./test-contentScriptFile.js",
+        onMessage: message => {
+          assert.equal(message, "msg from contentScriptFile",
+            "PageMod contentScriptFile with relative path worked");
+          tab.close(function() {
+            mod.destroy();
+            loader.unload();
+            done();
+          });
+        }
+      });
+    }
+  })
 };
 
 exports.testPageModTimeout = function(assert, done) {
