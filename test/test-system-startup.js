@@ -4,16 +4,20 @@
 "use strict";
 
 const { Cu } = require("chrome");
-const Startup = Cu.import("resource://gre/modules/sdk/system/Startup.js", {}).exports;
+const Startup = require("sdk/addon/startup.jsm");
+const LegacyStartup = Cu.import("resource://gre/modules/sdk/system/Startup.js", {}).exports;
 
 exports["test startup initialized"] = function(assert) {
   assert.ok(Startup.initialized, "Startup.initialized is true");
+  assert.ok(LegacyStartup.initialized, "LegacyStartup.initialized is true");
 }
 
 exports["test startup onceInitialized"] = function*(assert) {
-  yield Startup.onceInitialized.then(() => {
-    assert.pass("onceInitialized promise was resolved");
-  }).catch(assert.fail);
+  yield Startup.onceInitialized;
+  assert.pass("Startup.onceInitialized promise was resolved");
+
+  yield LegacyStartup.onceInitialized;
+  assert.pass("LegacyStartup.onceInitialized promise was resolved");
 }
 
 require('sdk/test').run(exports);
