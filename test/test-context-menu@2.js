@@ -211,71 +211,77 @@ exports["test parent selector don't match children"] = withTab(function*(assert)
 
 // Page contexts should cause their items to be present in the menu when the
 // menu is not invoked on an active element.
-exports["test page context match"] = withTab(function*(assert) {
-  const isPageMatch = (tree, description="page context matched") =>
-    assert.deepEqual(tree,
-                     menugroup(menuseparator(),
-                               menuitem({label: "page match"}),
-                               menuitem({label: "any match"})),
-                     description);
+exports["test page context match"] = function*(assert) {
+  // Make sure Java doesn't activate
+  prefs.set("plugin.state.java", 0);
 
-  const isntPageMatch = (tree, description="page context did not match") =>
-    assert.deepEqual(tree,
-                     menugroup(menuseparator(),
-                               menuitem({label: "any match"})),
-                    description);
+  yield withTab(function*(assert) {
+    const isPageMatch = (tree, description="page context matched") =>
+      assert.deepEqual(tree,
+                       menugroup(menuseparator(),
+                                 menuitem({label: "page match"}),
+                                 menuitem({label: "any match"})),
+                       description);
 
-  yield* withItems({
-    pageMatch: new Item({
-      label: "page match",
-      context: [new Contexts.Page()],
-    }),
-    anyMatch: new Item({
-      label: "any match"
-    })
-  }, function*({pageMatch, anyMatch}) {
-    for (let tagName of [null, "p", "h3"]) {
-      isPageMatch((yield captureContextMenu(tagName)),
-                  `Page context matches ${tagName} passive element`);
-    }
+    const isntPageMatch = (tree, description="page context did not match") =>
+      assert.deepEqual(tree,
+                       menugroup(menuseparator(),
+                                 menuitem({label: "any match"})),
+                      description);
 
-    for (let tagName of ["button", "canvas", "img", "input", "textarea",
-                         "select", "menu", "embed" ,"object", "video", "audio",
-                         "applet"])
-    {
-      isntPageMatch((yield captureContextMenu(tagName)),
-                    `Page context does not match <${tagName}/> active element`);
-    }
+    yield* withItems({
+      pageMatch: new Item({
+        label: "page match",
+        context: [new Contexts.Page()],
+      }),
+      anyMatch: new Item({
+        label: "any match"
+      })
+    }, function*({pageMatch, anyMatch}) {
+      for (let tagName of [null, "p", "h3"]) {
+        isPageMatch((yield captureContextMenu(tagName)),
+                    `Page context matches ${tagName} passive element`);
+      }
 
-    for (let selector of ["span"])
-    {
-      isntPageMatch((yield captureContextMenu(selector)),
-                    `Page context does not match decedents of active element`);
-    }
-  });
-},
-data`<head>
-  <style>
-    p, object, embed { display: inline-block; }
-  </style>
-</head>
-<body>
-  <div><p>paragraph</p></div>
-  <div><a href=./link><span>link</span></a></div>
-  <h3>hi</h3>
-  <div><button>button</button></div>
-  <div><canvas height=10 /></div>
-  <div><img height=10 width=10 /></div>
-  <div><input value=input /></div>
-  <div><textarea>text</textarea></div>
-  <div><select><option>one</option><option>two</option></select></div>
-  <div><menu><button>item</button></menu></div>
-  <div><object width=10 height=10><param name=foo value=bar /></object></div>
-  <div><embed width=10 height=10/></div>
-  <div><video width=10 height=10 controls /></div>
-  <div><audio width=10 height=10 controls /></div>
-  <div><applet width=10 height=10 /></div>
-</body>`);
+      for (let tagName of ["button", "canvas", "img", "input", "textarea",
+                           "select", "menu", "embed" ,"object", "video", "audio",
+                           "applet"])
+      {
+        isntPageMatch((yield captureContextMenu(tagName)),
+                      `Page context does not match <${tagName}/> active element`);
+      }
+
+      for (let selector of ["span"])
+      {
+        isntPageMatch((yield captureContextMenu(selector)),
+                      `Page context does not match decedents of active element`);
+      }
+      prefs.reset("plugin.state.java");
+    });
+  },
+  data`<head>
+    <style>
+      p, object, embed { display: inline-block; }
+    </style>
+  </head>
+  <body>
+    <div><p>paragraph</p></div>
+    <div><a href=./link><span>link</span></a></div>
+    <h3>hi</h3>
+    <div><button>button</button></div>
+    <div><canvas height=10 /></div>
+    <div><img height=10 width=10 /></div>
+    <div><input value=input /></div>
+    <div><textarea>text</textarea></div>
+    <div><select><option>one</option><option>two</option></select></div>
+    <div><menu><button>item</button></menu></div>
+    <div><object width=10 height=10><param name=foo value=bar /></object></div>
+    <div><embed width=10 height=10/></div>
+    <div><video width=10 height=10 controls /></div>
+    <div><audio width=10 height=10 controls /></div>
+    <div><applet width=10 height=10 /></div>
+  </body>`)(assert);
+};
 
 // Page context does not match if if there is a selection.
 exports["test page context doesn't match on selection"] = withTab(function*(assert) {
