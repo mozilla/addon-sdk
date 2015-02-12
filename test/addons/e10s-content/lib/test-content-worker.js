@@ -742,8 +742,16 @@ exports["test:check worker API with page history"] = WorkerTest(
           // that will be disable until the page gets visible again
           self.on("pagehide", function () {
             setTimeout(function () {
-              self.postMessage("timeout restored");
+              self.port.emit("timeout");
             }, 0);
+          });
+
+          self.on("message", function() {
+            self.postMessage("saw message");
+          });
+
+          self.on("event", function() {
+            self.port.emit("event", "saw event");
           });
         },
         contentScriptWhen: "start"
@@ -761,21 +769,10 @@ exports["test:check worker API with page history"] = WorkerTest(
       // Wait for the document to be hidden
       browser.addEventListener("pagehide", function onpagehide() {
         browser.removeEventListener("pagehide", onpagehide, false);
-        // Now any event sent to this worker should throw
+        // Now any event sent to this worker should be cached
 
-        setTimeout(_ => {
-          assert.throws(
-              function () { worker.postMessage("data"); },
-              /The page is currently hidden and can no longer be used/,
-              "postMessage should throw when the page is hidden in history"
-              );
-
-          assert.throws(
-              function () { worker.port.emit("event"); },
-              /The page is currently hidden and can no longer be used/,
-              "port.emit should throw when the page is hidden in history"
-              );
-        })
+        worker.postMessage("message");
+        worker.port.emit("event");
 
         // Display the page with attached content script back in order to resume
         // its timeout and receive the expected message.
@@ -784,10 +781,30 @@ exports["test:check worker API with page history"] = WorkerTest(
         // do not receive the message immediatly, so that the timeout is
         // actually disabled
         setTimeout(function () {
-          worker.on("message", function (data) {
-            assert.ok(data, "timeout restored");
-            done();
+          worker.on("pageshow", function() {
+            let promise = Promise.all([
+              new Promise(resolve => {
+                worker.port.on("event", () => {
+                  assert.pass("Saw event");
+                  resolve();
+                });
+              }),
+              new Promise(resolve => {
+                worker.on("message", () => {
+                  assert.pass("Saw message");
+                  resolve();
+                });
+              }),
+              new Promise(resolve => {
+                worker.port.on("timeout", () => {
+                  assert.pass("Timer fired");
+                  resolve();
+                });
+              })
+            ]);
+            promise.then(done);
           });
+
           browser.goForward();
         }, 500);
 

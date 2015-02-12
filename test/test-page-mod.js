@@ -1125,42 +1125,7 @@ exports.testPageModCssList = function(assert, done) {
 };
 
 exports.testPageModCssDestroy = function(assert, done) {
-  let [pageMod] = testPageMod(assert, done,
-    'data:text/html;charset=utf-8,<div style="width:200px">css test</div>', [{
-      include: "data:*",
-      contentStyle: "div { width: 100px!important; }"
-    }],
-
-    function(win, done) {
-      let div = win.document.querySelector("div"),
-          style = win.getComputedStyle(div);
-
-      assert.equal(
-        style.width,
-        "100px",
-        "PageMod contentStyle worked"
-      );
-
-      pageMod.destroy();
-
-      assert.equal(
-        style.width,
-        "200px",
-        "PageMod contentStyle is removed after destroy"
-      );
-
-      done();
-    }
-  );
-};
-
-exports.testPageModCssAutomaticDestroy = function(assert, done) {
   let loader = Loader(module);
-
-  let pageMod = loader.require("sdk/page-mod").PageMod({
-    include: "data:*",
-    contentStyle: "div { width: 100px!important; }"
-  });
 
   tabs.open({
     url: "data:text/html;charset=utf-8,<div style='width:200px'>css test</div>",
@@ -1174,19 +1139,89 @@ exports.testPageModCssAutomaticDestroy = function(assert, done) {
 
       assert.equal(
         style.width,
-        "100px",
-        "PageMod contentStyle worked"
+        "200px",
+        "PageMod contentStyle is current before page-mod applies"
       );
 
-      loader.unload();
+      let pageMod = loader.require("sdk/page-mod").PageMod({
+        include: "data:*",
+        contentStyle: "div { width: 100px!important; }",
+        attachTo: ["top", "existing"],
+        onAttach: function(worker) {
+          assert.equal(
+            style.width,
+            "100px",
+            "PageMod contentStyle worked"
+          );
+
+          worker.once('detach', () => {
+            assert.equal(
+              style.width,
+              "200px",
+              "PageMod contentStyle is removed after page-mod destroy"
+            );
+
+            tab.close(done);
+          });
+
+          pageMod.destroy();
+        }
+      });
+    }
+  });
+};
+
+exports.testPageModCssAutomaticDestroy = function(assert, done) {
+ let loader = Loader(module);
+
+  tabs.open({
+    url: "data:text/html;charset=utf-8,<div style='width:200px'>css test</div>",
+
+    onReady: function onReady(tab) {
+      let browserWindow = getMostRecentBrowserWindow();
+      let win = getTabContentWindow(getActiveTab(browserWindow));
+
+      let div = win.document.querySelector("div");
+      let style = win.getComputedStyle(div);
 
       assert.equal(
         style.width,
         "200px",
-        "PageMod contentStyle is removed after loader's unload"
+        "PageMod contentStyle is current before page-mod applies"
       );
 
-      tab.close(done);
+      let pageMod = loader.require("sdk/page-mod").PageMod({
+        include: "data:*",
+        contentStyle: "div { width: 100px!important; }",
+        attachTo: ["top", "existing"],
+        onAttach: function(worker) {
+          assert.equal(
+            style.width,
+            "100px",
+            "PageMod contentStyle worked"
+          );
+
+          // Wait for a second page-mod to attach to be sure the unload
+          // message has made it to the child
+          let pageMod2 = PageMod({
+            include: "data:*",
+            contentStyle: "div { width: 100px!important; }",
+            attachTo: ["top", "existing"],
+            onAttach: function(worker) {
+              assert.equal(
+                style.width,
+                "200px",
+                "PageMod contentStyle is removed after page-mod destroy"
+              );
+
+              pageMod2.destroy();
+              tab.close(done);
+            }
+          });
+
+          loader.unload();
+        }
+      });
     }
   });
 };
@@ -1680,32 +1715,35 @@ exports.testPageShowWhenStart = function(assert, done) {
   const TEST_URL = 'data:text/html;charset=utf-8,detach';
   let sawWorkerPageShow = false;
   let sawInjected = false;
+  let sawContentScriptPageShow = false;
 
   let mod = PageMod({
     include: TEST_URL,
     contentScriptWhen: 'start',
     contentScript: Isolate(function() {
-      self.port.emit('injected');
-      self.on('pageshow', () => {
-        self.port.emit('pageshow');
+      self.port.emit("injected");
+      self.on("pageshow", () => {
+        self.port.emit("pageshow");
       });
     }),
     onAttach: worker => {
-      worker.on('pageshow', () => {
-        sawWorkerPageShow = true;
-      });
-
-      worker.port.on('injected', () => {
+      worker.port.on("injected", () => {
         sawInjected = true;
       });
 
-      worker.port.on('pageshow', () => {
-        assert.ok(sawWorkerPageShow, 'Should have seen the pageshow event');
-        assert.ok(sawInjected, 'Should have seen the injected event');
+      worker.port.on("pageshow", () => {
+        sawContentScriptPageShow = true;
         closeTab(tab);
       });
 
-      worker.on('detach', () => {
+      worker.on("pageshow", () => {
+        sawWorkerPageShow = true;
+      });
+
+      worker.on("detach", () => {
+        assert.ok(sawWorkerPageShow, "Worker emitted pageshow");
+        assert.ok(sawInjected, "Content script ran");
+        assert.ok(sawContentScriptPageShow, "Content script saw pageshow");
         mod.destroy();
         done();
       });
@@ -1713,38 +1751,41 @@ exports.testPageShowWhenStart = function(assert, done) {
   });
 
   let tab = openTab(getMostRecentBrowserWindow(), TEST_URL);
-}
+};
 
 exports.testPageShowWhenReady = function(assert, done) {
   const TEST_URL = 'data:text/html;charset=utf-8,detach';
   let sawWorkerPageShow = false;
   let sawInjected = false;
+  let sawContentScriptPageShow = false;
 
   let mod = PageMod({
     include: TEST_URL,
     contentScriptWhen: 'ready',
     contentScript: Isolate(function() {
-      self.port.emit('injected');
-      self.on('pageshow', () => {
-        self.port.emit('pageshow');
+      self.port.emit("injected");
+      self.on("pageshow", () => {
+        self.port.emit("pageshow");
       });
     }),
     onAttach: worker => {
-      worker.on('pageshow', () => {
-        sawWorkerPageShow = true;
-      });
-
-      worker.port.on('injected', () => {
+      worker.port.on("injected", () => {
         sawInjected = true;
       });
 
-      worker.port.on('pageshow', () => {
-        assert.ok(sawWorkerPageShow, 'Should have seen the pageshow event');
-        assert.ok(sawInjected, 'Should have seen the injected event');
+      worker.port.on("pageshow", () => {
+        sawContentScriptPageShow = true;
         closeTab(tab);
       });
 
-      worker.on('detach', () => {
+      worker.on("pageshow", () => {
+        sawWorkerPageShow = true;
+      });
+
+      worker.on("detach", () => {
+        assert.ok(sawWorkerPageShow, "Worker emitted pageshow");
+        assert.ok(sawInjected, "Content script ran");
+        assert.ok(sawContentScriptPageShow, "Content script saw pageshow");
         mod.destroy();
         done();
       });
@@ -1752,38 +1793,41 @@ exports.testPageShowWhenReady = function(assert, done) {
   });
 
   let tab = openTab(getMostRecentBrowserWindow(), TEST_URL);
-}
+};
 
 exports.testPageShowWhenEnd = function(assert, done) {
   const TEST_URL = 'data:text/html;charset=utf-8,detach';
   let sawWorkerPageShow = false;
   let sawInjected = false;
+  let sawContentScriptPageShow = false;
 
   let mod = PageMod({
     include: TEST_URL,
     contentScriptWhen: 'end',
     contentScript: Isolate(function() {
-      self.port.emit('injected');
-      self.on('pageshow', () => {
-        self.port.emit('pageshow');
+      self.port.emit("injected");
+      self.on("pageshow", () => {
+        self.port.emit("pageshow");
       });
     }),
     onAttach: worker => {
-      worker.on('pageshow', () => {
-        sawWorkerPageShow = true;
-      });
-
-      worker.port.on('injected', () => {
+      worker.port.on("injected", () => {
         sawInjected = true;
       });
 
-      worker.port.on('pageshow', () => {
-        assert.ok(sawWorkerPageShow, 'Should have seen the pageshow event');
-        assert.ok(sawInjected, 'Should have seen the injected event');
+      worker.port.on("pageshow", () => {
+        sawContentScriptPageShow = true;
         closeTab(tab);
       });
 
-      worker.on('detach', () => {
+      worker.on("pageshow", () => {
+        sawWorkerPageShow = true;
+      });
+
+      worker.on("detach", () => {
+        assert.ok(sawWorkerPageShow, "Worker emitted pageshow");
+        assert.ok(sawInjected, "Content script ran");
+        assert.ok(sawContentScriptPageShow, "Content script saw pageshow");
         mod.destroy();
         done();
       });
@@ -1791,6 +1835,6 @@ exports.testPageShowWhenEnd = function(assert, done) {
   });
 
   let tab = openTab(getMostRecentBrowserWindow(), TEST_URL);
-}
+};
 
 require('sdk/test').run(exports);
