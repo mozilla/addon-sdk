@@ -15,7 +15,8 @@ const { Cu } = require('chrome');
 const { async } = Cu.import('resource://gre/modules/Task.jsm', {}).Task;
 
 const { set } = require('sdk/preferences/service');
-const isE10S = getMostRecentBrowserWindow().gMultiProcessBrowser;
+const mainWindow = getMostRecentBrowserWindow();
+const isE10S = mainWindow.gMultiProcessBrowser;
 
 // The hidden preload browser messes up our frame counts
 set('browser.newtab.preload', false);
@@ -89,6 +90,8 @@ let waitForProcesses = async(function*(loader) {
 
 if (isE10S) {
   console.log("Testing in E10S mode");
+  // We expect a child process to already be present, make sure that is the case
+  mainWindow.XULBrowserWindow.forceInitialBrowserRemote();
 
   // Check that we see a process stop and start
   exports["test process restart"] = function*(assert) {
