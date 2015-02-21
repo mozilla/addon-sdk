@@ -9,23 +9,19 @@ const { browserWindows } = require('sdk/windows');
 const tabs = require('sdk/tabs');
 const { isPrivate } = require('sdk/private-browsing');
 const { openTab, closeTab, getTabContentWindow, getOwnerWindow } = require('sdk/tabs/utils');
-const { open, close } = require('sdk/window/helpers');
+const { close } = require('sdk/window/helpers');
 const { windows } = require('sdk/window/utils');
 const { getMostRecentBrowserWindow } = require('sdk/window/utils');
 const { fromIterator } = require('sdk/util/array');
+
+const { openWindow } = require('./util');
 
 if (isWindowPBSupported) {
   exports.testGetTabs = function(assert, done) {
     let tabCount = getTabs().length;
     let windowCount = browserWindows.length;
 
-    open(null, {
-        features: {
-        private: true,
-        toolbar: true,
-        chrome: true
-      }
-    }).then(function(window) {
+    openWindow({ private: true }).then(function(window) {
       assert.ok(isPrivate(window), 'new tab is private');
 
       assert.equal(getTabs().length, tabCount, 'there are no new tabs found');

@@ -6,7 +6,7 @@
 
 const { Loader } = require("sdk/test/loader");
 const utils = require("sdk/tabs/utils");
-const { open, close } = require("sdk/window/helpers");
+const { close } = require("sdk/window/helpers");
 const { getMostRecentBrowserWindow } = require("sdk/window/utils");
 const { events } = require("sdk/tab/events");
 const { on, off } = require("sdk/event/core");
@@ -14,15 +14,16 @@ const { resolve, defer } = require("sdk/core/promise");
 
 let isFennec = require("sdk/system/xul-app").is("Fennec");
 
+const { openWindow } = require('./util');
+
 function test(options) {
   return function(assert, done) {
     let tabEvents = [];
     let tabs = [];
     let { promise, resolve: resolveP } = defer();
-    let win = isFennec ? resolve(getMostRecentBrowserWindow()) :
-      open(null, {
-        features: { private: true, toolbar:true, chrome: true }
-      });
+    let win = isFennec
+        ? resolve(getMostRecentBrowserWindow())
+        : openWindow({ private: true });
     let window = null;
 
     // Firefox events are fired sync; Fennec events async
@@ -50,7 +51,7 @@ function test(options) {
 
       // Execute here for synchronous FF events, as the handlers
       // were called before tabs were pushed to `tabs`
-      runIfReady(); 
+      runIfReady();
       return promise;
     }).then(function() {
       off(events, "data", handler);

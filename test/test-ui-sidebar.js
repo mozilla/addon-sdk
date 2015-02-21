@@ -14,7 +14,7 @@ const { Loader } = require('sdk/test/loader');
 const { show, hide } = require('sdk/ui/sidebar/actions');
 const { isShowing } = require('sdk/ui/sidebar/utils');
 const { getMostRecentBrowserWindow, isFocused } = require('sdk/window/utils');
-const { open, close, focus, promise: windowPromise } = require('sdk/window/helpers');
+const { open, close, focus } = require('sdk/window/helpers');
 const { setTimeout, setImmediate } = require('sdk/timers');
 const { isPrivate } = require('sdk/private-browsing');
 const data = require('./fixtures');
@@ -24,6 +24,8 @@ const { defer, all } = require('sdk/core/promise');
 const { modelFor } = require('sdk/model/core');
 const { cleanUI } = require("sdk/test/utils");
 const { before, after } = require('sdk/test/utils');
+
+const { openWindow } = require('./util');
 
 require('sdk/windows');
 
@@ -119,7 +121,7 @@ exports.testSideBarIsInNewWindows = function*(assert) {
   let ele = startWindow.document.getElementById(makeID(testName));
   assert.ok(ele, 'sidebar element was added');
 
-  let window = yield open();
+  let window = yield openWindow();
 
   ele = window.document.getElementById(makeID(testName));
   assert.ok(ele, 'sidebar element was added');
@@ -571,7 +573,7 @@ exports.testDestroyEdgeCaseBug = function*(assert) {
 
   //assert.equal(isShowing(sidebar), true, 'the sidebar is showing');
 
-  let window2 = yield open().then(focus);
+  let window2 = yield openWindow().then(focus);
 
   assert.equal(isPrivate(window2), false, 'the new window is not private');
   assert.equal(isSidebarShowing(window2), false, 'the sidebar is not showing');
@@ -617,7 +619,7 @@ exports.testClickingACheckedMenuitem = function*(assert) {
   });
   assert.pass('sidebar was created');
 
-  let window = yield open().then(focus);
+  let window = yield openWindow().then(focus);
   yield sidebar.show();
   assert.pass('the show callback works');
 
@@ -684,7 +686,7 @@ exports.testURLSetter = function*(assert) {
                'the menuitem is not checked');
   assert.equal(isSidebarShowing(window), false, 'the new window sidebar is not showing');
 
-  window = yield windowPromise(window.OpenBrowserWindow(), 'load');
+  window = yield openWindow();
   document = window.document;
   assert.pass('new window was opened');
 
@@ -758,7 +760,7 @@ exports.testURLSetterToSameValueReloadsSidebar = function*(assert) {
                'the menuitem is not checked');
   assert.equal(isSidebarShowing(window), false, 'the new window sidebar is not showing');
 
-  window = yield windowPromise(window.OpenBrowserWindow(), 'load');
+  window = yield openWindow();
   document = window.document;
   assert.pass('new window was opened');
 
@@ -817,7 +819,7 @@ exports.testShowingInOneWindowDoesNotAffectOtherWindows = function*(assert) {
   }
   checkSidebarShowing(window1, false);
 
-  let window = yield windowPromise(window1.OpenBrowserWindow(), 'load');
+  let window = yield openWindow();
   let { document } = window;
   assert.pass('new window was opened!');
 
@@ -946,7 +948,7 @@ exports.testDetachEventOnWindowClose = function*(assert) {
   let testName = 'testDetachEventOnWindowClose';
   let url = 'data:text/html;charset=utf-8,' + testName;
 
-  window = yield windowPromise(window.OpenBrowserWindow(), 'load').then(focus);
+  window = yield openWindow().then(focus);
 
   yield new Promise(resolve => {
     let sidebar = Sidebar({
@@ -976,7 +978,7 @@ exports.testHideEventOnWindowClose = function*(assert) {
   let url = 'data:text/html;charset=utf-8,' + testName;
 
 
-  window = yield windowPromise(window.OpenBrowserWindow(), 'load').then(focus);
+  window = yield openWindow().then(focus);
   yield new Promise(resolve => {
     let sidebar = Sidebar({
       id: testName,
@@ -1107,7 +1109,7 @@ exports.testSidebarLeakCheckUnloadAfterAttach = function*(assert) {
     url: 'data:text/html;charset=utf-8,'+testName
   });
 
-  let window = yield open().then(focus);
+  let window = yield openWindow().then(focus);
 
   yield new Promise(resolve => {
     sidebar.on('attach', resolve);
@@ -1490,7 +1492,7 @@ exports.testShowHideRawWindowArg = function*(assert) {
   });
 
   let mainWindow = getMostRecentBrowserWindow();
-  let newWindow = yield open().then(focus);
+  let newWindow = yield openWindow().then(focus);
 
   yield focus(mainWindow);
 
@@ -1521,7 +1523,7 @@ exports.testShowHideSDKWindowArg = function*(assert) {
   });
 
   let mainWindow = getMostRecentBrowserWindow();
-  let newWindow = yield open().then(focus);
+  let newWindow = yield openWindow().then(focus);
   let newSDKWindow = modelFor(newWindow);
 
   yield focus(mainWindow);

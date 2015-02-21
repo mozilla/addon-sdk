@@ -4,10 +4,12 @@
 "use strict";
 
 const { Loader } = require("sdk/test/loader");
-const { open, close } = require("sdk/window/helpers");
+const { close } = require("sdk/window/helpers");
 const { browserWindows: windows } = require("sdk/windows");
 const { isBrowser } = require('sdk/window/utils');
 const app = require("sdk/system/xul-app");
+
+const { openWindow } = require('./util');
 
 exports["test unload window observer"] = function(assert, done) {
   // Hacky way to be able to create unloadable modules via makeSandboxedLoader.
@@ -27,7 +29,7 @@ exports["test unload window observer"] = function(assert, done) {
   }
 
   // Open window and close it to trigger observers.
-  open().
+  openWindow().
     then(close).
     then(loader.unload).
     then(open).
