@@ -58,4 +58,13 @@ exports["test normalize"] = function assert(assert) {
   }, "throws if contains more then on non-modifier key");
 };
 
+/**  
+ * bug 1135312 - can't bind to the '-' key because it is key code 173, not 109
+ */
+exports["test hyphenminus"] = function(assert, done) {
+  assert.equal(utils.getKeyForCode(173), '-');
+  assert.equal(utils.getCodeForKey('-'), 173);
+  done();
+};
+
 require("sdk/test").run(exports);
