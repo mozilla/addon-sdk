@@ -762,6 +762,9 @@ exports.testURLSetterToSameValueReloadsSidebar = function*(assert) {
   document = window.document;
   assert.pass('new window was opened');
 
+  yield focus(window);
+  assert.pass('new window was focused');
+
   yield sidebar1.show();
 
   assert.equal(isShowing(sidebar1), true, 'the sidebar is showing');
