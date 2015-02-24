@@ -96,9 +96,12 @@ exports.testSidebarBasicLifeCycle = function*(assert) {
   sidebar.destroy();
   sidebar.destroy();
 
-  let sidebarMI = getSidebarMenuitems();
-  for (let mi of sidebarMI) {
-    assert.ok(BUILTIN_SIDEBAR_MENUITEMS.indexOf(mi.getAttribute('id')) >= 0, 'the menuitem is for a built-in sidebar')
+  for (let mi of getSidebarMenuitems()) {
+    let id = mi.getAttribute('id');
+
+    if (BUILTIN_SIDEBAR_MENUITEMS.indexOf(id) < 0) {
+      assert.fail('the menuitem "' + id + '" is not a built-in sidebar');
+    }
     assert.ok(!isChecked(mi), 'no sidebar menuitem is checked');
   }
 
@@ -360,8 +363,7 @@ exports.testSidebarUnload = function*(assert) {
 
   loader.unload();
 
-  let sidebarMI = getSidebarMenuitems();
-  for (let mi of sidebarMI) {
+  for (let mi of getSidebarMenuitems()) {
     assert.ok(BUILTIN_SIDEBAR_MENUITEMS.indexOf(mi.getAttribute('id')) >= 0, 'the menuitem is for a built-in sidebar')
     assert.ok(!isChecked(mi), 'no sidebar menuitem is checked');
   }
@@ -598,9 +600,12 @@ exports.testDestroyEdgeCaseBug = function*(assert) {
   yield sidebar.show();
   loader.unload();
 
-  let sidebarMI = getSidebarMenuitems();
-  for (let mi of sidebarMI) {
-    assert.ok(BUILTIN_SIDEBAR_MENUITEMS.indexOf(mi.getAttribute('id')) >= 0, 'the menuitem is for a built-in sidebar')
+  for (let mi of getSidebarMenuitems()) {
+    let id = mi.getAttribute('id');
+
+    if (BUILTIN_SIDEBAR_MENUITEMS.indexOf(id) < 0) {
+      assert.fail('the menuitem "' + id + '" is not a built-in sidebar');
+    }
     assert.ok(!isChecked(mi), 'no sidebar menuitem is checked');
   }
   assert.ok(!window.document.getElementById(makeID(testName)), 'sidebar id DNE');
