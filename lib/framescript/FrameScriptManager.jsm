@@ -32,4 +32,15 @@ function enableCMEvents() {
   globalMM.loadFrameScript(PATH + 'contextmenu-events.js', true);
 }
 
-const EXPORTED_SYMBOLS = ['enableTabEvents', 'enableCMEvents'];
+let loadedSelectionEvents = false;
+
+function enableSelectionEvents() {
+  if (loadedSelectionEvents)
+    return;
+
+  loadedSelectionEvents = true;
+  globalMM.loadFrameScript(PATH + 'selection-events.js', true);
+}
+
+const EXPORTED_SYMBOLS =
+    ['enableTabEvents', 'enableCMEvents', 'enableSelectionEvents'];

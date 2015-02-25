@@ -826,10 +826,6 @@ exports["test Selection Listener on frame"] = function*(assert) {
   loader.unload();
 };
 
-
-// TODO: re-enable and fix intermittent test below
-// See Bug 970062 https://bugzilla.mozilla.org/show_bug.cgi?id=970062
-/*
 exports["test Textarea onSelect Listener on frame"] = function*(assert) {
   let loader = Loader(module);
   let selection = loader.require("sdk/selection");
@@ -850,7 +846,6 @@ exports["test Textarea onSelect Listener on frame"] = function*(assert) {
   yield cleanUI();
   loader.unload();
 };
-*/
 
 
 exports["test PBPW Selection Listener"] = function*(assert) {
@@ -976,4 +971,4 @@ if (!require("sdk/private-browsing/utils").isWindowPBSupported) {
   });
 }
 
-require("sdk/test").run(exports);
+// require("sdk/test").run(exports);
