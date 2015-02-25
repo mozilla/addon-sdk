@@ -1495,23 +1495,29 @@ exports.testShowHideRawWindowArg = function*(assert) {
   });
 
   let mainWindow = getMostRecentBrowserWindow();
-  let newWindow = yield open().then(focus);
+  let newWindow = yield windowPromise(mainWindow.OpenBrowserWindow(), 'load');
+  assert.pass("Created the new window");
+
+  yield focus(newWindow);
+  assert.pass("Focused the new window");
 
   yield focus(mainWindow);
+  assert.pass("Focused the old window");
 
   yield sidebar.show(newWindow);
 
   assert.pass('the sidebar was shown');
-  assert.ok(!isSidebarShowing(mainWindow), 'sidebar is not showing in main window');
-  assert.ok(isSidebarShowing(newWindow), 'sidebar is showing in new window');
+  assert.equal(isSidebarShowing(mainWindow), false, 'sidebar is not showing in main window');
+  assert.equal(isSidebarShowing(newWindow), true, 'sidebar is showing in new window');
 
   assert.ok(isFocused(mainWindow), 'main window is still focused');
 
   yield sidebar.hide(newWindow);
 
-  assert.ok(isFocused(mainWindow), 'main window is still focused');
-  assert.ok(!isSidebarShowing(mainWindow), 'sidebar is not showing in main window');
-  assert.ok(!isSidebarShowing(newWindow), 'sidebar is not showing in new window');
+  assert.equal(isFocused(mainWindow), true, 'main window is still focused');
+  assert.equal(isSidebarShowing(mainWindow), false, 'sidebar is not showing in main window');
+  assert.equal(isSidebarShowing(newWindow), false, 'sidebar is not showing in new window');
+
   sidebar.destroy();
 }
 
@@ -1552,6 +1558,7 @@ before(exports, (name, assert) => {
 });
 
 after(exports, function*(name, assert) {
+  assert.pass("Cleaning new windows and tabs");
   yield cleanUI();
   assert.equal(isSidebarShowing(), false, 'no sidebar is showing');
 });
