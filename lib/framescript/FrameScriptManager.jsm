@@ -11,27 +11,6 @@ const globalMM = Components.classes["@mozilla.org/globalmessagemanager;1"].
 // overridden while running tests, just like any other module.
 const PATH = __URI__.replace('framescript/FrameScriptManager.jsm', '');
 
-// ensure frame scripts are loaded only once
-let loadedTabEvents = false;
-
-function enableTabEvents() {
-  if (loadedTabEvents)
-    return;
-
-  loadedTabEvents = true;
-  globalMM.loadFrameScript(PATH + 'framescript/tab-events.js', true);
-}
-
-let loadedCMEvents = false;
-
-function enableCMEvents() {
-  if (loadedCMEvents)
-    return;
-
-  loadedCMEvents = true;
-  globalMM.loadFrameScript(PATH + 'framescript/contextmenu-events.js', true);
-}
-
 // Builds a unique loader ID for this runtime. We prefix with the SDK path so
 // overriden versions of the SDK don't conflict
 let LOADER_ID = 0;
@@ -45,4 +24,4 @@ const frame_script = function(contentFrame, PATH) {
 }
 globalMM.loadFrameScript("data:,(" + frame_script.toString() + ")(this, " + JSON.stringify(PATH) + ");", true);
 
-this.EXPORTED_SYMBOLS = ['enableTabEvents', 'enableCMEvents', 'getNewLoaderID'];
+this.EXPORTED_SYMBOLS = ['getNewLoaderID'];

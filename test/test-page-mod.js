@@ -1666,7 +1666,7 @@ exports.testSyntaxErrorInContentScript = function *(assert) {
   yield cleanUI();
 };
 
-exports.testPageShowWhenStart = function(assert, done) {
+/*exports.testPageShowWhenStart = function(assert, done) {
   const TEST_URL = 'data:text/html;charset=utf-8,detach';
   let sawWorkerPageShow = false;
   let sawInjected = false;
@@ -1781,6 +1781,6 @@ exports.testPageShowWhenEnd = function(assert, done) {
   });
 
   let tab = openTab(getMostRecentBrowserWindow(), TEST_URL);
-}
+}*/
 
 require('sdk/test').run(exports);
