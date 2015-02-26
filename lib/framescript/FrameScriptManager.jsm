@@ -8,7 +8,7 @@ const { classes: Cc, interfaces: Ci } = Components;
 const globalMM = Cc["@mozilla.org/globalmessagemanager;1"].
                  getService(Ci.nsIMessageListenerManager);
 
-const EXPORTED_SYMBOLS = ["getNewLoaderID"];
+this.EXPORTED_SYMBOLS = ["getNewLoaderID"];
 
 // Load frame scripts from the same dir as this module.
 // Since this JSM will be loaded using require(), PATH will be
@@ -18,7 +18,7 @@ const PATH = __URI__.replace('framescript/FrameScriptManager.jsm', '');
 // Builds a unique loader ID for this runtime. We prefix with the SDK path so
 // overriden versions of the SDK don't conflict
 let LOADER_ID = 0;
-function getNewLoaderID() {
+this.getNewLoaderID = () => {
   return PATH + ":" + LOADER_ID++;
 }
 

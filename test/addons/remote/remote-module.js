@@ -17,7 +17,7 @@ log("module loaded");
 
 process.port.emit('sdk/test/load');
 
-process.port.on('sdk/test/ping', key => {
+process.port.on('sdk/test/ping', (process, key) => {
   log("received process ping");
   process.port.emit('sdk/test/pong', key);
 });
@@ -29,7 +29,7 @@ frames.forEvery(frame => {
     frameCount--;
   });
 
-  frame.port.on('sdk/test/ping', key => {
+  frame.port.on('sdk/test/ping', (frame, key) => {
     log("received frame ping");
     frame.port.emit('sdk/test/pong', key);
   });

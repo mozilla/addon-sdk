@@ -1,160 +1,85 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+"use strict";
+
 const LOCAL_URI = "about:robots";
 const REMOTE_URI = "about:home";
-const REMOTE_MODULE = "./remote-module";
 
 const { Loader } = require('sdk/test/loader');
 const { getTabs, openTab, closeTab, setTabURL, getBrowserForTab, getURI } = require('sdk/tabs/utils');
 const { getMostRecentBrowserWindow } = require('sdk/window/utils');
 const { cleanUI } = require("sdk/test/utils");
 const { setTimeout } = require("sdk/timers");
-
-const { Cu } = require('chrome');
-const { async } = Cu.import('resource://gre/modules/Task.jsm', {}).Task;
+const { promiseEvent, promiseDOMEvent, promiseEventOnItemAndContainer,
+        waitForProcesses, getChildFrameCount, isE10S } = require("./utils");
+const { after } = require('sdk/test/utils');
 
 const { set } = require('sdk/preferences/service');
-const mainWindow = getMostRecentBrowserWindow();
-const isE10S = mainWindow.gMultiProcessBrowser;
-
 // The hidden preload browser messes up our frame counts
 set('browser.newtab.preload', false);
 
-function promiseEvent(emitter, event) {
-  console.log("Waiting for " + event);
-  return new Promise(resolve => {
-    emitter.once(event, (...args) => {
-      console.log("Saw " + event);
-      resolve(args);
-    });
-  });
-}
+// Check that we see a process stop and start
+exports["test process restart"] = function*(assert) {
+  if (!isE10S) {
+    assert.pass("Skipping test in non-e10s mode");
+    return;
+  }
 
-function promiseDOMEvent(target, event, isCapturing = false) {
-  console.log("Waiting for " + event);
-  return new Promise(resolve => {
-    let listener = (event) => {
-      target.removeEventListener(event, listener, isCapturing);
-      resolve(event);
-    };
-    target.addEventListener(event, listener, isCapturing);
-  })
-}
+  let window = getMostRecentBrowserWindow();
 
-promiseEventOnItemAndContainer = async(function*(assert, itemport, container, event, item = itemport) {
-  let itemEvent = promiseEvent(itemport, event);
-  let containerEvent = promiseEvent(container, event);
+  let tabs = getTabs(window);
+  assert.equal(tabs.length, 1, "Should have just the one tab to start with");
+  let tab = tabs[0];
 
-  let itemArgs = yield itemEvent;
-  let [target, ...containerArgs] = yield containerEvent;
+  let loader = new Loader(module);
+  let { processes, frames } = yield waitForProcesses(loader);
 
-  assert.equal(target, item, "Should have seen a container event for the right item");
-  assert.equal(JSON.stringify(itemArgs), JSON.stringify(containerArgs), "Arguments should have matched");
+  let remoteProcess = Array.filter(processes, p => p.isRemote)[0];
+  let localProcess = Array.filter(processes, p => !p.isRemote)[0];
+  let remoteFrame = Array.filter(frames, f => f.process == remoteProcess)[0];
 
-  return itemArgs;
-});
+  // Switch the remote tab to a local URI which should kill the remote process
 
-let waitForProcesses = async(function*(loader) {
-  console.log("Starting remote");
-  let { processes, frames, remoteRequire } = loader.require('sdk/remote/parent');
-  remoteRequire(REMOTE_MODULE, module);
+  let frameDetach = promiseEventOnItemAndContainer(assert, remoteFrame, frames, 'detach');
+  let frameAttach = promiseEvent(frames, 'attach');
+  let processDetach = promiseEventOnItemAndContainer(assert, remoteProcess, processes, 'detach');
+  setTabURL(tab, LOCAL_URI);
+  // The load should kill the remote frame
+  yield frameDetach;
+  // And create a new frame in the local process
+  let [newFrame] = yield frameAttach;
+  assert.equal(newFrame.process, localProcess, "New frame should be in the local process");
+  // And kill the process
+  yield processDetach;
 
-  let events = [];
+  frameDetach = promiseEventOnItemAndContainer(assert, newFrame, frames, 'detach');
+  let processAttach = promiseEvent(processes, 'attach');
+  frameAttach = promiseEvent(frames, 'attach');
+  setTabURL(tab, REMOTE_URI);
+  // The load should kill the remote frame
+  yield frameDetach;
+  // And create a new remote process
+  [remoteProcess] = yield processAttach;
+  assert.ok(remoteProcess.isRemote, "Process should be remote");
+  // And create a new frame in the remote process
+  [newFrame] = yield frameAttach;
+  assert.equal(newFrame.process, remoteProcess, "New frame should be in the remote process");
 
-  // In e10s we should expect to see two processes
-  let expectedCount = isE10S ? 2 : 1;
+  setTabURL(tab, "about:blank");
 
-  yield new Promise(resolve => {
-    let count = 0;
-
-    // Wait for a process to be detected
-    let listener = process => {
-      console.log("Saw a process attach");
-      // Wait for the remote module to load in this process
-      process.port.once('sdk/test/load', () => {
-        console.log("Saw a remote module load");
-        count++;
-        if (count == expectedCount) {
-          processes.off('attach', listener);
-          resolve();
-        }
-      });
-    }
-    processes.on('attach', listener);
-  });
-
-  console.log("Remote ready");
-  return { processes, frames, remoteRequire };
-});
-
-if (isE10S) {
-  console.log("Testing in E10S mode");
-  // We expect a child process to already be present, make sure that is the case
-  mainWindow.XULBrowserWindow.forceInitialBrowserRemote();
-
-  // Check that we see a process stop and start
-  exports["test process restart"] = function*(assert) {
-    let window = getMostRecentBrowserWindow();
-
-    let tabs = getTabs(window);
-    assert.equal(tabs.length, 1, "Should have just the one tab to start with");
-    let tab = tabs[0];
-
-    let loader = new Loader(module);
-    let { processes, frames, remoteRequire } = yield waitForProcesses(loader);
-
-    let remoteProcess = Array.filter(processes, p => p.isRemote)[0];
-    let localProcess = Array.filter(processes, p => !p.isRemote)[0];
-    let remoteFrame = Array.filter(frames, f => f.process == remoteProcess)[0];
-
-    // Switch the remote tab to a local URI which should kill the remote process
-
-    let frameDetach = promiseEventOnItemAndContainer(assert, remoteFrame, frames, 'detach');
-    let frameAttach = promiseEvent(frames, 'attach');
-    let processDetach = promiseEventOnItemAndContainer(assert, remoteProcess, processes, 'detach');
-    setTabURL(tab, LOCAL_URI);
-    // The load should kill the remote frame
-    yield frameDetach;
-    // And create a new frame in the local process
-    let [newFrame] = yield frameAttach;
-    assert.equal(newFrame.process, localProcess, "New frame should be in the local process");
-    // And kill the process
-    yield processDetach;
-
-    frameDetach = promiseEventOnItemAndContainer(assert, newFrame, frames, 'detach');
-    processAttach = promiseEvent(processes, 'attach');
-    frameAttach = promiseEvent(frames, 'attach');
-    setTabURL(tab, REMOTE_URI);
-    // The load should kill the remote frame
-    yield frameDetach;
-    // And create a new remote process
-    [remoteProcess] = yield processAttach;
-    assert.ok(remoteProcess.isRemote, "Process should be remote");
-    // And create a new frame in the remote process
-    [newFrame] = yield frameAttach;
-    assert.equal(newFrame.process, remoteProcess, "New frame should be in the remote process");
-
-    setTabURL(tab, "about:blank");
-
-    loader.unload();
-    yield cleanUI();
-  };
-}
-else {
-  console.log("Testing in non-E10S mode");
-}
+  loader.unload();
+};
 
 // Test that we find the right number of processes and that messaging between
 // them works and none of the streams cross
 exports["test process list"] = function*(assert) {
   let loader = new Loader(module);
-  let { processes, frames, remoteRequire } = loader.require('sdk/remote/parent');
+  let { processes } = loader.require('sdk/remote/parent');
 
   let processCount = 0;
-  processes.forEvery(processes => {
-    processCount++;
-  });
+  processes.forEvery(processes => processCount++);
 
   yield waitForProcesses(loader);
 
@@ -164,26 +89,25 @@ exports["test process list"] = function*(assert) {
   assert.equal(localProcesses.length, 1, "Should always be one process");
 
   if (isE10S) {
-    assert.equal(remoteProcesses.length, 1, "Should be one remote processes");
-  } else {
+    assert.equal(remoteProcesses.length, 1, "Should be one remote process");
+  }
+  else {
     assert.equal(remoteProcesses.length, 0, "Should be no remote processes");
   }
 
   assert.equal(processCount, processes.length, "Should have seen all processes");
 
   processCount = 0;
-  processes.forEvery(process => {
-    processCount++;
-  });
+  processes.forEvery(process => processCount++);
 
   assert.equal(processCount, processes.length, "forEvery should send existing processes to the listener");
 
-  localProcesses[0].port.on('sdk/test/pong', (key) => {
+  localProcesses[0].port.on('sdk/test/pong', (process, key) => {
     assert.equal(key, "local", "Should not have seen a pong from the local process with the wrong key");
   });
 
   if (isE10S) {
-    remoteProcesses[0].port.on('sdk/test/pong', (key) => {
+    remoteProcesses[0].port.on('sdk/test/pong', (process, key) => {
       assert.equal(key, "remote", "Should not have seen a pong from the remote process with the wrong key");
     });
   }
@@ -201,24 +125,11 @@ exports["test process list"] = function*(assert) {
     reply = yield promise;
     assert.equal(reply[0], "remote", "Saw the process reply with the right key");
 
-    assert.notEqual(localProcesses[0].id, remoteProcesses[0].id, "Processes should have different identifiers");
+    assert.notEqual(localProcesses[0], remoteProcesses[0], "Processes should be different");
   }
 
   loader.unload();
 };
-
-// Counts the frames in all the child processes
-let getChildFrameCount = async(function*(processes) {
-  let frameCount = 0;
-
-  for (let process of processes) {
-    process.port.emit('sdk/test/count');
-    let [count] = yield promiseEvent(process.port, 'sdk/test/count');
-    frameCount += count;
-  }
-
-  return frameCount;
-});
 
 // Test that the frame lists are kept up to date
 exports["test frame list"] = function*(assert) {
@@ -232,7 +143,7 @@ exports["test frame list"] = function*(assert) {
   assert.equal(tabs.length, 1, "Should have just the one tab to start with");
 
   let loader = new Loader(module);
-  let { processes, frames, remoteRequire } = yield waitForProcesses(loader);
+  let { processes, frames } = yield waitForProcesses(loader);
 
   assert.equal(browserFrames(frames), getTabs(window).length, "Should be the right number of browser frames.");
   assert.equal((yield getChildFrameCount(processes)), frames.length, "Child processes should have the right number of frames");
@@ -302,8 +213,6 @@ exports["test frame list"] = function*(assert) {
   assert.equal((yield getChildFrameCount(processes)), frames.length, "Child processes should have the right number of frames");
 
   loader.unload();
-
-  yield cleanUI();
 };
 
 // Test that multiple loaders get their own loaders in the child and messages
@@ -318,11 +227,11 @@ exports["test new loader"] = function*(assert) {
   let process1 = [...processes1][0];
   let process2 = [...processes2][0];
 
-  process1.port.on('sdk/test/pong', (key) => {
+  process1.port.on('sdk/test/pong', (process, key) => {
     assert.equal(key, "a", "Should have seen the right pong");
   });
 
-  process2.port.on('sdk/test/pong', (key) => {
+  process2.port.on('sdk/test/pong', (process, key) => {
     assert.equal(key, "b", "Should have seen the right pong");
   });
 
@@ -344,7 +253,7 @@ exports["test new loader"] = function*(assert) {
 exports["test unload"] = function*(assert) {
   let window = getMostRecentBrowserWindow();
   let loader = new Loader(module);
-  let { processes, frames, remoteRequire } = yield waitForProcesses(loader);
+  let { frames } = yield waitForProcesses(loader);
 
   let promise = promiseEvent(frames, 'attach');
   let tab = openTab(window, "data:,<html/>");
@@ -362,15 +271,13 @@ exports["test unload"] = function*(assert) {
   assert.equal(hash, "unloaded:shutdown", "Saw the correct hash change.")
 
   closeTab(tab);
-
-  yield cleanUI();
 }
 
-// Test that unloading the loader causes the child to see detach events
-exports["test detach on unload"] = function*(assert) {
+// Test that unloading the loader causes the child to see frame detach events
+exports["test frame detach on unload"] = function*(assert) {
   let window = getMostRecentBrowserWindow();
   let loader = new Loader(module);
-  let { processes, frames, remoteRequire } = yield waitForProcesses(loader);
+  let { frames } = yield waitForProcesses(loader);
 
   let promise = promiseEvent(frames, 'attach');
   let tab = openTab(window, "data:,<html/>");
@@ -388,15 +295,13 @@ exports["test detach on unload"] = function*(assert) {
   assert.equal(hash, "unloaded", "Saw the correct hash change.")
 
   closeTab(tab);
-
-  yield cleanUI();
 }
 
 // Test that DOM event listener on the frame object works
 exports["test frame event listeners"] = function*(assert) {
   let window = getMostRecentBrowserWindow();
   let loader = new Loader(module);
-  let { processes, frames, remoteRequire } = yield waitForProcesses(loader);
+  let { frames } = yield waitForProcesses(loader);
 
   let promise = promiseEvent(frames, 'attach');
   let tab = openTab(window, "data:text/html,<html></html>");
@@ -425,15 +330,13 @@ exports["test frame event listeners"] = function*(assert) {
 
   closeTab(tab);
   loader.unload();
-
-  yield cleanUI();
 }
 
 // Test that DOM event listener on the frames object works
 exports["test frames event listeners"] = function*(assert) {
   let window = getMostRecentBrowserWindow();
   let loader = new Loader(module);
-  let { processes, frames, remoteRequire } = yield waitForProcesses(loader);
+  let { frames } = yield waitForProcesses(loader);
 
   let promise = promiseEvent(frames, 'attach');
   let tab = openTab(window, "data:text/html,<html></html>");
@@ -462,15 +365,13 @@ exports["test frames event listeners"] = function*(assert) {
 
   closeTab(tab);
   loader.unload();
-
-  yield cleanUI();
 }
 
 // Test that unloading unregisters frame DOM events
 exports["test unload removes frame event listeners"] = function*(assert) {
   let window = getMostRecentBrowserWindow();
   let loader = new Loader(module);
-  let { processes, frames, remoteRequire } = yield waitForProcesses(loader);
+  let { frames } = yield waitForProcesses(loader);
 
   let loader2 = new Loader(module);
   let { frames: frames2 } = yield waitForProcesses(loader2);
@@ -505,15 +406,13 @@ exports["test unload removes frame event listeners"] = function*(assert) {
 
   closeTab(tab);
   loader2.unload();
-
-  yield cleanUI();
 }
 
 // Test that unloading unregisters frames DOM events
 exports["test unload removes frames event listeners"] = function*(assert) {
   let window = getMostRecentBrowserWindow();
   let loader = new Loader(module);
-  let { processes, frames, remoteRequire } = yield waitForProcesses(loader);
+  let { frames } = yield waitForProcesses(loader);
 
   let loader2 = new Loader(module);
   let { frames: frames2 } = yield waitForProcesses(loader2);
@@ -548,14 +447,12 @@ exports["test unload removes frames event listeners"] = function*(assert) {
 
   closeTab(tab);
   loader2.unload();
-
-  yield cleanUI();
 }
 
 // Check that the child frame has the right properties
 exports["test frame properties"] = function*(assert) {
   let loader = new Loader(module);
-  let { processes, frames, remoteRequire } = yield waitForProcesses(loader);
+  let { frames } = yield waitForProcesses(loader);
 
   let promise = new Promise(resolve => {
     let count = frames.length;
@@ -577,5 +474,9 @@ exports["test frame properties"] = function*(assert) {
 
   loader.unload();
 }
+
+after(exports, function*(name, assert) {
+  yield cleanUI();
+});
 
 require('sdk/test/runner').runTestsFromModule(module);

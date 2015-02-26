@@ -4,17 +4,18 @@
 "use strict";
 
 const { utils: Cu, classes: Cc, interfaces: Ci } = Components;
-const { Loader } = Cu.import('resource://gre/modules/commonjs/toolkit/loader.js', {});
 const { Services } = Cu.import('resource://gre/modules/Services.jsm');
 
 const cpmm = Cc['@mozilla.org/childprocessmessagemanager;1'].
              getService(Ci.nsISyncMessageSender);
 
-const EXPORTED_SYMBOLS = ["registerContentFrame"];
+this.EXPORTED_SYMBOLS = ["registerContentFrame"];
 
 // This may be an overriden version of the SDK so use the PATH as a key for the
 // initial messages before we have a loaderID.
 const PATH = __URI__.replace('framescript/content.jsm', '');
+
+const { Loader } = Cu.import(PATH + 'toolkit/loader.js', {});
 
 // one Loader instance per addon (per @loader/options to be precise)
 let addons = new Map();
@@ -68,7 +69,7 @@ cpmm.addMessageListener('sdk/remote/process/unload', ({ data: { loaderID, reason
 
 let frames = new Set();
 
-function registerContentFrame(contentFrame) {
+this.registerContentFrame = contentFrame => {
   contentFrame.addEventListener("unload", () => {
     unregisterContentFrame(contentFrame);
   }, false);
@@ -79,7 +80,7 @@ function registerContentFrame(contentFrame) {
     if ("child" in addon)
       addon.child.registerContentFrame(contentFrame);
   }
-}
+};
 
 function unregisterContentFrame(contentFrame) {
   frames.delete(contentFrame);
