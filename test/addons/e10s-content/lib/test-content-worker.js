@@ -13,7 +13,7 @@ module.metadata = {
 const { Cc, Ci } = require("chrome");
 const { on } = require("sdk/event/core");
 const { setTimeout } = require("sdk/timers");
-const { LoaderWithHookedConsole } = require("sdk/test/loader");
+const { LoaderWithHookedConsole, Loader } = require("sdk/test/loader");
 const { Worker } = require("sdk/content/worker");
 const { close } = require("sdk/window/helpers");
 const { set: setPref } = require("sdk/preferences/service");
@@ -994,5 +994,134 @@ exports["test:destroy unbinds listeners from port"] = WorkerTest(
   }
 );
 
+
+exports["test:destroy kills child worker"] = WorkerTest(
+  "data:text/html;charset=utf-8,<html><body><p id='detail'></p></body></html>",
+  function(assert, browser, done) {
+    let worker1 = Worker({
+      window: browser.contentWindow,
+      contentScript: "new " + function WorkerScope() {
+        self.port.on("ping", detail => {
+          let event = document.createEvent("CustomEvent");
+          event.initCustomEvent("Test:Ping", true, true, detail);
+          document.dispatchEvent(event);
+          self.port.emit("pingsent");
+        });
+
+        let listener = function(event) {
+          self.port.emit("pong", event.detail);
+        };
+
+        self.port.on("detach", () => {
+          window.removeEventListener("Test:Pong", listener);
+        });
+        window.addEventListener("Test:Pong", listener);
+      },
+      onAttach: function() {
+        let worker2 = Worker({
+          window: browser.contentWindow,
+          contentScript: "new " + function WorkerScope() {
+            let listener = function(event) {
+              let newEvent = document.createEvent("CustomEvent");
+              newEvent.initCustomEvent("Test:Pong", true, true, event.detail);
+              document.dispatchEvent(newEvent);
+            };
+            self.port.on("detach", () => {
+              window.removeEventListener("Test:Ping", listener);
+            })
+            window.addEventListener("Test:Ping", listener);
+            self.postMessage();
+          },
+          onMessage: function() {
+            worker1.port.emit("ping", "test1");
+            worker1.port.once("pong", detail => {
+              assert.equal(detail, "test1", "Saw the right message");
+              worker1.port.once("pingsent", () => {
+                assert.pass("The message was sent");
+
+                worker2.destroy();
+
+                worker1.port.emit("ping", "test2");
+                worker1.port.once("pong", detail => {
+                  assert.fail("worker2 shouldn't have responded");
+                })
+                worker1.port.once("pingsent", () => {
+                  assert.pass("The message was sent");
+                  worker1.destroy();
+                  done();
+                });
+              });
+            })
+          }
+        });
+      }
+    });
+  }
+);
+
+exports["test:unload kills child worker"] = WorkerTest(
+  "data:text/html;charset=utf-8,<html><body><p id='detail'></p></body></html>",
+  function(assert, browser, done) {
+    let loader = Loader(module);
+    let worker1 = Worker({
+      window: browser.contentWindow,
+      contentScript: "new " + function WorkerScope() {
+        self.port.on("ping", detail => {
+          let event = document.createEvent("CustomEvent");
+          event.initCustomEvent("Test:Ping", true, true, detail);
+          document.dispatchEvent(event);
+          self.port.emit("pingsent");
+        });
+
+        let listener = function(event) {
+          self.port.emit("pong", event.detail);
+        };
+
+        self.port.on("detach", () => {
+          window.removeEventListener("Test:Pong", listener);
+        });
+        window.addEventListener("Test:Pong", listener);
+      },
+      onAttach: function() {
+        let worker2 = loader.require("sdk/content/worker").Worker({
+          window: browser.contentWindow,
+          contentScript: "new " + function WorkerScope() {
+            let listener = function(event) {
+              let newEvent = document.createEvent("CustomEvent");
+              newEvent.initCustomEvent("Test:Pong", true, true, event.detail);
+              document.dispatchEvent(newEvent);
+            };
+            self.port.on("detach", () => {
+              window.removeEventListener("Test:Ping", listener);
+            })
+            window.addEventListener("Test:Ping", listener);
+            self.postMessage();
+          },
+          onMessage: function() {
+            worker1.port.emit("ping", "test1");
+            worker1.port.once("pong", detail => {
+              assert.equal(detail, "test1", "Saw the right message");
+              worker1.port.once("pingsent", () => {
+                assert.pass("The message was sent");
+
+                loader.unload();
+
+                worker1.port.emit("ping", "test2");
+                worker1.port.once("pong", detail => {
+                  assert.fail("worker2 shouldn't have responded");
+                })
+                worker1.port.once("pingsent", () => {
+                  assert.pass("The message was sent");
+                  worker1.destroy();
+                  done();
+                });
+              });
+            })
+          }
+        });
+      }
+    });
+  }
+);
 
 // require("sdk/test").run(exports);

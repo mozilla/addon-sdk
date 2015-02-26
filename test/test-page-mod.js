@@ -12,7 +12,8 @@ const { setTimeout } = require("sdk/timers");
 const { Cc, Ci, Cu } = require("chrome");
 const system = require("sdk/system/events");
 const { open, getFrames, getMostRecentBrowserWindow, getInnerId } = require('sdk/window/utils');
-const { getTabContentWindow, getActiveTab, setTabURL, openTab, closeTab } = require('sdk/tabs/utils');
+const { getTabContentWindow, getActiveTab, setTabURL, openTab, closeTab,
+        getBrowserForTab } = require('sdk/tabs/utils');
 const xulApp = require("sdk/system/xul-app");
 const { isPrivateBrowsingSupported } = require('sdk/self');
 const { isPrivate } = require('sdk/private-browsing');
@@ -1337,9 +1338,9 @@ exports.testExistingOnFrames = function(assert, done) {
 
   let counter = 0;
   let tab = openTab(getMostRecentBrowserWindow(), url);
-  let window = getTabContentWindow(tab);
 
   function wait4Iframes() {
+    let window = getTabContentWindow(tab);
     if (window.document.readyState != "complete" ||
         getFrames(window).length != 2) {
       return;
@@ -1390,7 +1391,7 @@ exports.testExistingOnFrames = function(assert, done) {
     });
   }
 
-  window.addEventListener("load", wait4Iframes, false);
+  getBrowserForTab(tab).addEventListener("load", wait4Iframes, true);
 };
 
 exports.testIFramePostMessage = function(assert, done) {
@@ -1836,5 +1837,207 @@ exports.testPageShowWhenEnd = function(assert, done) {
 
   let tab = openTab(getMostRecentBrowserWindow(), TEST_URL);
 };
+
+// Tests that after destroy existing workers have been destroyed
+exports.testDestroyKillsChild = function(assert, done) {
+  const TEST_URL = 'data:text/html;charset=utf-8,detach';
+
+  let mod1 = PageMod({
+    include: TEST_URL,
+    contentScriptWhen: 'end',
+    contentScript: Isolate(function() {
+      self.port.on("ping", detail => {
+        let event = document.createEvent("CustomEvent");
+        event.initCustomEvent("Test:Ping", true, true, detail);
+        document.dispatchEvent(event);
+        self.port.emit("pingsent");
+      });
+
+      let listener = function(event) {
+        self.port.emit("pong", event.detail);
+      };
+
+      self.port.on("detach", () => {
+        window.removeEventListener("Test:Pong", listener);
+      });
+      window.addEventListener("Test:Pong", listener);
+    }),
+    onAttach: worker1 => {
+      let mod2 = PageMod({
+        include: TEST_URL,
+        attachTo: ["top", "existing"],
+        contentScriptWhen: 'end',
+        contentScript: Isolate(function() {
+          let listener = function(event) {
+            let newEvent = document.createEvent("CustomEvent");
+            newEvent.initCustomEvent("Test:Pong", true, true, event.detail);
+            document.dispatchEvent(newEvent);
+          };
+          self.port.on("detach", () => {
+            window.removeEventListener("Test:Ping", listener);
+          })
+          window.addEventListener("Test:Ping", listener);
+          self.postMessage();
+        }),
+        onAttach: worker2 => {
+          worker1.port.emit("ping", "test1");
+          worker1.port.once("pong", detail => {
+            assert.equal(detail, "test1", "Saw the right message");
+            worker1.port.once("pingsent", () => {
+              assert.pass("The message was sent");
+
+              mod2.destroy();
+
+              worker1.port.emit("ping", "test2");
+              worker1.port.once("pong", detail => {
+                assert.fail("worker2 shouldn't have responded");
+              })
+              worker1.port.once("pingsent", () => {
+                assert.pass("The message was sent");
+                mod1.destroy();
+                closeTab(tab);
+                done();
+              });
+            });
+          })
+        }
+      });
+    }
+  });
+
+  let tab = openTab(getMostRecentBrowserWindow(), TEST_URL);
+}
+
+// Tests that after destroy child page-mod won't attach
+exports.testDestroyWontAttach = function(assert, done) {
+  const TEST_URL = 'data:text/html;charset=utf-8,detach';
+
+  let badMod = PageMod({
+    include: TEST_URL,
+    contentScriptWhen: 'start',
+    contentScript: Isolate(function() {
+      unsafeWindow.testProperty = "attached";
+    })
+  });
+  badMod.destroy();
+
+  let mod = PageMod({
+    include: TEST_URL,
+    contentScriptWhen: 'end',
+    contentScript: Isolate(function() {
+      self.postMessage(unsafeWindow.testProperty);
+    }),
+    onMessage: property => {
+      assert.equal(property, undefined, "Shouldn't have seen the test property set.");
+      mod.destroy();
+      closeTab(tab);
+      done();
+    }
+  });
+
+  let tab = openTab(getMostRecentBrowserWindow(), TEST_URL);
+}
+
+// Tests that after unload existing workers have been destroyed
+exports.testUnloadKillsChild = function(assert, done) {
+  const TEST_URL = 'data:text/html;charset=utf-8,detach';
+
+  let mod1 = PageMod({
+    include: TEST_URL,
+    contentScriptWhen: 'end',
+    contentScript: Isolate(function() {
+      self.port.on("ping", detail => {
+        let event = document.createEvent("CustomEvent");
+        event.initCustomEvent("Test:Ping", true, true, detail);
+        document.dispatchEvent(event);
+        self.port.emit("pingsent");
+      });
+
+      let listener = function(event) {
+        self.port.emit("pong", event.detail);
+      };
+
+      self.port.on("detach", () => {
+        window.removeEventListener("Test:Pong", listener);
+      });
+      window.addEventListener("Test:Pong", listener);
+    }),
+    onAttach: worker1 => {
+      let loader = Loader(module);
+      let mod2 = loader.require('sdk/page-mod').PageMod({
+        include: TEST_URL,
+        attachTo: ["top", "existing"],
+        contentScriptWhen: 'end',
+        contentScript: Isolate(function() {
+          let listener = function(event) {
+            let newEvent = document.createEvent("CustomEvent");
+            newEvent.initCustomEvent("Test:Pong", true, true, event.detail);
+            document.dispatchEvent(newEvent);
+          };
+          self.port.on("detach", () => {
+            window.removeEventListener("Test:Ping", listener);
+          })
+          window.addEventListener("Test:Ping", listener);
+          self.postMessage();
+        }),
+        onAttach: worker2 => {
+          worker1.port.emit("ping", "test1");
+          worker1.port.once("pong", detail => {
+            assert.equal(detail, "test1", "Saw the right message");
+            worker1.port.once("pingsent", () => {
+              assert.pass("The message was sent");
+
+              loader.unload();
+
+              worker1.port.emit("ping", "test2");
+              worker1.port.once("pong", detail => {
+                assert.fail("worker2 shouldn't have responded");
+              })
+              worker1.port.once("pingsent", () => {
+                assert.pass("The message was sent");
+                mod1.destroy();
+                closeTab(tab);
+                done();
+              });
+            });
+          })
+        }
+      });
+    }
+  });
+
+  let tab = openTab(getMostRecentBrowserWindow(), TEST_URL);
+}
+
+// Tests that after unload child page-mod won't attach
+exports.testUnloadWontAttach = function(assert, done) {
+  const TEST_URL = 'data:text/html;charset=utf-8,detach';
+
+  let loader = Loader(module);
+  let badMod = loader.require('sdk/page-mod').PageMod({
+    include: TEST_URL,
+    contentScriptWhen: 'start',
+    contentScript: Isolate(function() {
+      unsafeWindow.testProperty = "attached";
+    })
+  });
+  loader.unload();
+
+  let mod = PageMod({
+    include: TEST_URL,
+    contentScriptWhen: 'end',
+    contentScript: Isolate(function() {
+      self.postMessage(unsafeWindow.testProperty);
+    }),
+    onMessage: property => {
+      assert.equal(property, undefined, "Shouldn't have seen the test property set.");
+      mod.destroy();
+      closeTab(tab);
+      done();
+    }
+  });
+
+  let tab = openTab(getMostRecentBrowserWindow(), TEST_URL);
+}
 
 require('sdk/test').run(exports);
