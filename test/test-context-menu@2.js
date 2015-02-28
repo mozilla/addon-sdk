@@ -1,3 +1,6 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
 const { Cc, Ci } = require("chrome");
@@ -7,6 +10,7 @@ const {openWindow, closeWindow, openTab, closeTab,
 const {when} = require("sdk/dom/events");
 const {Item, Menu, Separator, Contexts, Readers } = require("sdk/context-menu@2");
 const prefs = require("sdk/preferences/service");
+const { before, after } = require('sdk/test/utils');
 
 const testPageURI = require.resolve("./test-context-menu").replace(".js", ".html");
 
@@ -65,6 +69,8 @@ exports["test create / destroy menu item"] = withTab(function*(assert) {
 }, data`<h1>hello</h1>`);
 
 
+/* Bug 1115419 - Disable occasionally failing test until we
+                 figure out why it fails.
 // Items created should be present on all browser windows.
 exports["test menu item in new window"] = function*(assert) {
   const isMenuPopulated = function*(tab) {
@@ -86,7 +92,10 @@ exports["test menu item in new window"] = function*(assert) {
   yield* isMenuPopulated(tab1);
 
   const window2 = yield openWindow();
+  assert.pass("window is ready");
+
   const tab2 = yield openTab(`data:text/html,<h1>hello window-2</h1>`, window2);
+  assert.pass("tab is ready");
 
   yield* isMenuPopulated(tab2);
 
@@ -99,6 +108,7 @@ exports["test menu item in new window"] = function*(assert) {
 
   yield closeTab(tab1);
 };
+*/
 
 
 // Multilpe items can be created and destroyed at different points
@@ -1327,5 +1337,14 @@ if (require("@loader/options").isNative) {
     "test skip on jpm": (assert) => assert.pass("skipping this file with jpm")
   };
 }
+
+before(exports, (name, assert) => {
+  // Make sure Java doesn't activate
+  prefs.set("plugin.state.java", 0);
+});
+
+after(exports, (name, assert) => {
+  prefs.reset("plugin.state.java");
+});
 
 require("sdk/test").run(module.exports);

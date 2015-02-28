@@ -17,7 +17,7 @@ const xulApp = require("sdk/system/xul-app");
 const { isPrivateBrowsingSupported } = require('sdk/self');
 const { isPrivate } = require('sdk/private-browsing');
 const { openWebpage } = require('./private-browsing/helper');
-const { isTabPBSupported, isWindowPBSupported, isGlobalPBSupported } = require('sdk/private-browsing/utils');
+const { isTabPBSupported, isWindowPBSupported } = require('sdk/private-browsing/utils');
 const promise = require("sdk/core/promise");
 const { pb } = require('./private-browsing/helper');
 const { URL } = require("sdk/url");
@@ -521,6 +521,10 @@ exports.testWorksWithExistingTabs = function(assert, done) {
         onAttach: function(worker) {
           assert.ok(!!worker.tab, "Worker.tab exists");
           assert.equal(tab, worker.tab, "A worker has been created on this existing tab");
+
+          worker.on('pageshow', () => {
+            assert.fail("Should not have seen pageshow for an already loaded page");
+          });
 
           setTimeout(function() {
             pageModOnExisting.destroy();
@@ -1430,48 +1434,6 @@ exports["test page-mod on private tab"] = function (assert, done) {
   }, fail);
 }
 
-exports["test page-mod on private tab in global pb"] = function (assert, done) {
-  if (!isGlobalPBSupported) {
-    assert.pass();
-    return done();
-  }
-
-  let privateUri = "data:text/html;charset=utf-8," +
-                   "<iframe%20src=\"data:text/html;charset=utf-8,frame\"/>";
-
-  let pageMod = new PageMod({
-    include: privateUri,
-    onAttach: function(worker) {
-      assert.equal(worker.tab.url,
-                       privateUri,
-                       "page-mod should attach");
-      assert.equal(isPrivateBrowsingSupported,
-                       false,
-                       "private browsing is not supported");
-      assert.ok(isPrivate(worker),
-                  "The worker is really non-private");
-      assert.ok(isPrivate(worker.tab),
-                  "The document is really non-private");
-      pageMod.destroy();
-
-      worker.tab.close(function() {
-        pb.once('stop', function() {
-          assert.pass('global pb stop');
-          done();
-        });
-        pb.deactivate();
-      });
-    }
-  });
-
-  let page1;
-  pb.once('start', function() {
-    assert.pass('global pb start');
-    tabs.open({ url: privateUri });
-  });
-  pb.activate();
-}
-
 // Bug 699450: Calling worker.tab.close() should not lead to exception
 exports.testWorkerTabClose = function(assert, done) {
   let callbackDone;
@@ -1703,5 +1665,122 @@ exports.testSyntaxErrorInContentScript = function *(assert) {
   loader.unload();
   yield cleanUI();
 };
+
+exports.testPageShowWhenStart = function(assert, done) {
+  const TEST_URL = 'data:text/html;charset=utf-8,detach';
+  let sawWorkerPageShow = false;
+  let sawInjected = false;
+
+  let mod = PageMod({
+    include: TEST_URL,
+    contentScriptWhen: 'start',
+    contentScript: Isolate(function() {
+      self.port.emit('injected');
+      self.on('pageshow', () => {
+        self.port.emit('pageshow');
+      });
+    }),
+    onAttach: worker => {
+      worker.on('pageshow', () => {
+        sawWorkerPageShow = true;
+      });
+
+      worker.port.on('injected', () => {
+        sawInjected = true;
+      });
+
+      worker.port.on('pageshow', () => {
+        assert.ok(sawWorkerPageShow, 'Should have seen the pageshow event');
+        assert.ok(sawInjected, 'Should have seen the injected event');
+        closeTab(tab);
+      });
+
+      worker.on('detach', () => {
+        mod.destroy();
+        done();
+      });
+    }
+  });
+
+  let tab = openTab(getMostRecentBrowserWindow(), TEST_URL);
+}
+
+exports.testPageShowWhenReady = function(assert, done) {
+  const TEST_URL = 'data:text/html;charset=utf-8,detach';
+  let sawWorkerPageShow = false;
+  let sawInjected = false;
+
+  let mod = PageMod({
+    include: TEST_URL,
+    contentScriptWhen: 'ready',
+    contentScript: Isolate(function() {
+      self.port.emit('injected');
+      self.on('pageshow', () => {
+        self.port.emit('pageshow');
+      });
+    }),
+    onAttach: worker => {
+      worker.on('pageshow', () => {
+        sawWorkerPageShow = true;
+      });
+
+      worker.port.on('injected', () => {
+        sawInjected = true;
+      });
+
+      worker.port.on('pageshow', () => {
+        assert.ok(sawWorkerPageShow, 'Should have seen the pageshow event');
+        assert.ok(sawInjected, 'Should have seen the injected event');
+        closeTab(tab);
+      });
+
+      worker.on('detach', () => {
+        mod.destroy();
+        done();
+      });
+    }
+  });
+
+  let tab = openTab(getMostRecentBrowserWindow(), TEST_URL);
+}
+
+exports.testPageShowWhenEnd = function(assert, done) {
+  const TEST_URL = 'data:text/html;charset=utf-8,detach';
+  let sawWorkerPageShow = false;
+  let sawInjected = false;
+
+  let mod = PageMod({
+    include: TEST_URL,
+    contentScriptWhen: 'end',
+    contentScript: Isolate(function() {
+      self.port.emit('injected');
+      self.on('pageshow', () => {
+        self.port.emit('pageshow');
+      });
+    }),
+    onAttach: worker => {
+      worker.on('pageshow', () => {
+        sawWorkerPageShow = true;
+      });
+
+      worker.port.on('injected', () => {
+        sawInjected = true;
+      });
+
+      worker.port.on('pageshow', () => {
+        assert.ok(sawWorkerPageShow, 'Should have seen the pageshow event');
+        assert.ok(sawInjected, 'Should have seen the injected event');
+        closeTab(tab);
+      });
+
+      worker.on('detach', () => {
+        mod.destroy();
+        done();
+      });
+    }
+  });
+
+  let tab = openTab(getMostRecentBrowserWindow(), TEST_URL);
+}
 
 require('sdk/test').run(exports);

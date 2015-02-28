@@ -3,15 +3,26 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
-var EXPORTED_SYMBOLS = ["XulApp"];
+this.EXPORTED_SYMBOLS = [ "XulApp" ];
 
 var { classes: Cc, interfaces: Ci } = Components;
 
 var exports = {};
-var XulApp = exports;
+this.XulApp = exports;
 
-var appInfo = Cc["@mozilla.org/xre/app-info;1"]
+var appInfo;
+
+// NOTE: below is required to avoid failing xpcshell tests,
+//       which do not implement nsIXULAppInfo
+// See Bug 1114752 https://bugzilla.mozilla.org/show_bug.cgi?id=1114752
+try {
+ appInfo = Cc["@mozilla.org/xre/app-info;1"]
               .getService(Ci.nsIXULAppInfo);
+}
+catch (e) {
+  // xpcshell test case
+  appInfo = {};
+}
 var vc = Cc["@mozilla.org/xpcom/version-comparator;1"]
          .getService(Ci.nsIVersionComparator);
 
