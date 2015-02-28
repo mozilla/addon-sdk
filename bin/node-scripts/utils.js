@@ -23,7 +23,7 @@ function spawn (cmd, options) {
   var e10s = options.e10s || false;
 
   return child_process.spawn("node", [
-    jpm, cmd, "-v",
+    jpm, cmd, "-v", "--tbpl",
     "--prefs", e10s ? e10sPrefsPath : prefsPath,
     "-o", sdk,
     "-f", options.filter || ""
