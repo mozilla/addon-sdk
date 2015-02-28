@@ -129,6 +129,7 @@ exports['test basic constructor validation'] = function(assert) {
 exports['test button added'] = function(assert) {
   let loader = Loader(module);
   let { ActionButton } = loader.require('sdk/ui');
+  let { data } = loader.require('sdk/self');
 
   let button = ActionButton({
     id: 'my-button-1',
@@ -162,6 +163,7 @@ exports['test button added'] = function(assert) {
 exports['test button is not garbaged'] = function (assert, done) {
   let loader = Loader(module);
   let { ActionButton } = loader.require('sdk/ui');
+  let { data } = loader.require('sdk/self');
 
   ActionButton({
     id: 'my-button-1',
@@ -192,6 +194,7 @@ exports['test button is not garbaged'] = function (assert, done) {
 exports['test button added with resource URI'] = function(assert) {
   let loader = Loader(module);
   let { ActionButton } = loader.require('sdk/ui');
+  let { data } = loader.require('sdk/self');
 
   let button = ActionButton({
     id: 'my-button-1',
@@ -287,6 +290,7 @@ exports['test button removed on dispose'] = function(assert, done) {
 exports['test button global state updated'] = function(assert) {
   let loader = Loader(module);
   let { ActionButton } = loader.require('sdk/ui');
+  let { data } = loader.require("sdk/self");
 
   let button = ActionButton({
     id: 'my-button-4',
@@ -397,6 +401,7 @@ exports['test button global state set and get with state method'] = function(ass
 exports['test button global state updated on multiple windows'] = function*(assert) {
   let loader = Loader(module);
   let { ActionButton } = loader.require('sdk/ui');
+  let { data } = loader.require('sdk/self');
 
   let button = ActionButton({
     id: 'my-button-5',
@@ -453,6 +458,7 @@ exports['test button window state'] = function*(assert) {
   let loader = Loader(module);
   let { ActionButton } = loader.require('sdk/ui');
   let { browserWindows } = loader.require('sdk/windows');
+  let { data } = loader.require('sdk/self');
 
   let button = ActionButton({
     id: 'my-button-6',
@@ -599,6 +605,7 @@ exports['test button tab state'] = function*(assert) {
   let loader = Loader(module);
   let { ActionButton } = loader.require('sdk/ui');
   let { browserWindows } = loader.require('sdk/windows');
+  let { data } = loader.require('sdk/self');
   let tabs = loader.require('sdk/tabs');
 
   let button = ActionButton({
@@ -793,6 +800,7 @@ exports['test button icon set'] = function(assert) {
   const { CustomizableUI } = Cu.import('resource:///modules/CustomizableUI.jsm', {});
   let loader = Loader(module);
   let { ActionButton } = loader.require('sdk/ui');
+  let { data } = loader.require('sdk/self');
 
   // Test remote icon set
   assert.throws(
@@ -846,6 +854,7 @@ exports['test button icon set with only one option'] = function(assert) {
   const { CustomizableUI } = Cu.import('resource:///modules/CustomizableUI.jsm', {});
   let loader = Loader(module);
   let { ActionButton } = loader.require('sdk/ui');
+  let { data } = loader.require('sdk/self');
 
   // Test remote icon set
   assert.throws(
