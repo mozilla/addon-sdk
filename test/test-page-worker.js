@@ -513,6 +513,30 @@ exports.testWindowStopDontBreak = function (assert, done) {
   page.port.emit("ping");
 };
 
+/**  
+ * bug 1138545 - the docs claim you can pass in a bare regexp.
+ */
+exports.testRegexArgument = function (assert, done) {
+  let url = 'data:text/html;charset=utf-8,testWindowStopDontBreak';
+
+  let page = new Page({
+    contentURL: url,
+    contentScriptWhen: 'ready',
+    contentScript: Isolate(() => {
+      self.port.emit('location', document.location.href);
+    }),
+    include: /^data\:text\/html;.*/
+  });
+
+  page.port.on('location', (location) => {
+    assert.equal(location, url);
+    page.destroy();
+    done();
+  });
+
+  page.port.emit("ping");
+
+}
 
 function isDestroyed(page) {
   try {
