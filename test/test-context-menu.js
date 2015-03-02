@@ -5,8 +5,7 @@
 
 require("sdk/context-menu");
 
-const { defer } = require("sdk/core/promise");
-const packaging = require('@loader/options');
+const { defer, all } = require("sdk/core/promise");
 
 // These should match the same constants in the module.
 const OVERFLOW_THRESH_DEFAULT = 10;
@@ -827,7 +826,6 @@ exports.testContentContextMatchString = function (assert, done) {
 exports.testContentScriptFile = function (assert, done) {
   let test = new TestHelper(assert, done);
   let loader = test.newLoader();
-  let { defer, all } = require("sdk/core/promise");
   let itemScript = [defer(), defer()];
   let menuShown = defer();
   let menuPromises = itemScript.concat(menuShown).map(({promise}) => promise);
@@ -2180,11 +2178,11 @@ exports.testContentCommunication = function (assert, done) {
   let item = new loader.cm.Item({
     label: "item",
     contentScript: 'var potato;' +
-                   'self.on("context", function () {' +
+                   'self.on("context", () => {' +
                    '  potato = "potato";' +
                    '  return true;' +
                    '});' +
-                   'self.on("click", function () {' +
+                   'self.on("click", () => {' +
                    '  self.postMessage(potato);' +
                    '});',
   });
@@ -2194,10 +2192,14 @@ exports.testContentCommunication = function (assert, done) {
     test.done();
   });
 
-  test.showMenu(null, function (popup) {
+  test.showMenu(null, (popup) => {
+    assert.pass("the menu was shown");
+
     test.checkMenu([item], [], []);
-    let elt = test.getItemElt(popup, item);
-    elt.click();
+    assert.pass("the menu was checked");
+
+    test.getItemElt(popup, item).click();
+    assert.pass("the menu was clicked");
   });
 };
 
@@ -3751,11 +3753,5 @@ exports.testPredicateContextTargetValueNotSet = function (assert, done) {
     });
   });
 };
-
-if (packaging.isNative) {
-  module.exports = {
-    "test skip on jpm": (assert) => assert.pass("skipping this file with jpm")
-  };
-}
 
 require('sdk/test').run(exports);
