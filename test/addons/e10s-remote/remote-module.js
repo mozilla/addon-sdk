@@ -37,7 +37,7 @@ frames.forEvery(frame => {
 
 frames.port.on('sdk/test/checkproperties', frame => {
   frame.port.emit('sdk/test/replyproperties', {
-    isBrowser: frame.isBrowser
+    isTab: frame.isTab
   });
 });
 

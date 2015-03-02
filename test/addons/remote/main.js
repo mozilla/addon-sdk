@@ -134,7 +134,7 @@ exports["test process list"] = function*(assert) {
 // Test that the frame lists are kept up to date
 exports["test frame list"] = function*(assert) {
   function browserFrames(list) {
-    return Array.filter(list, b => b.isBrowser).length;
+    return Array.filter(list, b => b.isTab).length;
   }
 
   let window = getMostRecentBrowserWindow();
@@ -457,8 +457,8 @@ exports["test frame properties"] = function*(assert) {
   let promise = new Promise(resolve => {
     let count = frames.length;
     let listener = (frame, properties) => {
-      assert.equal(properties.isBrowser, frame.isBrowser,
-                   "Child frame should have the same isBrowser property");
+      assert.equal(properties.isTab, frame.isTab,
+                   "Child frame should have the same isTab property");
 
       if (--count == 0) {
         frames.port.off('sdk/test/replyproperties', listener);
