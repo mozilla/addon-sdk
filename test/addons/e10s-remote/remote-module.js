@@ -46,6 +46,10 @@ process.port.on('sdk/test/count', () => {
   process.port.emit('sdk/test/count', frameCount);
 });
 
+process.port.on('sdk/test/getprocessid', () => {
+  process.port.emit('sdk/test/processid', processID);
+});
+
 frames.port.on('sdk/test/testunload', (frame) => {
   // Cache the content since the frame will have been destroyed by the time
   // we see the unload event.

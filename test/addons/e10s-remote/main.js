@@ -15,6 +15,7 @@ const { setTimeout } = require("sdk/timers");
 const { promiseEvent, promiseDOMEvent, promiseEventOnItemAndContainer,
         waitForProcesses, getChildFrameCount, isE10S } = require("./utils");
 const { after } = require('sdk/test/utils');
+const { processID } = require('sdk/system/runtime');
 
 const { set } = require('sdk/preferences/service');
 // The hidden preload browser messes up our frame counts
@@ -473,6 +474,24 @@ exports["test frame properties"] = function*(assert) {
   yield promise;
 
   loader.unload();
+}
+
+// Check that non-remote processes have the same process ID and remote processes
+// have different IDs
+exports["test processID"] = function*(assert) {
+  let loader = new Loader(module);
+  let { processes } = yield waitForProcesses(loader);
+
+  for (let process of processes) {
+    process.port.emit('sdk/test/getprocessid');
+    let [p, ID] = yield promiseEvent(process.port, 'sdk/test/processid');
+    if (process.isRemote) {
+      assert.notEqual(ID, processID, "Remote processes should have a different process ID");
+    }
+    else {
+      assert.equal(ID, processID, "Remote processes should have the same process ID");
+    }
+  }
 }
 
 after(exports, function*(name, assert) {
