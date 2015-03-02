@@ -6,7 +6,8 @@
 const { Cc, Ci } = require('chrome');
 const { Loader } = require('sdk/test/loader');
 const systemEvents = require("sdk/system/events");
-const { setTimeout } = require('sdk/timers');
+const { setTimeout, setImmediate } = require('sdk/timers');
+const { modelFor } = require('sdk/model/core');
 const { viewFor } = require('sdk/view/core');
 const { getOwnerWindow } = require('sdk/tabs/utils');
 const { windows, onFocus, getMostRecentBrowserWindow } = require('sdk/window/utils');
@@ -1047,7 +1048,7 @@ exports.testFaviconGetterDeprecation = function (assert, done) {
     url: 'data:text/html;charset=utf-8,',
     onOpen: function (tab) {
       let favicon = tab.favicon;
-      assert.ok(messages.length === 1, 'only one error is dispatched');
+      assert.equal(messages.length, 1, 'only one error is dispatched');
       assert.ok(messages[0].type, 'error', 'the console message is an error');
 
       let msg = messages[0].msg;
@@ -1080,8 +1081,8 @@ exports.testNoDeadObjects = function(assert, done) {
           // 3. Arrange to close the tab once the second page loads.
           tab.on("load", function() {
             tab.close(function() {
-              var TABS = loader.sandbox("sdk/tabs/tab-firefox").TABS;
-              assert.equal(TABS.length, 0, "no dead objects");
+              let { viewFor } = loader.require("sdk/view/core");
+              assert.equal(viewFor(tab), undefined, "didn't retain the closed tab");
               done();
             });
           });
@@ -1100,6 +1101,106 @@ exports.testNoDeadObjects = function(assert, done) {
       }, 0);
     }
   });
+};
+
+exports.testTabDestroy = function(assert, done) {
+  let loader = Loader(module);
+  let myTabs = loader.require("sdk/tabs");
+  let { modelFor: myModelFor } = loader.require("sdk/model/core");
+  let { viewFor: myViewFor } = loader.require("sdk/view/core");
+  let myFirstTab = myTabs.activeTab;
+
+  myTabs.open({
+    url: "data:text/html;charset=utf-8,destroy",
+    onReady: (myTab) => setImmediate(() => {
+      let tab = modelFor(myViewFor(myTab));
+
+      function badListener(event, tab) {
+        // Ignore events for the other tabs
+        if (tab != myTab)
+          return;
+        assert.fail("Should not have seen the " + event + " listener called");
+      }
+
+      assert.ok(myTab, "Should have a tab in the test loader.");
+      assert.equal(myViewFor(myTab), viewFor(tab), "Should have the right view.");
+      assert.equal(myTabs.length, 2, "Should have the right number of global tabs.");
+      assert.equal(myTab.window.tabs.length, 2, "Should have the right number of window tabs.");
+      assert.equal(myTabs.activeTab, myTab, "Globally active tab is correct.");
+      assert.equal(myTab.window.tabs.activeTab, myTab, "Window active tab is correct.");
+
+      assert.equal(myTabs[1], myTab, "Global tabs list contains tab.");
+      assert.equal(myTab.window.tabs[1], myTab, "Window tabs list contains tab.");
+
+      myTab.once("ready", badListener.bind(null, "tab ready"));
+      myTab.once("deactivate", badListener.bind(null, "tab deactivate"));
+      myTab.once("activate", badListener.bind(null, "tab activate"));
+      myTab.once("close", badListener.bind(null, "tab close"));
+
+      myTab.destroy();
+
+      myTab.once("ready", badListener.bind(null, "new tab ready"));
+      myTab.once("deactivate", badListener.bind(null, "new tab deactivate"));
+      myTab.once("activate", badListener.bind(null, "new tab activate"));
+      myTab.once("close", badListener.bind(null, "new tab close"));
+
+      myTabs.once("ready", badListener.bind(null, "tabs ready"));
+      myTabs.once("deactivate", badListener.bind(null, "tabs deactivate"));
+      myTabs.once("activate", badListener.bind(null, "tabs activate"));
+      myTabs.once("close", badListener.bind(null, "tabs close"));
+
+      assert.equal(myViewFor(myTab), viewFor(tab), "Should have the right view.");
+      assert.equal(myModelFor(viewFor(tab)), myTab, "Can still reach the tab object.");
+      assert.equal(myTabs.length, 2, "Should have the right number of global tabs.");
+      assert.equal(myTab.window.tabs.length, 2, "Should have the right number of window tabs.");
+      assert.equal(myTabs.activeTab, myTab, "Globally active tab is correct.");
+      assert.equal(myTab.window.tabs.activeTab, myTab, "Window active tab is correct.");
+
+      assert.equal(myTabs[1], myTab, "Global tabs list still contains tab.");
+      assert.equal(myTab.window.tabs[1], myTab, "Window tabs list still contains tab.");
+
+      assert.equal(myTab.url, undefined, "url property is not usable");
+      assert.equal(myTab.contentType, undefined, "contentType property is not usable");
+      assert.equal(myTab.title, undefined, "title property is not usable");
+      assert.equal(myTab.id, undefined, "id property is not usable");
+      assert.equal(myTab.index, undefined, "index property is not usable");
+
+      myTab.pin();
+      assert.ok(!tab.isPinned, "pin method shouldn't work");
+
+      tabs.once("activate", () => setImmediate(() => {
+        assert.equal(myTabs.activeTab, myFirstTab, "Globally active tab is correct.");
+        assert.equal(myTab.window.tabs.activeTab, myFirstTab, "Window active tab is correct.");
+
+        let sawActivate = false;
+        tabs.once("activate", () => setImmediate(() => {
+          sawActivate = true;
+
+          assert.equal(myTabs.activeTab, myTab, "Globally active tab is correct.");
+          assert.equal(myTab.window.tabs.activeTab, myTab, "Window active tab is correct.");
+
+          // This shouldn't have any effect
+          myTab.close();
+
+          tab.once("ready", () => setImmediate(() => {
+            tab.close(() => {
+              loader.unload();
+              done();
+            });
+          }));
+          tab.url = "data:text/html;charset=utf-8,destroy2";
+        }));
+
+        myTab.activate();
+        setImmediate(() => {
+          assert.ok(!sawActivate, "activate method shouldn't have done anything");
+
+          tab.activate();
+        });
+      }));
+      myFirstTab.activate();
+    })
+  })
 };
 
 /******************* helpers *********************/
