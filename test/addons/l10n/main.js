@@ -6,7 +6,7 @@
 const prefs = require("sdk/preferences/service");
 const { Loader } = require('sdk/test/loader');
 const { resolveURI } = require('toolkit/loader');
-const { rootURI } = require("@loader/options");
+const { rootURI, isNative } = require("@loader/options");
 const { usingJSON } = require('sdk/l10n/json/core');
 
 const PREF_MATCH_OS_LOCALE  = "intl.locale.matchOS";
@@ -36,8 +36,12 @@ function createTest(locale, testFunction) {
     // Initialize main l10n module in order to load new locale files
     loader.require("sdk/l10n/loader").
       load(rootURI).
+      then(null, function failure(error) {
+        if (!isNative)
+          assert.fail("Unable to load locales: " + error);
+      }).
       then(function success(data) {
-             definePseudo(loader, '@l10n/data', data);
+             definePseudo(loader, '@l10n/data', data ? data : null);
              // Execute the given test function
              try {
                testFunction(assert, loader, function onDone() {
@@ -94,33 +98,37 @@ exports.testHtmlLocalization = createTest("en-GB", function(assert, loader, done
   loaderHtmlL10n.enable();
 
   let uri = require("sdk/self").data.url("test-localization.html");
-  let worker = loader.require("sdk/page-worker").Page({
-    contentURL: uri,
-    contentScript: "new " + function ContentScriptScope() {
-      let nodes = document.body.querySelectorAll("*[data-l10n-id]");
-      self.postMessage([nodes[0].innerHTML,
-                        nodes[1].innerHTML,
-                        nodes[2].innerHTML,
-                        nodes[3].innerHTML]);
-    },
-    onMessage: function (data) {
-      assert.equal(
-        data[0],
-        "Kept as-is",
-        "Nodes with unknown id in .properties are kept 'as-is'"
-      );
-      assert.equal(data[1], "Yes", "HTML is translated");
-      assert.equal(
-        data[2],
-        "no &lt;b&gt;HTML&lt;/b&gt; injection",
-        "Content from .properties is text content; HTML can't be injected."
-      );
-      assert.equal(data[3], "Yes", "Multiple elements with same data-l10n-id are accepted.");
+  loader.require("sdk/tabs").open({
+    url: uri,
+    onReady: function(tab) {
+      tab.attach({
+        contentURL: uri,
+        contentScript: "new " + function ContentScriptScope() {
+          let nodes = document.body.querySelectorAll("*[data-l10n-id]");
+          self.postMessage([nodes[0].innerHTML,
+                            nodes[1].innerHTML,
+                            nodes[2].innerHTML,
+                            nodes[3].innerHTML]);
+        },
+        onMessage: function (data) {
+          assert.equal(
+            data[0],
+            "Kept as-is",
+            "Nodes with unknown id in .properties are kept 'as-is'"
+          );
+          assert.equal(data[1], "Yes", "HTML is translated");
+          assert.equal(
+            data[2],
+            "no &lt;b&gt;HTML&lt;/b&gt; injection",
+            "Content from .properties is text content; HTML can't be injected."
+          );
+          assert.equal(data[3], "Yes", "Multiple elements with same data-l10n-id are accepted.");
 
-      done();
+          tab.close(done);
+        }
+      });
     }
   });
-
 });
 
 exports.testEnUsLocaleName = createTest("en-US", function(assert, loader, done) {
@@ -182,7 +190,7 @@ exports.testEnUsLocaleName = createTest("en-US", function(assert, loader, done) 
 });
 
 exports.testUsingJSON = function(assert) {
-  assert.equal(usingJSON, true, 'using json');
+  assert.equal(usingJSON, !isNative, 'using json');
 }
 
 exports.testShortLocaleName = createTest("eo", function(assert, loader, done) {
