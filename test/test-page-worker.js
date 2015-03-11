@@ -281,7 +281,7 @@ exports.testLoadContentPageRelativePath = function(assert, done) {
   const { merge } = require("sdk/util/object");
 
   const options = merge({}, require('@loader/options'),
-      { prefixURI: require('./fixtures').url() });
+      { id: "testloader", prefixURI: require('./fixtures').url() });
 
   let loader = Loader(module, null, options);
 
