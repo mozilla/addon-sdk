@@ -17,6 +17,8 @@ const { viewFor } = require("sdk/view/core");
 const { defer } = require("sdk/lang/functional");
 const { cleanUI } = require("sdk/test/utils");
 const { after } = require("sdk/test/utils");
+const { nuke } = require("sdk/loader/sandbox");
+const systemEvents = require("sdk/system/events");
 
 // TEST: open & close window
 exports.testOpenAndCloseWindow = function(assert, done) {
@@ -458,6 +460,54 @@ exports["test getView(window)"] = function(assert, done) {
   });
 
   browserWindows.open({ url: "data:text/html,<title>yo</title>" });
+};
+
+exports.testNoDeadObjectsOnUnload = function(assert, done) {
+  let loader = Loader(module);
+  let { browserWindows } = loader.require("sdk/windows");
+
+  systemEvents.on("console-api-log-event", onConsoleMessage);
+
+  function cleanup() {
+    systemEvents.off("console-api-log-event", onConsoleMessage);
+  }
+
+  // Fail if we get a dead object message on the console.
+  function onConsoleMessage({ subject }) {
+    let message = subject.wrappedJSObject;
+    let text = message.arguments[0] + "";
+
+    if (new RegExp("can't access dead object", "i").test(text)) {
+      cleanup();
+      assert.fail(text);
+      done();
+    }
+    else if (text == "testNoDeadObjectsOnUnload test complete") {
+      cleanup();
+      assert.pass("no dead object errors");
+      done();
+    }
+  }
+
+  browserWindows.open({
+    url: "data:text/html;charset=utf-8,test-window",
+    onOpen: (window) => {
+      // Defer till the end of the event queue
+      setTimeout(() => {
+        systemEvents.once("sdk:loader:destroy", function() {
+          // Nuke the sandboxes of all the loaded modules.
+          // This step creates the dead objects.
+          for (let name in loader.sandboxes) {
+            nuke(loader.sandboxes[name]);
+          }
+
+          setTimeout(() => console.log("testNoDeadObjectsOnUnload test complete"));
+        });
+
+        loader.unload();
+      });
+    }
+  });
 };
 
 after(exports, function*(name, assert) {
