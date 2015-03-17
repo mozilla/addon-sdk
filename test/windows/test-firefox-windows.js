@@ -404,21 +404,32 @@ exports.testTrackWindows = function(assert, done) {
 }
 
 // test that it is not possible to open a private window by default
-exports.testWindowOpenPrivateDefault = function(assert, done) {
-  browserWindows.open({
-    url: 'about:mozilla',
+exports.testWindowOpenPrivateDefault = function*(assert) {
+  const TITLE = "yo";
+  const URL = "data:text/html,<title>" + TITLE + "</title>";
+
+  let tabReady = new Promise(resolve => {
+    tabs.on('ready', function onTabReady(tab) {
+      if (tab.url != URL)
+        return;
+
+      tabs.removeListener('ready', onTabReady);
+      assert.equal(tab.title, TITLE, 'opened correct tab');
+      assert.equal(isPrivate(tab), false, 'tab is not private');
+      resolve();
+    });
+  })
+
+  yield new Promise(resolve => browserWindows.open({
+    url: URL,
     isPrivate: true,
     onOpen: function(window) {
-      let tab = window.tabs[0];
-
-      tab.once('ready', function() {
-        assert.equal(tab.url, 'about:mozilla', 'opened correct tab');
-        assert.equal(isPrivate(tab), false, 'tab is not private');
-
-        done();
-      });
+      assert.pass("the new window was opened");
+      resolve();
     }
-  });
+  }));
+
+  yield tabReady;
 }
 
 // test that it is not possible to find a private window in
