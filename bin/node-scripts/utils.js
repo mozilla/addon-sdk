@@ -47,6 +47,7 @@ function run (cmd, options, p) {
     }
     proc.on("close", function(code) {
       var out = output.join("");
+      var buildDisplayed = /Build \d+/.test(out);
       var noTests = /No tests were run/.test(out);
       var hasSuccess = /All tests passed!/.test(out);
       var hasFailure = /There were test failures\.\.\./.test(out);
@@ -54,6 +55,7 @@ function run (cmd, options, p) {
         DEFAULT_PROCESS.stdout.write(out);
       }
       expect(code).to.equal(hasFailure ? 1 : 0);
+      expect(buildDisplayed).to.equal(true);
       expect(hasFailure).to.equal(false);
       expect(hasSuccess).to.equal(true);
       expect(noTests).to.equal(false);
