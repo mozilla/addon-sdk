@@ -17,6 +17,8 @@ const { viewFor } = require("sdk/view/core");
 const { defer } = require("sdk/lang/functional");
 const { cleanUI } = require("sdk/test/utils");
 const { after } = require("sdk/test/utils");
+const { merge } = require("sdk/util/object");
+const self = require("sdk/self");
 
 // TEST: open & close window
 exports.testOpenAndCloseWindow = function(assert, done) {
@@ -59,11 +61,8 @@ exports.testNeWindowIsFocused = function(assert, done) {
   });
 }
 
-exports.testOpenRelativePathWindow = function(assert, done) {
+exports.testOpenRelativePathWindow = function*(assert) {
   assert.equal(browserWindows.length, 1, "Only one window open");
-
-  const { merge } = require("sdk/util/object");
-  const self = require("sdk/self");
 
   let loader = Loader(module, null, null, {
     modules: {
@@ -72,17 +71,31 @@ exports.testOpenRelativePathWindow = function(assert, done) {
       })
     }
   });
+  assert.pass("Created a new loader");
 
-  loader.require("sdk/windows").browserWindows.open({
-    url: "./test.html",
-    onOpen: (window) => {
-      window.tabs.activeTab.once("ready", (tab) => {
-        assert.equal(tab.title, "foo",
-          "tab opened a document with relative path");
-        done();
-      });
-    }
-  })
+  let tabReady = new Promise(resolve => {
+    loader.require("sdk/tabs").on("ready", (tab) => {
+      if (!/test\.html$/.test(tab.url))
+        return;
+      assert.equal(tab.title, "foo",
+        "tab opened a document with relative path");
+      resolve();
+    });
+  });
+
+
+  yield new Promise(resolve => {
+    loader.require("sdk/windows").browserWindows.open({
+      url: "./test.html",
+      onOpen: (window) => {
+        assert.pass("Created a new window");
+        resolve();
+      }
+    })
+  });
+
+  yield tabReady;
+  loader.unload();
 }
 
 exports.testAutomaticDestroy = function(assert, done) {
