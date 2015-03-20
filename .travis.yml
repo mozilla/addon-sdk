@@ -14,11 +14,8 @@ before_install:
 
 before_script:
   - npm install mozilla-download -g
-  - npm install jpm -g
+  - npm install gulp -g
   - cd ..
   - mozilla-download --branch nightly -c prerelease --host ftp.mozilla.org firefox
   - export JPM_FIREFOX_BINARY=$TRAVIS_BUILD_DIR/../firefox/firefox
   - cd $TRAVIS_BUILD_DIR
-
-script:
-  - npm test
