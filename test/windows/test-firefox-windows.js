@@ -7,7 +7,7 @@ const { Cc, Ci } = require('chrome');
 const { setTimeout } = require('sdk/timers');
 const { Loader } = require('sdk/test/loader');
 const { onFocus, getMostRecentWindow, windows, isBrowser, getWindowTitle, isFocused } = require('sdk/window/utils');
-const { open, close, focus } = require('sdk/window/helpers');
+const { open, close, focus, promise: windowPromise } = require('sdk/window/helpers');
 const { browserWindows } = require("sdk/windows");
 const tabs = require("sdk/tabs");
 const winUtils = require("sdk/deprecated/window-utils");
@@ -19,6 +19,7 @@ const { cleanUI } = require("sdk/test/utils");
 const { after } = require("sdk/test/utils");
 const { merge } = require("sdk/util/object");
 const self = require("sdk/self");
+const { openTab } = require("../tabs/utils");
 
 // TEST: open & close window
 exports.testOpenAndCloseWindow = function(assert, done) {
@@ -231,52 +232,26 @@ exports.testOnOpenOnCloseListeners = function(assert, done) {
 
 exports.testActiveWindow = function*(assert) {
   let windows = browserWindows;
-
-  // API window objects
-  let window2, window3;
+  let window = getMostRecentWindow();
 
   // Raw window objects
-  let rawWindow2, rawWindow3;
+  let rawWindow2 =  yield windowPromise(window.OpenBrowserWindow(), "load").then(focus);
+  assert.pass("Window 2 was created");
 
-  yield new Promise(resolve => {
-    windows.open({
-      url: "data:text/html;charset=utf-8,<title>window 2</title>",
-      onOpen: (window) => {
-        assert.pass('window 2 open');
+  // open a tab in window 2
+  yield openTab(rawWindow2, "data:text/html;charset=utf-8,<title>window 2</title>");
 
-        window.tabs.activeTab.once('ready', () => {
-          assert.pass('window 2 tab activated');
+  assert.equal(rawWindow2.content.document.title, "window 2", "Got correct raw window 2");
+  assert.equal(rawWindow2.document.title, windows[1].title, "Saw correct title on window 2");
 
-          window2 = window;
-          rawWindow2 = viewFor(window);
+  let rawWindow3 =  yield windowPromise(window.OpenBrowserWindow(), "load").then(focus);;
+  assert.pass("Window 3 was created");
 
-          assert.equal(rawWindow2.content.document.title, "window 2", "Got correct raw window 2");
-          assert.equal(rawWindow2.document.title, window2.title, "Saw correct title on window 2");
+  // open a tab in window 3
+  yield openTab(rawWindow3, "data:text/html;charset=utf-8,<title>window 3</title>");
 
-          windows.open({
-            url: "data:text/html;charset=utf-8,<title>window 3</title>",
-            onOpen: (window) => {
-              assert.pass('window 3 open');
-
-              window.tabs.activeTab.once('ready', () => {
-                assert.pass('window 3 tab activated');
-
-                window3 = window;
-                rawWindow3 = viewFor(window);
-
-                assert.equal(rawWindow3.content.document.title, "window 3", "Got correct raw window 3");
-                assert.equal(rawWindow3.document.title, window3.title, "Saw correct title on window 3");
-
-                resolve();
-              });
-            }
-          });
-        });
-      }
-    });
-  });
-
-  yield focus(rawWindow3);
+  assert.equal(rawWindow3.content.document.title, "window 3", "Got correct raw window 3");
+  assert.equal(rawWindow3.document.title, windows[2].title, "Saw correct title on window 3");
 
   assert.equal(windows.length, 3, "Correct number of browser windows");
 
@@ -285,11 +260,13 @@ exports.testActiveWindow = function*(assert) {
     count++;
   }
   assert.equal(count, 3, "Correct number of windows returned by iterator");
-  assert.equal(windows.activeWindow.title, window3.title, "Correct active window title - 3");
+  assert.equal(windows.activeWindow.title, windows[2].title, "Correct active window title - 3");
+  let window3 = windows[2];
 
   yield focus(rawWindow2);
 
-  assert.equal(windows.activeWindow.title, window2.title, "Correct active window title - 2");
+  assert.equal(windows.activeWindow.title, windows[1].title, "Correct active window title - 2");
+  let window2 = windows[1];
 
   yield new Promise(resolve => {
     onFocus(rawWindow2).then(resolve);
@@ -297,7 +274,7 @@ exports.testActiveWindow = function*(assert) {
     assert.pass("activating window2");
   });
 
-  assert.equal(windows.activeWindow.title, window2.title, "Correct active window - 2");
+  assert.equal(windows.activeWindow.title, windows[1].title, "Correct active window - 2");
 
   yield new Promise(resolve => {
     onFocus(rawWindow3).then(resolve);
