@@ -30,7 +30,7 @@ describe("jpm test logging in debug builds", function () {
       var stdout = data.stdout;
       var startIndex = stdout.indexOf(START) + START.length;
       var endIndex = stdout.indexOf(END);
-      stdout = stdout.substr(startIndex, endIndex)
+      stdout = stdout.substring(startIndex, endIndex)
       console.log(stdout);
     }).then(done).catch(done);
   });

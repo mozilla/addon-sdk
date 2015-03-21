@@ -5,7 +5,7 @@
 
 exports.testLogging = function(assert) {
   dump("START TRACKING LOGGING HERE");
-  require("resource://gre/modules/NetUtil.jsm");
+  require("sdk/timers");
   dump("STOP TRACKING LOGGING HERE");
   assert.pass("done testing")
 };
