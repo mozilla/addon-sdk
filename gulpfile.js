@@ -21,3 +21,6 @@ gulp.task('test:modules', function(done) {
   require("./bin/jpm-test").run("modules").then(done);
 });
 
+gulp.task('test:logging', function(done) {
+  require("./bin/jpm-test").run("logging").then(done);
+});
