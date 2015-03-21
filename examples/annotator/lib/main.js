@@ -2,9 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-var widgets = require('sdk/widget');
+var ui = require('sdk/ui');
 var pageMod = require('sdk/page-mod');
-var data = require('sdk/self').data;
 var panels = require('sdk/panel');
 var simpleStorage = require('sdk/simple-storage');
 var notifications = require("sdk/notifications");
@@ -87,24 +86,28 @@ view the list of annotations.
 The selector is switched on/off with a left-click, and the list of annotations
 is displayed on a right-click.
 */
-  var widget = widgets.Widget({
+  var button = ui.ToggleButton({
     id: 'toggle-switch',
     label: 'Annotator',
-    contentURL: data.url('widget/pencil-off.png'),
-    contentScriptWhen: 'ready',
-    contentScriptFile: data.url('widget/widget.js')
+    icon: './widget/pencil.png',
+    onChange: function () {
+      if (toggleActivation()) {
+        console.log('activate')
+      }
+      else {
+        console.log('deactivate');
+      }
+    }
   });
 
-  widget.port.on('left-click', function() {
-    console.log('activate/deactivate');
-    widget.contentURL = toggleActivation() ?
-              data.url('widget/pencil-on.png') :
-              data.url('widget/pencil-off.png');
-  });
-
-  widget.port.on('right-click', function() {
-      console.log('show annotation list');
-      annotationList.show();
+  var buttonList = ui.ToggleButton({
+    id: 'toggle-list',
+    label: 'Annotator List',
+    icon: './widget/list.png',
+    onChange: function(state) {
+      if (state.checked)
+        annotationList.show({position: buttonList});
+    }
   });
 
 /*
@@ -123,8 +126,8 @@ display it.
   var selector = pageMod.PageMod({
     include: ['*'],
     contentScriptWhen: 'ready',
-    contentScriptFile: [data.url('jquery-1.4.2.min.js'),
-                        data.url('selector.js')],
+    contentScriptFile: ['./jquery-1.4.2.min.js',
+                        './selector.js'],
     onAttach: function(worker) {
       worker.postMessage(annotatorIsOn);
       selectors.push(worker);
@@ -155,8 +158,8 @@ and the text the user entered, store it, and hide the panel.
   var annotationEditor = panels.Panel({
     width: 220,
     height: 220,
-    contentURL: data.url('editor/annotation-editor.html'),
-    contentScriptFile: data.url('editor/annotation-editor.js'),
+    contentURL: './editor/annotation-editor.html',
+    contentScriptFile: './editor/annotation-editor.js',
     onMessage: function(annotationText) {
       if (annotationText)
         handleNewAnnotation(annotationText, this.annotationAnchor);
@@ -180,12 +183,15 @@ in the browser.
   var annotationList = panels.Panel({
     width: 420,
     height: 200,
-    contentURL: data.url('list/annotation-list.html'),
-    contentScriptFile: [data.url('jquery-1.4.2.min.js'),
-                        data.url('list/annotation-list.js')],
+    contentURL: './list/annotation-list.html',
+    contentScriptFile: ['./jquery-1.4.2.min.js',
+                        './list/annotation-list.js'],
     contentScriptWhen: 'ready',
     onShow: function() {
       this.postMessage(simpleStorage.storage.annotations);
+    },
+    onHide: function() {
+      buttonList.state('window', {checked: false});
     },
     onMessage: function(message) {
       require('sdk/tabs').open(message);
@@ -224,8 +230,8 @@ see old ones.
   var matcher = pageMod.PageMod({
     include: ['*'],
     contentScriptWhen: 'ready',
-    contentScriptFile: [data.url('jquery-1.4.2.min.js'),
-                        data.url('matcher.js')],
+    contentScriptFile: ['./jquery-1.4.2.min.js',
+                        './matcher.js'],
     onAttach: function(worker) {
       if(simpleStorage.storage.annotations) {
         worker.postMessage(simpleStorage.storage.annotations);
@@ -254,9 +260,9 @@ the annotation text, and that gets sent to the content process in onShow().
   var annotation = panels.Panel({
     width: 200,
     height: 180,
-    contentURL: data.url('annotation/annotation.html'),
-    contentScriptFile: [data.url('jquery-1.4.2.min.js'),
-                        data.url('annotation/annotation.js')],
+    contentURL: './annotation/annotation.html',
+    contentScriptFile: ['./jquery-1.4.2.min.js',
+                        './annotation/annotation.js'],
     contentScriptWhen: 'ready',
     onShow: function() {
       this.postMessage(this.content);

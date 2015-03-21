@@ -21,11 +21,6 @@ exports["test compatibility"] = function(assert) {
   assert.equal(require("tabs"),
                require("sdk/tabs"), "sdk/tabs -> tabs");
 
-  if (app.is("Firefox")) {
-    assert.equal(require("widget"),
-                 require("sdk/widget"), "sdk/widget -> widget");
-  }
-
   assert.equal(require("page-mod"),
                require("sdk/page-mod"), "sdk/page-mod -> page-mod");
 
