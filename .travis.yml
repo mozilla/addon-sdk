@@ -13,7 +13,7 @@ before_install:
   - "/sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1280x1024x16 -extension RANDR"
 
 before_script:
-  - npm install mozilla-download -g
+  - npm install mozilla-download@0.4.6 -g
   - npm install gulp -g
   - cd ..
   - mozilla-download --branch nightly -c prerelease --host ftp.mozilla.org firefox
