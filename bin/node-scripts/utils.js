@@ -17,6 +17,13 @@ var sdk = path.join(__dirname, "..", "..");
 var prefsPath = path.join(sdk, "test", "preferences", "test-preferences.js");
 var e10sPrefsPath = path.join(sdk, "test", "preferences", "test-e10s-preferences.js");
 
+var OUTPUT_FILTERS = [
+  /[^\n\r]+WARNING\: NS_ENSURE_SUCCESS\(rv, rv\) failed[^\n]+\n\r?/
+];
+
+var isDebug = (process.env["JPM_FX_DEBUG"] == "1");
+exports.isDebug = isDebug;
+
 function spawn (cmd, options) {
   options = options || {};
   var env = _.extend({}, options.env, process.env);
@@ -40,7 +47,13 @@ function run (cmd, options, p) {
     var proc = spawn(cmd, options);
     proc.stderr.pipe(process.stderr);
     proc.stdout.on("data", function (data) {
+      for (var i = OUTPUT_FILTERS.length - 1; i >= 0; i--) {
+        if (OUTPUT_FILTERS[i].test(data)) {
+          return null;
+        }
+      }
       output.push(data);
+      return null;
     });
     if (p) {
       proc.stdout.pipe(p.stdout);
