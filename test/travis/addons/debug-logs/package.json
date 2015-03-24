@@ -1,0 +1,5 @@
+{
+  "name": "debug-logs",
+  "title": "Debug Logs",
+  "main": "./index"
+}

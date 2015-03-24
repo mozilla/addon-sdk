@@ -57,7 +57,9 @@ function run (cmd, options, p) {
       expect(hasFailure).to.equal(false);
       expect(hasSuccess).to.equal(true);
       expect(noTests).to.equal(false);
-      resolve();
+      resolve({
+        stdout: out
+      });
     });
   });
 }
