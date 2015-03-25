@@ -5,6 +5,7 @@
 
 var gulp = require('gulp');
 var patch = require("./bin/node-scripts/apply-patch");
+var ini = require("./bin/node-scripts/update-ini");
 
 gulp.task('test', function(done) {
   require("./bin/jpm-test").run().then(done);
@@ -28,4 +29,8 @@ gulp.task('patch:clean', function(done) {
 
 gulp.task('patch:apply', function(done) {
   patch.apply().then(done);
+});
+
+gulp.task('update:ini', function(done) {
+  ini.updateAddonINI().then(done).catch(done);
 });
