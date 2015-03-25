@@ -4,6 +4,7 @@
 "use strict";
 
 var gulp = require('gulp');
+var patch = require("./bin/node-scripts/apply-patch");
 
 gulp.task('test', function(done) {
   require("./bin/jpm-test").run().then(done);
@@ -21,3 +22,10 @@ gulp.task('test:modules', function(done) {
   require("./bin/jpm-test").run("modules").then(done);
 });
 
+gulp.task('patch:clean', function(done) {
+  patch.clean().then(done);
+});
+
+gulp.task('patch:apply', function(done) {
+  patch.apply().then(done);
+});
