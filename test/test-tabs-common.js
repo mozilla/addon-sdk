@@ -4,8 +4,6 @@
 'use strict';
 
 const { Loader, LoaderWithHookedConsole } = require("sdk/test/loader");
-const { nuke } = require("sdk/loader/sandbox");
-const systemEvents = require("sdk/system/events");
 const { browserWindows } = require('sdk/windows');
 const tabs = require('sdk/tabs');
 const { isPrivate } = require('sdk/private-browsing');
@@ -603,70 +601,6 @@ exports.testAttachStyleToTab = function(assert, done) {
         "Style.uri properly detached from xul tab");
 
       tab.close(done);
-    }
-  });
-};
-
-exports.testNoDeadObjects = function(assert, done) {
-  let loader = Loader(module);
-  let myTabs = loader.require("sdk/tabs");
-
-  systemEvents.on("console-api-log-event", onConsoleMessage);
-
-  function cleanup() {
-    systemEvents.off("console-api-log-event", onConsoleMessage);
-  }
-
-  // Fail if we get a dead object message on the console.
-  function onConsoleMessage({ subject }) {
-    let message = subject.wrappedJSObject;
-    let text = message.arguments[0] + "";
-    if (text.contains("can't access dead object")) {
-      cleanup();
-      assert.fail("testNoDeadObjects: " + text);
-    }
-  }
-
-  // Load a tab, unload our modules, and navigate the tab to trigger an event
-  // on it.  This would throw a dead object exception if our modules didn't
-  // clean up their event handlers on unload.
-  tabs.open({
-    url: "data:text/html;charset=utf-8,one",
-    onOpen: function(tab) {
-      // 3. Arrange to close the tab once the second page loads.
-      tab.on("load", function() {
-        tab.close(function() {
-          cleanup();
-          assert.pass("no dead object errors");
-          done();
-        });
-      });
-
-      // 2. Arrange to nuke the sandboxes and then trigger the load event
-      //    on the tab once the loader is kaput.
-      systemEvents.on("sdk:loader:destroy", function onUnload() {
-        systemEvents.off("sdk:loader:destroy", onUnload);
-        // Defer this carnage till the end of the event queue, to avoid nuking
-        // the sandboxes from under the modules as they're being cleaned up.
-        setTimeout(function() {
-          // Nuke the sandboxes of all the loaded modules.
-          // This step creates the dead objects.
-          for (let name in loader.sandboxes) {
-            nuke(loader.sandboxes[name]);
-          }
-
-          // Trigger a load event on the tab, to give the now-unloaded
-          // myTabs a chance to choke on it.
-          tab.url = "data:text/html;charset=utf-8,two";
-        }, 0);
-      }, true);
-
-      // 1. Start unloading the modules.  Defer till the end of the event
-      //    queue, in case myTabs is attaching its own handlers here too.
-      //    We want it to latch on before we pull the rug from under it.
-      setTimeout(function() {
-        loader.unload();
-      }, 0);
     }
   });
 };
