@@ -27,6 +27,11 @@ exports.isDebug = isDebug;
 function spawn (cmd, options) {
   options = options || {};
   var env = _.extend({}, options.env, process.env);
+
+  if (isDebug) {
+    env["MOZ_QUIET"] = 1;
+  }
+
   var e10s = options.e10s || false;
 
   return child_process.spawn("node", [
