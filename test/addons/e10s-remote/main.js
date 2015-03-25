@@ -5,7 +5,7 @@
 "use strict";
 
 const LOCAL_URI = "about:robots";
-const REMOTE_URI = "about:home";
+const REMOTE_URI = "data:text/html;charset=utf-8,remote";
 
 const { Loader } = require('sdk/test/loader');
 const { getTabs, openTab, closeTab, setTabURL, getBrowserForTab, getURI } = require('sdk/tabs/utils');
