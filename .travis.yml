@@ -1,8 +1,11 @@
 sudo: false
 language: node_js
 node_js:
-  - "iojs"
   - "0.10"
+
+env:
+  - JPM_FX_DEBUG=0
+  - JPM_FX_DEBUG=1
 
 notifications:
   irc: "irc.mozilla.org#jetpack"
@@ -14,7 +17,6 @@ before_install:
 before_script:
   - npm install fx-download -g
   - npm install gulp -g
-  - cd ..
-  - fx-download --branch nightly -c prerelease --host ftp.mozilla.org firefox
+  - bash bin/fx-download.sh
   - export JPM_FIREFOX_BINARY=$TRAVIS_BUILD_DIR/../firefox/firefox
   - cd $TRAVIS_BUILD_DIR

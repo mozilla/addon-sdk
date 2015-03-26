@@ -11,12 +11,14 @@ var mocha = new Mocha({
   timeout: 900000
 });
 
+var isDebug = require("./node-scripts/utils").isDebug;
+
 exports.run = function(type) {
   return new Promise(function(resolve) {
     type = type || "";
     [
-      (/^(modules)?$/.test(type)) && require.resolve("../bin/node-scripts/test.modules"),
-      (/^(addons)?$/.test(type)) && require.resolve("../bin/node-scripts/test.addons"),
+      (!isDebug && /^(modules)?$/.test(type)) && require.resolve("../bin/node-scripts/test.modules"),
+      (!isDebug && /^(addons)?$/.test(type)) && require.resolve("../bin/node-scripts/test.addons"),
       (/^(examples)?$/.test(type)) && require.resolve("../bin/node-scripts/test.examples"),
     ].sort().forEach(function(filepath) {
       filepath && mocha.addFile(filepath);
