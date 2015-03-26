@@ -67,7 +67,6 @@
   "simple-storage": "sdk/simple-storage",
   "tabs": "sdk/tabs",
   "timers": "sdk/timers",
-  "widget": "sdk/widget",
   "windows": "sdk/windows",
   "harness": "sdk/test/harness",
   "run-tests": "sdk/test/runner",
