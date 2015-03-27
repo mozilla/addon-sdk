@@ -12,25 +12,29 @@ gulp.task('test', function(done) {
 });
 
 gulp.task('test:addons', function(done) {
-  require("./bin/jpm-test").run("addons").then(done);
+  require("./bin/jpm-test").run("addons").catch(console.error).then(done);
+});
+
+gulp.task('test:docs', function(done) {
+  require("./bin/jpm-test").run("docs").catch(console.error).then(done);
 });
 
 gulp.task('test:examples', function(done) {
-  require("./bin/jpm-test").run("examples").then(done);
+  require("./bin/jpm-test").run("examples").catch(console.error).then(done);
 });
 
 gulp.task('test:modules', function(done) {
-  require("./bin/jpm-test").run("modules").then(done);
+  require("./bin/jpm-test").run("modules").catch(console.error).then(done);
 });
 
 gulp.task('patch:clean', function(done) {
-  patch.clean().then(done);
+  patch.clean().catch(console.error).then(done);
 });
 
 gulp.task('patch:apply', function(done) {
-  patch.apply().then(done);
+  patch.apply().catch(console.error).then(done);
 });
 
 gulp.task('update:ini', function(done) {
-  ini.updateAddonINI().then(done).catch(done);
+  ini.updateAddonINI().catch(console.error).then(done);
 });

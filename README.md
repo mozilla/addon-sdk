@@ -6,7 +6,7 @@ If you find a problem, please [report the bug here](https://bugzilla.mozilla.org
 
 ## Developing Add-ons
 
-These resources should provide some help:
+These resources offer some help:
 
 * [Add-on SDK Documentation](https://developer.mozilla.org/en-US/Add-ons/SDK)
 * [Community Developed Modules](https://github.com/mozilla/addon-sdk/wiki/Community-developed-modules)
@@ -17,7 +17,7 @@ These resources should provide some help:
 
 ## Contributing Code
 
-Please read these two guides if you wish to contribute some patches to the addon-sdk:
+Please read these two guides if you wish to make some patches to the addon-sdk:
 
 * [Contribute Guide](https://github.com/mozilla/addon-sdk/blob/master/CONTRIBUTING.md)
 * [Style Guide](https://github.com/mozilla/addon-sdk/wiki/Coding-style-guide)
