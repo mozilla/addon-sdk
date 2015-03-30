@@ -13,7 +13,7 @@ const { atob } = Cu.import("resource://gre/modules/Services.jsm", {});
 const historyService = Cc["@mozilla.org/browser/nav-history-service;1"]
                        .getService(Ci.nsINavHistoryService);
 const { events } = require('sdk/places/events');
-const { OS } = require("resource://gre/modules/osfile.jsm");
+const { OS } = Cu.import("resource://gre/modules/osfile.jsm", {});
 
 function onFaviconChange (url) {
   return new Promise(resolve => {
