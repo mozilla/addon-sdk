@@ -24,12 +24,12 @@ const MPL2_LICENSE_TEST = new RegExp([
 
 // Note: Using regular expressions because the paths a different for cfx vs jpm
 const IGNORES = [
-  /lib\/(diffpatcher|method)\/.+$/, // MIT
-  /lib\/sdk\/fs\/path\.js$/, // MIT
-  /lib\/sdk\/system\/child_process\/.*/,
-  /tests?\/buffers\/.+$/, // MIT
-  /tests?\/path\/test-path\.js$/,
-  /tests?\/querystring\/test-querystring\.js$/,
+  /lib[\/\\](diffpatcher|method)[\/\\].+$/, // MIT
+  /lib[\/\\]sdk[\/\\]fs[\/\\]path\.js$/, // MIT
+  /lib[\/\\]sdk[\/\\]system[\/\\]child_process[\/\\].*/,
+  /tests?[\/\\]buffers[\/\\].+$/, // MIT
+  /tests?[\/\\]path[\/\\]test-path\.js$/,
+  /tests?[\/\\]querystring[\/\\]test-querystring\.js$/,
 ];
 
 const ignoreFile = file => !!IGNORES.find(regex => regex.test(file));
@@ -45,8 +45,6 @@ const isTestFile = ({ path, leafName }) => {
 const getFileURI = x => ios.newFileURI(x).spec;
 
 const getDirectoryEntries = file => map(toFile, fromEnumerator(_ => file.directoryEntries));
-const getTestFiles = directory => filter(isTestFile, getDirectoryEntries(directory));
-const getTestURIs = directory => map(getFileURI, getTestFiles(directory));
 
 const isDirectory = x => x.isDirectory();
 const getEntries = directory => mapcat(entry => {
