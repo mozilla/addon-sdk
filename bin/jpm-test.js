@@ -20,6 +20,7 @@ exports.run = function(type) {
       (!isDebug && /^(modules)?$/.test(type)) && require.resolve("../bin/node-scripts/test.modules"),
       (!isDebug && /^(addons)?$/.test(type)) && require.resolve("../bin/node-scripts/test.addons"),
       (/^(examples)?$/.test(type)) && require.resolve("../bin/node-scripts/test.examples"),
+      (/^(docs)?$/.test(type)) && require.resolve("../bin/node-scripts/test.docs"),
     ].sort().forEach(function(filepath) {
       filepath && mocha.addFile(filepath);
     })
