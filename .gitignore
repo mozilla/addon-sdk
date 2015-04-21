@@ -18,3 +18,10 @@ node_modules
 
 # Windows
 *Thumbs.db
+
+# Ignore subtrees
+
+# git@github.com:jsantell/jetpack-id.git
+lib/jetpack-id/*
+!lib/jetpack-id/index.js
+!lib/jetpack-id/package.json
