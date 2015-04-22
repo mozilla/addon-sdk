@@ -893,34 +893,34 @@ exports['test passing DOM node as first argument'] = function (assert, done) {
 
   let { loader } = LoaderWithHookedConsole(module, onMessage);
   let { Panel } = loader.require('sdk/panel');
-  let { Widget } = loader.require('sdk/widget');
+  let { ActionButton } = loader.require('sdk/ui/button/action');
+  let { getNodeView } = loader.require('sdk/view/core');
   let { document } = getMostRecentBrowserWindow();
-  let widgetId = 'widget:' + self.id + '-panel-widget';
 
   let panel = Panel({
     onShow: function() {
       let panelNode = document.getElementById('mainPopupSet').lastChild;
 
-      assert.equal(panelNode.anchorNode, widgetNode,
-        'the panel is properly anchored to the widget');
+      assert.equal(panelNode.anchorNode, buttonNode,
+        'the panel is properly anchored to the button');
 
       shown.resolve();
     }
   });
 
-  let widget = Widget({
-    id: 'panel-widget',
-    label: 'panel widget',
-    content: '<i></i>',
+  let button = ActionButton({
+    id: 'panel-button',
+    label: 'panel button',
+    icon: './icon.png'
   });
 
-  let widgetNode = document.getElementById(widgetId);
+  let buttonNode = getNodeView(button);
 
   all([warned.promise, shown.promise]).
     then(loader.unload).
     then(done, assert.fail)
 
-  panel.show(widgetNode);
+  panel.show(buttonNode);
 };
 
 // This test is checking that `onpupshowing` events emitted by panel's children
@@ -1297,7 +1297,6 @@ exports["test panel addon global object"] = function*(assert) {
 exports["test panel load doesn't show"] = function*(assert) {
   let loader = Loader(module);
 
-  let showCount = 0;
   let panel = loader.require("sdk/panel").Panel({
     contentScript: "addEventListener('load', function(event) { self.postMessage('load'); });",
     contentScriptWhen: "start",
@@ -1332,6 +1331,24 @@ exports["test panel load doesn't show"] = function*(assert) {
   panel.contentURL = "data:text/html;charset=utf-8,<html/>";
 
   yield messaged.promise;
+  loader.unload();
+}
+
+exports["test Panel without contentURL and contentScriptWhen=start should show"] = function*(assert) {
+  let loader = Loader(module);
+
+  let panel = loader.require("sdk/panel").Panel({
+    contentScriptWhen: "start",
+    // No contentURL, the bug only shows up when contentURL is not explicitly set.
+  });
+
+  yield new Promise(resolve => {
+    panel.once("show", resolve);
+    panel.show();
+  });
+
+  assert.pass("Received show event");
+
   loader.unload();
 }
 

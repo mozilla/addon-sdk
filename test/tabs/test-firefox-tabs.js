@@ -5,6 +5,7 @@
 
 const { Cc, Ci } = require('chrome');
 const { Loader } = require('sdk/test/loader');
+const systemEvents = require("sdk/system/events");
 const { setTimeout } = require('sdk/timers');
 const { viewFor } = require('sdk/view/core');
 const { getOwnerWindow } = require('sdk/tabs/utils');
@@ -371,29 +372,30 @@ exports.testTabMove = function(assert, done) {
 };
 
 exports.testIgnoreClosing = function(assert, done) {
-  let originalWindow = browserWindows.activeWindow;
+  let originalWindow = viewFor(browserWindows.activeWindow);
   openBrowserWindow(function(window, browser) {
-    let url = "data:text/html;charset=utf-8,foobar";
+    onFocus(window).then(() => {
+      let url = "data:text/html;charset=utf-8,foobar";
 
-    assert.equal(tabs.length, 2, "should be two windows open each with one tab");
+      assert.equal(tabs.length, 2, "should be two windows open each with one tab");
 
-    tabs.on('ready', function onReady(tab) {
-      tabs.removeListener('ready', onReady);
+      tabs.on('ready', function onReady(tab) {
+        tabs.removeListener('ready', onReady);
 
-      let win = tab.window;
-      assert.equal(win.tabs.length, 2, "should be two tabs in the new window");
-      assert.equal(tabs.length, 3, "should be three tabs in total");
+        let win = tab.window;
+        assert.equal(win.tabs.length, 2, "should be two tabs in the new window");
+        assert.equal(tabs.length, 3, "should be three tabs in total");
 
-      tab.close(function() {
-        assert.equal(win.tabs.length, 1, "should be one tab in the new window");
-        assert.equal(tabs.length, 2, "should be two tabs in total");
+        tab.close(function() {
+          assert.equal(win.tabs.length, 1, "should be one tab in the new window");
+          assert.equal(tabs.length, 2, "should be two tabs in total");
 
-        originalWindow.once("activate", done);
-        close(window);
+          close(window).then(onFocus(originalWindow)).then(done).then(null, assert.fail);
+        });
       });
-    });
 
-    tabs.open(url);
+      tabs.open(url);
+    });
   });
 };
 
@@ -1056,6 +1058,49 @@ exports.testFaviconGetterDeprecation = function (assert, done) {
     }
   });
 }
+
+
+exports.testNoDeadObjects = function(assert, done) {
+  let loader = Loader(module);
+  let myTabs = loader.require("sdk/tabs");
+
+  // Load a tab, unload our modules, and navigate the tab to trigger an event
+  // on it.  This would throw a dead object exception if our modules didn't
+  // clean up their event handlers on unload.
+  tabs.open({
+    url: "data:text/html;charset=utf-8,one",
+    onLoad: function(tab) {
+      // 2. Arrange to nuke the sandboxes and then trigger the load event
+      //    on the tab once the loader is kaput.
+      systemEvents.on("sdk:loader:destroy", function onUnload() {
+        systemEvents.off("sdk:loader:destroy", onUnload, true);
+        // Defer this carnage till the end of the event queue, to avoid nuking
+        // the sandboxes from under the modules as they're being cleaned up.
+        setTimeout(function() {
+          // 3. Arrange to close the tab once the second page loads.
+          tab.on("load", function() {
+            tab.close(function() {
+              var TABS = loader.sandbox("sdk/tabs/tab-firefox").TABS;
+              assert.equal(TABS.length, 0, "no dead objects");
+              done();
+            });
+          });
+
+          // Trigger a load event on the tab, to give the now-unloaded
+          // myTabs a chance to choke on it.
+          tab.url = "data:text/html;charset=utf-8,two";
+        }, 0);
+      }, true);
+
+      // 1. Start unloading the modules.  Defer till the end of the event
+      //    queue, in case myTabs is attaching its own handlers here too.
+      //    We want it to latch on before we pull the rug from under it.
+      setTimeout(function() {
+        loader.unload();
+      }, 0);
+    }
+  });
+};
 
 /******************* helpers *********************/
 
