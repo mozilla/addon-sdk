@@ -90,6 +90,55 @@ exports["test Panel API"] = test(function*(assert) {
   myTool.destroy();
 });
 
+exports["test forbid remote https docs"] = test(function*(assert) {
+  const MyPanel = Class({
+    extends: Panel,
+    label: "test https panel",
+    tooltip: "my test panel",
+    icon: iconURI,
+    url: "https://mozilla.org",
+  });
+
+  assert.throws(() => {
+    new Tool({ panels: { myPanel: MyPanel } });
+  },
+  /The `options.url` must be a valid local URI/,
+  "can't use panel with remote URI");
+});
+
+exports["test forbid remote http docs"] = test(function*(assert) {
+  const MyPanel = Class({
+    extends: Panel,
+    label: "test http panel",
+    tooltip: "my test panel",
+    icon: iconURI,
+    url: "http://arewefastyet.com/",
+  });
+
+  assert.throws(() => {
+    new Tool({ panels: { myPanel: MyPanel } });
+  },
+  /The `options.url` must be a valid local URI/,
+  "can't use panel with remote URI");
+});
+
+exports["test forbid remote ftp docs"] = test(function*(assert) {
+  const MyPanel = Class({
+    extends: Panel,
+    label: "test ftp panel",
+    tooltip: "my test panel",
+    icon: iconURI,
+    url: "ftp://ftp.mozilla.org/",
+  });
+
+  assert.throws(() => {
+    new Tool({ panels: { myPanel: MyPanel } });
+  },
+  /The `options.url` must be a valid local URI/,
+  "can't use panel with remote URI");
+});
+
+
 exports["test Panel communication"] = test(function*(assert) {
   const MyPanel = Class({
     extends: Panel,
