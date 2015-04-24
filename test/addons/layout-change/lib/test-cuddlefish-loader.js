@@ -180,8 +180,4 @@ exports["test compatibility"] = function(assert) {
 
   assert.equal(require("array"),
                require("sdk/util/array"), "sdk/util/array -> array");
-
-  assert.equal(require("api-utils/cortex"),
-               require("sdk/deprecated/cortex"),
-               "api-utils/cortex -> sdk/deprecated/cortex");
 };
