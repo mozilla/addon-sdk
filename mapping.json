@@ -48,7 +48,6 @@
   "hidden-frame": "sdk/frame/hidden-frame",
   "collection": "sdk/util/collection",
   "array": "sdk/util/array",
-  "cortex": "sdk/deprecated/cortex",
   "clipboard": "sdk/clipboard",
   "context-menu": "sdk/context-menu",
   "hotkeys": "sdk/hotkeys",
