@@ -8,6 +8,7 @@ var path = require("path");
 var fs = require("fs");
 var jpm = utils.run;
 var readParam = utils.readParam;
+var isDebug = utils.isDebug;
 
 var addonsPath = path.join(__dirname, "..", "..", "test", "addons");
 
@@ -37,9 +38,17 @@ describe("jpm test sdk addons", function () {
 
 function fileFilter(root, file) {
   var matcher = filterPattern && new RegExp(filterPattern);
-  if (/^(l10n|simple-prefs|page-mod-debugger)/.test(file)) {
+  if (/^(l10n-properties|simple-prefs|page-mod-debugger)/.test(file)) {
     return false;
   }
+
+  // filter additional add-ons when using debug builds
+  if (isDebug) {
+    if (/^(chrome|e10s)/.test(file)) {
+      return false;
+    }
+  }
+
   if (matcher && !matcher.test(file)) {
     return false;
   }

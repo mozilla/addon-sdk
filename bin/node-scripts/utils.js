@@ -17,9 +17,21 @@ var sdk = path.join(__dirname, "..", "..");
 var prefsPath = path.join(sdk, "test", "preferences", "test-preferences.js");
 var e10sPrefsPath = path.join(sdk, "test", "preferences", "test-e10s-preferences.js");
 
+var OUTPUT_FILTERS = [
+  /[^\n\r]+WARNING\: NS_ENSURE_SUCCESS\(rv, rv\) failed[^\n]+\n\r?/
+];
+
+var isDebug = (process.env["JPM_FX_DEBUG"] == "1");
+exports.isDebug = isDebug;
+
 function spawn (cmd, options) {
   options = options || {};
   var env = _.extend({}, options.env, process.env);
+
+  if (isDebug) {
+    env["MOZ_QUIET"] = 1;
+  }
+
   var e10s = options.e10s || false;
 
   return child_process.spawn("node", [
@@ -40,13 +52,20 @@ function run (cmd, options, p) {
     var proc = spawn(cmd, options);
     proc.stderr.pipe(process.stderr);
     proc.stdout.on("data", function (data) {
+      for (var i = OUTPUT_FILTERS.length - 1; i >= 0; i--) {
+        if (OUTPUT_FILTERS[i].test(data)) {
+          return null;
+        }
+      }
       output.push(data);
+      return null;
     });
     if (p) {
       proc.stdout.pipe(p.stdout);
     }
     proc.on("close", function(code) {
       var out = output.join("");
+      var buildDisplayed = /Build \d+/.test(out);
       var noTests = /No tests were run/.test(out);
       var hasSuccess = /All tests passed!/.test(out);
       var hasFailure = /There were test failures\.\.\./.test(out);
@@ -54,6 +73,7 @@ function run (cmd, options, p) {
         DEFAULT_PROCESS.stdout.write(out);
       }
       expect(code).to.equal(hasFailure ? 1 : 0);
+      expect(buildDisplayed).to.equal(true);
       expect(hasFailure).to.equal(false);
       expect(hasSuccess).to.equal(true);
       expect(noTests).to.equal(false);

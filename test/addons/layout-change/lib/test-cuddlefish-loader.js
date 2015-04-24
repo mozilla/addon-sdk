@@ -22,8 +22,13 @@ exports["test compatibility"] = function(assert) {
                require("sdk/tabs"), "sdk/tabs -> tabs");
 
   if (app.is("Firefox")) {
-    assert.equal(require("widget"),
-                 require("sdk/widget"), "sdk/widget -> widget");
+    assert.throws(() => require("widget"),
+      /Module `widget` is not found at/,
+      "There is no widget module");
+
+    assert.throws(() => require("sdk/widget"),
+      /Module `sdk\/widget` is not found at/,
+      "There is no sdk/widget module");
   }
 
   assert.equal(require("page-mod"),
@@ -175,8 +180,4 @@ exports["test compatibility"] = function(assert) {
 
   assert.equal(require("array"),
                require("sdk/util/array"), "sdk/util/array -> array");
-
-  assert.equal(require("api-utils/cortex"),
-               require("sdk/deprecated/cortex"),
-               "api-utils/cortex -> sdk/deprecated/cortex");
 };
