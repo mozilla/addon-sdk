@@ -21,7 +21,6 @@ const { defer, all } = require('sdk/core/promise');
 const { getMostRecentBrowserWindow } = require('sdk/window/utils');
 const { URL } = require('sdk/url');
 const { wait } = require('./event/helpers');
-const packaging = require('@loader/options');
 
 const fixtures = require('./fixtures')
 
@@ -1350,12 +1349,6 @@ exports["test Panel without contentURL and contentScriptWhen=start should show"]
   assert.pass("Received show event");
 
   loader.unload();
-}
-
-if (packaging.isNative) {
-  module.exports = {
-    "test skip on jpm": (assert) => assert.pass("skipping this file with jpm")
-  };
 }
 
 require("sdk/test").run(exports);
