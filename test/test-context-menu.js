@@ -6,7 +6,6 @@
 require("sdk/context-menu");
 
 const { defer } = require("sdk/core/promise");
-const packaging = require('@loader/options');
 
 // These should match the same constants in the module.
 const OVERFLOW_THRESH_DEFAULT = 10;
@@ -3751,11 +3750,5 @@ exports.testPredicateContextTargetValueNotSet = function (assert, done) {
     });
   });
 };
-
-if (packaging.isNative) {
-  module.exports = {
-    "test skip on jpm": (assert) => assert.pass("skipping this file with jpm")
-  };
-}
 
 require('sdk/test').run(exports);
