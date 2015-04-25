@@ -156,9 +156,6 @@ exports["test compatibility"] = function(assert) {
   assert.equal(require("memory"),
                require("sdk/deprecated/memory"), "sdk/deprecated/memory -> memory");
 
-  assert.equal(require("light-traits"),
-               require("sdk/deprecated/light-traits"), "sdk/deprecated/light-traits -> light-traits");
-
   assert.equal(require("environment"),
                require("sdk/system/environment"), "sdk/system/environment -> environment");
 

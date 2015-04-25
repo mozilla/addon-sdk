@@ -243,13 +243,6 @@ exports['test:once'] = function(assert) {
   e.emit('foo', 'baz');
 };
 
-exports["test:removing once"] = function(assert) {
-  let e = require("sdk/deprecated/events").EventEmitterTrait.create();
-  e.once("foo", function() { assert.pass("listener was called"); });
-  e.once("error", function() { assert.fail("error event was emitted"); });
-  e._emit("foo", "bug-656684");
-};
-
 // Bug 726967: Ensure that `emit` doesn't do an infinite loop when `error`
 // listener throws an exception
 exports['test:emitLoop'] = function(assert) {
