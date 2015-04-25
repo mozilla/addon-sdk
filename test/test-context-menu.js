@@ -6,6 +6,8 @@
 require("sdk/context-menu");
 
 const { defer } = require("sdk/core/promise");
+const { cleanUI } = require("sdk/test/utils");
+const { after } = require("sdk/test/utils");
 
 // These should match the same constants in the module.
 const OVERFLOW_THRESH_DEFAULT = 10;
@@ -3751,4 +3753,10 @@ exports.testPredicateContextTargetValueNotSet = function (assert, done) {
   });
 };
 
-require('sdk/test').run(exports);
+after(exports, function*(name, assert) {
+  assert.pass("Cleaning new windows and tabs.");
+  yield cleanUI();
+  assert.pass("Removed all new tabs and windows.");
+});
+
+require("sdk/test").run(exports);
