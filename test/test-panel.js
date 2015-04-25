@@ -21,6 +21,8 @@ const { defer, all } = require('sdk/core/promise');
 const { getMostRecentBrowserWindow } = require('sdk/window/utils');
 const { URL } = require('sdk/url');
 const { wait } = require('./event/helpers');
+const { cleanUI } = require("sdk/test/utils");
+const { after } = require('sdk/test/utils');
 
 const fixtures = require('./fixtures')
 
@@ -1350,5 +1352,11 @@ exports["test Panel without contentURL and contentScriptWhen=start should show"]
 
   loader.unload();
 }
+
+after(exports, function*(name, assert) {
+  assert.pass("Cleaning windows and tabs.");
+  yield cleanUI();
+  assert.pass("Removed new windows and tabs.");
+});
 
 require("sdk/test").run(exports);
