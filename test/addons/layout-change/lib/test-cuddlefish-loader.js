@@ -108,9 +108,6 @@ exports["test compatibility"] = function(assert) {
   assert.equal(require("passwords"),
                require("sdk/passwords"), "sdk/passwords -> passwords");
 
-  assert.equal(require("events"),
-               require("sdk/deprecated/events"), "sdk/deprecated/events -> events");
-
   assert.equal(require("match-pattern"),
                require("sdk/util/match-pattern"), "sdk/util/match-pattern -> match-pattern");
 
@@ -132,9 +129,6 @@ exports["test compatibility"] = function(assert) {
   assert.equal(require("xpcom"),
                require("sdk/platform/xpcom"), "sdk/platform/xpcom -> xpcom");
 
-  assert.equal(require("traits"),
-               require("sdk/deprecated/traits"), "sdk/deprecated/traits -> traits");
-
   assert.equal(require("keyboard/utils"),
                require("sdk/keyboard/utils"), "sdk/keyboard/utils -> keyboard/utils");
 
@@ -155,9 +149,6 @@ exports["test compatibility"] = function(assert) {
 
   assert.equal(require("memory"),
                require("sdk/deprecated/memory"), "sdk/deprecated/memory -> memory");
-
-  assert.equal(require("light-traits"),
-               require("sdk/deprecated/light-traits"), "sdk/deprecated/light-traits -> light-traits");
 
   assert.equal(require("environment"),
                require("sdk/system/environment"), "sdk/system/environment -> environment");

@@ -39,7 +39,6 @@
   "querystring": "sdk/querystring",
   "text-streams": "sdk/io/text-streams",
   "app-strings": "sdk/deprecated/app-strings",
-  "light-traits": "sdk/deprecated/light-traits",
   "environment": "sdk/system/environment",
   "keyboard/utils": "sdk/keyboard/utils",
   "dom/events": "sdk/dom/events",
