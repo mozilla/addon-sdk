@@ -1,7 +1,6 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 "use strict";
 
 // Skipping due to window creation being unsupported in Fennec
@@ -12,14 +11,28 @@ module.metadata = {
 };
 
 const { Cc, Ci } = require("chrome");
+const { on } = require("sdk/event/core");
 const { setTimeout } = require("sdk/timers");
-const { LoaderWithHookedConsole } = require("sdk/test/loader");
+const { LoaderWithHookedConsole, Loader } = require("sdk/test/loader");
 const { Worker } = require("sdk/content/worker");
 const { close } = require("sdk/window/helpers");
+const { set: setPref } = require("sdk/preferences/service");
+const { isArray } = require("sdk/lang/type");
+const { URL } = require('sdk/url');
+const fixtures = require("./fixtures");
+const system = require("sdk/system/events");
+
+const DEPRECATE_PREF = "devtools.errorconsole.deprecation_warnings";
 
 const DEFAULT_CONTENT_URL = "data:text/html;charset=utf-8,foo";
 
-function makeWindow(contentURL) {
+const WINDOW_SCRIPT_URL = "data:text/html;charset=utf-8," +
+                          "<script>window.addEventListener('message', function (e) {" +
+                          "  if (e.data === 'from -> content-script')" +
+                          "    window.postMessage('from -> window', '*');" +
+                          "});</script>";
+
+function makeWindow() {
   let content =
     "<?xml version=\"1.0\"?>" +
     "<window " +
@@ -110,6 +123,8 @@ exports["test:sample"] = WorkerTest(
 
     assert.equal(worker.url, window.location.href,
                      "worker.url works");
+    assert.equal(worker.contentURL, window.location.href,
+                     "worker.contentURL works");
     worker.postMessage("hi!");
   }
 );
@@ -220,7 +235,7 @@ exports["test:post-json-values-only"] = WorkerTest(
             self.postMessage([ message.fun === undefined,
                                typeof message.w,
                                message.w && "port" in message.w,
-                               message.w.url,
+                               message.w._url,
                                Array.isArray(message.array),
                                JSON.stringify(message.array)]);
           });
@@ -241,6 +256,10 @@ exports["test:post-json-values-only"] = WorkerTest(
                        "Array is correctly serialized");
       done();
     });
+    // Add a new url property sa the Class function used by
+    // Worker doesn't set enumerables to true for non-functions
+    worker._url = DEFAULT_CONTENT_URL;
+
     worker.postMessage({ fun: function () {}, w: worker, array: array });
   }
 );
@@ -258,7 +277,7 @@ exports["test:emit-json-values-only"] = WorkerTest(
                             fun === null,
                             typeof w,
                             "port" in w,
-                            w.url,
+                            w._url,
                             "fun" in obj,
                             Object.keys(obj.dom).length,
                             Array.isArray(array),
@@ -289,6 +308,9 @@ exports["test:emit-json-values-only"] = WorkerTest(
       fun: function () {},
       dom: browser.contentWindow.document.createElement("div")
     };
+    // Add a new url property sa the Class function used by
+    // Worker doesn't set enumerables to true for non-functions
+    worker._url = DEFAULT_CONTENT_URL;
     worker.port.emit("addon-to-content", function () {}, worker, obj, array);
   }
 );
@@ -312,6 +334,8 @@ exports["test:content is wrapped"] = WorkerTest(
   }
 );
 
+// ContentWorker is not for chrome
+/*
 exports["test:chrome is unwrapped"] = function(assert, done) {
   let window = makeWindow();
 
@@ -332,6 +356,7 @@ exports["test:chrome is unwrapped"] = function(assert, done) {
 
   });
 }
+*/
 
 exports["test:nothing is leaked to content script"] = WorkerTest(
   DEFAULT_CONTENT_URL,
@@ -360,42 +385,158 @@ exports["test:nothing is leaked to content script"] = WorkerTest(
 exports["test:ensure console.xxx works in cs"] = WorkerTest(
   DEFAULT_CONTENT_URL,
   function(assert, browser, done) {
-    let { loader } = LoaderWithHookedConsole(module, onMessage);
+    const EXPECTED = ["time", "log", "info", "warn", "error", "error", "timeEnd"];
 
-    // Intercept all console method calls
     let calls = [];
-    function onMessage(type, msg) {
-      assert.equal(type, msg,
-                       "console.xxx(\"xxx\"), i.e. message is equal to the " +
-                       "console method name we are calling");
-      calls.push(msg);
+    let levels = [];
+
+    system.on('console-api-log-event', onMessage);
+
+    function onMessage({ subject }) {
+      calls.push(subject.wrappedJSObject.arguments[0]);
+      levels.push(subject.wrappedJSObject.level);
     }
 
-    // Finally, create a worker that will call all console methods
-    let worker =  loader.require("sdk/content/worker").Worker({
+    let worker =  Worker({
       window: browser.contentWindow,
       contentScript: "new " + function WorkerScope() {
+        console.time("time");
         console.log("log");
         console.info("info");
         console.warn("warn");
         console.error("error");
         console.debug("debug");
-        console.exception("exception");
+        console.exception("error");
+        console.timeEnd("timeEnd");
         self.postMessage();
       },
       onMessage: function() {
-        // Ensure that console methods are called in the same execution order
+        system.off('console-api-log-event', onMessage);
+
         assert.equal(JSON.stringify(calls),
-                         JSON.stringify(["log", "info", "warn", "error", "debug", "exception"]),
-                         "console has been called successfully, in the expected order");
+          JSON.stringify(EXPECTED),
+          "console methods have been called successfully, in expected order");
+
+        assert.equal(JSON.stringify(levels),
+          JSON.stringify(EXPECTED),
+          "console messages have correct log levels, in expected order");
+
         done();
       }
     });
   }
 );
 
+exports["test:setTimeout works with string argument"] = WorkerTest(
+  "data:text/html;charset=utf-8,<script>var docVal=5;</script>",
+  function(assert, browser, done) {
+    let worker = Worker({
+      window: browser.contentWindow,
+      contentScript: "new " + function ContentScriptScope() {
+        // must use "window.scVal" instead of "var csVal"
+        // since we are inside ContentScriptScope function.
+        // i'm NOT putting code-in-string inside code-in-string </YO DAWG>
+        window.csVal = 13;
+        setTimeout("self.postMessage([" +
+                      "csVal, " +
+                      "window.docVal, " +
+                      "'ContentWorker' in window, " +
+                      "'UNWRAP_ACCESS_KEY' in window, " +
+                      "'getProxyForObject' in window, " +
+                    "])", 1);
+      },
+      contentScriptWhen: "ready",
+      onMessage: function([csVal, docVal, chrome1, chrome2, chrome3]) {
+        // test timer code is executed in the correct context
+        assert.equal(csVal, 13, "accessing content-script values");
+        assert.notEqual(docVal, 5, "can't access document values (directly)");
+        assert.ok(!chrome1 && !chrome2 && !chrome3, "nothing is leaked from chrome");
+        done();
+      }
+    });
+  }
+);
 
-exports["test:setTimeout can\"t be cancelled by content"] = WorkerTest(
+exports["test:setInterval works with string argument"] = WorkerTest(
+  DEFAULT_CONTENT_URL,
+  function(assert, browser, done) {
+    let count = 0;
+    let worker = Worker({
+      window: browser.contentWindow,
+      contentScript: "setInterval('self.postMessage(1)', 50)",
+      contentScriptWhen: "ready",
+      onMessage: function(one) {
+        count++;
+        assert.equal(one, 1, "got " + count + " message(s) from setInterval");
+        if (count >= 3) done();
+      }
+    });
+  }
+);
+
+exports["test:setInterval async Errors passed to .onError"] = WorkerTest(
+  DEFAULT_CONTENT_URL,
+  function(assert, browser, done) {
+    let count = 0;
+    let worker = Worker({
+      window: browser.contentWindow,
+      contentScript: "setInterval(() => { throw Error('ubik') }, 50)",
+      contentScriptWhen: "ready",
+      onError: function(err) {
+        count++;
+        assert.equal(err.message, "ubik",
+            "error (corectly) propagated  " + count + " time(s)");
+        if (count >= 3) done();
+      }
+    });
+  }
+);
+
+exports["test:setTimeout throws array, passed to .onError"] = WorkerTest(
+  DEFAULT_CONTENT_URL,
+  function(assert, browser, done) {
+    let worker = Worker({
+      window: browser.contentWindow,
+      contentScript: "setTimeout(function() { throw ['array', 42] }, 1)",
+      contentScriptWhen: "ready",
+      onError: function(arr) {
+        assert.ok(isArray(arr),
+            "the type of thrown/propagated object is array");
+        assert.ok(arr.length==2,
+            "the propagated thrown array is the right length");
+        assert.equal(arr[1], 42,
+            "element inside the thrown array correctly propagated");
+        done();
+      }
+    });
+  }
+);
+
+exports["test:setTimeout string arg with SyntaxError to .onError"] = WorkerTest(
+  DEFAULT_CONTENT_URL,
+  function(assert, browser, done) {
+    let worker = Worker({
+      window: browser.contentWindow,
+      contentScript: "setTimeout('syntax 123 error', 1)",
+      contentScriptWhen: "ready",
+      onError: function(err) {
+        assert.equal(err.name, "SyntaxError",
+            "received SyntaxError thrown from bad code in string argument to setTimeout");
+        assert.ok('fileName' in err,
+            "propagated SyntaxError contains a fileName property");
+        assert.ok('stack' in err,
+            "propagated SyntaxError contains a stack property");
+        assert.equal(err.message, "missing ; before statement",
+            "propagated SyntaxError has the correct (helpful) message");
+        assert.equal(err.lineNumber, 1,
+            "propagated SyntaxError was thrown on the right lineNumber");
+        done();
+      }
+    });
+  }
+);
+
+exports["test:setTimeout can't be cancelled by content"] = WorkerTest(
   "data:text/html;charset=utf-8,<script>var documentValue=true;</script>",
   function(assert, browser, done) {
 
@@ -601,8 +742,16 @@ exports["test:check worker API with page history"] = WorkerTest(
           // that will be disable until the page gets visible again
           self.on("pagehide", function () {
             setTimeout(function () {
-              self.postMessage("timeout restored");
+              self.port.emit("timeout");
             }, 0);
+          });
+
+          self.on("message", function() {
+            self.postMessage("saw message");
+          });
+
+          self.on("event", function() {
+            self.port.emit("event", "saw event");
           });
         },
         contentScriptWhen: "start"
@@ -620,19 +769,10 @@ exports["test:check worker API with page history"] = WorkerTest(
       // Wait for the document to be hidden
       browser.addEventListener("pagehide", function onpagehide() {
         browser.removeEventListener("pagehide", onpagehide, false);
-        // Now any event sent to this worker should throw
+        // Now any event sent to this worker should be cached
 
-        assert.throws(
-            function () { worker.postMessage("data"); },
-            /The page is currently hidden and can no longer be used/,
-            "postMessage should throw when the page is hidden in history"
-            );
-
-        assert.throws(
-            function () { worker.port.emit("event"); },
-            /The page is currently hidden and can no longer be used/,
-            "port.emit should throw when the page is hidden in history"
-            );
+        worker.postMessage("message");
+        worker.port.emit("event");
 
         // Display the page with attached content script back in order to resume
         // its timeout and receive the expected message.
@@ -641,10 +781,30 @@ exports["test:check worker API with page history"] = WorkerTest(
         // do not receive the message immediatly, so that the timeout is
         // actually disabled
         setTimeout(function () {
-          worker.on("message", function (data) {
-            assert.ok(data, "timeout restored");
-            done();
+          worker.on("pageshow", function() {
+            let promise = Promise.all([
+              new Promise(resolve => {
+                worker.port.on("event", () => {
+                  assert.pass("Saw event");
+                  resolve();
+                });
+              }),
+              new Promise(resolve => {
+                worker.on("message", () => {
+                  assert.pass("Saw message");
+                  resolve();
+                });
+              }),
+              new Promise(resolve => {
+                worker.port.on("timeout", () => {
+                  assert.pass("Timer fired");
+                  resolve();
+                });
+              })
+            ]);
+            promise.then(done);
           });
+
           browser.goForward();
         }, 500);
 
@@ -654,47 +814,313 @@ exports["test:check worker API with page history"] = WorkerTest(
   }
 );
 
-exports["test:global postMessage"] = WorkerTest(
+exports['test:conentScriptFile as URL instance'] = WorkerTest(
   DEFAULT_CONTENT_URL,
   function(assert, browser, done) {
-    let { loader } = LoaderWithHookedConsole(module, onMessage);
 
-    // Intercept all console method calls
-    let seenMessages = 0;
-    function onMessage(type, message) {
-      seenMessages++;
-      assert.equal(type, "error", "Should be an error");
-      assert.equal(message, "DEPRECATED: The global `postMessage()` function in " +
-                            "content scripts is deprecated in favor of the " +
-                            "`self.postMessage()` function, which works the same. " +
-                            "Replace calls to `postMessage()` with calls to " +
-                            "`self.postMessage()`." +
-                            "For more info on `self.on`, see " +
-                            "<https://addons.mozilla.org/en-US/developers/docs/sdk/latest/dev-guide/addon-development/web-content.html>.",
-                            "Should have seen the deprecation message")
-    }
-
-    assert.notEqual(browser.contentWindow.location.href, "about:blank",
-                        "window is now on the right document");
-
-    let window = browser.contentWindow
-    let worker = loader.require("sdk/content/worker").Worker({
-      window: window,
-      contentScript: "new " + function WorkerScope() {
-        postMessage("success");
-      },
-      contentScriptWhen: "ready",
+    let url = new URL(fixtures.url("test-contentScriptFile.js"));
+    let worker =  Worker({
+      window: browser.contentWindow,
+      contentScriptFile: url,
       onMessage: function(msg) {
-        assert.equal("success", msg, "Should have seen the right postMessage call");
-        assert.equal(1, seenMessages, "Should have seen the deprecation message");
+        assert.equal(msg, "msg from contentScriptFile",
+            "received a wrong message from contentScriptFile");
         done();
       }
     });
-
-    assert.equal(worker.url, window.location.href,
-                     "worker.url works");
-    worker.postMessage("hi!");
   }
 );
 
-require("test").run(exports);
+exports["test:worker events"] = WorkerTest(
+  DEFAULT_CONTENT_URL,
+  function (assert, browser, done) {
+    let window = browser.contentWindow;
+    let events = [];
+    let worker = Worker({
+      window: window,
+      contentScript: 'new ' + function WorkerScope() {
+        self.postMessage('start');
+      },
+      onAttach: win => {
+        events.push('attach');
+        assert.pass('attach event called when attached');
+        assert.equal(window, win, 'attach event passes in attached window');
+      },
+      onError: err => {
+        assert.equal(err.message, 'Custom',
+          'Error passed into error event');
+        worker.detach();
+      },
+      onMessage: msg => {
+        assert.pass('`onMessage` handles postMessage')
+        throw new Error('Custom');
+      },
+      onDetach: _ => {
+        assert.pass('`onDetach` called when worker detached');
+        done();
+      }
+    });
+    // `attach` event is called synchronously during instantiation,
+    // so we can't listen to that, TODO FIX?
+    //  worker.on('attach', obj => console.log('attach', obj));
+  }
+);
+
+exports["test:onDetach in contentScript on destroy"] = WorkerTest(
+  "data:text/html;charset=utf-8,foo#detach",
+  function(assert, browser, done) {
+    let worker = Worker({
+      window: browser.contentWindow,
+      contentScript: 'new ' + function WorkerScope() {
+        self.port.on('detach', function(reason) {
+          window.location.hash += '!' + reason;
+        })
+      },
+    });
+    browser.contentWindow.addEventListener('hashchange', _ => {
+      assert.equal(browser.contentWindow.location.hash, '#detach!',
+                   "location.href is as expected");
+      done();
+    })
+    worker.destroy();
+  }
+);
+
+exports["test:onDetach in contentScript on unload"] = WorkerTest(
+  "data:text/html;charset=utf-8,foo#detach",
+  function(assert, browser, done) {
+    let { loader } = LoaderWithHookedConsole(module);
+    let worker = loader.require("sdk/content/worker").Worker({
+      window: browser.contentWindow,
+      contentScript: 'new ' + function WorkerScope() {
+        self.port.on('detach', function(reason) {
+          window.location.hash += '!' + reason;
+        })
+      },
+    });
+    browser.contentWindow.addEventListener('hashchange', _ => {
+      assert.equal(browser.contentWindow.location.hash, '#detach!shutdown',
+                   "location.href is as expected");
+      done();
+    })
+    loader.unload('shutdown');
+  }
+);
+
+exports["test:console method log functions properly"] = WorkerTest(
+  DEFAULT_CONTENT_URL,
+  function(assert, browser, done) {
+    let logs = [];
+
+    system.on('console-api-log-event', onMessage);
+
+    function onMessage({ subject }) {
+      logs.push(clean(subject.wrappedJSObject.arguments[0]));
+    }
+
+    let clean = message =>
+          message.trim().
+          replace(/[\r\n]/g, " ").
+          replace(/ +/g, " ");
+
+    let worker =  Worker({
+      window: browser.contentWindow,
+      contentScript: "new " + function WorkerScope() {
+        console.log(Function);
+        console.log((foo) => foo * foo);
+        console.log(function foo(bar) { return bar + bar });
+
+        self.postMessage();
+      },
+      onMessage: () => {
+        system.off('console-api-log-event', onMessage);
+
+        assert.deepEqual(logs, [
+          "function Function() { [native code] }",
+          "(foo) => foo * foo",
+          "function foo(bar) { \"use strict\"; return bar + bar }"
+        ]);
+
+        done();
+      }
+    });
+  }
+);
+
+exports["test:global postMessage"] = WorkerTest(
+  WINDOW_SCRIPT_URL,
+  function(assert, browser, done) {
+    let contentScript = "window.addEventListener('message', function (e) {" +
+                        "  if (e.data === 'from -> window')" +
+                        "    self.port.emit('response', e.data, e.origin);" +
+                        "});" +
+                        "postMessage('from -> content-script', '*');";
+    let { loader } = LoaderWithHookedConsole(module);
+    let worker =  loader.require("sdk/content/worker").Worker({
+      window: browser.contentWindow,
+      contentScriptWhen: "ready",
+      contentScript: contentScript
+    });
+
+    worker.port.on("response", (data, origin) => {
+      assert.equal(data, "from -> window", "Communication from content-script to window completed");
+      done();
+    });
+});
+
+exports["test:destroy unbinds listeners from port"] = WorkerTest(
+  "data:text/html;charset=utf-8,portdestroyer",
+  function(assert, browser, done) {
+    let destroyed = false;
+    let worker = Worker({
+      window: browser.contentWindow,
+      contentScript: "new " + function WorkerScope() {
+        self.port.emit("destroy");
+        setInterval(self.port.emit, 10, "ping");
+      },
+      onDestroy: done
+    });
+    worker.port.on("ping", () => {
+      if (destroyed) {
+        assert.fail("Should not call events on port after destroy.");
+      }
+    });
+    worker.port.on("destroy", () => {
+      destroyed = true;
+      worker.destroy();
+      assert.pass("Worker destroyed, waiting for no future listeners handling events.");
+      setTimeout(done, 500);
+    });
+  }
+);
+
+exports["test:destroy kills child worker"] = WorkerTest(
+  "data:text/html;charset=utf-8,<html><body><p id='detail'></p></body></html>",
+  function(assert, browser, done) {
+    let worker1 = Worker({
+      window: browser.contentWindow,
+      contentScript: "new " + function WorkerScope() {
+        self.port.on("ping", detail => {
+          let event = document.createEvent("CustomEvent");
+          event.initCustomEvent("Test:Ping", true, true, detail);
+          document.dispatchEvent(event);
+          self.port.emit("pingsent");
+        });
+
+        let listener = function(event) {
+          self.port.emit("pong", event.detail);
+        };
+
+        self.port.on("detach", () => {
+          window.removeEventListener("Test:Pong", listener);
+        });
+        window.addEventListener("Test:Pong", listener);
+      },
+      onAttach: function() {
+        let worker2 = Worker({
+          window: browser.contentWindow,
+          contentScript: "new " + function WorkerScope() {
+            let listener = function(event) {
+              let newEvent = document.createEvent("CustomEvent");
+              newEvent.initCustomEvent("Test:Pong", true, true, event.detail);
+              document.dispatchEvent(newEvent);
+            };
+            self.port.on("detach", () => {
+              window.removeEventListener("Test:Ping", listener);
+            })
+            window.addEventListener("Test:Ping", listener);
+            self.postMessage();
+          },
+          onMessage: function() {
+            worker1.port.emit("ping", "test1");
+            worker1.port.once("pong", detail => {
+              assert.equal(detail, "test1", "Saw the right message");
+              worker1.port.once("pingsent", () => {
+                assert.pass("The message was sent");
+
+                worker2.destroy();
+
+                worker1.port.emit("ping", "test2");
+                worker1.port.once("pong", detail => {
+                  assert.fail("worker2 shouldn't have responded");
+                })
+                worker1.port.once("pingsent", () => {
+                  assert.pass("The message was sent");
+                  worker1.destroy();
+                  done();
+                });
+              });
+            })
+          }
+        });
+      }
+    });
+  }
+);
+
+exports["test:unload kills child worker"] = WorkerTest(
+  "data:text/html;charset=utf-8,<html><body><p id='detail'></p></body></html>",
+  function(assert, browser, done) {
+    let loader = Loader(module);
+    let worker1 = Worker({
+      window: browser.contentWindow,
+      contentScript: "new " + function WorkerScope() {
+        self.port.on("ping", detail => {
+          let event = document.createEvent("CustomEvent");
+          event.initCustomEvent("Test:Ping", true, true, detail);
+          document.dispatchEvent(event);
+          self.port.emit("pingsent");
+        });
+
+        let listener = function(event) {
+          self.port.emit("pong", event.detail);
+        };
+
+        self.port.on("detach", () => {
+          window.removeEventListener("Test:Pong", listener);
+        });
+        window.addEventListener("Test:Pong", listener);
+      },
+      onAttach: function() {
+        let worker2 = loader.require("sdk/content/worker").Worker({
+          window: browser.contentWindow,
+          contentScript: "new " + function WorkerScope() {
+            let listener = function(event) {
+              let newEvent = document.createEvent("CustomEvent");
+              newEvent.initCustomEvent("Test:Pong", true, true, event.detail);
+              document.dispatchEvent(newEvent);
+            };
+            self.port.on("detach", () => {
+              window.removeEventListener("Test:Ping", listener);
+            })
+            window.addEventListener("Test:Ping", listener);
+            self.postMessage();
+          },
+          onMessage: function() {
+            worker1.port.emit("ping", "test1");
+            worker1.port.once("pong", detail => {
+              assert.equal(detail, "test1", "Saw the right message");
+              worker1.port.once("pingsent", () => {
+                assert.pass("The message was sent");
+
+                loader.unload();
+
+                worker1.port.emit("ping", "test2");
+                worker1.port.once("pong", detail => {
+                  assert.fail("worker2 shouldn't have responded");
+                })
+                worker1.port.once("pingsent", () => {
+                  assert.pass("The message was sent");
+                  worker1.destroy();
+                  done();
+                });
+              });
+            })
+          }
+        });
+      }
+    });
+  }
+);
+
+require("sdk/test").run(exports);

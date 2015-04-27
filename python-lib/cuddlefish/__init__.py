@@ -5,7 +5,6 @@
 import sys
 import os
 import optparse
-import webbrowser
 import time
 
 from copy import copy
@@ -26,14 +25,12 @@ usage = """
 %prog [options] command [command-specific options]
 
 Supported Commands:
-  docs       - view web-based documentation
   init       - create a sample addon in an empty directory
   test       - run tests
   run        - run program
   xpi        - generate an xpi
 
 Internal Commands:
-  sdocs      - export static documentation
   testcfx    - test the cfx tool
   testex     - test all example code
   testpkgs   - test all installed packages
@@ -98,8 +95,8 @@ parser_groups = (
                                          "match FILENAME and optionally "
                                          "match TESTNAME, both regexps"),
                                    metavar="FILENAME[:TESTNAME]",
-                                   default=None,
-                                   cmds=['test', 'testex', 'testpkgs',
+                                   default='',
+                                   cmds=['test', 'testex', 'testaddons', 'testpkgs',
                                          'testall'])),
         (("-g", "--use-config",), dict(dest="config",
                                        help="use named config from local.json",
@@ -155,7 +152,7 @@ parser_groups = (
                                       "thunderbird"),
                                 metavar=None,
                                 type="choice",
-                                choices=["firefox", "fennec",
+                                choices=["firefox",
                                          "fennec-on-device", "thunderbird",
                                          "xulrunner"],
                                 default="firefox",
@@ -172,7 +169,7 @@ parser_groups = (
         (("", "--strip-sdk",), dict(dest="bundle_sdk",
                                     help=("Do not ship SDK modules in the xpi"),
                                     action="store_false",
-                                    default=True,
+                                    default=False,
                                     cmds=['run', 'test', 'testex', 'testpkgs',
                                           'testall', 'xpi'])),
         (("", "--force-use-bundled-sdk",), dict(dest="force_use_bundled_sdk",
@@ -189,6 +186,12 @@ parser_groups = (
                                            "for doing so.  Use this to launch "
                                            "the application in a debugger like "
                                            "gdb."),
+                                     action="store_true",
+                                     default=False,
+                                     cmds=['run', 'test'])),
+        (("", "--no-quit",), dict(dest="no_quit",
+                                     help=("Prevent from killing Firefox when"
+                                           "running tests"),
                                      action="store_true",
                                      default=False,
                                      cmds=['run', 'test'])),
@@ -223,11 +226,6 @@ parser_groups = (
                                   metavar=None,
                                   default=False,
                                   cmds=['test', 'testex', 'testpkgs'])),
-        (("", "--override-version",), dict(dest="override_version",
-                                  help="Pass in a version string to use in generated docs",
-                                  metavar=None,
-                                  default=False,
-                                  cmds=['sdocs'])),
         (("", "--check-memory",), dict(dest="check_memory",
                                        help="attempts to detect leaked compartments after a test run",
                                        action="store_true",
@@ -238,6 +236,22 @@ parser_groups = (
                                       help="Where to put the finished .xpi",
                                       default=None,
                                       cmds=['xpi'])),
+        (("", "--manifest-overload",), dict(dest="manifest_overload",
+                                      help="JSON file to overload package.json properties",
+                                      default=None,
+                                      cmds=['xpi'])),
+        (("", "--abort-on-missing-module",), dict(dest="abort_on_missing",
+                                      help="Abort if required module is missing",
+                                      action="store_true",
+                                      default=False,
+                                      cmds=['test', 'run', 'xpi', 'testpkgs'])),
+        (("", "--no-connections",), dict(dest="no_connections",
+                                      help="disable/enable remote connections (on for cfx run only by default)",
+                                      type="choice",
+                                      choices=["on", "off", "default"],
+                                      default="default",
+                                      cmds=['test', 'run', 'testpkgs',
+                                            'testall', 'testaddons', 'testex'])),
         ]
      ),
 
@@ -249,12 +263,6 @@ parser_groups = (
                                  default=None,
                                  cmds=['test', 'run', 'testex', 'testpkgs',
                                        'testall'])),
-        (("", "--baseurl",), dict(dest="baseurl",
-                                 help=("root of static docs tree: "
-                                       "for example: 'http://me.com/the_docs/'"),
-                                 metavar=None,
-                                 default='',
-                                 cmds=['sdocs'])),
         (("", "--test-runner-pkg",), dict(dest="test_runner_pkg",
                                           help=("name of package "
                                                 "containing test runner "
@@ -273,10 +281,11 @@ parser_groups = (
                                  cmds=['test', 'run', 'xpi', 'testex',
                                        'testpkgs', 'testall'])),
         (("", "--e10s",), dict(dest="enable_e10s",
-                               help="enable out-of-process Jetpacks",
+                               help="enable remote windows",
                                action="store_true",
                                default=False,
-                               cmds=['test', 'run', 'testex', 'testpkgs'])),
+                               cmds=['test', 'run', 'testex', 'testpkgs',
+                                     'testaddons', 'testcfx', 'testall'])),
         (("", "--logfile",), dict(dest="logfile",
                                   help="log console output to file",
                                   metavar=None,
@@ -430,10 +439,14 @@ def test_all_testaddons(env_root, defaults):
     addons.sort()
     fail = False
     for dirname in addons:
+        # apply the filter
+        if (not defaults['filter'].split(":")[0] in dirname):
+            continue
+
         print >>sys.stderr, "Testing %s..." % dirname
         sys.stderr.flush()
         try:
-            run(arguments=["run",
+            run(arguments=["testrun",
                            "--pkgdir",
                            os.path.join(addons_dir, dirname)],
                 defaults=defaults,
@@ -454,6 +467,9 @@ def test_all_examples(env_root, defaults):
     examples.sort()
     fail = False
     for dirname in examples:
+        if (not defaults['filter'].split(":")[0] in dirname):
+            continue
+
         print >>sys.stderr, "Testing %s..." % dirname
         sys.stderr.flush()
         try:
@@ -546,29 +562,25 @@ def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
     if existing:
         print >>err, 'This command must be run in an empty directory.'
         return {"result":1}
-    for d in ['lib','data','test','doc']:
+    for d in ['lib','data','test']:
         os.mkdir(os.path.join(path,d))
         print >>out, '*', d, 'directory created'
-    open(os.path.join(path,'README.md'),'w').write('')
-    print >>out, '* README.md written'
     jid = create_jid()
     print >>out, '* generated jID automatically:', jid
     open(os.path.join(path,'package.json'),'w').write(PACKAGE_JSON % {'name':addon.lower(),
-                                                   'fullName':addon,
+                                                   'title':addon,
                                                    'id':jid })
     print >>out, '* package.json written'
     open(os.path.join(path,'test','test-main.js'),'w').write(TEST_MAIN_JS)
     print >>out, '* test/test-main.js written'
     open(os.path.join(path,'lib','main.js'),'w').write('')
     print >>out, '* lib/main.js written'
-    open(os.path.join(path,'doc','main.md'),'w').write('')
-    print >>out, '* doc/main.md written'
     if len(args) == 1:
         print >>out, '\nYour sample add-on is now ready.'
         print >>out, 'Do "cfx test" to test it and "cfx run" to try it.  Have fun!'
     else:
         print >>out, '\nYour sample add-on is now ready in the \'' + args[1] +  '\' directory.'
-        print >>out, 'Change to that directory, then do "cfx test" to test it, \nand "cfx run" to try it.  Have fun!' 
+        print >>out, 'Change to that directory, then do "cfx test" to test it, \nand "cfx run" to try it.  Have fun!'
     return {"result":0, "jid":jid}
 
 def buildJID(target_cfg):
@@ -597,7 +609,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     (options, args) = parse_args(**parser_kwargs)
 
     config_args = get_config_args(options.config, env_root);
-    
+
     # reparse configs with arguments from local.json
     if config_args:
         parser_kwargs['arguments'] += config_args
@@ -626,24 +638,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
             return
         test_cfx(env_root, options.verbose)
         return
-    elif command == "docs":
-        from cuddlefish.docs import generate
-        if len(args) > 1:
-            docs_home = generate.generate_named_file(env_root, filename_and_path=args[1])
-        else:
-            docs_home = generate.generate_local_docs(env_root)
-            webbrowser.open(docs_home)
-        return
-    elif command == "sdocs":
-        from cuddlefish.docs import generate
-        filename=""
-        if options.override_version:
-            filename = generate.generate_static_docs(env_root, override_version=options.override_version)
-        else:
-            filename = generate.generate_static_docs(env_root)
-        print >>stdout, "Wrote %s." % filename
-        return
-    elif command not in ["xpi", "test", "run"]:
+    elif command not in ["xpi", "test", "run", "testrun"]:
         print >>sys.stderr, "Unknown command: %s" % command
         print >>sys.stderr, "Try using '--help' for assistance."
         sys.exit(1)
@@ -666,11 +661,16 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         target_cfg_json = os.path.join(options.pkgdir, 'package.json')
         target_cfg = packaging.get_config_in_dir(options.pkgdir)
 
+    if options.manifest_overload:
+        for k, v in packaging.load_json_file(options.manifest_overload).items():
+            target_cfg[k] = v
+
     # At this point, we're either building an XPI or running Jetpack code in
     # a Mozilla application (which includes running tests).
 
     use_main = False
-    inherited_options = ['verbose', 'enable_e10s', 'parseable', 'check_memory']
+    inherited_options = ['verbose', 'enable_e10s', 'parseable', 'check_memory',
+                         'no_quit', 'abort_on_missing']
     enforce_timeouts = False
 
     if command == "xpi":
@@ -683,6 +683,9 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         enforce_timeouts = True
     elif command == "run":
         use_main = True
+    elif command == "testrun":
+        use_main = True
+        enforce_timeouts = True
     else:
         assert 0, "shouldn't get here"
 
@@ -701,7 +704,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     # TODO: Consider keeping a cache of dynamic UUIDs, based
     # on absolute filesystem pathname, in the root directory
     # or something.
-    if command in ('xpi', 'run'):
+    if command in ('xpi', 'run', 'testrun'):
         from cuddlefish.preflight import preflight_config
         if target_cfg_json:
             config_was_ok, modified = preflight_config(target_cfg,
@@ -756,15 +759,11 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                                       "lib", "sdk", "loader", "cuddlefish.js")
     loader_modules = [("addon-sdk", "lib", "sdk/loader/cuddlefish", cuddlefish_js_path)]
     scan_tests = command == "test"
-    test_filter_re = None
-    if scan_tests and options.filter:
-        test_filter_re = options.filter
-        if ":" in options.filter:
-            test_filter_re = options.filter.split(":")[0]
+
     try:
-        manifest = build_manifest(target_cfg, pkg_cfg, deps,
-                                  scan_tests, test_filter_re,
-                                  loader_modules)
+        manifest = build_manifest(target_cfg, pkg_cfg, deps, scan_tests,
+                                  None, loader_modules,
+                                  abort_on_missing=options.abort_on_missing)
     except ModuleNotFoundError, e:
         print str(e)
         sys.exit(1)
@@ -804,10 +803,13 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         options.force_use_bundled_sdk = False
         options.overload_modules = True
 
+    if options.pkgdir == env_root:
+        options.bundle_sdk = True
+        options.overload_modules = True
+
     extra_environment = {}
     if command == "test":
         # This should be contained in the test runner package.
-        # maybe just do: target_cfg.main = 'test-harness/run-tests'
         harness_options['main'] = 'sdk/test/runner'
         harness_options['mainPath'] = 'sdk/test/runner'
     else:
@@ -828,23 +830,22 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     if options.templatedir:
         app_extension_dir = os.path.abspath(options.templatedir)
+    elif os.path.exists(os.path.join(options.pkgdir, "app-extension")):
+      app_extension_dir = os.path.join(options.pkgdir, "app-extension")
     else:
         mydir = os.path.dirname(os.path.abspath(__file__))
         app_extension_dir = os.path.join(mydir, "../../app-extension")
-
-    if target_cfg.get('preferences'):
-        harness_options['preferences'] = target_cfg.get('preferences')
 
     # Do not add entries for SDK modules
     harness_options['manifest'] = manifest.get_harness_options_manifest(False)
 
     # Gives an hint to tell if sdk modules are bundled or not
-    harness_options['is-sdk-bundled'] = options.bundle_sdk
+    harness_options['is-sdk-bundled'] = options.bundle_sdk or options.no_strip_xpi
 
     if options.force_use_bundled_sdk:
-        if not options.bundle_sdk:
-            print >>sys.stderr, ("--force-use-bundled-sdk and --strip-sdk "
-                                 "can't be used at the same time.")
+        if not harness_options['is-sdk-bundled']:
+            print >>sys.stderr, ("--force-use-bundled-sdk "
+                                 "can't be used if sdk isn't bundled.")
             sys.exit(1)
         if options.overload_modules:
             print >>sys.stderr, ("--force-use-bundled-sdk and --overload-modules "
@@ -852,12 +853,6 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
             sys.exit(1)
         # Pass a flag in order to force using sdk modules shipped in the xpi
         harness_options['force-use-bundled-sdk'] = True
-
-    # Pass the list of absolute path for all test modules
-    if command == "test":
-        harness_options['allTestModules'] = manifest.get_all_test_modules()
-        if len(harness_options['allTestModules']) == 0:
-            sys.exit(0)
 
     from cuddlefish.rdf import gen_manifest, RDFUpdate
 
@@ -913,12 +908,24 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     else:
         from cuddlefish.runner import run_app
 
+        if options.no_connections == "default":
+            if command == "run":
+              no_connections = False
+            else:
+              no_connections = True
+        elif options.no_connections == "on":
+            no_connections = True
+        else:
+            no_connections = False
+
         if options.profiledir:
             options.profiledir = os.path.expanduser(options.profiledir)
             options.profiledir = os.path.abspath(options.profiledir)
 
         if options.addons is not None:
             options.addons = options.addons.split(",")
+
+        enable_e10s = options.enable_e10s or target_cfg.get('e10s', False)
 
         try:
             retval = run_app(harness_root_dir=app_extension_dir,
@@ -935,6 +942,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                              args=options.cmdargs,
                              extra_environment=extra_environment,
                              norun=options.no_run,
+                             noquit=options.no_quit,
                              used_files=used_files,
                              enable_mobile=options.enable_mobile,
                              mobile_app_name=options.mobile_app_name,
@@ -942,7 +950,9 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                              is_running_tests=(command == "test"),
                              overload_modules=options.overload_modules,
                              bundle_sdk=options.bundle_sdk,
-                             pkgdir=options.pkgdir)
+                             pkgdir=options.pkgdir,
+                             enable_e10s=enable_e10s,
+                             no_connections=no_connections)
         except ValueError, e:
             print ""
             print "A given cfx option has an inappropriate value:"

@@ -4,31 +4,6 @@
 
 const apiUtils = require("sdk/deprecated/api-utils");
 
-exports.testPublicConstructor = function (assert) {
-  function PrivateCtor() {}
-  PrivateCtor.prototype = {};
-
-  let PublicCtor = apiUtils.publicConstructor(PrivateCtor);
-  assert.ok(
-    PrivateCtor.prototype.isPrototypeOf(PublicCtor.prototype),
-    "PrivateCtor.prototype should be prototype of PublicCtor.prototype"
-  );
-
-  function testObj(useNew) {
-    let obj = useNew ? new PublicCtor() : PublicCtor();
-    assert.ok(obj instanceof PublicCtor,
-                "Object should be instance of PublicCtor");
-    assert.ok(obj instanceof PrivateCtor,
-                "Object should be instance of PrivateCtor");
-    assert.ok(PublicCtor.prototype.isPrototypeOf(obj),
-                "PublicCtor's prototype should be prototype of object");
-    assert.equal(obj.constructor, PublicCtor,
-                     "Object constructor should be PublicCtor");
-  }
-  testObj(true);
-  testObj(false);
-};
-
 exports.testValidateOptionsEmpty = function (assert) {
   let val = apiUtils.validateOptions(null, {});
 
@@ -314,7 +289,7 @@ exports.testAddIterator = function testAddIterator (assert) {
   apiUtils.addIterator(
     obj,
     function keysValsGen() {
-      for each (let keyVal in keysVals)
+      for (let keyVal of keysVals)
         yield keyVal;
     }
   );
@@ -338,4 +313,4 @@ exports.testAddIterator = function testAddIterator (assert) {
 
 };
 
-require('test').run(exports);
+require("sdk/test").run(exports);

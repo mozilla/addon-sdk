@@ -1,11 +1,12 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 'use strict';
 
-const { on, once, off, emit, count, amass } = require('sdk/event/core');
+const { on, once, off, emit, count } = require('sdk/event/core');
 const { LoaderWithHookedConsole } = require("sdk/test/loader");
+const { defer } = require("sdk/core/promise");
+const { gc } = require("sdk/test/memory");
 
 exports['test add a listener'] = function(assert) {
   let events = [ { name: 'event#1' }, 'event#2' ];
@@ -199,7 +200,7 @@ exports['test unhandled errors'] = function(assert) {
   let exceptions = [];
   let { loader, messages } = LoaderWithHookedConsole(module);
 
-  let { emit, on } = loader.require('sdk/event/core');
+  let { emit } = loader.require('sdk/event/core');
   let target = {};
   let boom = Error('Boom!');
 
@@ -210,6 +211,24 @@ exports['test unhandled errors'] = function(assert) {
             'unhandled exception is logged');
 };
 
+exports['test piped errors'] = function(assert) {
+  let exceptions = [];
+  let { loader, messages } = LoaderWithHookedConsole(module);
+
+  let { emit } = loader.require('sdk/event/core');
+  let { pipe } = loader.require('sdk/event/utils');
+  let target = {};
+  let second = {};
+
+  pipe(target, second);
+  emit(target, 'error', 'piped!');
+
+  assert.equal(messages.length, 1, 'error logged only once, ' +
+               'considered "handled" on `target` by the catch-all pipe');
+  assert.equal(messages[0].type, 'exception', 'The console message is exception');
+  assert.ok(~String(messages[0].msg).indexOf('piped!'),
+            'unhandled (piped) exception is logged on `second` target');
+};
 
 exports['test count'] = function(assert) {
   let target = {};
@@ -222,23 +241,105 @@ exports['test count'] = function(assert) {
   assert.equal(count(target, 'foo'), 0, 'listeners unregistered');
 };
 
-exports['test emit.lazy'] = function(assert) {
-  let target = {}, boom = Error('boom!'), errors = [], actual = []
+exports['test listen to all events'] = function(assert) {
+  let actual = [];
+  let target = {};
 
-  on(target, 'error', function error(e) errors.push(e))
+  on(target, 'foo', message => actual.push(message));
+  on(target, '*', (type, ...message) => {
+    actual.push([type].concat(message));
+  });
 
-  on(target, 'a', function() 1);
-  on(target, 'a', function() {});
-  on(target, 'a', function() 2);
-  on(target, 'a', function() { throw boom });
-  on(target, 'a', function() 3);
+  emit(target, 'foo', 'hello');
+  assert.equal(actual[0], 'hello',
+    'non-wildcard listeners still work');
+  assert.deepEqual(actual[1], ['foo', 'hello'],
+    'wildcard listener called');
 
-  for each (let value in emit.lazy(target, 'a'))
-    actual.push(value);
-
-  assert.deepEqual(actual, [ 1, undefined, 2, 3 ],
-                   'all results were collected');
-  assert.deepEqual(errors, [ boom ], 'errors reporetd');
+  emit(target, 'bar', 'goodbye');
+  assert.deepEqual(actual[2], ['bar', 'goodbye'],
+    'wildcard listener called for unbound event name');
 };
 
-require('test').run(exports);
+exports['test once'] = function(assert, done) {
+  let target = {};
+  let called = false;
+  let { resolve, promise } = defer();
+
+  once(target, 'foo', function(value) {
+    assert.ok(!called, "listener called only once");
+    assert.equal(value, "bar", "correct argument was passed");
+  });
+  once(target, 'done', resolve);
+
+  emit(target, 'foo', 'bar');
+  emit(target, 'foo', 'baz');
+  emit(target, 'done', "");
+
+  yield promise;
+};
+
+exports['test once with gc'] = function*(assert) {
+  let target = {};
+  let called = false;
+  let { resolve, promise } = defer();
+
+  once(target, 'foo', function(value) {
+    assert.ok(!called, "listener called only once");
+    assert.equal(value, "bar", "correct argument was passed");
+  });
+  once(target, 'done', resolve);
+
+  yield gc();
+
+  emit(target, 'foo', 'bar');
+  emit(target, 'foo', 'baz');
+  emit(target, 'done', "");
+
+  yield promise;
+};
+
+exports["test removing once"] = function(assert, done) {
+  let target = {};
+
+  function test() {
+    assert.fail("listener was called");
+  }
+
+  once(target, "foo", test);
+  once(target, "done", done);
+
+  off(target, "foo", test);
+
+  assert.pass("emit foo");
+  emit(target, "foo", "bar");
+
+  assert.pass("emit done");
+  emit(target, "done", "");
+};
+
+exports["test removing once with gc"] = function*(assert) {
+  let target = {};
+  let { resolve, promise } = defer();
+
+  function test() {
+    assert.fail("listener was called");
+  }
+
+  once(target, "foo", test);
+  once(target, "done", resolve);
+
+  yield gc();
+
+  off(target, "foo", test);
+
+  assert.pass("emit foo");
+  emit(target, "foo", "bar");
+
+  assert.pass("emit done");
+  emit(target, "done", "");
+
+  yield promise;
+};
+
+require('sdk/test').run(exports);

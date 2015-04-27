@@ -1,11 +1,10 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 "use strict";
 
 const { readURI, readURISync } = require("sdk/net/url");
-const { data } = require("sdk/self");
+const data = require("./fixtures");
 
 const utf8text = "Hello, ゼロ!";
 const latin1text = "Hello, ã‚¼ãƒ­!";
@@ -29,18 +28,6 @@ exports["test async readURI"] = function(assert, done) {
   assert.equal(content, "", "The URL content is not load yet");
 }
 
-exports["test sync readURI"] = function(assert) {
-  let content = "";
-
-  readURI(data.url("test-net-url.txt"), { sync: true }).then(function(data) {
-    content = data;
-  }, function() {
-    assert.fail("should not reject");
-  })
-
-  assert.equal(content, utf8text, "The URL content is loaded properly");
-}
-
 exports["test readURISync"] = function(assert) {
   let content = readURISync(data.url("test-net-url.txt"));
 
@@ -62,21 +49,6 @@ exports["test async readURI with ISO-8859-1 charset"] = function(assert, done) {
   assert.equal(content, "", "The URL content is not load yet");
 }
 
-exports["test sync readURI with ISO-8859-1 charset"] = function(assert) {
-  let content = "";
-
-  readURI(data.url("test-net-url.txt"), {
-    sync: true,
-    charset: "ISO-8859-1"
-  }).then(function(data) {
-    content = data;
-  }, function() {
-    assert.fail("should not reject");
-  })
-
-  assert.equal(content, latin1text, "The URL content is loaded properly");
-}
-
 exports["test readURISync with ISO-8859-1 charset"] = function(assert) {
   let content = readURISync(data.url("test-net-url.txt"), "ISO-8859-1");
 
@@ -90,14 +62,6 @@ exports["test async readURI with not existing file"] = function(assert, done) {
   }, function(reason) {
     assert.ok(reason.indexOf("Failed to read:") === 0);
     done();
-  })
-}
-
-exports["test sync readURI with not existing file"] = function(assert) {
-  readURI(data.url("test-net-url-fake.txt"), { sync: true }).then(function(data) {
-    assert.fail("should not resolve");
-  }, function(reason) {
-    assert.ok(reason.indexOf("Failed to read:") === 0);
   })
 }
 
@@ -122,18 +86,6 @@ exports["test async readURI with data URI"] = function(assert, done) {
   assert.equal(content, "", "The URL content is not load yet");
 }
 
-exports["test sync readURI with data URI"] = function(assert) {
-  let content = "";
-
-  readURI(dataURIutf8, { sync: true }).then(function(data) {
-    content = data;
-  }, function() {
-    assert.fail("should not reject");
-  })
-
-  assert.equal(content, utf8text, "The URL content is loaded properly");
-}
-
 exports["test readURISync with data URI"] = function(assert) {
   let content = readURISync(dataURIutf8);
 
@@ -153,21 +105,6 @@ exports["test async readURI with data URI and ISO-8859-1 charset"] = function(as
   })
 
   assert.equal(content, "", "The URL content is not load yet");
-}
-
-exports["test sync readURI with data URI and ISO-8859-1 charset"] = function(assert) {
-  let content = "";
-
-  readURI(dataURIlatin1, {
-    sync: true,
-    charset: "ISO-8859-1"
-  }).then(function(data) {
-    content = unescape(data);
-  }, function() {
-    assert.fail("should not reject");
-  })
-
-  assert.equal(content, latin1text, "The URL content is loaded properly");
 }
 
 exports["test readURISync with data URI and ISO-8859-1 charset"] = function(assert) {
@@ -197,16 +134,4 @@ exports["test async readURI with chrome URI"] = function(assert, done) {
   assert.equal(content, "", "The URL content is not load yet");
 }
 
-exports["test sync readURI with chrome URI"] = function(assert) {
-  let content = "";
-
-  readURI(chromeURI, { sync: true }).then(function(data) {
-    content = data;
-  }, function() {
-    assert.fail("should not reject");
-  })
-
-  assert.equal(content, readURISync(chromeURI), "The URL content is loaded properly");
-}
-
-require("test").run(exports)
+require("sdk/test").run(exports)

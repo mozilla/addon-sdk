@@ -5,12 +5,15 @@
 
 const { XMLHttpRequest } = require('sdk/net/xhr');
 const { LoaderWithHookedConsole } = require('sdk/test/loader');
-const { data } = require('sdk/self');
+const { set: setPref } = require("sdk/preferences/service");
+const data = require("./fixtures");
 
+const DEPRECATE_PREF = "devtools.errorconsole.deprecation_warnings";
 
 exports.testAPIExtension = function(assert) {
   let { loader, messages } = LoaderWithHookedConsole(module);
   let { XMLHttpRequest } = loader.require("sdk/net/xhr");
+  setPref(DEPRECATE_PREF, true);
 
   let xhr = new XMLHttpRequest();
   assert.equal(typeof(xhr.forceAllowThirdPartyCookie), "function",
@@ -83,4 +86,4 @@ exports.testResponseHeaders = function(assert, done) {
   req.send(null);
 }
 
-require('test').run(exports);
+require('sdk/test').run(exports);

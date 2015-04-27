@@ -13,7 +13,7 @@ const windowUtils = require("sdk/deprecated/window-utils");
 const timer = require("sdk/timers");
 const { Cc, Ci } = require("chrome");
 const { Loader } = require("sdk/test/loader");
-const { open, getFrames, getWindowTitle, onFocus } = require('sdk/window/utils');
+const { open, getFrames, getWindowTitle, onFocus, windows } = require('sdk/window/utils');
 const { close } = require('sdk/window/helpers');
 const { fromIterator: toArray } = require('sdk/util/array');
 
@@ -90,37 +90,30 @@ exports['test close on unload'] = function(assert) {
 };
 
 exports.testWindowTracker = function(assert, done) {
-  var myWindow;
-  var finished = false;
+  var myWindow = makeEmptyWindow();
+  assert.pass('window was created');
 
-  var delegate = {
-    onTrack: function(window) {
-      if (window == myWindow) {
-        assert.pass("onTrack() called with our test window");
-        timer.setTimeout(function() myWindow.close());
-      }
-    },
-    onUntrack: function(window) {
-      if (window == myWindow) {
-        assert.pass("onUntrack() called with our test window");
-        timer.setTimeout(function() {
-          if (!finished) {
-           finished = true;
-           myWindow = null;
-           wt.unload();
-           done();
-          }
-          else {
-           assert.fail("finishTest() called multiple times.");
-          }
-        });
-      }
-    }
-  };
+  myWindow.addEventListener("load", function onload() {
+    myWindow.removeEventListener("load", onload, false);
+    assert.pass("test window has opened");
 
-  // test bug 638007 (new is optional), using new
-  var wt = new windowUtils.WindowTracker(delegate);
-  myWindow = makeEmptyWindow();
+    // test bug 638007 (new is optional), using new
+    var wt = new windowUtils.WindowTracker({
+      onTrack: window => {
+        if (window === myWindow) {
+          assert.pass("onTrack() called with our test window");
+          close(window);
+        }
+      },
+      onUntrack: window => {
+        if (window === myWindow) {
+          assert.pass("onUntrack() called with our test window");
+          wt.unload();
+          timer.setTimeout(done);
+        }
+      }
+    });
+  }, false);
 };
 
 exports['test window watcher untracker'] = function(assert, done) {
@@ -297,4 +290,29 @@ exports.testWindowIterator = function(assert, done) {
   }, false);
 };
 
-require("test").run(exports);
+exports.testIgnoreClosingWindow = function(assert, done) {
+  assert.equal(windows().length, 1, "Only one window open");
+
+  // make a new window
+  let window = makeEmptyWindow();
+
+  assert.equal(windows().length, 2, "Two windows open");
+
+  window.addEventListener("load", function onload() {
+    window.addEventListener("load", onload, false);
+
+    assert.equal(windows().length, 2, "Two windows open");
+
+    // Wait for the window unload before ending test
+    let checked = false;
+
+    close(window).then(function() {
+      assert.ok(checked, 'the test is finished');
+    }).then(done, assert.fail)
+
+    assert.equal(windows().length, 1, "Only one window open");
+    checked = true;
+  }, false);
+};
+
+require("sdk/test").run(exports);

@@ -5,7 +5,7 @@
 
 module.metadata = {
   'engines': {
-    'Firefox': '> 24'
+    'Firefox': '*'
   }
 };
 
@@ -19,9 +19,9 @@ const { isPrivate } = require('sdk/private-browsing');
 const { data } = require('sdk/self');
 const { URL } = require('sdk/url');
 
-const { BLANK_IMG, BUILTIN_SIDEBAR_MENUITEMS, isSidebarShowing,
+const { BUILTIN_SIDEBAR_MENUITEMS, isSidebarShowing,
         getSidebarMenuitems, getExtraSidebarMenuitems, makeID, simulateCommand,
-        simulateClick, getWidget, isChecked } = require('./sidebar/utils');
+        simulateClick, isChecked } = require('./sidebar/utils');
 
 exports.testSideBarIsNotInNewPrivateWindows = function(assert, done) {
   const { Sidebar } = require('sdk/ui/sidebar');
@@ -29,7 +29,6 @@ exports.testSideBarIsNotInNewPrivateWindows = function(assert, done) {
   let sidebar = Sidebar({
     id: testName,
     title: testName,
-    icon: BLANK_IMG,
     url: 'data:text/html;charset=utf-8,'+testName
   });
 
@@ -50,15 +49,14 @@ exports.testSideBarIsNotInNewPrivateWindows = function(assert, done) {
   })
 }
 
-/*
 exports.testSidebarIsNotOpenInNewPrivateWindow = function(assert, done) {
+  const { Sidebar } = require('sdk/ui/sidebar');
   let testName = 'testSidebarIsNotOpenInNewPrivateWindow';
   let window = getMostRecentBrowserWindow();
 
     let sidebar = Sidebar({
       id: testName,
       title: testName,
-      icon: BLANK_IMG,
       url: 'data:text/html;charset=utf-8,'+testName
     });
 
@@ -67,7 +65,7 @@ exports.testSidebarIsNotOpenInNewPrivateWindow = function(assert, done) {
       assert.equal(isSidebarShowing(window), true, 'the sidebar is showing');
       assert.equal(isShowing(sidebar), true, 'the sidebar is showing');
 
-      let window2 = window.OpenBrowserWindow({private: true});
+      let window2 = window.OpenBrowserWindow({ private: true });
       windowPromise(window2, 'load').then(focus).then(function() {
         // TODO: find better alt to setTimeout...
         setTimeout(function() {
@@ -75,15 +73,15 @@ exports.testSidebarIsNotOpenInNewPrivateWindow = function(assert, done) {
           assert.equal(isSidebarShowing(window), true, 'the sidebar is showing in old window still');
           assert.equal(isSidebarShowing(window2), false, 'the sidebar is not showing in the new private window');
           assert.equal(isShowing(sidebar), false, 'the sidebar is not showing');
+
           sidebar.destroy();
           close(window2).then(done);
-        }, 500)
+        }, 500);
       })
     });
 
     sidebar.show();
 }
-*/
 
 // TEST: edge case where web panel is destroyed while loading
 exports.testDestroyEdgeCaseBugWithPrivateWindow = function(assert, done) {
@@ -94,7 +92,6 @@ exports.testDestroyEdgeCaseBugWithPrivateWindow = function(assert, done) {
   let sidebar = Sidebar({
     id: testName,
     title: testName,
-    icon: BLANK_IMG,
     url: 'data:text/html;charset=utf-8,'+testName
   });
 
@@ -123,14 +120,13 @@ exports.testDestroyEdgeCaseBugWithPrivateWindow = function(assert, done) {
       let sidebar = loader.require('sdk/ui/sidebar').Sidebar({
         id: testName,
         title: testName,
-        icon: BLANK_IMG,
         url:  'data:text/html;charset=utf-8,'+ testName,
         onShow: function() {
           assert.pass('onShow works for Sidebar');
           loader.unload();
 
           let sidebarMI = getSidebarMenuitems();
-          for each (let mi in sidebarMI) {
+          for (let mi of sidebarMI) {
             assert.ok(BUILTIN_SIDEBAR_MENUITEMS.indexOf(mi.getAttribute('id')) >= 0, 'the menuitem is for a built-in sidebar')
             assert.ok(!isChecked(mi), 'no sidebar menuitem is checked');
           }
@@ -158,7 +154,6 @@ exports.testShowInPrivateWindow = function(assert, done) {
   let sidebar1 = Sidebar({
     id: testName,
     title: testName,
-    icon: BLANK_IMG,
     url: url
   });
 

@@ -7,7 +7,7 @@ const { create: makeFrame } = require("sdk/frame/utils");
 const { window } = require("sdk/addon/window");
 const { Loader } = require('sdk/test/loader');
 const { URL } = require("sdk/url");
-const testURI = require("sdk/self").data.url("test.html");
+const testURI = require("./fixtures").url("test.html");
 const testHost = URL(testURI).scheme + '://' + URL(testURI).host;
 
 /*
@@ -136,6 +136,7 @@ exports["test Create Proxy Test With Events"] = createProxyTest("", function (he
 
 });
 
+/* Disabled due to bug 1038432
 // Bug 714778: There was some issue around `toString` functions
 //             that ended up being shared between content scripts
 exports["test Shared To String Proxies"] = createProxyTest("", function(helper) {
@@ -165,7 +166,7 @@ exports["test Shared To String Proxies"] = createProxyTest("", function(helper) 
     );
   });
 });
-
+*/
 
 // Ensure that postMessage is working correctly across documents with an iframe
 let html = '<iframe id="iframe" name="test" src="data:text/html;charset=utf-8," />';
@@ -191,9 +192,6 @@ exports["test postMessage"] = createProxyTest(html, function (helper, assert) {
 
   helper.createWorker(
     'new ' + function ContentScriptScope() {
-      assert(postMessage === postMessage,
-          "verify that we doesn't generate multiple functions for the same method");
-
       var json = JSON.stringify({foo : "bar\n \"escaped\"."});
 
       document.getElementById("iframe").contentWindow.postMessage(json, "*");
@@ -260,8 +258,7 @@ exports["test Object Listener 2"] = createProxyTest("", function (helper) {
 let html = '<input id="input" type="text" /><input id="input3" type="checkbox" />' +
              '<input id="input2" type="checkbox" />';
 
-/* Disable test to keep tree green until Bug 756214 is fixed.
-exports.testStringOverload = createProxyTest(html, function (helper, test) {
+exports.testStringOverload = createProxyTest(html, function (helper, assert) {
   // Proxy - toString error
   let originalString = "string";
   let p = Proxy.create({
@@ -271,10 +268,10 @@ exports.testStringOverload = createProxyTest(html, function (helper, test) {
       return originalString[name];
     }
   });
-  assert.okRaises(function () {
+  assert.throws(function () {
     p.toString();
   },
-  /String.prototype.toString called on incompatible Proxy/,
+  /toString method called on incompatible Proxy/,
   "toString can't be called with this being the proxy");
   assert.equal(p.binded(), "string", "but it works if we bind this to the original string");
 
@@ -296,7 +293,6 @@ exports.testStringOverload = createProxyTest(html, function (helper, test) {
     }
   );
 });
-*/
 
 exports["test MozMatchedSelector"] = createProxyTest("", function (helper) {
   helper.createWorker(
@@ -517,8 +513,6 @@ exports["test Window Frames"] = createProxyTest(html, function (helper) {
       let iframe = document.getElementById("iframe");
       //assert(window.frames.length == 1, "The iframe is reported in window.frames check1");
       //assert(window.frames[0] == iframe.contentWindow, "The iframe is reported in window.frames check2");
-      //console.log(window.test+ "-"+iframe.contentWindow);
-      //console.log(window);
       assert(window.test == iframe.contentWindow, "window[frameName] is valid");
       done();
     }
@@ -563,24 +557,11 @@ exports["test Collections 2"] = createProxyTest(html, function (helper) {
       for(let i in body.childNodes) {
         count++;
       }
-      assert(count == 6, "body.childNodes is iterable");
+
+      assert(count >= 3, "body.childNodes is iterable");
       done();
     }
   );
-
-});
-
-exports["test valueOf"] = createProxyTest("", function (helper) {
-
-    helper.createWorker(
-      'new ' + function ContentScriptScope() {
-        // Bug 787013: Until this bug is fixed, we are missing some methods
-        // on JS objects that comes from global `Object` object
-        assert(!('valueOf' in window), "valueOf is missing");
-        assert(!('toLocateString' in window), "toLocaleString is missing");
-        done();
-      }
-    );
 
 });
 
@@ -590,7 +571,7 @@ exports["test XMLHttpRequest"] = createProxyTest("", function (helper) {
     'new ' + function ContentScriptScope() {
       // XMLHttpRequest doesn't support XMLHttpRequest.apply,
       // that may break our proxy code
-      assert(window.XMLHttpRequest(), "we are able to instantiate XMLHttpRequest object");
+      assert(new window.XMLHttpRequest(), "we are able to instantiate XMLHttpRequest object");
       done();
     }
   );
@@ -757,7 +738,7 @@ exports["testGlobalScope"] = createProxyTest("", function (helper) {
 // Create an http server in order to simulate real cross domain documents
 exports["test Cross Domain Iframe"] = createProxyTest("", function (helper) {
   let serverPort = 8099;
-  let server = require("sdk/test/httpd").startServerAsync(serverPort);
+  let server = require("./lib/httpd").startServerAsync(serverPort);
   server.registerPathHandler("/", function handle(request, response) {
     // Returns the webpage that receive a message and forward it back to its
     // parent document by appending ' world'.
@@ -846,4 +827,30 @@ exports["test MutationObvserver"] = createProxyTest(html, function (helper) {
 
 });
 
-require("test").run(exports);
+let html = '<script>' +
+  'var accessCheck = function() {' +
+  '  assert(true, "exporting function works");' +
+  '  try{' +
+  '    exportedObj.prop;' +
+  '    assert(false, "content should not have access to content-script");' +
+  '  } catch(e) {' +
+  '    assert(e.toString().indexOf("Permission denied") != -1,' +
+  '           "content should not have access to content-script");' +
+  '  }' +
+  '}</script>';
+exports["test nsEp for content-script"] = createProxyTest(html, function (helper) {
+
+  helper.createWorker(
+    'let glob = this; new ' + function ContentScriptScope() {
+
+      exportFunction(assert, unsafeWindow, { defineAs: "assert" });
+      window.wrappedJSObject.assert(true, "assert exported");
+      window.wrappedJSObject.exportedObj = { prop: 42 };
+      window.wrappedJSObject.accessCheck();
+      done();
+    }
+  );
+
+});
+
+require("sdk/test").run(exports);

@@ -10,6 +10,12 @@ const { openTab, closeTab, getBrowserForTab } = require("sdk/tabs/utils");
 const { defer } = require("sdk/core/promise");
 const { curry, identity, partial } = require("sdk/lang/functional");
 
+const { nuke } = require("sdk/loader/sandbox");
+
+const { open: openWindow, close: closeWindow } = require('sdk/window/helpers');
+
+const openBrowserWindow = partial(openWindow, null, {features: {toolbar: true}});
+
 let when = curry(function(options, tab) {
   let type = options.type || options;
   let capture = options.capture || false;
@@ -41,18 +47,13 @@ exports["test multiple tabs"] = function(assert, done) {
   let { events } = loader.require("sdk/content/events");
   let { on, off } = loader.require("sdk/event/core");
   let actual = [];
-  on(events, "data", function({type, target, timeStamp}) {
-    // ignore about:blank pages and *-document-global-created
-    // events that are not very consistent.
-    // ignore http:// requests, as Fennec's `about:home` page
-    // displays add-ons a user could install
-    if (target.URL !== "about:blank" &&
-        target.URL !== "about:home" &&
-        !target.URL.match(/^https?:\/\//i) &&
-        type !== "chrome-document-global-created" &&
-        type !== "content-document-global-created")
+
+  on(events, "data", handler);
+  function handler ({type, target, timeStamp}) {
+    eventFilter(type, target, () => {
       actual.push(type + " -> " + target.URL)
-  });
+    });
+  }
 
   let window = getMostRecentBrowserWindow();
   let firstTab = open("data:text/html,first-tab", window);
@@ -78,6 +79,7 @@ exports["test multiple tabs"] = function(assert, done) {
       assert.fail(Error(reason));
     }).then(function() {
       loader.unload();
+      off(events, "data", handler);
       done();
     });
 };
@@ -87,14 +89,12 @@ exports["test nested frames"] = function(assert, done) {
   let { events } = loader.require("sdk/content/events");
   let { on, off } = loader.require("sdk/event/core");
   let actual = [];
-  on(events, "data", function({type, target, timeStamp}) {
-    // ignore about:blank pages and *-global-created
-    // events that are not very consistent.
-    if (target.URL !== "about:blank" &&
-       type !== "chrome-document-global-created" &&
-       type !== "content-document-global-created")
+  on(events, "data", handler);
+  function handler ({type, target, timeStamp}) {
+    eventFilter(type, target, () => {
       actual.push(type + " -> " + target.URL)
-  });
+    });
+  }
 
   let window =  getMostRecentBrowserWindow();
   let uri = encodeURI("data:text/html,<iframe src='data:text/html,iframe'>");
@@ -117,8 +117,61 @@ exports["test nested frames"] = function(assert, done) {
       assert.fail(Error(reason))
     }).then(function() {
       loader.unload();
+      off(events, "data", handler);
       done();
     });
 };
 
+exports["test dead object errors"] = function(assert, done) {
+  let system = require("sdk/system/events");
+  let loader = Loader(module);
+  let { events } = loader.require("sdk/content/events");
+
+  // The dead object error is properly reported on console but
+  // doesn't raise any test's exception
+  function onMessage({ subject }) {
+    let message = subject.wrappedJSObject;
+    let { level } = message;
+    let text = String(message.arguments[0]);
+
+    if (level === "error" && text.contains("can't access dead object"))
+      fail(text);
+  }
+
+  let cleanup = () => system.off("console-api-log-event", onMessage);
+  let fail = (reason) => {
+    cleanup();
+    assert.fail(reason);
+  }
+
+  loader.unload();
+
+  // in order to get a dead object error on this module, we need to nuke
+  // the relative sandbox; unload the loader is not enough
+  let url = Object.keys(loader.sandboxes).
+    find(url => url.endsWith("/sdk/content/events.js"));
+
+  nuke(loader.sandboxes[url]);
+
+  system.on("console-api-log-event", onMessage, true);
+
+  openBrowserWindow().
+    then(closeWindow).
+    then(() => assert.pass("checking dead object errors")).
+    then(cleanup).
+    then(done, fail);
+};
+
+// ignore *-document-global-created events that are not very consistent.
+// only allow data uris that we create to ignore unwanted events, e.g.,
+// about:blank, http:// requests from Fennec's `about:`home page that displays
+// add-ons a user could install, local `searchplugins`, other chrome uris
+// Calls callback if passes filter
+function eventFilter (type, target, callback) {
+  if (target.URL.startsWith("data:text/html,") &&
+    type !== "chrome-document-global-created" &&
+    type !== "content-document-global-created")
+
+    callback();
+}
 require("test").run(exports);

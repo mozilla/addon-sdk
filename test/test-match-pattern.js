@@ -5,10 +5,10 @@
 
 const { MatchPattern } = require("sdk/util/match-pattern");
 
-exports.testMatchPatternTestTrue = function(test) {
+exports.testMatchPatternTestTrue = function(assert) {
   function ok(pattern, url) {
     let mp = new MatchPattern(pattern);
-    test.assert(mp.test(url), pattern + " should match " + url);
+    assert.ok(mp.test(url), pattern + " should match " + url);
   }
 
   ok("*", "http://example.com");
@@ -30,6 +30,8 @@ exports.testMatchPatternTestTrue = function(test) {
   ok("http://example.com/ice-cream", "http://example.com/ice-cream");
 
   ok(/.*zilla.*/, "https://bugzilla.redhat.com/show_bug.cgi?id=569753");
+  ok(/.*A.*/i, "http://A.com");
+  ok(/.*A.*/i, "http://a.com");
   ok(/https:.*zilla.*/, "https://bugzilla.redhat.com/show_bug.cgi?id=569753");
   ok('*.sample.com', 'http://ex.sample.com/foo.html');
   ok('*.amp.le.com', 'http://ex.amp.le.com');
@@ -37,10 +39,10 @@ exports.testMatchPatternTestTrue = function(test) {
   ok('data:*', 'data:text/html;charset=utf-8,');
 };
 
-exports.testMatchPatternTestFalse = function(test) {
+exports.testMatchPatternTestFalse = function(assert) {
   function ok(pattern, url) {
     let mp = new MatchPattern(pattern);
-    test.assert(!mp.test(url), pattern + " should not match " + url);
+    assert.ok(!mp.test(url), pattern + " should not match " + url);
   }
 
   ok("*", null);
@@ -82,58 +84,54 @@ exports.testMatchPatternTestFalse = function(test) {
   ok('*.amp.le.com', 'http://examp.le.com');
 };
 
-exports.testMatchPatternErrors = function(test) {
-  test.assertRaises(
+exports.testMatchPatternErrors = function(assert) {
+  assert.throws(
     function() new MatchPattern("*.google.com/*"),
     /There can be at most one/,
     "MatchPattern throws when supplied multiple '*'"
   );
 
-  test.assertRaises(
+  assert.throws(
     function() new MatchPattern("google.com"),
     /expected to be either an exact URL/,
     "MatchPattern throws when the wildcard doesn't use '*' and doesn't " +
     "look like a URL"
   );
 
-  test.assertRaises(
+  assert.throws(
     function() new MatchPattern("http://google*.com"),
     /expected to be the first or the last/,
     "MatchPattern throws when a '*' is in the middle of the wildcard"
   );
 
-  test.assertRaises(
+  assert.throws(
     function() new MatchPattern(/ /g),
     /^A RegExp match pattern cannot be set to `global` \(i\.e\. \/\/g\)\.$/,
     "MatchPattern throws on a RegExp set to `global` (i.e. //g)."
   );
 
-  test.assertRaises(
-    function() new MatchPattern(/ /i),
-    /^A RegExp match pattern cannot be set to `ignoreCase` \(i\.e\. \/\/i\)\.$/,
-    "MatchPattern throws on a RegExp set to `ignoreCase` (i.e. //i)."
-  );
-
-  test.assertRaises(
+  assert.throws(
     function() new MatchPattern( / /m ),
     /^A RegExp match pattern cannot be set to `multiline` \(i\.e\. \/\/m\)\.$/,
     "MatchPattern throws on a RegExp set to `multiline` (i.e. //m)."
   );
 };
 
-exports.testMatchPatternInternals = function(test) {
-  test.assertEqual(
+exports.testMatchPatternInternals = function(assert) {
+  assert.equal(
     new MatchPattern("http://google.com/test").exactURL,
     "http://google.com/test"
   );
 
-  test.assertEqual(
+  assert.equal(
     new MatchPattern("http://google.com/test/*").urlPrefix,
     "http://google.com/test/"
   );
 
-  test.assertEqual(
+  assert.equal(
     new MatchPattern("*.example.com").domain,
     "example.com"
   );
 };
+
+require('sdk/test').run(exports);

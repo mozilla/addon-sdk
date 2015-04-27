@@ -8,6 +8,8 @@ const { Loader, LoaderWithHookedConsole } = require('sdk/test/loader');
 const timer = require('sdk/timers');
 const tabs = require('sdk/tabs');
 const windows = require('sdk/windows');
+const { set: setPref } = require("sdk/preferences/service");
+const DEPRECATE_PREF = "devtools.errorconsole.deprecation_warnings";
 
 const tabsLen = tabs.length;
 const URL = 'data:text/html;charset=utf-8,<html><head><title>#title#</title></head></html>';
@@ -96,6 +98,7 @@ exports.testAutomaticDestroy = function(assert, done) {
 
 // TEST: tab properties
 exports.testTabProperties = function(assert, done) {
+  setPref(DEPRECATE_PREF, true);
   let { loader, messages } = LoaderWithHookedConsole();
   let tabs = loader.require('sdk/tabs');
 
@@ -132,7 +135,7 @@ exports.testTabProperties = function(assert, done) {
 exports.testTabsIteratorAndLength = function(assert, done) {
   let newTabs = [];
   let startCount = 0;
-  for each (let t in tabs) startCount++;
+  for (let t of tabs) startCount++;
 
   assert.equal(startCount, tabs.length, "length property is correct");
 
@@ -143,7 +146,7 @@ exports.testTabsIteratorAndLength = function(assert, done) {
     url: url,
     onOpen: function(tab) {
       let count = 0;
-      for each (let t in tabs) count++;
+      for (let t of tabs) count++;
       assert.equal(count, startCount + 3, "iterated tab count matches");
       assert.equal(startCount + 3, tabs.length, "iterated tab count matches length property");
 
@@ -578,4 +581,26 @@ exports.testUniqueTabIds = function(assert, done) {
   next(0);
 }
 
-require('sdk/test').run(exports);
+exports.testOnLoadEventWithDOM = function(assert, done) {
+  let count = 0;
+  let title = 'testOnLoadEventWithDOM';
+
+  tabs.open({
+    url: 'data:text/html;charset=utf-8,<title>' + title + '</title>',
+    inBackground: true,
+    onLoad: function(tab) {
+      assert.equal(tab.title, title, 'tab passed in as arg, load called');
+
+      if (++count > 1) {
+        assert.pass('onLoad event called on reload');
+        tab.close(done);
+      }
+      else {
+        assert.pass('first onLoad event occured');
+        tab.reload();
+      }
+    }
+  });
+};
+
+require("sdk/test").run(exports);
