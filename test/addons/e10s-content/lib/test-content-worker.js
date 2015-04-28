@@ -385,7 +385,7 @@ exports["test:nothing is leaked to content script"] = WorkerTest(
 exports["test:ensure console.xxx works in cs"] = WorkerTest(
   DEFAULT_CONTENT_URL,
   function(assert, browser, done) {
-    const EXPECTED = ["time", "log", "info", "warn", "error", "error", "timeEnd"];
+    const EXPECTED = ["time", "log", "info", "warn", "error", "debug", "error", "timeEnd"];
 
     let calls = [];
     let levels = [];

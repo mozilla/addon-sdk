@@ -44,14 +44,14 @@ exports["test LoaderWithHookedConsole"] = function (assert) {
   console.error("2nd");
   console.warn("3rd");
   console.info("4th");
-  console.log("5th");
+  console.debug("5th");
   console.exception("6th");
   assert.equal(messages.length, 6, "Got all console messages");
   assert.deepEqual(messages[0], {type: "log", msg: "1st", innerID: null}, "Got log");
   assert.deepEqual(messages[1], {type: "error", msg: "2nd", innerID: null}, "Got error");
   assert.deepEqual(messages[2], {type: "warn", msg: "3rd", innerID: null}, "Got warn");
   assert.deepEqual(messages[3], {type: "info", msg: "4th", innerID: null}, "Got info");
-  assert.deepEqual(messages[4], {type: "debug", msg: "5th", innerID: null}, "Got log");
+  assert.deepEqual(messages[4], {type: "debug", msg: "5th", innerID: null}, "Got debug");
   assert.deepEqual(messages[5], {type: "exception", msg: "6th", innerID: null}, "Got exception");
   assert.equal(count, 6, "Called for all messages");
 };

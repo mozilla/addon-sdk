@@ -4,6 +4,7 @@
   "browser.firstrun.show.localepicker": false,
   "browser.firstrun.show.uidiscovery": false,
   "browser.ui.layout.tablet": 0,
+  "devtools.webconsole.filter.debug": true,
   "dom.disable_open_during_load": false,
   "dom.experimental_forms": true,
   "dom.forms.number": true,

@@ -185,6 +185,7 @@ DEFAULT_TEST_PREFS = {
     'browser.firstrun.show.localepicker': False,
     'browser.firstrun.show.uidiscovery': False,
     'browser.ui.layout.tablet': 0,
+    'devtools.webconsole.filter.debug': True,
     'dom.disable_open_during_load': False,
     'dom.experimental_forms': True,
     'dom.forms.number': True,

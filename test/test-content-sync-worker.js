@@ -409,7 +409,7 @@ exports["test:ensure console.xxx works in cs"] = WorkerTest(
       onMessage: function() {
         // Ensure that console methods are called in the same execution order
         const EXPECTED_CALLS = ["time", "log", "info", "warn", "error",
-          "exception", "timeEnd"];
+          "debug", "exception", "timeEnd"];
         assert.equal(JSON.stringify(calls),
           JSON.stringify(EXPECTED_CALLS),
           "console methods have been called successfully, in expected order");
