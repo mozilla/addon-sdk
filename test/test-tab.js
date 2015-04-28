@@ -22,6 +22,27 @@ var auxTab;
 // The window for the outer iframe in the primary test page
 var iframeWin;
 
+function tabExistenceInTabs(assert, found, tab, tabs) {
+  let tabFound = false;
+
+  for each (let t in tabs) {
+    assert.notEqual(t.title, undefined, 'tab title is not undefined');
+    assert.notEqual(t.url, undefined, 'tab url is not undefined');
+    assert.notEqual(t.index, undefined, 'tab index is not undefined');
+
+    if (t === tab) {
+      tabFound = true;
+      break;
+    }
+  }
+
+  // check for the tab's existence
+  if (found)
+    assert.ok(tabFound, 'the tab was found as expected');
+  else
+    assert.ok(!tabFound, 'the tab was not found as expected');
+}
+
 exports["test GetTabForWindow"] = function(assert, done) {
 
   assert.equal(getTabForWindow(windowUtils.activeWindow), null,
@@ -234,37 +255,6 @@ exports.testBehaviorOnCloseAfterOpen = function(assert, done) {
     }
   });
 };
-
-function tabExistenceInTabs(assert, found, tab, tabs) {
-  let tabFound = false;
-
-  for each (let t in tabs) {
-    assert.notEqual(t.title, undefined, 'tab title is not undefined');
-    assert.notEqual(t.url, undefined, 'tab url is not undefined');
-    assert.notEqual(t.index, undefined, 'tab index is not undefined');
-
-    if (t === tab) {
-      tabFound = true;
-      break;
-    }
-  }
-
-  // check for the tab's existence
-  if (found)
-    assert.ok(tabFound, 'the tab was found as expected');
-  else
-    assert.ok(!tabFound, 'the tab was not found as expected');
-}
-
-if (require("sdk/system/xul-app").is("Fennec")) {
-  module.exports = {
-    "test Unsupported Test": function UnsupportedTest (assert) {
-        assert.pass(
-          "Skipping this test until Fennec support is implemented." +
-          "See Bug 809362");
-    }
-  }
-}
 
 exports["test viewFor(tab)"] = (assert, done) => {
   // Note we defer handlers as length collection is updated after
