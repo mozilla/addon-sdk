@@ -385,7 +385,7 @@ exports["test:nothing is leaked to content script"] = WorkerTest(
 exports["test:ensure console.xxx works in cs"] = WorkerTest(
   DEFAULT_CONTENT_URL,
   function(assert, browser, done) {
-    const EXPECTED = ["time", "log", "info", "warn", "error", "debug", "error", "timeEnd"];
+    const EXPECTED = ["time", "log", "info", "warn", "error", "debug", "exception", "timeEnd"];
 
     let calls = [];
     let levels = [];
@@ -406,7 +406,7 @@ exports["test:ensure console.xxx works in cs"] = WorkerTest(
         console.warn("warn");
         console.error("error");
         console.debug("debug");
-        console.exception("error");
+        console.exception("exception");
         console.timeEnd("timeEnd");
         self.postMessage();
       },
@@ -919,7 +919,7 @@ exports["test:console method log functions properly"] = WorkerTest(
     }
 
     let clean = message =>
-          message.trim().
+          message.toString().trim().
           replace(/[\r\n]/g, " ").
           replace(/ +/g, " ");
 
