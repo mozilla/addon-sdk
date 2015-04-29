@@ -340,6 +340,7 @@ exports["test Anchor And Arrow"] = function(assert, done) {
   let tab;
 
   function newPanel(anchor) {
+    assert.pass("testing panel for " + anchor.id);
     let panel = Panel({
       contentURL: "data:text/html;charset=utf-8,<html><body style='padding: 0; margin: 0; " +
                   "background: gray; text-align: center;'>Anchor: " +
@@ -347,6 +348,7 @@ exports["test Anchor And Arrow"] = function(assert, done) {
       width: 200,
       height: 100,
       onShow: function () {
+        assert.pass("showed panel for " + anchor.id);
         panel.destroy();
         next();
       }
@@ -357,7 +359,7 @@ exports["test Anchor And Arrow"] = function(assert, done) {
   function next () {
     if (!queue.length) {
       assert.pass("All anchored panel test displayed");
-      tab.close(function () {
+      tab.close(() => {
         done();
       });
       return;
@@ -366,7 +368,7 @@ exports["test Anchor And Arrow"] = function(assert, done) {
     panel.show(null, anchor);
   }
 
-  let tabs= require("sdk/tabs");
+  let tabs = require("sdk/tabs");
   let url = 'data:text/html;charset=utf-8,' +
     '<html><head><title>foo</title></head><body>' +
     '<style>div {background: gray; position: absolute; width: 300px; ' +
@@ -377,18 +379,22 @@ exports["test Anchor And Arrow"] = function(assert, done) {
     '<div id="br" style="bottom: 0px; right: 0px;">Bottom right</div>' +
     '</body></html>';
 
+  assert.pass("Creating new tab");
+
   tabs.open({
     url: url,
     onReady: function(_tab) {
+      assert.pass("Created new tab");
+
       tab = _tab;
-      let browserWindow = Cc["@mozilla.org/appshell/window-mediator;1"].
-                      getService(Ci.nsIWindowMediator).
-                      getMostRecentWindow("navigator:browser");
+      let browserWindow = getMostRecentBrowserWindow();
       let window = browserWindow.content;
+
       newPanel(window.document.getElementById('tl'));
       newPanel(window.document.getElementById('tr'));
       newPanel(window.document.getElementById('bl'));
       newPanel(window.document.getElementById('br'));
+
       let anchor = browserWindow.document.getElementById("identity-box");
       newPanel(anchor);
 
