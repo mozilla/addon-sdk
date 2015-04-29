@@ -17,10 +17,16 @@ var resolve = function() {
 }
 
 gulp.task('travis', function(done) {
-  var filters = getFilters();
-  var filtersExist = Object.keys(filters).length > 0;
+  var filters = {};
+  var filtersExist = false;
 
-  new Promise(function(resolve) {
+  getFilters().
+  then(function(f) {
+    filters = f;
+    filtersExist = Object.keys(filters).length > 0;
+    return resolve();
+  }).
+  then(function() {
     if (filtersExist && !filters["addons"]) {
       return resolve();
     }
