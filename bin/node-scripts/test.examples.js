@@ -7,7 +7,7 @@ var utils = require("./utils");
 var path = require("path");
 var fs = require("fs");
 var jpm = utils.run;
-var readParam = utils.readParam;
+var readParam = require("./args").get;
 
 var examplesPath = path.join(__dirname, "..", "..", "examples");
 
