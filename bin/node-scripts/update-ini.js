@@ -16,6 +16,18 @@ function updateAddonINI() {
   return new Promise(function(resolve) {
     console.log("Start updating " + addonINI);
 
+    makeAddonIniContent().
+    then(function(contents) {
+      fs.writeFileSync(addonINI, contents, { encoding: "utf8" });
+      console.log("Done updating " + addonINI);
+      resolve();
+    });
+  })
+}
+exports.updateAddonINI = updateAddonINI;
+
+function makeAddonIniContent() {
+  return new Promise(function(resolve) {
     var data = parser.parse(fs.readFileSync(addonINI, { encoding: "utf8" }).toString());
     var result = {};
 
@@ -39,10 +51,8 @@ function updateAddonINI() {
       });
       contents = contents.join("\n") + "\n";
 
-      fs.writeFileSync(addonINI, contents, { encoding: "utf8" });
-      console.log("Done updating " + addonINI);
-      resolve();
+      return resolve(contents);
     });
-  })
+  });
 }
-exports.updateAddonINI = updateAddonINI;
+exports.makeAddonIniContent = makeAddonIniContent;
