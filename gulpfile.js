@@ -52,6 +52,13 @@ gulp.task('travis', function(done) {
     return test("docs");
   }).
   then(function() {
+    if (filtersExist) {
+      return resolve();
+    }
+
+    return test("ini");
+  }).
+  then(function() {
     if (filtersExist && !filters["modules"]) {
       return resolve();
     }
@@ -81,6 +88,10 @@ gulp.task('test:examples', function(done) {
 
 gulp.task('test:modules', function(done) {
   test("modules").catch(console.error).then(done);
+});
+
+gulp.task('test:ini', function(done) {
+  test("ini").catch(console.error).then(done);
 });
 
 gulp.task('patch:clean', function(done) {
