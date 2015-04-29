@@ -73,10 +73,7 @@ exports["test window result from addon extras in panel"] = function(assert, done
 
   extras.set({
     test: function(window) {
-      return Cu.cloneInto(Cu.waiveXrays(result), window, {
-        cloneFunctions: true,
-        wrapReflectors: true
-      });
+      return Cu.waiveXrays(result)
     }
   });
 
