@@ -8,7 +8,7 @@ var cp = require("child_process");
 var fs = require("fs");
 var Promise = require("promise");
 var patcher = require("patch-editor");
-var readParam = require("./utils").readParam;
+var readParam = require("./args").get;
 
 var isKeeper = /\/addon-sdk\/source/;
 
