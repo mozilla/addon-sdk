@@ -1659,7 +1659,6 @@ exports.testConsole = function(assert, done) {
     if (msg.arguments[0] !== "Hello from the page mod")
       return;
     seenMessage = true;
-    innerID = msg.innerID;
   }
 
   let mod = PageMod({
@@ -1671,11 +1670,7 @@ exports.testConsole = function(assert, done) {
     }),
     onAttach: function(worker) {
       worker.port.on("done", function() {
-        let window = getTabContentWindow(tab);
-        let id = getInnerId(window);
         assert.ok(seenMessage, "Should have seen the console message");
-        assert.equal(innerID, id, "Should have seen the right inner ID");
-
         system.off('console-api-log-event', onMessage);
         mod.destroy();
         closeTab(tab);

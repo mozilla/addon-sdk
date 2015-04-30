@@ -20,6 +20,7 @@ const { set: setPref } = require("sdk/preferences/service");
 const { isArray } = require("sdk/lang/type");
 const { URL } = require('sdk/url');
 const fixtures = require("./fixtures");
+const system = require("sdk/system/events");
 
 const DEPRECATE_PREF = "devtools.errorconsole.deprecation_warnings";
 
@@ -382,15 +383,16 @@ exports["test:ensure console.xxx works in cs"] = WorkerTest(
   DEFAULT_CONTENT_URL,
   function(assert, browser, done) {
     let { loader } = LoaderWithHookedConsole(module, onMessage);
+    // Ensure that console methods are called in the same execution order
+    const EXPECTED_CALLS = ["time", "log", "info", "warn", "error",
+      "debug", "exception", "timeEnd"];
 
     // Intercept all console method calls
     let calls = [];
-    function onMessage(type, msg) {
-      assert.equal(type, msg,
-        "console.xxx(\"xxx\"), i.e. message is equal to the " +
-        "console method name we are calling");
-      calls.push(msg);
+    function onMessage({ subject }) {
+      calls.push(subject.wrappedJSObject.arguments[0]);
     }
+    system.on('console-api-log-event', onMessage);
 
     // Finally, create a worker that will call all console methods
     let worker =  loader.require("sdk/deprecated/sync-worker").Worker({
@@ -406,13 +408,13 @@ exports["test:ensure console.xxx works in cs"] = WorkerTest(
         console.timeEnd("timeEnd");
         self.postMessage();
       },
-      onMessage: function() {
-        // Ensure that console methods are called in the same execution order
-        const EXPECTED_CALLS = ["time", "log", "info", "warn", "error",
-          "debug", "exception", "timeEnd"];
+      onMessage: () => {
+        system.off('console-api-log-event', onMessage);
+
         assert.equal(JSON.stringify(calls),
           JSON.stringify(EXPECTED_CALLS),
           "console methods have been called successfully, in expected order");
+
         done();
       }
     });
@@ -886,12 +888,15 @@ exports["test:console method log functions properly"] = WorkerTest(
     let logs = [];
 
     let clean = message =>
-          message.trim().
+          message.toString().trim().
           replace(/[\r\n]/g, " ").
           replace(/ +/g, " ");
 
-    let onMessage = (type, message) => logs.push(clean(message));
-    let { loader } = LoaderWithHookedConsole(module, onMessage);
+    function onMessage({ subject }) {
+      logs.push(clean(subject.wrappedJSObject.arguments[0]));
+    }
+    system.on("console-api-log-event", onMessage);
+    let { loader } = LoaderWithHookedConsole(module);
 
     let worker =  loader.require("sdk/deprecated/sync-worker").Worker({
       window: browser.contentWindow,
@@ -903,6 +908,8 @@ exports["test:console method log functions properly"] = WorkerTest(
         self.postMessage();
       },
       onMessage: () => {
+        system.off("console-api-log-event", onMessage);
+
         assert.deepEqual(logs, [
           "function Function() { [native code] }",
           "(foo) => foo * foo",
