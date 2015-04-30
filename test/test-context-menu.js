@@ -2682,7 +2682,7 @@ exports.testItemNoData = function*(assert) {
 
   assert.pass("showing the context-menu 2");
 
-  let itemElt = test.getItemElt(popup, item2);
+  itemElt = test.getItemElt(popup, item2);
   itemElt.click();
 
   yield test.hideMenu();
@@ -2692,12 +2692,12 @@ exports.testItemNoData = function*(assert) {
   popup = yield test.showMenu(null);
   assert.pass("showing the context-menu 3");
 
-  let itemElt = test.getItemElt(popup, item3);
+  itemElt = test.getItemElt(popup, item3);
   itemElt.click();
 
   test.done();
 
-  yeild deferred.promise;
+  yield deferred.promise;
 }
 
 
