@@ -6,88 +6,25 @@
 var gulp = require('gulp');
 var patch = require("./bin/node-scripts/apply-patch");
 var ini = require("./bin/node-scripts/update-ini");
-var test = require("./bin/jpm-test").run;
-var Promise = require("promise");
-var getFilters = require("./bin/node-scripts/last-commit-msg").getFilters;
-
-var resolve = function() {
-  return new Promise(function(resolve) {
-    return resolve();
-  });
-}
-
-gulp.task('travis', function(done) {
-  var filters = {};
-  var filtersExist = false;
-
-  getFilters().
-  then(function(f) {
-    filters = f;
-    filtersExist = Object.keys(filters).length > 0;
-    return resolve();
-  }).
-  then(function() {
-    if (filtersExist && !filters["addons"]) {
-      return resolve();
-    }
-
-    return test("addons", {
-      filter: filters["addons"]
-    }).then(resolve);
-  }).
-  then(function() {
-    if (filtersExist && !filters["examples"]) {
-      return resolve();
-    }
-
-    return test("examples", {
-      filter: filters["examples"]
-    });
-  }).
-  then(function() {
-    if (filtersExist) {
-      return resolve();
-    }
-
-    return test("docs");
-  }).
-  then(function() {
-    if (filtersExist) {
-      return resolve();
-    }
-
-    return test("ini");
-  }).
-  then(function() {
-    if (filtersExist && !filters["modules"]) {
-      return resolve();
-    }
-
-    return test("modules", {
-      filter: filters["modules"]
-    });
-  }).
-  catch(console.error).then(done);
-});
 
 gulp.task('test', function(done) {
-  test().then(done);
+  require("./bin/jpm-test").run().then(done);
 });
 
 gulp.task('test:addons', function(done) {
-  test("addons").catch(console.error).then(done);
+  require("./bin/jpm-test").run("addons").catch(console.error).then(done);
 });
 
 gulp.task('test:docs', function(done) {
-  test("docs").catch(console.error).then(done);
+  require("./bin/jpm-test").run("docs").catch(console.error).then(done);
 });
 
 gulp.task('test:examples', function(done) {
-  test("examples").catch(console.error).then(done);
+  require("./bin/jpm-test").run("examples").catch(console.error).then(done);
 });
 
 gulp.task('test:modules', function(done) {
-  test("modules").catch(console.error).then(done);
+  require("./bin/jpm-test").run("modules").catch(console.error).then(done);
 });
 
 gulp.task('test:ini', function(done) {

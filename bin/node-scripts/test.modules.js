@@ -4,7 +4,7 @@
 "use strict";
 
 var utils = require("./utils");
-var readParam = require("./args").get;
+var readParam = utils.readParam;
 var path = require("path");
 var fs = require("fs");
 var jpm = utils.run;
