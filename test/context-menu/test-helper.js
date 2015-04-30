@@ -493,9 +493,16 @@ TestHelper.prototype = {
   },
 
   hideMenu: function(onhiddenCallback) {
-    this.delayedEventListener(this.browserWindow, "popuphidden", onhiddenCallback);
+    return new Promise(resolve => {
+      this.delayedEventListener(this.browserWindow, "popuphidden", function() {
+        if (onhiddenCallback) {
+          onhiddenCallback.apply(this);
+        }
+        resolve();
+      });
 
-    this.contextMenuPopup.hidePopup();
+      this.contextMenuPopup.hidePopup();
+    })
   },
 
   // Opens a new browser window.  The window will be closed automatically when

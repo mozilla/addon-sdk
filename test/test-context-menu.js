@@ -2664,7 +2664,6 @@ exports.testItemNoData = function*(assert) {
   assert.equal(item2.data, null, "Should be no defined data");
   assert.equal(item3.data, undefined, "Should be no defined data");
 
-
   let popup = yield test.showMenu(null);
 
   assert.pass("showing the context-menu 1");
