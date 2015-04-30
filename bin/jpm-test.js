@@ -12,14 +12,8 @@ var mocha = new Mocha({
 });
 
 var isDebug = require("./node-scripts/utils").isDebug;
-var args = require("./node-scripts/args");
 
-exports.run = function(type, options) {
-  options = options || {};
-  if (options.filter) {
-    args.set("filter", options.filter);
-  }
-
+exports.run = function(type) {
   return new Promise(function(resolve) {
     type = type || "";
     [
@@ -33,7 +27,6 @@ exports.run = function(type, options) {
     })
 
     mocha.run(function(failures) {
-      args.set("filter", undefined);
       resolve(failures);
     });
   });

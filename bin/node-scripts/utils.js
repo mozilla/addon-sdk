@@ -82,3 +82,9 @@ function run (cmd, options, p) {
   });
 }
 exports.run = run;
+
+function readParam(name) {
+  var index = process.argv.indexOf("--" + name)
+  return index >= 0 && process.argv[index + 1]
+}
+exports.readParam = readParam;
