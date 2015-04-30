@@ -51,6 +51,13 @@ exports["test changing result from addon extras in panel"] = function(assert, do
   panel.port.emit("get-result");
 }
 
+
+function toArray(args) {
+   return Array.prototype.slice.call(args).map((arg) => {
+     return JSON.stringify({ name: arg.name, value: arg.value })
+   });
+}
+
 exports["test window result from addon extras in panel"] = function(assert, done) {
   let loader = Loader(module, null, null, {
     modules: {
@@ -67,24 +74,28 @@ exports["test window result from addon extras in panel"] = function(assert, done
   const { getDocShell } = loader.require('sdk/frame/utils');
 
   let page = Page({
-    contentURL: "./test-.html"
+    contentURL: "./test.html"
   });
-  let result = getActiveView(page).contentWindow;
+  let pageFrame = getActiveView(page);
+  let pageWindow = pageFrame.contentWindow;
+  console.log(toArray(pageFrame.attributes));
 
   extras.set({
     test: function(window) {
-      return Cu.waiveXrays(result)
+      return pageWindow.wrappedJSObject;
     }
   });
 
   let panel = Panel({
     contentURL: "./test-addon-extras-window.html"
   });
+  let panelFrame = getActiveView(panel).firstChild;
+  console.log(toArray(panelFrame.attributes));
 
   panel.port.once("result1", (result) => {
-    assert.equal(result, fixtures.url("./test-.html"), "result is a window");
-    result = true;
-    panel.port.emit("get-result");
+    assert.equal(result, fixtures.url("./test.html"), "result is a window");
+    loader.unload();
+    done()
   });
 
   panel.port.emit("get-result");

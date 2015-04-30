@@ -13,7 +13,7 @@
     if ("addon" in window) {
       var count = 1;
       addon.port.on("get-result", () => {
-        addon.port.emit("result" + count++, extras.test(window).documentURI)
+        addon.port.emit("result" + count++, extras.test(window).getTestURL())
       });
     }
   </script>
