@@ -11,8 +11,6 @@ const fixtures = require("./fixtures");
 const { Loader } = require("sdk/test/loader");
 const { merge } = require("sdk/util/object");
 
-const EXPECTED = JSON.stringify({});
-
 exports["test changing result from addon extras in panel"] = function(assert, done) {
   let loader = Loader(module, null, null, {
     modules: {
@@ -124,12 +122,12 @@ exports["test window result from addon extras in panel"] = function*(assert) {
 
 before(exports, (name, assert) => {
   // test the default addon.extras value is {}
-  assert.equal(JSON.stringify(extras.get()), EXPECTED, "no extras");
+  assert.equal(JSON.stringify(extras.get()), undefined, "no extras");
 });
 after(exports, (name, assert) => {
   // reset extras
-  extras.set({});
-  assert.equal(JSON.stringify(extras.get()), EXPECTED, "no extras");
+  extras.set(undefined);
+  assert.equal(JSON.stringify(extras.get()), undefined, "no extras");
 });
 
 require("sdk/test").run(exports);
