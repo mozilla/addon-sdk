@@ -2633,8 +2633,9 @@ exports.testItemNoLabel = function (assert, done) {
 
 
 // Tests that items can have an empty data property
-exports.testItemNoData = function (assert, done) {
-  let test = new TestHelper(assert, done);
+exports.testItemNoData = function*(assert) {
+  let deferred = defer();
+  let test = new TestHelper(assert, deferred.resolve);
   let loader = test.newLoader();
 
   function checkData(data) {
@@ -2663,38 +2664,40 @@ exports.testItemNoData = function (assert, done) {
   assert.equal(item2.data, null, "Should be no defined data");
   assert.equal(item3.data, undefined, "Should be no defined data");
 
-  test.showMenu(null, function (popup) {
-    assert.pass("showing the context-menu 1");
 
-    test.checkMenu([item1, item2, item3], [], []);
+  let popup = yield test.showMenu(null);
 
-    let itemElt = test.getItemElt(popup, item1);
-    itemElt.click();
+  assert.pass("showing the context-menu 1");
 
-    test.hideMenu(function() {
-      assert.pass("hiding the context-menu 1");
+  test.checkMenu([item1, item2, item3], [], []);
 
-      test.showMenu(null, function (popup) {
-        assert.pass("showing the context-menu 2");
+  let itemElt = test.getItemElt(popup, item1);
+  itemElt.click();
 
-        let itemElt = test.getItemElt(popup, item2);
-        itemElt.click();
+  yield test.hideMenu();
 
-        test.hideMenu(function() {
-          assert.pass("hiding the context-menu 2");
+  assert.pass("hiding the context-menu 1");
 
-          test.showMenu(null, function (popup) {
-            assert.pass("showing the context-menu 3");
+  popup = yield test.showMenu(null);
 
-            let itemElt = test.getItemElt(popup, item3);
-            itemElt.click();
+  assert.pass("showing the context-menu 2");
 
-            test.done();
-          });
-        });
-      });
-    });
-  });
+  let itemElt = test.getItemElt(popup, item2);
+  itemElt.click();
+
+  yield test.hideMenu();
+
+  assert.pass("hiding the context-menu 2");
+
+  popup = yield test.showMenu(null);
+  assert.pass("showing the context-menu 3");
+
+  let itemElt = test.getItemElt(popup, item3);
+  itemElt.click();
+
+  test.done();
+
+  yeild deferred.promise;
 }
 
 

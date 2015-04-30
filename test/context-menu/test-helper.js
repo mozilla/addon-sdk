@@ -438,58 +438,58 @@ TestHelper.prototype = {
   // instead of an array
   showMenu: function(selectors, onshownCallback) {
     this.assert.pass("testhelper.showMenu()");
-    let { promise, resolve } = defer();
+    return new Promise(resolve => {
+      if (selectors && !Array.isArray(selectors))
+        selectors = [selectors];
 
-    if (selectors && !Array.isArray(selectors))
-      selectors = [selectors];
+      let sendEvent = () => {
+        let menu = this.browserWindow.document.getElementById("contentAreaContextMenu");
+        this.delayedEventListener(menu, "popupshowing", function (e) {
+          let popup = e.target;
+          if (onshownCallback) {
+            onshownCallback.call(this, popup);
+          }
+          resolve(popup);
+        }, false);
 
-    let sendEvent = () => {
-      let menu = this.browserWindow.document.getElementById("contentAreaContextMenu");
-      this.delayedEventListener(menu, "popupshowing", function (e) {
-        let popup = e.target;
-        if (onshownCallback) {
-          onshownCallback.call(this, popup);
-        }
-        resolve(popup);
-      }, false);
+        let messageManager = this.browserWindow.gBrowser.selectedBrowser.messageManager;
+        messageManager.sendAsyncMessage('test:contextmenu', { selectors });
+      }
 
-      let messageManager = this.browserWindow.gBrowser.selectedBrowser.messageManager;
-      messageManager.sendAsyncMessage('test:contextmenu', { selectors });
-    }
+      // Bounces an asynchronous message through the browser message manager.
+      // This ensures that any pending messages have been delivered to the frame
+      // scripts and so the remote proxies have been updated
+      let flushMessages = () => {
+        let listener = () => {
+          messageManager.removeMessageListener('test:pong', listener);
+          sendEvent();
+        };
 
-    // Bounces an asynchronous message through the browser message manager.
-    // This ensures that any pending messages have been delivered to the frame
-    // scripts and so the remote proxies have been updated
-    let flushMessages = () => {
-      let listener = () => {
-        messageManager.removeMessageListener('test:pong', listener);
-        sendEvent();
-      };
+        let messageManager = this.browserWindow.gBrowser.selectedBrowser.messageManager;
+        messageManager.addMessageListener('test:pong', listener);
+        messageManager.sendAsyncMessage('test:ping');
+      }
 
-      let messageManager = this.browserWindow.gBrowser.selectedBrowser.messageManager;
-      messageManager.addMessageListener('test:pong', listener);
-      messageManager.sendAsyncMessage('test:ping');
-    }
+      // If a new tab or window has not yet been opened, open a new tab now.  For
+      // some reason using the tab already opened when the test starts causes
+      // leaks.  See bug 566351 for details.
+      if (!selectors && !this.oldSelectedTab && !this.oldBrowserWindow) {
+        this.assert.pass("opening a new tab for the testhelper");
+        this.oldSelectedTab = this.tabBrowser.selectedTab;
+        this.tab = this.tabBrowser.addTab("about:blank");
+        let browser = this.tabBrowser.getBrowserForTab(this.tab);
 
-    // If a new tab or window has not yet been opened, open a new tab now.  For
-    // some reason using the tab already opened when the test starts causes
-    // leaks.  See bug 566351 for details.
-    if (!selectors && !this.oldSelectedTab && !this.oldBrowserWindow) {
-      this.oldSelectedTab = this.tabBrowser.selectedTab;
-      this.tab = this.tabBrowser.addTab("about:blank");
-      let browser = this.tabBrowser.getBrowserForTab(this.tab);
-
-      this.delayedEventListener(browser, "load", function () {
-        this.tabBrowser.selectedTab = this.tab;
-        this.loadFrameScript();
+        this.delayedEventListener(browser, "load", function () {
+          this.assert.pass("loaded a new tab for the testhelper");
+          this.tabBrowser.selectedTab = this.tab;
+          this.loadFrameScript();
+          flushMessages();
+        }, true);
+      }
+      else {
         flushMessages();
-      }, true);
-    }
-    else {
-      flushMessages();
-    }
-
-    return promise;
+      }
+    });
   },
 
   hideMenu: function(onhiddenCallback) {
