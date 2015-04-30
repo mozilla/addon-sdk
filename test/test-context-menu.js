@@ -2664,18 +2664,28 @@ exports.testItemNoData = function (assert, done) {
   assert.equal(item3.data, undefined, "Should be no defined data");
 
   test.showMenu(null, function (popup) {
+    assert.pass("showing the context-menu 1");
+
     test.checkMenu([item1, item2, item3], [], []);
 
     let itemElt = test.getItemElt(popup, item1);
     itemElt.click();
 
     test.hideMenu(function() {
+      assert.pass("hiding the context-menu 1");
+
       test.showMenu(null, function (popup) {
+        assert.pass("showing the context-menu 2");
+
         let itemElt = test.getItemElt(popup, item2);
         itemElt.click();
 
         test.hideMenu(function() {
+          assert.pass("hiding the context-menu 2");
+
           test.showMenu(null, function (popup) {
+            assert.pass("showing the context-menu 3");
+
             let itemElt = test.getItemElt(popup, item3);
             itemElt.click();
 

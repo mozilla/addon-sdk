@@ -437,6 +437,7 @@ TestHelper.prototype = {
   // In the simple case of a single selector just that string can be passed
   // instead of an array
   showMenu: function(selectors, onshownCallback) {
+    this.assert.pass("testhelper.showMenu()");
     let { promise, resolve } = defer();
 
     if (selectors && !Array.isArray(selectors))
@@ -444,14 +445,13 @@ TestHelper.prototype = {
 
     let sendEvent = () => {
       let menu = this.browserWindow.document.getElementById("contentAreaContextMenu");
-      this.delayedEventListener(menu, "popupshowing",
-        function (e) {
-          let popup = e.target;
-          if (onshownCallback) {
-            onshownCallback.call(this, popup);
-          }
-          resolve(popup);
-        }, false);
+      this.delayedEventListener(menu, "popupshowing", function (e) {
+        let popup = e.target;
+        if (onshownCallback) {
+          onshownCallback.call(this, popup);
+        }
+        resolve(popup);
+      }, false);
 
       let messageManager = this.browserWindow.gBrowser.selectedBrowser.messageManager;
       messageManager.sendAsyncMessage('test:contextmenu', { selectors });
