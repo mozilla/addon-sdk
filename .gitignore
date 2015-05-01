@@ -9,6 +9,7 @@ doc/modules/
 doc/status.md5
 packages/*
 node_modules
+cache
 
 # Python
 *.pyc
