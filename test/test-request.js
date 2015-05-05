@@ -92,6 +92,35 @@ exports.testStatus200 = function (assert, done) {
   }).get();
 };
 
+// responseURL Test, should return the location to which have been automatically redirected
+exports.testStatus302 = function (assert, done) {
+  let srv = startServerAsync(port, basePath);
+  
+  let moveLocation = "test-request-moved.txt";
+  let movedContent = "here now\n";
+  let movedUrl = "http://localhost:" + port + "/" + moveLocation;
+  prepareFile(moveLocation, movedContent);
+
+  let content = "The document has moved!\n";
+  let contentHeaders = "HTTP 302 Found\nLocation: "+moveLocation+"\n";
+  let basename = "test-request.txt"
+  prepareFile(basename, content);
+  prepareFile(basename+"^headers^", contentHeaders);
+
+  var req = Request({
+    url: "http://localhost:" + port + "/" + basename,
+    onComplete: function (response) {
+      assert.equal(this, req, "`this` should be request");
+      assert.equal(response.status, 200);
+      assert.equal(response.statusText, "OK");
+      assert.equal(response.headers["Content-Type"], "text/plain");
+      assert.equal(response.text, movedContent);
+      assert.equal(response.responseURL, movedUrl);
+      srv.stop(done);
+    }
+  }).get();
+};
+
 // This tries to get a file that doesn't exist
 exports.testStatus404 = function (assert, done) {
   var srv = startServerAsync(port, basePath);
