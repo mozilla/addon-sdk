@@ -11,7 +11,7 @@
     "name": "Jordan Santell",
     "url": "http://github.com/jsantell"
   },
-  "license": "MPL 2.0",
+  "license": "MPL-2.0",
   "scripts": {
     "test": "./node_modules/.bin/mocha --reporter spec --ui bdd"
   },

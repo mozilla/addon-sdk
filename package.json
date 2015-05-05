@@ -5,7 +5,7 @@
     "javascript", "engine", "addon", "extension",
     "xulrunner", "firefox", "browser"
   ],
-  "license": "MPL 2.0",
+  "license": "MPL-2.0",
   "unpack": true,
   "scripts": {
     "test": "gulp test"
