@@ -216,7 +216,7 @@ exports["test addon extras are not added to non-addon about: uris in page-worker
   });
 }
 
-exports["test unsafeWindow.extras is undefined for addon uris in panels with content scripts"] = function(assert, done) {
+exports["test unsafeWindow.extras is undefined for addon uris in panels with content scripts"] = function*(assert) {
   let loader = Loader(module, null, null, {
     modules: {
       "sdk/self": merge({}, self, {
@@ -224,6 +224,7 @@ exports["test unsafeWindow.extras is undefined for addon uris in panels with con
       })
     }
   });
+  assert.pass("created a loader");
 
   const { Panel } = loader.require('sdk/panel');
   const extras = loader.require("sdk/addon/extras");
@@ -234,27 +235,35 @@ exports["test unsafeWindow.extras is undefined for addon uris in panels with con
       return result;
     }
   });
+  assert.pass("set extras");
 
   let goodPanel = Panel({
     contentURL: "./test-addon-extras.html",
     contentScriptWhen: "end",
-    contentScript: "self.port.on('get-result', _ => self.port.emit('result', typeof unsafeWindow.extras == 'undefined'))",
-    onShow: () => {
-      assert.pass("showing panel");
-      goodPanel.port.emit("get-result");
-    }
+    contentScript: "self.port.on('get-result', _ => self.port.emit('result', typeof unsafeWindow.extras == 'undefined'))"
   });
   assert.pass("created the panel");
 
-  goodPanel.port.once("result", (data) => {
-    assert.equal(data, true, "unsafeWindow.extras is undefined");
-    loader.unload();
-    done();
+  yield new Promise(resolve => {
+    goodPanel.once('show', () => {
+      assert.pass("showing panel");
+      resolve();
+    });
+    goodPanel.show();
+    assert.pass("showing the panel");
   });
-  assert.pass("add listener to panel");
 
-  goodPanel.show();
-  assert.pass("showing the panel");
+  yield new Promise(resolve => {
+    goodPanel.port.once("result", (data) => {
+      assert.equal(data, true, "unsafeWindow.extras is undefined");
+      resolve();
+    });
+    assert.pass("add listener to panel");
+
+    goodPanel.port.emit("get-result");
+  });
+
+  loader.unload();
 }
 
 exports["test window.extras is undefined for addon uris in panels with content scripts"] = function(assert, done) {
