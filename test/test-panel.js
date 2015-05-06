@@ -22,6 +22,7 @@ const { getMostRecentBrowserWindow } = require('sdk/window/utils');
 const { URL } = require('sdk/url');
 const { wait } = require('./event/helpers');
 const packaging = require('@loader/options');
+const { merge } = require("sdk/util/object");
 
 const fixtures = require('./fixtures')
 
@@ -992,8 +993,6 @@ exports['test panel can be constructed without any arguments'] = function (asser
 };
 
 exports['test panel CSS'] = function(assert, done) {
-  const { merge } = require("sdk/util/object");
-
   let loader = Loader(module, null, null, {
     modules: {
       "sdk/self": merge({}, self, {
