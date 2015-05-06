@@ -217,18 +217,6 @@ exports["test addon extras are not added to non-addon about: uris in page-worker
 }
 
 exports["test unsafeWindow.extras is undefined for addon uris in panels with content scripts"] = function*(assert) {
-  let loader = Loader(module, null, null, {
-    modules: {
-      "sdk/self": merge({}, self, {
-        data: merge({}, self.data, {url: fixtures.url})
-      })
-    }
-  });
-  assert.pass("created a loader");
-
-  const { Panel } = loader.require('sdk/panel');
-  const extras = loader.require("sdk/addon/extras");
-
   var result = 1;
   extras.set({
     test: function() {
@@ -254,7 +242,7 @@ exports["test unsafeWindow.extras is undefined for addon uris in panels with con
     goodPanel.port.emit("get-result");
   });
 
-  loader.unload();
+  goodPanel.destroy();
 }
 
 exports["test window.extras is undefined for addon uris in panels with content scripts"] = function(assert, done) {
@@ -297,21 +285,6 @@ exports["test window.extras is undefined for addon uris in panels with content s
 exports["test addon extras are added to addon uris in panels"] = function(assert, done) {
   assert.pass("START");
 
-  let loader = Loader(module, null, null, {
-    modules: {
-      "sdk/self": merge({}, self, {
-        data: merge({}, self.data, {url: fixtures.url})
-      })
-    }
-  });
-  assert.pass("created the loader");
-
-  const { Panel } = loader.require('sdk/panel');
-  assert.pass("require panel");
-
-  const extras = loader.require("sdk/addon/extras");
-  assert.pass("require extras");
-
   var result = 1;
   extras.set({
     test: function() {
@@ -326,7 +299,7 @@ exports["test addon extras are added to addon uris in panels"] = function(assert
 
   goodPanel.port.once("result1", (data) => {
     assert.equal(data, 1, "window.extras.test() returned 1");
-    loader.unload();
+    goodPanel.destroy();
     done();
   });
 
