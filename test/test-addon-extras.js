@@ -245,15 +245,6 @@ exports["test unsafeWindow.extras is undefined for addon uris in panels with con
   assert.pass("created the panel");
 
   yield new Promise(resolve => {
-    goodPanel.once('show', () => {
-      assert.pass("showing panel");
-      resolve();
-    });
-    goodPanel.show();
-    assert.pass("showing the panel");
-  });
-
-  yield new Promise(resolve => {
     goodPanel.port.once("result", (data) => {
       assert.equal(data, true, "unsafeWindow.extras is undefined");
       resolve();
@@ -291,11 +282,7 @@ exports["test window.extras is undefined for addon uris in panels with content s
     contentScript: "self.port.on('get-result', _ => {\n" +
       "window.addEventListener('message', ({ data }) => data.name == 'extras' && self.port.emit('result', data.result));\n" +
       "window.postMessage({ name: 'start'}, '*');\n" +
-    "});",
-    onShow: () => {
-      assert.pass("showing panel");
-      goodPanel.port.emit("get-result");
-    }
+    "});"
   });
 
   goodPanel.port.once("result", (data) => {
@@ -304,7 +291,7 @@ exports["test window.extras is undefined for addon uris in panels with content s
     done();
   });
 
-  goodPanel.show();
+  goodPanel.port.emit("get-result");
 }
 
 exports["test addon extras are added to addon uris in panels"] = function(assert, done) {
@@ -334,11 +321,7 @@ exports["test addon extras are added to addon uris in panels"] = function(assert
   assert.pass("set extras");
 
   let goodPanel = Panel({
-    contentURL: "./test-addon-extras.html",
-    onShow: () => {
-      assert.pass("showing panel");
-      goodPanel.port.emit("get-result");
-    }
+    contentURL: "./test-addon-extras.html"
   });
 
   goodPanel.port.once("result1", (data) => {
@@ -347,7 +330,7 @@ exports["test addon extras are added to addon uris in panels"] = function(assert
     done();
   });
 
-  goodPanel.show();
+  goodPanel.port.emit("get-result");
 }
 
 before(exports, (name, assert) => {
