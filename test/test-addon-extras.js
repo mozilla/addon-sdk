@@ -120,6 +120,217 @@ exports["test window result from addon extras in panel"] = function*(assert) {
   loader.unload();
 }
 
+exports["test addon extras are not added to non-addon data: uris in panels"] = function(assert, done) {
+  let loader = Loader(module, null, null, {
+    modules: {
+      "sdk/self": merge({}, self, {
+        data: merge({}, self.data, {url: fixtures.url})
+      })
+    }
+  });
+
+  const { Panel } = loader.require('sdk/panel');
+  const extras = loader.require("sdk/addon/extras");
+
+  var result = 1;
+  extras.set({
+    test: function() {
+      return result;
+    }
+  });
+
+  let badPanel = Panel({
+    contentURL: "data:text/html;charset=utf-8,",
+    contentScriptWhen: "end",
+    contentScript: "self.port.emit('window-has-extras', unsafeWindow.extras === undefined)"
+  });
+
+  badPanel.port.once("window-has-extras", (data) => {
+    assert.equal(data, true, "unsafeWindow.extras is undefined for a data uri")
+    loader.unload();
+    done();
+  });
+}
+
+exports["test addon extras are not added to non-addon data: uris in page-workers"] = function(assert, done) {
+  let loader = Loader(module, null, null, {
+    modules: {
+      "sdk/self": merge({}, self, {
+        data: merge({}, self.data, {url: fixtures.url})
+      })
+    }
+  });
+
+  const { Page } = loader.require('sdk/page-worker');
+  const extras = loader.require("sdk/addon/extras");
+
+  var result = 1;
+  extras.set({
+    test: function() {
+      return result;
+    }
+  });
+
+  let badPage = Page({
+    contentURL: "data:text/html;charset=utf-8,",
+    contentScriptWhen: "end",
+    contentScript: "self.port.emit('window-has-extras', unsafeWindow.extras === undefined)"
+  });
+
+  badPage.port.once("window-has-extras", (data) => {
+    assert.equal(data, true, "unsafeWindow.extras is undefined for a data uri");
+    loader.unload();
+    done();
+  });
+}
+
+exports["test addon extras are not added to non-addon about: uris in page-workers"] = function(assert, done) {
+  let loader = Loader(module, null, null, {
+    modules: {
+      "sdk/self": merge({}, self, {
+        data: merge({}, self.data, {url: fixtures.url})
+      })
+    }
+  });
+
+  const { Page } = loader.require('sdk/page-worker');
+  const extras = loader.require("sdk/addon/extras");
+
+  var result = 1;
+  extras.set({
+    test: function() {
+      return result;
+    }
+  });
+
+  let badPage = Page({
+    contentURL: "about:mozilla",
+    contentScriptWhen: "end",
+    contentScript: "self.port.emit('window-has-extras', unsafeWindow.extras === undefined)"
+  });
+
+  badPage.port.once("window-has-extras", (data) => {
+    assert.equal(data, true, "unsafeWindow.extras is undefined for a data uri");
+    loader.unload();
+    done();
+  });
+}
+
+exports["test unsafeWindow.extras is undefined for addon uris in panels with content scripts"] = function(assert, done) {
+  let loader = Loader(module, null, null, {
+    modules: {
+      "sdk/self": merge({}, self, {
+        data: merge({}, self.data, {url: fixtures.url})
+      })
+    }
+  });
+
+  const { Panel } = loader.require('sdk/panel');
+  const extras = loader.require("sdk/addon/extras");
+
+  var result = 1;
+  extras.set({
+    test: function() {
+      return result;
+    }
+  });
+
+  let goodPanel = Panel({
+    contentURL: "./test-addon-extras.html",
+    contentScriptWhen: "end",
+    contentScript: "self.port.on('get-result', _ => self.port.emit('result', unsafeWindow.extras === undefined))",
+    onShow: () => {
+      assert.pass("showing panel");
+      goodPanel.port.emit("get-result");
+    }
+  });
+
+  goodPanel.port.once("result", (data) => {
+    assert.equal(data, true, "unsafeWindow.extras is undefined");
+    loader.unload();
+    done();
+  });
+
+  goodPanel.show();
+}
+
+exports["test window.extras is undefined for addon uris in panels with content scripts"] = function(assert, done) {
+  let loader = Loader(module, null, null, {
+    modules: {
+      "sdk/self": merge({}, self, {
+        data: merge({}, self.data, {url: fixtures.url})
+      })
+    }
+  });
+
+  const { Panel } = loader.require('sdk/panel');
+  const extras = loader.require("sdk/addon/extras");
+
+  var result = 1;
+  extras.set({
+    test: function() {
+      return result;
+    }
+  });
+
+  let goodPanel = Panel({
+    contentURL: "./test-addon-extras.html",
+    contentScriptWhen: "end",
+    contentScript: "self.port.on('get-result', _ => {\n" +
+      "window.addEventListener('message', ({ data }) => data.name == 'extras' && self.port.emit('result', data.result));\n" +
+      "window.postMessage({ name: 'start'}, '*');\n" +
+    "});",
+    onShow: () => {
+      assert.pass("showing panel");
+      goodPanel.port.emit("get-result");
+    }
+  });
+
+  goodPanel.port.once("result", (data) => {
+    assert.equal(data, true, "window.extras is undefined");
+    loader.unload();
+    done();
+  });
+
+  goodPanel.show();
+}
+
+exports["test addon extras are added to addon uris in panels"] = function(assert, done) {
+  let loader = Loader(module, null, null, {
+    modules: {
+      "sdk/self": merge({}, self, {
+        data: merge({}, self.data, {url: fixtures.url})
+      })
+    }
+  });
+
+  const { Panel } = loader.require('sdk/panel');
+  const extras = loader.require("sdk/addon/extras");
+
+  var result = 1;
+  extras.set({
+    test: function() {
+      return result;
+    }
+  });
+
+  let goodPanel = Panel({
+    contentURL: "./test-addon-extras.html",
+    onShow: () => {
+      assert.pass("showing panel");
+      goodPanel.port.emit("get-result");
+    }
+  });
+
+  goodPanel.port.once("result1", (data) => {
+    assert.equal(data, 1, "window.extras.test() returned 1");
+    loader.unload();
+    done();
+  });
+
+  goodPanel.show();
+}
+
 before(exports, (name, assert) => {
   // test the default addon.extras value is {}
   assert.equal(JSON.stringify(extras.get()), undefined, "no extras");

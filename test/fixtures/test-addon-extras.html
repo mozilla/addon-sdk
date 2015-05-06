@@ -13,9 +13,19 @@
     if ("addon" in window) {
       var count = 1;
       addon.port.on("get-result", () => {
-        addon.port.emit("result" + count++, extras.test())
+        console.log("get-result recieved");
+        addon.port.emit("result" + count++, extras && extras.test())
       });
     }
+
+    window.addEventListener("message", function getMessage({ data }) {
+      if (data.name == "start") {
+        window.postMessage({
+          name: "extras",
+          result: window.extras === undefined
+        }, '*');
+      }
+    }, false);
   </script>
 </body>
 </html>
