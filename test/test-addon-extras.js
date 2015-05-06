@@ -320,7 +320,10 @@ exports["test addon extras are added to addon uris in panels"] = function(assert
   assert.pass("created the loader");
 
   const { Panel } = loader.require('sdk/panel');
+  assert.pass("require panel");
+
   const extras = loader.require("sdk/addon/extras");
+  assert.pass("require extras");
 
   var result = 1;
   extras.set({
@@ -328,6 +331,7 @@ exports["test addon extras are added to addon uris in panels"] = function(assert
       return result;
     }
   });
+  assert.pass("set extras");
 
   let goodPanel = Panel({
     contentURL: "./test-addon-extras.html",
