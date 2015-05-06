@@ -238,20 +238,23 @@ exports["test unsafeWindow.extras is undefined for addon uris in panels with con
   let goodPanel = Panel({
     contentURL: "./test-addon-extras.html",
     contentScriptWhen: "end",
-    contentScript: "self.port.on('get-result', _ => self.port.emit('result', unsafeWindow.extras === undefined))",
+    contentScript: "self.port.on('get-result', _ => self.port.emit('result', typeof unsafeWindow.extras == 'undefined'))",
     onShow: () => {
       assert.pass("showing panel");
       goodPanel.port.emit("get-result");
     }
   });
+  assert.pass("created the panel");
 
   goodPanel.port.once("result", (data) => {
     assert.equal(data, true, "unsafeWindow.extras is undefined");
     loader.unload();
     done();
   });
+  assert.pass("add listener to panel");
 
   goodPanel.show();
+  assert.pass("showing the panel");
 }
 
 exports["test window.extras is undefined for addon uris in panels with content scripts"] = function(assert, done) {
