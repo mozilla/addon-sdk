@@ -49,6 +49,11 @@ exports.spawn = spawn;
 function run (cmd, options, p) {
   return new Promise(function(resolve) {
     var output = [];
+    var mins = 0;
+    var minsInvterval = setInterval(function() {
+      mins += 1;
+      DEFAULT_PROCESS.stdout.write(mins + " mins have passed, out has " + output.length + " lines..\n");
+    }, 60000);
     var proc = spawn(cmd, options);
     proc.stderr.pipe(process.stderr);
     proc.stdout.on("data", function (data) {
@@ -64,6 +69,8 @@ function run (cmd, options, p) {
       proc.stdout.pipe(p.stdout);
     }
     proc.on("close", function(code) {
+      clearInterval(minsInvterval);
+
       var out = output.join("");
       var buildDisplayed = /Build \d+/.test(out);
       var noTests = /No tests were run/.test(out);
