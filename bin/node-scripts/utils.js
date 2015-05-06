@@ -49,6 +49,23 @@ exports.spawn = spawn;
 function run (cmd, options, p) {
   return new Promise(function(resolve) {
     var output = [];
+    var lastOutputLimit = 0;
+    var mins = 0;
+    var minsInterval = setInterval(function() {
+      mins += 0.5;
+      DEFAULT_PROCESS.stdout.write(mins + " mins have passed, out has " + output.length + " lines..\n");
+      if (!p) {
+        var len = output.length;
+        var start = len - 100;
+        if (start < lastOutputLimit) {
+          start = lastOutputLimit;
+        }
+        lastOutputLimit = len + 1;
+        DEFAULT_PROCESS.stdout.write("These are the last ~100 lines..\n");
+        var out = output.slice(start).join("\n");
+        DEFAULT_PROCESS.stdout.write(out);
+      }
+    }, 30000);
     var proc = spawn(cmd, options);
     proc.stderr.pipe(process.stderr);
     proc.stdout.on("data", function (data) {
@@ -64,6 +81,8 @@ function run (cmd, options, p) {
       proc.stdout.pipe(p.stdout);
     }
     proc.on("close", function(code) {
+      clearInterval(minsInterval);
+
       var out = output.join("");
       var buildDisplayed = /Build \d+/.test(out);
       var noTests = /No tests were run/.test(out);
