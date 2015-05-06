@@ -308,6 +308,8 @@ exports["test window.extras is undefined for addon uris in panels with content s
 }
 
 exports["test addon extras are added to addon uris in panels"] = function(assert, done) {
+  assert.pass("START");
+
   let loader = Loader(module, null, null, {
     modules: {
       "sdk/self": merge({}, self, {
@@ -315,6 +317,7 @@ exports["test addon extras are added to addon uris in panels"] = function(assert
       })
     }
   });
+  assert.pass("created the loader");
 
   const { Panel } = loader.require('sdk/panel');
   const extras = loader.require("sdk/addon/extras");
