@@ -345,12 +345,13 @@ exports["test addon extras are added to addon uris in panels"] = function(assert
 
 before(exports, (name, assert) => {
   // test the default addon.extras value is {}
-  assert.equal(JSON.stringify(extras.get()), undefined, "no extras");
+  assert.strictEqual(extras.get(), undefined, "no extras @ start");
 });
+
 after(exports, (name, assert) => {
   // reset extras
   extras.set(undefined);
-  assert.equal(JSON.stringify(extras.get()), undefined, "no extras");
+  assert.strictEqual(extras.get(), undefined, "no extras @ end");
 });
 
 require("sdk/test").run(exports);
