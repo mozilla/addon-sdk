@@ -49,6 +49,7 @@ exports.spawn = spawn;
 function run (cmd, options, p) {
   return new Promise(function(resolve) {
     var output = [];
+
     var proc = spawn(cmd, options);
     proc.stderr.pipe(process.stderr);
     proc.stdout.on("data", function (data) {
@@ -60,9 +61,19 @@ function run (cmd, options, p) {
       output.push(data);
       return null;
     });
+
     if (p) {
       proc.stdout.pipe(p.stdout);
     }
+    else {
+      proc.stdout.on("data", function (data) {
+        data = (data || "") + "";
+        if (/TEST-/.test(data)) {
+          DEFAULT_PROCESS.stdout.write(data.replace(/[\s\n]+$/, "") + "\n");
+        }
+      });
+    }
+
     proc.on("close", function(code) {
       var out = output.join("");
       var buildDisplayed = /Build \d+/.test(out);
