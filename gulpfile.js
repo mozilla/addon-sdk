@@ -31,6 +31,10 @@ gulp.task('test:ini', function(done) {
   require("./bin/jpm-test").run("ini").catch(console.error).then(done);
 });
 
+gulp.task('test:firefox-bin', function(done) {
+  require("./bin/jpm-test").run("firefox-bin").catch(console.error).then(done);
+});
+
 gulp.task('patch:clean', function(done) {
   patch.clean().catch(console.error).then(done);
 });
