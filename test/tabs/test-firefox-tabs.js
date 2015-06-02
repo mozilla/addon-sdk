@@ -18,6 +18,7 @@ const { set: setPref } = require("sdk/preferences/service");
 const DEPRECATE_PREF = "devtools.errorconsole.deprecation_warnings";
 const fixtures = require("../fixtures");
 const { base64jpeg } = fixtures;
+const { cleanUI, after } = require("sdk/test/utils");
 
 // Bug 682681 - tab.title should never be empty
 exports.testBug682681_aboutURI = function(assert, done) {
@@ -372,31 +373,28 @@ exports.testTabMove = function(assert, done) {
   }).then(null, assert.fail);
 };
 
-exports.testIgnoreClosing = function(assert, done) {
-  let originalWindow = viewFor(browserWindows.activeWindow);
-  openBrowserWindow(function(window, browser) {
-    onFocus(window).then(() => {
-      let url = "data:text/html;charset=utf-8,foobar";
+exports.testIgnoreClosing = function*(assert) {
+  let url = "data:text/html;charset=utf-8,foobar";
+  let originalWindow = getMostRecentBrowserWindow();
 
-      assert.equal(tabs.length, 2, "should be two windows open each with one tab");
+  let window = yield open().then(focus);
 
-      tabs.on('ready', function onReady(tab) {
-        tabs.removeListener('ready', onReady);
+  assert.equal(tabs.length, 2, "should be two windows open each with one tab");
 
-        let win = tab.window;
-        assert.equal(win.tabs.length, 2, "should be two tabs in the new window");
-        assert.equal(tabs.length, 3, "should be three tabs in total");
+  yield new Promise(resolve => {
+    tabs.once("ready", (tab) => {
+      let win = tab.window;
+      assert.equal(win.tabs.length, 2, "should be two tabs in the new window");
+      assert.equal(tabs.length, 3, "should be three tabs in total");
 
-        tab.close(function() {
-          assert.equal(win.tabs.length, 1, "should be one tab in the new window");
-          assert.equal(tabs.length, 2, "should be two tabs in total");
-
-          close(window).then(onFocus(originalWindow)).then(done).then(null, assert.fail);
-        });
+      tab.close(() => {
+        assert.equal(win.tabs.length, 1, "should be one tab in the new window");
+        assert.equal(tabs.length, 2, "should be two tabs in total");
+        resolve();
       });
-
-      tabs.open(url);
     });
+
+    tabs.open(url);
   });
 };
 
@@ -1202,6 +1200,10 @@ exports.testTabDestroy = function(assert, done) {
     })
   })
 };
+
+after(exports, function*(name, assert) {
+  yield cleanUI();
+});
 
 /******************* helpers *********************/
 
