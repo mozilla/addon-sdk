@@ -535,23 +535,23 @@ exports.testTabsEvent_onOpen = function(assert, done) {
 };
 
 // TEST: onClose event handler
-exports.testTabsEvent_onClose = function(assert, done) {
-  open().then(focus).then(window => {
-    let url = "data:text/html;charset=utf-8,onclose";
-    let eventCount = 0;
+exports.testTabsEvent_onClose = function*(assert) {
+  let window = yield open().then(focus);
+  let url = "data:text/html;charset=utf-8,onclose";
+  let eventCount = 0;
 
-    // add listener via property assignment
-    function listener1(tab) {
-      eventCount++;
-    }
-    tabs.on('close', listener1);
+  // add listener via property assignment
+  function listener1(tab) {
+    eventCount++;
+  }
+  tabs.on("close", listener1);
 
+  yield new Promise(resolve => {
     // add listener via collection add
-    tabs.on('close', function listener2(tab) {
+    tabs.on("close", function listener2(tab) {
       assert.equal(++eventCount, 2, "both listeners notified");
-      tabs.removeListener('close', listener1);
-      tabs.removeListener('close', listener2);
-      close(window).then(done).then(null, assert.fail);
+      tabs.removeListener("close", listener2);
+      resolve();
     });
 
     tabs.on('ready', function onReady(tab) {
@@ -560,7 +560,13 @@ exports.testTabsEvent_onClose = function(assert, done) {
     });
 
     tabs.open(url);
-  }).then(null, assert.fail);
+  });
+
+  tabs.removeListener("close", listener1);
+  assert.pass("done test!");
+
+  yield close(window);
+  assert.pass("window was closed!");
 };
 
 // TEST: onClose event handler when a window is closed
