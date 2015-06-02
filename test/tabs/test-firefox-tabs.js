@@ -161,11 +161,8 @@ exports.testAutomaticDestroyEventClose = function(assert, done) {
 };
 
 exports.testTabPropertiesInNewWindow = function(assert, done) {
-  let warning = "DEPRECATED: tab.favicon is deprecated, please use require(\"sdk/places/favicon\").getFavicon instead.\n"
   const { LoaderWithFilteredConsole } = require("sdk/test/loader");
   let loader = LoaderWithFilteredConsole(module, function(type, message) {
-    if (type == "error" && message.substring(0, warning.length) == warning)
-      return false;
     return true;
   });
 
@@ -186,7 +183,7 @@ exports.testTabPropertiesInNewWindow = function(assert, done) {
     onReady: function(tab) {
       assert.equal(tab.title, "foo", "title of the new tab matches");
       assert.equal(tab.url, url, "URL of the new tab matches");
-      assert.ok(tab.favicon, "favicon of the new tab is not empty");
+      assert.equal(tab.favicon, undefined, "favicon of the new tab is undefined");
       assert.equal(tab.style, null, "style of the new tab matches");
       assert.equal(tab.index, 0, "index of the new tab matches");
       assert.notEqual(tab.getThumbnail(), null, "thumbnail of the new tab matches");
@@ -197,7 +194,7 @@ exports.testTabPropertiesInNewWindow = function(assert, done) {
     onLoad: function(tab) {
       assert.equal(tab.title, "foo", "title of the new tab matches");
       assert.equal(tab.url, url, "URL of the new tab matches");
-      assert.ok(tab.favicon, "favicon of the new tab is not empty");
+      assert.equal(tab.favicon, undefined, "favicon of the new tab is undefined");
       assert.equal(tab.style, null, "style of the new tab matches");
       assert.equal(tab.index, 0, "index of the new tab matches");
       assert.notEqual(tab.getThumbnail(), null, "thumbnail of the new tab matches");
@@ -209,11 +206,8 @@ exports.testTabPropertiesInNewWindow = function(assert, done) {
 };
 
 exports.testTabPropertiesInSameWindow = function(assert, done) {
-  let warning = "DEPRECATED: tab.favicon is deprecated, please use require(\"sdk/places/favicon\").getFavicon instead.\n"
   const { LoaderWithFilteredConsole } = require("sdk/test/loader");
   let loader = LoaderWithFilteredConsole(module, function(type, message) {
-    if (type == "error" && message.substring(0, warning.length) == warning)
-      return false;
     return true;
   });
 
@@ -235,7 +229,7 @@ exports.testTabPropertiesInSameWindow = function(assert, done) {
     onReady: function(tab) {
       assert.equal(tab.title, "foo", "title of the new tab matches");
       assert.equal(tab.url, url, "URL of the new tab matches");
-      assert.ok(tab.favicon, "favicon of the new tab is not empty");
+      assert.equal(tab.favicon, undefined, "favicon of the new tab is undefined");
       assert.equal(tab.style, null, "style of the new tab matches");
       assert.equal(tab.index, tabCount, "index of the new tab matches");
       assert.notEqual(tab.getThumbnail(), null, "thumbnail of the new tab matches");
@@ -246,7 +240,7 @@ exports.testTabPropertiesInSameWindow = function(assert, done) {
     onLoad: function(tab) {
       assert.equal(tab.title, "foo", "title of the new tab matches");
       assert.equal(tab.url, url, "URL of the new tab matches");
-      assert.ok(tab.favicon, "favicon of the new tab is not empty");
+      assert.equal(tab.favicon, undefined, "favicon of the new tab is undefined");
       assert.equal(tab.style, null, "style of the new tab matches");
       assert.equal(tab.index, tabCount, "index of the new tab matches");
       assert.notEqual(tab.getThumbnail(), null, "thumbnail of the new tab matches");
@@ -1041,29 +1035,6 @@ exports.testOnLoadEventWithImage = function(assert, done) {
     }
   });
 };
-
-exports.testFaviconGetterDeprecation = function (assert, done) {
-  setPref(DEPRECATE_PREF, true);
-  const { LoaderWithHookedConsole } = require("sdk/test/loader");
-  let { loader, messages } = LoaderWithHookedConsole(module);
-  let tabs = loader.require('sdk/tabs');
-
-  tabs.open({
-    url: 'data:text/html;charset=utf-8,',
-    onOpen: function (tab) {
-      let favicon = tab.favicon;
-      assert.equal(messages.length, 1, 'only one error is dispatched');
-      assert.ok(messages[0].type, 'error', 'the console message is an error');
-
-      let msg = messages[0].msg;
-      assert.ok(msg.indexOf('tab.favicon is deprecated') !== -1,
-        'message contains the given message');
-      tab.close(done);
-      loader.unload();
-    }
-  });
-}
-
 
 exports.testNoDeadObjects = function(assert, done) {
   let loader = Loader(module);
