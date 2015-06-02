@@ -675,32 +675,38 @@ exports.testTabsEvent_onActivate = function(assert, done) {
 };
 
 // onDeactivate event handler
-exports.testTabsEvent_onDeactivate = function(assert, done) {
-  open().then(focus).then(window => {
-    let url = "data:text/html;charset=utf-8,ondeactivate";
-    let eventCount = 0;
+exports.testTabsEvent_onDeactivate = function*(assert) {
+  let window = yield open().then(focus);
 
-    // add listener via property assignment
-    function listener1(tab) {
-      eventCount++;
-    };
-    tabs.on('deactivate', listener1);
+  let url = "data:text/html;charset=utf-8,ondeactivate";
+  let eventCount = 0;
 
+  // add listener via property assignment
+  function listener1(tab) {
+    eventCount++;
+    assert.pass("listener1 was called " + eventCount);
+  };
+  tabs.on('deactivate', listener1);
+
+  yield new Promise(resolve => {
     // add listener via collection add
     tabs.on('deactivate', function listener2(tab) {
       assert.equal(++eventCount, 2, "both listeners notified");
-      tabs.removeListener('deactivate', listener1);
       tabs.removeListener('deactivate', listener2);
-      close(window).then(done).then(null, assert.fail);
+      resolve();
     });
 
     tabs.on('open', function onOpen(tab) {
+      assert.pass("tab opened");
       tabs.removeListener('open', onOpen);
       tabs.open("data:text/html;charset=utf-8,foo");
     });
 
     tabs.open(url);
-  }).then(null, assert.fail);
+  });
+
+  tabs.removeListener('deactivate', listener1);
+  assert.pass("listeners were removed");
 };
 
 // pinning
