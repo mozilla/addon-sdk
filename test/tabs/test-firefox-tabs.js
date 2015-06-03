@@ -465,28 +465,25 @@ exports.testInBackground = function(assert, done) {
 }
 
 // TEST: open tab in new window
-exports.testOpenInNewWindow = function(assert, done) {
-  let startWindowCount = windows().length;
-
+exports.testOpenInNewWindow = function*(assert) {
   let url = "data:text/html;charset=utf-8,testOpenInNewWindow";
-  tabs.open({
-    url: url,
-    inNewWindow: true,
-    onReady: function(tab) {
-      let newWindow = getOwnerWindow(viewFor(tab));
-      assert.equal(windows().length, startWindowCount + 1, "a new window was opened");
-
-      onFocus(newWindow).then(function() {
-        assert.equal(getMostRecentBrowserWindow(), newWindow, "new window is active");
-        assert.equal(tab.url, url, "URL of the new tab matches");
-        assert.equal(newWindow.content.location, url, "URL of new tab in new window matches");
-        assert.equal(tabs.activeTab.url, url, "URL of activeTab matches");
-
-        return close(newWindow).then(done);
-      }).then(null, assert.fail);
-    }
+  let tab = yield new Promise(resolve => {
+    tabs.open({
+      url: url,
+      inNewWindow: true,
+      onReady: resolve
+    });
   });
 
+  let newWindow = getOwnerWindow(viewFor(tab));
+  assert.equal(windows().length, 2, "a new window was opened");
+
+  yield focus(newWindow);
+
+  assert.equal(getMostRecentBrowserWindow(), newWindow, "new window is active");
+  assert.equal(tab.url, url, "URL of the new tab matches");
+  assert.equal(newWindow.content.location, url, "URL of new tab in new window matches");
+  assert.equal(tabs.activeTab.url, url, "URL of activeTab matches");
 }
 
 // Test tab.open inNewWindow + onOpen combination
@@ -1208,6 +1205,7 @@ exports.testTabDestroy = function(assert, done) {
 };
 
 after(exports, function*(name, assert) {
+  assert.pass("cleaning ui.");
   yield cleanUI();
 });
 
