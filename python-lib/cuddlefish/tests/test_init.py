@@ -203,7 +203,7 @@ class TestCfxQuits(unittest.TestCase):
         # run cfx test
         rc, out, err = self.run_cfx(addon_path, ["test"])
         self.assertEqual(rc, 0)
-        self.assertIn("2 of 2 tests passed.", err)
+        self.assertIn("6 of 6 tests passed.", err)
         self.assertIn("Program terminated successfully.", err)
 
 
