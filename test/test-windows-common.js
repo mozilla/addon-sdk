@@ -65,20 +65,18 @@ exports.testWindowActivateMethod_simple = function(assert) {
 };
 
 
-exports["test getView(window)"] = function(assert, done) {
-  browserWindows.once("open", window => {
-    const view = viewFor(window);
-
-    assert.ok(view instanceof Ci.nsIDOMWindow, "view is a window");
-    assert.ok(isBrowser(view), "view is a browser window");
-    assert.equal(getWindowTitle(view), window.title,
-                 "window has a right title");
-
-    window.close(done);
+exports["test getView(window)"] = function*(assert) {
+  let window = yield new Promise(resolve => {
+    browserWindows.once("open", resolve);
+    browserWindows.open({ url: "data:text/html;charset=utf-8,<title>yo</title>" });
   });
 
+  const view = viewFor(window);
 
-  browserWindows.open({ url: "data:text/html;charset=utf-8,<title>yo</title>" });
+  assert.ok(view instanceof Ci.nsIDOMWindow, "view is a window");
+  assert.ok(isBrowser(view), "view is a browser window");
+  assert.equal(getWindowTitle(view), window.title,
+               "window has a right title");
 };
 
 
@@ -96,5 +94,10 @@ exports["test modelFor(window)"] = function(assert, done) {
 
   browserWindows.open({ url: "data:text/html;charset=utf-8,<title>yo</title>" });
 };
+
+after(exports, function*(name, assert) {
+  assert.pass("cleaning the ui.");
+  yield cleanUI();
+});
 
 require('sdk/test').run(exports);
