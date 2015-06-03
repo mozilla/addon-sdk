@@ -168,51 +168,50 @@ exports.testSearchCount = function (assert, done) {
   }
 };
 
-exports.testSearchSort = function (assert, done) {
-  let places = [
-    'http://mozilla.com/', 'http://webaud.io/', 'http://mozilla.com/webfwd/',
-    'http://developer.mozilla.com/', 'http://bandcamp.com/'
-  ];
-  addVisits(places).then(() => {
-    return searchP({}, { sort: 'title' });
-  }).then(results => {
-    checkOrder(results, [4,3,0,2,1]);
-    return searchP({}, { sort: 'title', descending: true });
-  }).then(results => {
-    checkOrder(results, [1,2,0,3,4]);
-    return searchP({}, { sort: 'url' });
-  }).then(results => {
-    checkOrder(results, [4,3,0,2,1]);
-    return searchP({}, { sort: 'url', descending: true });
-  }).then(results => {
-    checkOrder(results, [1,2,0,3,4]);
-    return addVisits('http://mozilla.com') // for visit conut
-      .then(() => addVisits('http://github.com')); // for checking date
-  }).then(() => {
-    return searchP({}, { sort: 'visitCount' });
-  }).then(results => {
-    assert.equal(results[5].url, 'http://mozilla.com/',
-      'last entry is the highest visit count');
-    return searchP({}, { sort: 'visitCount', descending: true });
-  }).then(results => {
-    assert.equal(results[0].url, 'http://mozilla.com/',
-      'first entry is the highest visit count');
-    return searchP({}, { sort: 'date' });
-  }).then(results => {
-    assert.equal(results[5].url, 'http://github.com/',
-      'latest visited should be first');
-    return searchP({}, { sort: 'date', descending: true });
-  }).then(results => {
-    assert.equal(results[0].url, 'http://github.com/',
-      'latest visited should be at the end');
-  }).then(done);
-
+exports.testSearchSortForHistory = function*(assert) {
   function checkOrder (results, nums) {
     assert.equal(results.length, nums.length, 'expected return count');
     for (let i = 0; i < nums.length; i++) {
       assert.equal(results[i].url, places[nums[i]], 'successful order');
     }
   }
+
+  let places = [
+    'http://mozilla.com/', 'http://webaud.io/', 'http://mozilla.com/webfwd/',
+    'http://developer.mozilla.com/', 'http://bandcamp.com/'
+  ];
+  yield addVisits(places);
+
+  let results = yield searchP({}, { sort: 'title' });
+  checkOrder(results, [4,3,0,2,1]);
+
+  results = yield searchP({}, { sort: 'title', descending: true });
+  checkOrder(results, [1,2,0,3,4]);
+
+  results = yield searchP({}, { sort: 'url' });
+  checkOrder(results, [4,3,0,2,1]);
+
+  results = yield searchP({}, { sort: 'url', descending: true });
+  checkOrder(results, [1,2,0,3,4]);
+
+  yield addVisits('http://mozilla.com'); // for visit conut
+  yield addVisits('http://github.com'); // for checking date
+
+  results = yield searchP({}, { sort: 'visitCount' });
+  assert.equal(results[5].url, 'http://mozilla.com/',
+    'last entry is the highest visit count');
+
+  results = yield  searchP({}, { sort: 'visitCount', descending: true });
+  assert.equal(results[0].url, 'http://mozilla.com/',
+    'first entry is the highest visit count');
+
+  results = yield  searchP({}, { sort: 'date' });
+  assert.equal(results[5].url, 'http://github.com/',
+    'latest visited should be first');
+
+  results = yield  searchP({}, { sort: 'date', descending: true });
+  assert.equal(results[0].url, 'http://github.com/',
+    'latest visited should be at the end');
 };
 
 exports.testEmitters = function (assert, done) {

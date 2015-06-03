@@ -827,7 +827,7 @@ exports.testSearchCount = function (assert, done) {
   }
 };
 
-exports.testSearchSort = function (assert, done) {
+exports.testSearchSortForBookmarks = function (assert, done) {
   let urls = [
     'http://mozilla.com/', 'http://webaud.io/', 'http://mozilla.com/webfwd/',
     'http://developer.mozilla.com/', 'http://bandcamp.com/'
