@@ -13,6 +13,13 @@
     function getTestURL() {
       return window.document.documentURI + "";
     }
+    function changesInWindow() {
+      window.document.documentElement.setAttribute('test', 'changes in window');
+      return null;
+    }
+    function getAUQLUE() {
+      return "AUQLUE" in window;
+    }
     </script>
   </body>
 </html>
