@@ -692,35 +692,38 @@ exports.testSearchTags = function (assert, done) {
  * 'http://mozilla.com/'
  * 'http://mozilla.com/*'
  */
-exports.testSearchURL = function (assert, done) {
-  createBookmarkTree().then(() => {
-    return searchP({ url: 'mozilla.org' });
-  }).then(data => {
-    assert.equal(data.length, 2, 'only URLs with host domain');
-    assert.equal(data[0].url, 'http://mozilla.org/');
-    assert.equal(data[1].url, 'http://mozilla.org/thunderbird/');
-    return searchP({ url: '*.mozilla.org' });
-  }).then(data => {
-    assert.equal(data.length, 3, 'returns domain and when host is other than domain');
-    assert.equal(data[0].url, 'http://mozilla.org/');
-    assert.equal(data[1].url, 'http://mozilla.org/thunderbird/');
-    assert.equal(data[2].url, 'http://developer.mozilla.org/en-US/');
-    return searchP({ url: 'http://mozilla.org' });
-  }).then(data => {
-    assert.equal(data.length, 1, 'only exact URL match');
-    assert.equal(data[0].url, 'http://mozilla.org/');
-    return searchP({ url: 'http://mozilla.org/*' });
-  }).then(data => {
-    assert.equal(data.length, 2, 'only URLs that begin with query');
-    assert.equal(data[0].url, 'http://mozilla.org/');
-    assert.equal(data[1].url, 'http://mozilla.org/thunderbird/');
-    return searchP([{ url: 'mozilla.org' }, { url: 'component.fm' }]);
-  }).then(data => {
-    assert.equal(data.length, 3, 'returns URLs that match EITHER query');
-    assert.equal(data[0].url, 'http://mozilla.org/');
-    assert.equal(data[1].url, 'http://mozilla.org/thunderbird/');
-    assert.equal(data[2].url, 'http://component.fm/');
-  }).then(done).catch(assert.fail);
+exports.testSearchURLForBookmarks = function*(assert) {
+  yield createBookmarkTree()
+  let data = yield searchP({ url: 'mozilla.org' });
+
+  assert.equal(data.length, 2, 'only URLs with host domain');
+  assert.equal(data[0].url, 'http://mozilla.org/');
+  assert.equal(data[1].url, 'http://mozilla.org/thunderbird/');
+
+  data = yield searchP({ url: '*.mozilla.org' });
+
+  assert.equal(data.length, 3, 'returns domain and when host is other than domain');
+  assert.equal(data[0].url, 'http://mozilla.org/');
+  assert.equal(data[1].url, 'http://mozilla.org/thunderbird/');
+  assert.equal(data[2].url, 'http://developer.mozilla.org/en-US/');
+
+  data = yield searchP({ url: 'http://mozilla.org' });
+
+  assert.equal(data.length, 1, 'only exact URL match');
+  assert.equal(data[0].url, 'http://mozilla.org/');
+
+  data = yield searchP({ url: 'http://mozilla.org/*' });
+
+  assert.equal(data.length, 2, 'only URLs that begin with query');
+  assert.equal(data[0].url, 'http://mozilla.org/');
+  assert.equal(data[1].url, 'http://mozilla.org/thunderbird/');
+
+  data = yield searchP([{ url: 'mozilla.org' }, { url: 'component.fm' }]);
+
+  assert.equal(data.length, 3, 'returns URLs that match EITHER query');
+  assert.equal(data[0].url, 'http://mozilla.org/');
+  assert.equal(data[1].url, 'http://mozilla.org/thunderbird/');
+  assert.equal(data[2].url, 'http://component.fm/');
 };
 
 /*
