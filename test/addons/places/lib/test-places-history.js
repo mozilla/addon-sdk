@@ -19,45 +19,44 @@ const {
   search
 } = require('sdk/places/history');
 const {
-  invalidResolve, invalidReject, createTree,
+  invalidResolve, createTree,
   compareWithHost, addVisits, resetPlaces
 } = require('./places-helper');
 const { promisedEmitter } = require('sdk/places/utils');
 
-exports.testEmptyQuery = function (assert, done) {
+exports.testEmptyQuery = function*(assert) {
   let within = toBeWithin();
-  addVisits([
+  yield addVisits([
     'http://simplequery-1.com', 'http://simplequery-2.com'
-  ]).then(searchP).then(results => {
-    assert.equal(results.length, 2, 'Correct number of entries returned');
-    assert.equal(results[0].url, 'http://simplequery-1.com/',
-      'matches url');
-    assert.equal(results[1].url, 'http://simplequery-2.com/',
-      'matches url');
-    assert.equal(results[0].title, 'Test visit for ' + results[0].url,
-      'title matches');
-    assert.equal(results[1].title, 'Test visit for ' + results[1].url,
-      'title matches');
-    assert.equal(results[0].visitCount, 1, 'matches access');
-    assert.equal(results[1].visitCount, 1, 'matches access');
-    assert.ok(within(results[0].time), 'accurate access time');
-    assert.ok(within(results[1].time), 'accurate access time');
-    assert.equal(Object.keys(results[0]).length, 4,
-      'no addition exposed properties on history result');
-    done();
-  }, invalidReject);
+  ]);
+
+  let results = yield searchP();
+  assert.equal(results.length, 2, 'Correct number of entries returned');
+  assert.equal(results[0].url, 'http://simplequery-1.com/',
+    'matches url');
+  assert.equal(results[1].url, 'http://simplequery-2.com/',
+    'matches url');
+  assert.equal(results[0].title, 'Test visit for ' + results[0].url,
+    'title matches');
+  assert.equal(results[1].title, 'Test visit for ' + results[1].url,
+    'title matches');
+  assert.equal(results[0].visitCount, 1, 'matches access');
+  assert.equal(results[1].visitCount, 1, 'matches access');
+  assert.ok(within(results[0].time), 'accurate access time');
+  assert.ok(within(results[1].time), 'accurate access time');
+  assert.equal(Object.keys(results[0]).length, 4,
+    'no addition exposed properties on history result');
 };
 
-exports.testVisitCount = function (assert, done) {
-  addVisits([
+exports.testVisitCount = function*(assert) {
+  yield addVisits([
     'http://simplequery-1.com', 'http://simplequery-1.com',
     'http://simplequery-1.com', 'http://simplequery-1.com'
-  ]).then(searchP).then(results => {
-    assert.equal(results.length, 1, 'Correct number of entries returned');
-    assert.equal(results[0].url, 'http://simplequery-1.com/', 'correct url');
-    assert.equal(results[0].visitCount, 4, 'matches access count');
-    done();
-  }, invalidReject);
+  ]);
+  let results = yield searchP();
+  assert.equal(results.length, 1, 'Correct number of entries returned');
+  assert.equal(results[0].url, 'http://simplequery-1.com/', 'correct url');
+  assert.equal(results[0].visitCount, 4, 'matches access count');
 };
 
 /*
