@@ -24,7 +24,7 @@ const {
   MENU, TOOLBAR, UNSORTED
 } = require('sdk/places/bookmarks');
 const {
-  invalidResolve, invalidReject, createTree,
+  invalidResolve, createTree,
   compareWithHost, createBookmark, createBookmarkItem,
   createBookmarkTree, addVisits, resetPlaces
 } = require('./places-helper');
@@ -369,28 +369,27 @@ exports.testPromisedSave = function (assert, done) {
   }).then(done).catch(assert.fail);
 };
 
-exports.testPromisedErrorSave = function (assert, done) {
+exports.testPromisedErrorSave = function*(assert) {
   let bookmarks = [
     { title: 'moz1', url: 'http://moz1.com', type: 'bookmark'},
     { title: 'moz2', url: 'invalidurl', type: 'bookmark'},
     { title: 'moz3', url: 'http://moz3.com', type: 'bookmark'}
   ];
 
-  saveP(bookmarks).then(invalidResolve, reason => {
+  yield saveP(bookmarks).then(() => {
+    assert.fail("should not resolve");
+  }, reason => {
     assert.ok(
       /The `url` property must be a valid URL/.test(reason),
       'Error event called with correct reason');
+  });
 
-    bookmarks[1].url = 'http://moz2.com';
-    return saveP(bookmarks);
-  }).
-  then(res => searchP({ query: 'moz' })).
-  then(res => {
-    assert.equal(res.length, 3, 'all 3 should be saved upon retry');
-    res.map(item => assert.ok(/moz\d\.com/.test(item.url), 'correct item'));
-    done();
-  }, invalidReject).
-  catch(assert.fail);
+  bookmarks[1].url = 'http://moz2.com';
+  yield saveP(bookmarks);
+
+  let res = yield searchP({ query: 'moz' });
+  assert.equal(res.length, 3, 'all 3 should be saved upon retry');
+  res.map(item => assert.ok(/moz\d\.com/.test(item.url), 'correct item'));
 };
 
 exports.testMovingChildren = function (assert, done) {
