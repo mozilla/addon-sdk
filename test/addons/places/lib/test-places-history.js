@@ -124,23 +124,21 @@ exports.testSearchTimeRange = function (assert, done) {
   });
 };
 */
-exports.testSearchQuery = function (assert, done) {
-  addVisits([
+exports.testSearchQueryForHistory = function*(assert) {
+  yield addVisits([
     'http://mozilla.com', 'http://webaud.io', 'http://mozilla.com/webfwd'
-  ]).then(() => {
-    return searchP({ query: 'moz' });
-  }).then(results => {
-    assert.equal(results.length, 2, 'should return urls that match substring');
-    results.map(({url}) => {
-      assert.ok(/moz/.test(url), 'correct item');
-    });
-    return searchP([{ query: 'webfwd' }, { query: 'aud.io' }]);
-  }).then(results => {
-    assert.equal(results.length, 2, 'should OR separate queries');
-    results.map(({url}) => {
-      assert.ok(/webfwd|aud\.io/.test(url), 'correct item');
-    });
-    done();
+  ]);
+
+  let results = yield searchP({ query: 'moz' });
+  assert.equal(results.length, 2, 'should return urls that match substring');
+  results.map(({url}) => {
+    assert.ok(/moz/.test(url), 'correct item');
+  });
+
+  results = yield searchP([{ query: 'webfwd' }, { query: 'aud.io' }]);
+  assert.equal(results.length, 2, 'should OR separate queries');
+  results.map(({url}) => {
+    assert.ok(/webfwd|aud\.io/.test(url), 'correct item');
   });
 };
 

@@ -726,27 +726,26 @@ exports.testSearchURL = function (assert, done) {
 /*
  * Searches url, title, tags
  */
-exports.testSearchQuery = function (assert, done) {
-  createBookmarkTree().then(() => {
-    return searchP({ query: 'thunder' });
-  }).then(data => {
-    assert.equal(data.length, 3);
-    assert.equal(data[0].title, 'mozilla.com', 'query matches tag, url, or title');
-    assert.equal(data[1].title, 'mozilla.org', 'query matches tag, url, or title');
-    assert.equal(data[2].title, 'thunderbird', 'query matches tag, url, or title');
-    return searchP([{ query: 'rust' }, { query: 'component' }]);
-  }).then(data => {
-    // rust OR component
-    assert.equal(data.length, 3);
-    assert.equal(data[0].title, 'mozilla.com', 'query matches tag, url, or title');
-    assert.equal(data[1].title, 'mozilla.org', 'query matches tag, url, or title');
-    assert.equal(data[2].title, 'web audio components', 'query matches tag, url, or title');
-    return searchP([{ query: 'moz', tags: ['javascript']}]);
-  }).then(data => {
-    assert.equal(data.length, 1);
-    assert.equal(data[0].title, 'mdn',
-      'only one item matches moz query AND has a javascript tag');
-  }).then(done).catch(assert.fail);
+exports.testSearchQueryForBookmarks = function*(assert) {
+  yield createBookmarkTree();
+
+  let data = yield searchP({ query: 'thunder' });
+  assert.equal(data.length, 3);
+  assert.equal(data[0].title, 'mozilla.com', 'query matches tag, url, or title');
+  assert.equal(data[1].title, 'mozilla.org', 'query matches tag, url, or title');
+  assert.equal(data[2].title, 'thunderbird', 'query matches tag, url, or title');
+
+  data = yield searchP([{ query: 'rust' }, { query: 'component' }]);
+  // rust OR component
+  assert.equal(data.length, 3);
+  assert.equal(data[0].title, 'mozilla.com', 'query matches tag, url, or title');
+  assert.equal(data[1].title, 'mozilla.org', 'query matches tag, url, or title');
+  assert.equal(data[2].title, 'web audio components', 'query matches tag, url, or title');
+
+  data = yield searchP([{ query: 'moz', tags: ['javascript']}]);
+  assert.equal(data.length, 1);
+  assert.equal(data[0].title, 'mdn',
+    'only one item matches moz query AND has a javascript tag');
 };
 
 /*
