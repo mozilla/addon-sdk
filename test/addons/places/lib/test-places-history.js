@@ -66,24 +66,23 @@ exports.testVisitCount = function*(assert) {
  * 'http://mozilla.org/'
  * 'http://mozilla.org/*'
  */
-exports.testSearchURL = function (assert, done) {
-  addVisits([
+exports.testSearchURLForHistory = function*(assert) {
+  yield addVisits([
     'http://developer.mozilla.org', 'http://mozilla.org',
     'http://mozilla.org/index', 'https://mozilla.org'
-  ]).then(() => searchP({ url: '*.mozilla.org' }))
-  .then(results => {
-    assert.equal(results.length, 4, 'returns all entries');
-    return searchP({ url: 'mozilla.org' });
-  }).then(results => {
-    assert.equal(results.length, 3, 'returns entries where mozilla.org is host');
-    return searchP({ url: 'http://mozilla.org/' });
-  }).then(results => {
-    assert.equal(results.length, 1, 'should just be an exact match');
-    return searchP({ url: 'http://mozilla.org/*' });
-  }).then(results => {
-    assert.equal(results.length, 2, 'should match anything starting with substring');
-    done();
-  });
+  ]);
+
+  let results = yield searchP({ url: 'http://mozilla.org/' });
+  assert.equal(results.length, 1, 'should just be an exact match');
+
+  results = yield searchP({ url: '*.mozilla.org' });
+  assert.equal(results.length, 4, 'returns all entries');
+
+  results = yield searchP({ url: 'mozilla.org' });
+  assert.equal(results.length, 3, 'returns entries where mozilla.org is host');
+
+  results = yield searchP({ url: 'http://mozilla.org/*' });
+  assert.equal(results.length, 2, 'should match anything starting with substring');
 };
 
 // Disabling due to intermittent Bug 892619
