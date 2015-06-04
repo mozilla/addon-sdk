@@ -16,7 +16,6 @@ var packageDir = path.resolve("./test/");
 var packageIgnorables = [ "addons", "preferences" ];
 var packageSupportFiles = [
   "fixtures.js",
-  "pagemod-test-helpers.js",
   "test-context-menu.html",
   "util.js"
 ]
