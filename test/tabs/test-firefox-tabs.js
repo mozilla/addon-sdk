@@ -736,13 +736,16 @@ exports.testTabsEvent_pinning = function(assert, done) {
 };
 
 // TEST: per-tab event handlers
-exports.testPerTabEvents = function(assert, done) {
-  open().then(focus).then(window => {
-    let eventCount = 0;
+exports.testPerTabEvents = function*(assert) {
+  let window = yield open().then(focus);
+  let eventCount = 0;
 
+  let tab = yield new Promise(resolve => {
     tabs.open({
       url: "data:text/html;charset=utf-8,foo",
-      onOpen: function(tab) {
+      onOpen: (tab) => {
+        assert.pass("the tab was opened");
+
         // add listener via property assignment
         function listener1() {
           eventCount++;
@@ -751,14 +754,18 @@ exports.testPerTabEvents = function(assert, done) {
 
         // add listener via collection add
         tab.on('ready', function listener2() {
-          assert.equal(eventCount, 1, "both listeners notified");
+          assert.equal(eventCount, 1, "listener1 called before listener2");
           tab.removeListener('ready', listener1);
           tab.removeListener('ready', listener2);
-          close(window).then(done).then(null, assert.fail);
+          assert.pass("removed listeners");
+          eventCount++;
+          resolve();
         });
       }
     });
-  }).then(null, assert.fail);
+  });
+
+  assert.equal(eventCount, 2, "both listeners were notified.");
 };
 
 exports.testAttachOnOpen = function (assert, done) {
