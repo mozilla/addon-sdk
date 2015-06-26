@@ -12,13 +12,16 @@ const { viewFor } = require('sdk/view/core');
 const { getOwnerWindow } = require('sdk/tabs/utils');
 const { windows, onFocus, getMostRecentBrowserWindow } = require('sdk/window/utils');
 const { open, focus, close } = require('sdk/window/helpers');
+const { observer: windowObserver } = require("sdk/windows/observer");
 const tabs = require('sdk/tabs');
 const { browserWindows } = require('sdk/windows');
-const { set: setPref } = require("sdk/preferences/service");
+const { set: setPref, get: getPref, reset: resetPref } = require("sdk/preferences/service");
 const DEPRECATE_PREF = "devtools.errorconsole.deprecation_warnings";
+const OPEN_IN_NEW_WINDOW_PREF = 'browser.link.open_newwindow';
+const DISABLE_POPUP_PREF = 'dom.disable_open_during_load';
 const fixtures = require("../fixtures");
 const { base64jpeg } = fixtures;
-const { cleanUI, after } = require("sdk/test/utils");
+const { cleanUI, before, after } = require("sdk/test/utils");
 
 // Bug 682681 - tab.title should never be empty
 exports.testBug682681_aboutURI = function(assert, done) {
@@ -1191,9 +1194,55 @@ exports.testTabDestroy = function(assert, done) {
   })
 };
 
+// related to bug 942511
+// https://bugzilla.mozilla.org/show_bug.cgi?id=942511
+exports['test active tab properties defined on popup closed'] = function (assert, done) {
+  setPref(OPEN_IN_NEW_WINDOW_PREF, 2);
+  setPref(DISABLE_POPUP_PREF, false);
+
+  let tabID = "";
+  let popupClosed = false;
+
+  tabs.open({
+    url: 'about:blank',
+    onReady: function (tab) {
+      tabID = tab.id;
+      tab.attach({
+        contentScript: 'var popup = window.open("about:blank");' +
+                       'popup.close();'
+      });
+      
+      windowObserver.once('close', () => {
+        popupClosed = true;
+      });
+
+      windowObserver.on('activate', () => {
+        // Only when the 'activate' event is fired after the popup was closed.
+        if (popupClosed) {
+          popupClosed = false;
+          let activeTabID = tabs.activeTab.id;
+          if (activeTabID) {
+              assert.equal(tabID, activeTabID, 'ActiveTab properties are correct');
+          }
+          else {
+            assert.fail('ActiveTab properties undefined on popup closed');
+          }
+          tab.close(done);
+        }
+      });
+    }
+  });
+};
+
 after(exports, function*(name, assert) {
+  resetPopupPrefs();
   yield cleanUI();
 });
+
+const resetPopupPrefs = () => {
+  resetPref(OPEN_IN_NEW_WINDOW_PREF);
+  resetPref(DISABLE_POPUP_PREF);
+};
 
 /******************* helpers *********************/
 
