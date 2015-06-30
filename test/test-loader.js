@@ -367,6 +367,16 @@ exports['test shared globals'] = function(assert) {
   unload(loader);
 }
 
+exports['test prototype of global'] = function (assert) {
+  let uri = root + '/fixtures/loader/globals/';
+  let loader = Loader({ paths: { '': uri }, sharedGlobal: true,
+                        sandboxPrototype: { globalFoo: 5 }});
+
+  let program = main(loader, 'main');
+
+  assert.ok(program.globalFoo === 5, '`globalFoo` exists');
+};
+
 exports["test require#resolve"] = function(assert) {
   let foundRoot = require.resolve("sdk/tabs").replace(/sdk\/tabs.js$/, "");
   assert.ok(root, foundRoot, "correct resolution root");
