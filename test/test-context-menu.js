@@ -6,7 +6,8 @@
 require("sdk/context-menu");
 
 const { defer } = require("sdk/core/promise");
-const packaging = require('@loader/options');
+const { cleanUI } = require("sdk/test/utils");
+const { after } = require("sdk/test/utils");
 
 // These should match the same constants in the module.
 const OVERFLOW_THRESH_DEFAULT = 10;
@@ -2632,8 +2633,9 @@ exports.testItemNoLabel = function (assert, done) {
 
 
 // Tests that items can have an empty data property
-exports.testItemNoData = function (assert, done) {
-  let test = new TestHelper(assert, done);
+exports.testItemNoData = function*(assert) {
+  let deferred = defer();
+  let test = new TestHelper(assert, deferred.resolve);
   let loader = test.newLoader();
 
   function checkData(data) {
@@ -2662,28 +2664,39 @@ exports.testItemNoData = function (assert, done) {
   assert.equal(item2.data, null, "Should be no defined data");
   assert.equal(item3.data, undefined, "Should be no defined data");
 
-  test.showMenu(null, function (popup) {
-    test.checkMenu([item1, item2, item3], [], []);
+  let popup = yield test.showMenu(null);
 
-    let itemElt = test.getItemElt(popup, item1);
-    itemElt.click();
+  assert.pass("showing the context-menu 1");
 
-    test.hideMenu(function() {
-      test.showMenu(null, function (popup) {
-        let itemElt = test.getItemElt(popup, item2);
-        itemElt.click();
+  test.checkMenu([item1, item2, item3], [], []);
 
-        test.hideMenu(function() {
-          test.showMenu(null, function (popup) {
-            let itemElt = test.getItemElt(popup, item3);
-            itemElt.click();
+  let itemElt = test.getItemElt(popup, item1);
+  itemElt.click();
 
-            test.done();
-          });
-        });
-      });
-    });
-  });
+  yield test.hideMenu();
+
+  assert.pass("hiding the context-menu 1");
+
+  popup = yield test.showMenu(null);
+
+  assert.pass("showing the context-menu 2");
+
+  itemElt = test.getItemElt(popup, item2);
+  itemElt.click();
+
+  yield test.hideMenu();
+
+  assert.pass("hiding the context-menu 2");
+
+  popup = yield test.showMenu(null);
+  assert.pass("showing the context-menu 3");
+
+  itemElt = test.getItemElt(popup, item3);
+  itemElt.click();
+
+  test.done();
+
+  yield deferred.promise;
 }
 
 
@@ -3752,10 +3765,10 @@ exports.testPredicateContextTargetValueNotSet = function (assert, done) {
   });
 };
 
-if (packaging.isNative) {
-  module.exports = {
-    "test skip on jpm": (assert) => assert.pass("skipping this file with jpm")
-  };
-}
+after(exports, function*(name, assert) {
+  assert.pass("Cleaning new windows and tabs.");
+  yield cleanUI();
+  assert.pass("Removed all new tabs and windows.");
+});
 
-require('sdk/test').run(exports);
+require("sdk/test").run(exports);
