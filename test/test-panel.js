@@ -22,7 +22,7 @@ const { getMostRecentBrowserWindow } = require('sdk/window/utils');
 const { URL } = require('sdk/url');
 const { wait } = require('./event/helpers');
 const packaging = require('@loader/options');
-const { cleanUI, after } = require("sdk/test/utils");
+const { cleanUI, after, isTravisCI } = require("sdk/test/utils");
 const { platform } = require('sdk/system');
 
 const fixtures = require('./fixtures')
@@ -1373,7 +1373,7 @@ after(exports, function*(name, assert) {
   assert.pass("ui was cleaned.");
 });
 
-if (packaging.isNative) {
+if (isTravisCI) {
   module.exports = {
     "test skip on jpm": (assert) => assert.pass("skipping this file with jpm")
   };

@@ -18,6 +18,7 @@ const { getMostRecentBrowserWindow } = require('sdk/window/utils');
 const { partial } = require('sdk/lang/functional');
 const { wait } = require('./event/helpers');
 const { gc } = require('sdk/test/memory');
+const { isTravisCI } = require("sdk/test/utils");
 const packaging = require("@loader/options");
 
 const openBrowserWindow = partial(open, null, {features: {toolbar: true}});
@@ -1377,7 +1378,7 @@ exports['test buttons can have anchored panels'] = function(assert, done) {
 }
 
 
-if (packaging.isNative) {
+if (isTravisCI) {
   module.exports = {
     "test skip on jpm": (assert) => assert.pass("skipping this file with jpm")
   };
