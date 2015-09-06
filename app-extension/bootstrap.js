@@ -26,8 +26,6 @@ const appInfo = Cc["@mozilla.org/xre/app-info;1"].
 const vc = Cc["@mozilla.org/xpcom/version-comparator;1"].
            getService(Ci.nsIVersionComparator);
 
-const Startup = Cu.import("resource://gre/modules/sdk/system/Startup.js", {}).exports;
-
 
 const REASON = [ 'unknown', 'startup', 'shutdown', 'enable', 'disable',
                  'install', 'uninstall', 'upgrade', 'downgrade' ];
@@ -196,14 +194,21 @@ function startup(data, reasonCode) {
 
     // Import `cuddlefish.js` module using a Sandbox and bootstrap loader.
     let cuddlefishPath = 'loader/cuddlefish.js';
-    let cuddlefishURI = 'resource://gre/modules/commonjs/sdk/' + cuddlefishPath;
-    if (paths['sdk/']) { // sdk folder has been overloaded
-                         // (from pref, or cuddlefish is still in the xpi)
-      cuddlefishURI = paths['sdk/'] + cuddlefishPath;
+    let prePath = 'resource://gre/modules/commonjs/sdk/';
+
+    // sdk folder has been overloaded
+    // (from pref, or cuddlefish is still in the xpi)
+    if (paths['sdk/']) {
+      prePath = paths['sdk/'];
     }
-    else if (paths['']) { // root modules folder has been overloaded
-      cuddlefishURI = paths[''] + 'sdk/' + cuddlefishPath;
+    // root modules folder has been overloaded
+    else if (paths['']) {
+      prePath = paths[''] + 'sdk/';
     }
+    cuddlefishURI = prePath + cuddlefishPath;
+
+    // load this now so that addon/runner can use it later
+    Cu.import(prePath + 'addon/startup.jsm', {});
 
     cuddlefishSandbox = loadSandbox(cuddlefishURI);
     let cuddlefish = cuddlefishSandbox.exports;
