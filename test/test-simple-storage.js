@@ -22,7 +22,9 @@ file.mkpath(storeFile.path);
 storeFile.append("store.json");
 var storeFilename = storeFile.path;
 
-function manager(loader) loader.sandbox("sdk/simple-storage").manager;
+function manager(loader) {
+  return loader.sandbox("sdk/simple-storage").manager;
+}
 
 exports.testSetGet = function (assert, done) {
   // Load the module once, set a value.
@@ -284,7 +286,7 @@ exports.testSetNoSetRead = function (assert, done) {
 
 
 function setGetRoot(assert, done, val, compare) {
-  compare = compare || function (a, b) a === b;
+  compare = compare || (a, b) => a === b;
 
   // Load the module once, set a value.
   let loader = Loader(module);
@@ -312,7 +314,7 @@ function setGetRootError(assert, done, val, msg) {
              "array, boolean, null, number, object, string");
   let loader = Loader(module);
   let ss = loader.require("sdk/simple-storage");
-  assert.throws(function () ss.storage = val, pred, msg);
+  assert.throws(() => ss.storage = val, pred, msg);
   done();
   loader.unload();
 }
