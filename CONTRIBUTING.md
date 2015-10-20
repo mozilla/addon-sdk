@@ -37,7 +37,6 @@ All changes need a review by someone on the Jetpack review crew:
 - [@mossop]
 - [@gozala]
 - [@ZER0]
-- [@erikvold]
 - [@jsantell]
 - [@zombie]
 
