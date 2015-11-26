@@ -13,6 +13,12 @@ const utf8text = "\u2713 à la mode";
 const badutf8text = "\u0013 à la mode";
 const b64utf8text = "4pyTIMOgIGxhIG1vZGU=";
 
+// 1 MB string
+const longtext = 'fff'.repeat(333333);
+const b64longtext = 'ZmZm'.repeat(333333);
+// 1 MB string, lower-order bits = '\x66\x66\x66' = 'fff'
+const longtextnonoctet = 'f\u0166f\uff66'.repeat(333333);
+
 exports["test base64.encode"] = function (assert) {
   assert.equal(base64.encode(text), b64text, "encode correctly")
 }
@@ -31,6 +37,26 @@ exports["test base64.decode Unicode"] = function (assert) {
 
   assert.equal(base64.decode(b64utf8text, "utf-8"), utf8text,
     "decode correctly Unicode strings.")
+}
+
+exports["test base64.encode long string"] = function (assert) {
+
+  assert.equal(base64.encode(longtext), b64longtext, "encode long strings")
+}
+
+exports["test base64.decode long string"] = function (assert) {
+
+  assert.equal(base64.decode(b64longtext), longtext, "decode long strings")
+}
+
+exports["test base64.encode treats input as octet string"] = function (assert) {
+
+  assert.equal(base64.encode("\u0066"), "Zg==",
+    "treat octet string as octet string")
+  assert.equal(base64.encode("\u0166"), "Zg==",
+    "treat non-octet string as octet string")
+  assert.equal(base64.encode("\uff66"), "Zg==",
+    "encode non-octet string as octet string")
 }
 
 exports["test base64.encode with wrong charset"] = function (assert) {
