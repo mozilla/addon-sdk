@@ -1,7 +1,8 @@
 sudo: false
 language: node_js
 node_js:
-  - "0.12"
+  - "4.2"
+  - "5.1"
 
 env:
   - JPM_FX_DEBUG=0
