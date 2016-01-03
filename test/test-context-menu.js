@@ -2688,6 +2688,58 @@ exports.testItemNoData = function (assert, done) {
 }
 
 
+exports.testItemNoId = function (assert, done) {
+  let test = new TestHelper(assert, done);
+  let loader = test.newLoader();
+
+  let item1 = new loader.cm.Item({ label: "item 1" });
+  let item2 = new loader.cm.Item({ label: "item 2", id: null });
+  let item3 = new loader.cm.Item({ label: "item 3", id: undefined });
+
+  assert.equal(item1.id, undefined, "Should be no defined id");
+  assert.equal(item2.id, null, "Should be no defined id");
+  assert.equal(item3.id, undefined, "Should be no defined id");
+
+  test.showMenu().
+  then((popup) => test.checkMenu([item1, item2, item3], [], [])).
+  then(test.done).
+  catch(assert.fail);
+}
+
+
+// Test id support.
+exports.testItemId = function (assert, done) {
+  let test = new TestHelper(assert, done);
+  let loader = test.newLoader();
+
+  let item = new loader.cm.Item({ label: "item", id: "abc" });
+  assert.equal(item.id, "abc", "Should have set the id to abc");
+
+  let menu = new loader.cm.Menu({ label: "menu", id: "def", items: [
+    loader.cm.Item({ label: "subitem" })
+  ]});
+  assert.equal(menu.id, "def", "Should have set the id to def");
+
+  test.showMenu().then((popup) => {
+    test.checkMenu([item, menu], [], []);
+
+    let id = "xyz";
+    menu.id = item.id = id;
+    assert.equal(item.id, id, "Should have set the id to " + id);
+    assert.equal(menu.id, id, "Should have set the id to " + id);
+    test.checkMenu([item, menu], [], []);
+
+    item.id = null;
+    menu.id = null;
+    assert.equal(item.id, null, "Should have set the id to " + id);
+    assert.equal(menu.id, null, "Should have set the id to " + id);
+    test.checkMenu([item, menu], [], []);
+  }).
+  then(test.done).
+  catch(assert.fail);
+};
+
+
 exports.testItemNoAccessKey = function (assert, done) {
   let test = new TestHelper(assert, done);
   let loader = test.newLoader();
@@ -2696,9 +2748,9 @@ exports.testItemNoAccessKey = function (assert, done) {
   let item2 = new loader.cm.Item({ label: "item 2", accesskey: null });
   let item3 = new loader.cm.Item({ label: "item 3", accesskey: undefined });
 
-  assert.equal(item1.accesskey, undefined, "Should be no defined image");
-  assert.equal(item2.accesskey, null, "Should be no defined image");
-  assert.equal(item3.accesskey, undefined, "Should be no defined image");
+  assert.equal(item1.accesskey, undefined, "Should be no defined accesskey");
+  assert.equal(item2.accesskey, null, "Should be no defined accesskey");
+  assert.equal(item3.accesskey, undefined, "Should be no defined accesskey");
 
   test.showMenu().
   then((popup) => test.checkMenu([item1, item2, item3], [], [])).
@@ -2713,7 +2765,7 @@ exports.testItemAccessKey = function (assert, done) {
   let loader = test.newLoader();
 
   let item = new loader.cm.Item({ label: "item", accesskey: "i" });
-  assert.equal(item.accesskey, "i", "Should have set the image to i");
+  assert.equal(item.accesskey, "i", "Should have set the accesskey to i");
 
   let menu = new loader.cm.Menu({ label: "menu", accesskey: "m", items: [
     loader.cm.Item({ label: "subitem" })
