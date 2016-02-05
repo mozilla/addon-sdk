@@ -280,7 +280,7 @@ class Profile(object):
             assert e is None, '%s found without %s' % (delimeters[0], delimeters[1])
 
         # ensure the markers are in the proper order
-        assert e > s, '%s found at %s, while %s found at %s' (delimeter[1], e, delimeter[0], s)
+        assert e > s, '%s found at %s, while %s found at %s' % (delimeters[1], e, delimeters[0], s)
 
         # write the prefs
         cleaned_prefs = '\n'.join(lines[:s] + lines[e+1:])
