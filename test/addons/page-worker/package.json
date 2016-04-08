@@ -1,3 +1,5 @@
 {
-  "id": "test-page-worker"
+  "name": "test-page-worker",
+  "version": "0.0.1",
+  "main": "./main.js"
 }
