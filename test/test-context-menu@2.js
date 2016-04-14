@@ -1332,11 +1332,6 @@ exports["test unloading"] = withTab(function*(assert) {
                  "all items disposed");
 }, data`<body></body>`);
 
-if (require("@loader/options").isNative) {
-  module.exports = {
-    "test skip on jpm": (assert) => assert.pass("skipping this file with jpm")
-  };
-}
 
 before(exports, (name, assert) => {
   // Make sure Java doesn't activate
