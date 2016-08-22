@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -34,7 +34,7 @@ class SDK:
             parser.add_option('-p', '--path', dest = 'path', default = self.default_path)
             parser.add_option('-b', '--binary', dest = 'binary')#, default='/Applications/Firefox.app')
             (options, args) = parser.parse_args()
-      
+
             # Get the URL from the parameter
             self.link = options.url
             # Set the base path for the user. If the user supplies the path, use the home variable as well. Else, take the default path of this script as the installation directory.
@@ -50,11 +50,11 @@ class SDK:
                     self.base_path = str(options.path).strip() + '/'
             assert ' ' not in self.base_path, "You cannot have a space in your home path. Please remove the space before you continue."
             print('Your Base path is =' + self.base_path)
-            
+
             # This assignment is not used in this program. It will be used in version 2 of this script.
             self.bin = options.binary
             # if app or bin is empty, dont pass anything
-    
+
             # Search for the .zip file or tarball file in the URL.
             i = self.link.rfind('/')
 
@@ -73,12 +73,12 @@ class SDK:
                 print 'zip/gz file not present. Check the URL.'
                 return
             print("File name is =" + self.fname)
-    
+
             # Join the base path and the zip/tar file name to crate a complete Local file path.
             self.fpath = self.base_path + self.fname
             print('Your local file path will be=' + self.fpath)
         except AssertionError, e:
-            print e.args[0] 
+            print e.args[0]
             sys.exit(1)
 
     # Download function - to download the SDK from the URL to the local machine.
@@ -98,7 +98,7 @@ class SDK:
     # Function to extract the downloaded zipfile.
     def extract(self, zipfilepath, extfile):
         try:
-            # Timeout is set to 30 seconds. 
+            # Timeout is set to 30 seconds.
             timeout = 30
             # Change the directory to the location of the zip file.
             try:
@@ -135,7 +135,7 @@ class SDK:
             # Timeout code. The subprocess.popen exeutes the command and the thread waits for a timeout. If the process does not finish within the mentioned-
             # timeout, the process is killed.
             kill_check = threading.Event()
-            
+
             if self.zip:
             # Call the command to unzip the file.
                 if self.mswindows:
@@ -150,7 +150,7 @@ class SDK:
                 else:
                     p = subprocess.Popen('tar -xf '+extfile, stdout=subprocess.PIPE, shell=True)
                     pid = p.pid
-            
+
             #No need to handle for windows because windows automatically replaces old files with new files. It does not ask the user(as it does in Mac/Unix)
             if self.mswindows==False:
                 watch = threading.Timer(timeout, kill_process, args=(pid, kill_check, self.mswindows ))
@@ -158,7 +158,7 @@ class SDK:
                 (stdout, stderr) = p.communicate()
                 watch.cancel() # if it's still waiting to run
                 success = not kill_check.isSet()
-    
+
                 # Abort process if process fails.
                 if not success:
                     raise RuntimeError
@@ -210,7 +210,7 @@ class SDK:
                     p = subprocess.Popen('. bin/activate; cfx testall -a firefox > '+log_path, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
                     pid = p.pid
                     (stdout,stderr) = p.communicate()
-                    
+
             #Write the output to log file
             f=open(log_path,"w")
             f.write(stdout+stderr)
@@ -227,7 +227,7 @@ class SDK:
             if not success:
                 raise RuntimeError
             kill_check.clear()
-        
+
             if p.returncode!=0:
                 print('\nAll tests were not successful. Check the test-logs in the jetpack directory.')
                 result_sdk(home_path)
@@ -246,13 +246,13 @@ class SDK:
         except:
             print "Error during the testall command execution:", sys.exc_info()[0]
             raise
-        
+
     def package(self, example_dir):
         try:
             timeout = 30
-    
+
             print '\nNow Running packaging tests...'
-    
+
             kill_check = threading.Event()
 
             # Set the path for the example logs. They will be in the parent directory of the Jetpack SDK.
@@ -276,12 +276,12 @@ class SDK:
                     p = subprocess.Popen('. bin/activate; cfx run --pkgdir examples/reading-data --static-args=\'{\"quitWhenDone\":true}\' ', stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
                     pid = p.pid
                     (stdout, stderr) = p.communicate()
-            
+
             #Write the output to log file
             f=open(exlog_path,"w")
             f.write(stdout+stderr)
             f.close()
-            
+
             #Watch dog for timeout process
             if self.mswindows:
                 watch = threading.Timer(timeout, kill_process, args=(proc_handle, kill_check, self.mswindows))
@@ -305,21 +305,21 @@ class SDK:
                 else:
                     print ('\nTests passed with warning.Take a look at logs')
                     sys.exit(1)
-        
+
         except RuntimeError:
             print "Ending program"
             sys.exit(1)
         except:
             print "Error during running sample tests:", sys.exc_info()[0]
             raise
-    
+
 def result_sdk(sdk_dir):
     log_path = sdk_dir + 'tests.log'
     print 'Results are logged at:' + log_path
     try:
         f = open(log_path,'r')
     # Handles file errors
-    except IOError : 
+    except IOError :
         print 'I/O error - Cannot open test log at ' + log_path
         raise
 
@@ -328,7 +328,7 @@ def result_sdk(sdk_dir):
             print ('\nOverall result - FAIL. Look at the test log at '+log_path)
             return 1
     return 0
-    
+
 
 def result_example(sdk_dir):
     exlog_path = sdk_dir + 'test-example.log'
@@ -336,10 +336,10 @@ def result_example(sdk_dir):
     try:
         f = open(exlog_path,'r')
     # Handles file errors
-    except IOError : 
+    except IOError :
         print 'I/O error - Cannot open sample test log at ' + exlog_path
         raise
-    
+
     #Read the file in reverse and check for the keyword 'FAIL'.
     for line in reversed(open(exlog_path).readlines()):
         if line.strip()=='FAIL':

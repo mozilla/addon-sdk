@@ -63,4 +63,4 @@ function fish_prompt
     return
 end 
 
-python -c "from jetpack_sdk_env import welcome; welcome()"
+python2 -c "from jetpack_sdk_env import welcome; welcome()"
