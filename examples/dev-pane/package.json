@@ -1,0 +1,10 @@
+{
+  "name": "dev-pane",
+  "title": "dev-pane",
+  "id": "jid1-7f6oAMhbP8FPXQ",
+  "description": "a basic add-on",
+  "author": "",
+  "license": "MPL 2.0",
+  "version": "0.1",
+  "main": "./main.js"
+}
