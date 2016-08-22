@@ -111,14 +111,14 @@ rem Remove the REG_SZ
 set PYTHONINSTALL=%PYTHONINSTALL:REG_SZ=%
 rem Remove tabs (note the literal \t in the next line
 set PYTHONINSTALL=%PYTHONINSTALL:	=%
-rem Remove spaces.
-set PYTHONINSTALL=%PYTHONINSTALL: =%
-if exist %PYTHONINSTALL%\python.exe goto :EOF
+rem Remove leading spaces.
+for /f "tokens=* delims= " %%a in ("%PYTHONINSTALL%") do set PYTHONINSTALL=%%a
+if exist "%PYTHONINSTALL%\python.exe" goto :EOF
 rem It may be a 32bit Python directory built from source, in which case the
 rem executable is in the PCBuild directory.
-if exist %PYTHONINSTALL%\PCBuild\python.exe (set "PYTHONINSTALL=%PYTHONINSTALL%\PCBuild" & goto :EOF)
+if exist "%PYTHONINSTALL%\PCBuild\python.exe" (set "PYTHONINSTALL=%PYTHONINSTALL%\PCBuild" & goto :EOF)
 rem Or maybe a 64bit build directory.
-if exist %PYTHONINSTALL%\PCBuild\amd64\python.exe (set "PYTHONINSTALL=%PYTHONINSTALL%\PCBuild\amd64" & goto :EOF)
+if exist "%PYTHONINSTALL%\PCBuild\amd64\python.exe" (set "PYTHONINSTALL=%PYTHONINSTALL%\PCBuild\amd64" & goto :EOF)
 
 rem And try HKCU
 FOR /F "usebackq tokens=2 delims=)>" %%A IN (`%reg% QUERY HKCU\%key% /ve 2^>NUL`) DO SET "%~1=%%A"
