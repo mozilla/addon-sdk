@@ -52,21 +52,64 @@ class Require(unittest.TestCase, Extra):
         requires = self.scan(mod)
         self.failUnlessKeysAre(requires, [])
 
-        mod = """/* var foo = require('one');"""
+        mod = """/* var foo = require('one');
+        */"""
         requires = self.scan(mod)
         self.failUnlessKeysAre(requires, [])
 
-        mod = """ * var foo = require('one');"""
-        requires = self.scan(mod)
-        self.failUnlessKeysAre(requires, [])
-
-        mod = """ ' var foo = require('one');"""
+        mod = """ ' var foo = require('one');' """
         requires = self.scan(mod)
         self.failUnlessKeysAre(requires, ["one"])
 
-        mod = """ \" var foo = require('one');"""
+        mod = """ \" var foo = require('one');\" """
         requires = self.scan(mod)
         self.failUnlessKeysAre(requires, ["one"])
+
+        mod = """var foo = require('one'); // require('commented_out')"""
+        requires = self.scan(mod)
+        self.failUnlessKeysAre(requires, ["one"])
+
+        mod = """var foo = require('one') /*require('commented_out')*/;"""
+        requires = self.scan(mod)
+        self.failUnlessKeysAre(requires, ["one"])
+
+        mod = """var foo = /*require('commented_out')*/ require('one');"""
+        requires = self.scan(mod)
+        self.failUnlessKeysAre(requires, ["one"])
+
+        # multiple requires with comments in between
+
+        mod = """var foo = require('one'), // require('commented_out')
+        bar = require('two');"""
+        requires, locations = self.scan_locations(mod)
+        self.failUnlessKeysAre(requires, ["one", "two"])
+        self.failUnlessEqual(locations["one"], 1)
+        self.failUnlessEqual(locations["two"], 2)
+
+        mod = """var foo = require('one'),
+        // require('commented_out')
+        bar = require('two');"""
+        requires, locations = self.scan_locations(mod)
+        self.failUnlessKeysAre(requires, ["one", "two"])
+        self.failUnlessEqual(locations["one"], 1)
+        self.failUnlessEqual(locations["two"], 3)
+
+        mod = """var foo = require('one'), /*
+        require('commented_out'),
+        require('commented_out'),
+        */ bar = require('two');"""
+        requires, locations = self.scan_locations(mod)
+        self.failUnlessKeysAre(requires, ["one", "two"])
+        self.failUnlessEqual(locations["one"], 1)
+        self.failUnlessEqual(locations["two"], 4)
+
+        mod = """var foo = require('one');
+        // require('commented_out')
+        var bar = require('two');"""
+        requires, locations = self.scan_locations(mod)
+        self.failUnlessKeysAre(requires, ["one", "two"])
+        self.failUnlessEqual(locations["one"], 1)
+        self.failUnlessEqual(locations["two"], 3)
 
         # multiple requires
 

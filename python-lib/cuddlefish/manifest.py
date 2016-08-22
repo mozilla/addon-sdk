@@ -677,6 +677,7 @@ def build_manifest(target_cfg, pkg_cfg, deps, scan_tests,
 
 
 COMMENT_PREFIXES = ["//", "/*", "*", "dump("]
+COMMENT_RE = r"(\".*?\"|\'.*?\')|(/\*.*?\*/|//[^\r\n]*$)"
 
 REQUIRE_RE = r"(?<![\'\"])require\s*\(\s*[\'\"]([^\'\"]+?)[\'\"]\s*\)"
 
@@ -689,17 +690,30 @@ DEF_RE = re.compile(r"(require|define)\s*\(\s*([\'\"][^\'\"]+[\'\"]\s*,)?\s*\[([
 DEF_RE_ALLOWED = re.compile(r"^[\'\"][^\'\"]+[\'\"]$")
 
 def scan_requirements_with_grep(fn, lines):
+    def comment_repl(comment_match):
+        """Replace comment with 'empty' characters leaving out newlines."""
+        if comment_match.group(2) is not None:
+            blanked_chars = map(lambda c: '\n' if c == '\n' else '',
+                                comment_match.group(2))
+            return ''.join(blanked_chars)
+        else:
+            return comment_match.group(1)
     requires = {}
     first_location = {}
-    for (lineno0, line) in enumerate(lines):
+
+    # whole source in one string
+    wholeshebang = "\n".join([l.rstrip() for l in lines])
+
+    # whole source cleaned out of comments
+    wholeshebang_cleaned = re.compile(COMMENT_RE, re.MULTILINE | re.DOTALL) \
+                             .sub(comment_repl, wholeshebang)
+
+    # cleaned source split into lines
+    lines_cleaned = wholeshebang_cleaned.split('\n')
+
+    for (lineno0, line) in enumerate(lines_cleaned):
         for clause in line.split(";"):
             clause = clause.strip()
-            iscomment = False
-            for commentprefix in COMMENT_PREFIXES:
-                if clause.startswith(commentprefix):
-                    iscomment = True
-            if iscomment:
-                continue
             mo = re.finditer(REQUIRE_RE, clause)
             if mo:
                 for mod in mo:
@@ -708,8 +722,6 @@ def scan_requirements_with_grep(fn, lines):
                     if modname not in first_location:
                         first_location[modname] = lineno0 + 1
 
-    # define() can happen across multiple lines, so join everyone up.
-    wholeshebang = "\n".join(lines)
     for match in DEF_RE.finditer(wholeshebang):
         # this should net us a list of string literals separated by commas
         for strbit in match.group(3).split(","):
