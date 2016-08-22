@@ -45,7 +45,7 @@ set -gx _OLD_PYTHONPATH $PYTHONPATH
 set -gx _OLD_VIRTUAL_PATH $PATH
 set -gx _OLD_FISH_PROMPT_OVERRIDE "true"
 
-set VIRTUAL_ENV (pwd)
+set VIRTUAL_ENV (dirname (dirname (status -f)))
 
 set -gx CUDDLEFISH_ROOT $VIRTUAL_ENV
 set -gx PYTHONPATH "$VIRTUAL_ENV/python-lib" $PYTHONPATH
