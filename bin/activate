@@ -64,13 +64,33 @@ export CUDDLEFISH_ROOT
 export PYTHONPATH
 export PATH
 
+prefix_ps1_bash() {
+    # Match group 1 contains the non-visible prompt prefix:
+    # control sequences, encoded newlines, and whitespace.  Match
+    # group 5 contains everything else.
+    local prompt_re='^(((\\\[([^\]|\\[^]])*\\\])|\\n|[[:space:]])*)(.*)$'
+    if [[ "$PS1" =~ $prompt_re ]]; then
+        PS1="${BASH_REMATCH[1]}$1${BASH_REMATCH[5]}"
+    else
+        PS1="$1$PS1"
+    fi
+}
+
+prefix_ps1() {
+    if [ -n "$BASH" -o -n "$ZSH_VERSION" ]; then
+        prefix_ps1_bash "$@"
+    else
+        PS1="$1$PS1"
+    fi
+}
+
 _OLD_VIRTUAL_PS1="$PS1"
 if [ "`basename \"$VIRTUAL_ENV\"`" = "__" ] ; then
     # special case for Aspen magic directories
     # see http://www.zetadev.com/software/aspen/
-    PS1="[`basename \`dirname \"$VIRTUAL_ENV\"\``] $PS1"
+    prefix_ps1 "[`basename \`dirname \"$VIRTUAL_ENV\"\``] "
 else
-    PS1="(`basename \"$VIRTUAL_ENV\"`)$PS1"
+    prefix_ps1 "(`basename \"$VIRTUAL_ENV\"`) "
 fi
 export PS1
 
