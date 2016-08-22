@@ -423,6 +423,10 @@ def test_cfx(env_root, verbose):
     sys.stdout.flush(); sys.stderr.flush()
     olddir = os.getcwd()
     os.chdir(env_root)
+    # set the value of the environment variable XPCOM_DEBUG_BREAK to 'stack'
+    # before running the tests so we get a stack trace if we hit any
+    # assertions. This was added for bug 689291
+    os.environ["XPCOM_DEBUG_BREAK"] = "stack";
     retval = cuddlefish.tests.run(verbose)
     os.chdir(olddir)
     sys.stdout.flush(); sys.stderr.flush()
