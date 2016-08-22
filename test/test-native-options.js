@@ -5,12 +5,15 @@
 
 const { setDefaults, injectOptions: inject, validate } = require('sdk/preferences/native-options');
 const { activeBrowserWindow: { document } } = require("sdk/deprecated/window-utils");
+const { emit, on, off, once } = require('sdk/system/events');
+const { setTimeout, setImmediate } = require('sdk/timers');
 const { preferencesBranch, id } = require('sdk/self');
 const { get } = require('sdk/preferences/service');
-const { setTimeout } = require('sdk/timers');
 const simple = require('sdk/simple-prefs');
 const fixtures = require('./fixtures');
-const { Cc, Ci } = require('chrome');
+const { Cc, Ci, Cu } = require('chrome');
+
+const { AddonManager } = Cu.import('resource://gre/modules/AddonManager.jsm', {});
 
 const prefsrv = Cc['@mozilla.org/preferences-service;1'].
                     getService(Ci.nsIPrefService);
@@ -178,6 +181,59 @@ exports.testSimplePrefs = function(assert) {
 
 function packageJSON(dir) {
   return require(fixtures.url('preferences/' + dir + '/package.json'));
+}
+
+exports.testAddonDisable = function(assert, done) {
+  let addon = null;
+  
+  // create a mock container for <setting> elements
+  let parent = document.createElement('parent');
+  document.documentElement.appendChild(parent);
+  let child = document.createElement('child');
+  child.setAttribute('id', 'detail-downloads');
+  parent.appendChild(child);
+
+  // install an addon with a single pref
+  AddonManager.getInstallForURL(
+    fixtures.url('preferences/empty.xpi'), 
+    function(install) {
+      install.addListener({ onInstallEnded: (install) => addon = install.addon });
+      install.install();
+    },
+    'application/x-xpinstall'
+  );
+
+  // wait for addon startup event
+  once('test-addon-startup', ({ data }) => {
+    assert.equal(data, addon.id, "startup event from the right addon");
+
+    // addon needs a tick before it is ready to observe this notification
+    setImmediate( _ => 
+      emit('addon-options-displayed', { data: addon.id, subject: document }) );
+  });
+
+  let called = 0;
+  on('addon-options-displayed', function optionsObserver({ data }) {
+
+    called++;
+    assert.equal(data, addon.id, "options event for the right addon");
+
+    if (called === 1) {
+      let settings = parent.querySelectorAll('setting');
+      assert.equal(settings.length, 1, "expecting one <setting> in the document");
+      addon.userDisabled = true;
+      parent.removeChild(settings[0]);
+      emit('addon-options-displayed', { data: addon.id, subject: document });
+    }
+    else if (called === 2) {
+      let settings = parent.querySelectorAll('setting');
+      assert.equal(settings.length, 0, "expecting no <setting> after disabling");
+      off('addon-options-displayed', optionsObserver);
+      parent.parentNode.removeChild(parent);
+      addon.uninstall();
+      done();
+    }
+  });
 }
 
 require('sdk/test').run(exports);
