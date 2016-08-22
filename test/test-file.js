@@ -136,6 +136,36 @@ exports.testOpenNonexistentForWrite = function (assert) {
               "file.exists() should return false after file.remove()");
 };
 
+exports.testAppend = function(assert) {
+  const filename = file.join(profilePath, 'open.txt');
+  const stringA = "hola";
+  const stringB = "adiós";
+
+  const read = (filename) => {
+    const TextReader = file.open(filename, "r");
+    const text = TextReader.read();
+    TextReader.close();
+    return text;
+  };
+
+  let stream = file.open(filename, "w"); //create or truncate
+  stream.write(stringA);
+  stream.close();
+
+  stream = file.open(filename, "a"); //append
+  stream.write(stringB);
+  stream.close();
+
+  const expectedContents = stringA + stringB;
+  const actualContents = read(filename);
+  assert.equal(expectedContents, actualContents,
+    "should have appended to file instead of truncating");
+
+  file.remove(filename);
+  assert.ok(!file.exists(filename),
+    "file.exists() should return false after file.remove()");
+};
+
 exports.testOpenDirectory = function (assert) {
   let dir = dirPathInProfile;
   assert.throws(function() {
