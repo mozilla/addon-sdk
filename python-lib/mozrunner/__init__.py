@@ -149,6 +149,11 @@ def addon_details(install_rdf_fh):
         if entry in details.keys():
             details.update({ entry: get_text(node) })
 
+    for name in details.keys():
+        value = description.getAttributeNS("http://www.mozilla.org/2004/em-rdf#", name)
+        if value:
+            details[name] = value
+
     # turn unpack into a true/false value
     if isinstance(details['unpack'], basestring):
         details['unpack'] = details['unpack'].lower() == 'true'
