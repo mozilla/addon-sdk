@@ -1,0 +1,3 @@
+[submodule "examples/addon-builder-helper"]
+	path = examples/addon-builder-helper
+	url = git://github.com/mozilla/addon-builder-helper.git
