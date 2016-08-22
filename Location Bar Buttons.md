@@ -1,136 +1,115 @@
-This component is based on [Button](./Navbar Buttons.md) and
-inherits mostly all the capabilities. However, it has some
-important differences:
+# Location Bar Buttons - [Bug 907379](https://bugzilla.mozilla.org/show_bug.cgi?id=907379)
 
-1. It's placed inside the Location bar (see the [Mockup](#mockup))
-instead of Navigation bar
-2. The `size` property is fixed to "small" (16px), and can't be
-changed
-3. The `set` property is fixed to `undefined` and can't be changed.
-4. Set the `disabled` property to `true` makes it disappear, where
-set it to `false` makes it visible
-5. It's URL (and tab) sensitive
+Location bar buttons are regular buttons described by a
+[Navbar Buttons][] API, but used in specific `context` that
+implies semantic and visual differences.
 
-I would like to spend few words about the points 4th and 5th.
+1. These buttons are placed inside the Location bar (see the
+[Mockup](#mockup)) instead of Navigation bar.
+2. Limited size of location bar implies fixed "small" (16px)
+`size` for its buttons. Attempts to use different size are
+simply ignored and buttons of 16px are rendered (maybe
+warnings are dumped and nothing is rendered).
+3. Button in the location bar, unlike ones in the navbar, when
+`disabled` (field is set to `true`) simply are not displayed.
+4. Button in the location bar are associated to a content document
+under that URL.
 
-### Disabling a Location Bar Button
+### Disabled buttons in Location Bar
 
-In the Firefox UI, the buttons in the location bar are not meant
-to be disabled: if they are not "enabled" they're not visible.
-If you "force" the disabled attribute on these such buttons, the
-look & feel will be still the same of when they're active – no
-difference at all – but they're not reactive. That's because
-they will never be disabled and visible at the same time, so
-there is no need to have such visual feedback for the user to
-indicate such status: if they're not enabled, then they're not
-visible.
+Disabling button in the location bar means that given button is
+not relevant in the given page context, there for it is not displayed. For example this behaviour can be observed on a "New
+Tab" page, where the bookmark button (star icon) is not present, 
+since bookmarking that page makes no sense.
 
-This can be also observed in "New Tab" document, where the
-bookmark star icon is not visible, because that page is not
-supposed to be bookmarked.
+So to summarise, disabling button in the context of location bar 
+means not relevant and there for not displayed, until enabled
+again.
 
-Disabled a Location Bar Button means is not visible in the
-location bar.
+### Context sensitivity
 
-### "URL (and tab) sensitive" means multiple states
-
-Navbar Button shared the same state across multiple views: each
-browser window opened has a view of the button, that reflect the
-button's state.
-
-However, Location Bar Buttons are different: they have multiple
-states to shared across multiple views.
-
-Let's take the bookmark button in the location bar: I can have
-one window with three tabs, where two of them are point to the
-same URL, and this URL is bookmarked. The bookmark button will
-be "checked" in both of them, but not in the third tab, that has
-a different, and individual, state. It means each tab has it own
-state, even if they share the same view.
-With two windows, I will have two views. And a different state
-for each tab is loaded in the windows.
-And we don't have to focus on URL only: the same can be applied
-to "RSS feed" button, where is visible only if the page's
-content displayed in the tab has an RSS feed.
-
-## Proposal
-
-This proposal is based on top of the
-[The Canonical Jetpack API proposal for Button](./Navbar Buttons.md),
-and takes in account the differences exposed above.
+In contrast to button placed in the navigation bar, button
+placed in the location bar implies `context` of the page under
+the given location. Logically this button must be given
+`context` of pages reflecting when it is relevant. To do that
+button must be given a `context` of [MatchPattern][] (already
+known from page-mod API):
 
 ```js
-    /*
-    * Location bar button
-    */
+    const { ActionButton } = require("sdk/ui);
+    const { MatchPattern } = require("page-mod/match-pattern);
 
-    // See Navbar Button examples too
-
-    // maybe `PageButton` instead of `LocationButton`?
-    // it would be more consistent with `PageMod` too
-    const { LocationButton } = require("sdk/button/location"); // or maybe `sdk/ui`?
-
-    let patternButton = LocationButton({
+    let patternButton = ActionButton({
       id: "drink-button",
-      // it will be visible only to "*.mozilla.org"
-      // see `page-mod`. It should be mandatory too.
-      include: "*.mozilla.org",
+      // Button is only enabled, there for present on pages that
+      // match "*.mozilla.org" pattern.
+      context: MatchPattern("*.mozilla.org"),
       label: "Drink a Beer",
-      image: data.url("beer.png")
+      image: "./beer.png"
     });
 
     patternButton.on("click", function() {
       console.log("Drink a Beer right now!");
     });
+```
 
-    // The button above will be automatically visible if the `include` rule is
-    // matched, and hidden otherwise.
-    // Let's create a button that is enabled only if we loaded an image (with
-    // bug 671305 fixed, that should works)
+Note that in example above `MatchPattern` was used to specify
+context, although it's redundant and pattern string or regexp
+could be used directly.
 
-    let imageButton = LocationButton({
-      id: "drink-button",
-      include: "*.mozilla.org",
-      label: "Drink a Beer",
-      image: data.url("beer.png"),
-       // hidden by default, even if the `include` pattern is matched
-      disabled: true
+Since button is given a `context` of specific pages it will only
+be present on pages that matches that `context`.
+
+### States
+
+Location bar buttons are just a regular buttons, there for their
+behaviour is the same, they comply to same "state chain" rules,
+but again only present in a relevant page contexts.
+
+```js
+    let { ToogleButton } = require("sdk/ui");
+
+    let readLater = ToggleButton({
+      id: "read-button",
+      // Note: this time we just duck typed pattern
+      context "*",
+      label: "read later",
+      image: "./read-off.png",
+      checked: false,
+       // hidden by default, even if the `context` pattern is matched
+      disabled: true,
+      // Add remove item to a read list.
+      onChange: function() { /* ... * / }
     });
 
-    // this code will run on purpose on all URLs, not only the "*.mozilla.org"
-    // ones, to show how `disabled` works.
+    // This just illustrates how `disabled` works.
     require("sdk/tabs").on("ready", function(tab) {
-      // `disabled` works only if the match-pattern of `include` is satisfied.
-      // it means that if the current tab's URL is not matching '*.mozilla.org',
-      // then the button won't be displayed even if dev tries to set `disabled`
-      // to `false`. In that case we could either raise an exception, or
-      // simply keep the `disabled` property value to `true`.
-      //
-      // This is useful for scenario like the "RSS feed" button, that is
-      // displayed based on the content of the page rather than the URL only.
-      // It doesn't change the base shared state for `disabled`, only the
-      // one related to the tab given
-      imageButton.tabs(tab).disabled = tab.contentType.indexOf("image/") === -1;
+      // In this case whether button is displayed or not depends on
+      // the content of the page rather than URL. If button does not
+      // relevant in the given `tab` context it's not displayed anyway
+      // so updating state will have no effect.
+      readLater.state(tab, {
+        disabled: tab.contentType.indexOf("image/") === -1,
+        checked: !isInReadmeList(tab.url)
+      });
     });
 ```
 
-### Notes
+Note that above example illustrates how state is set per tab,
+but all other rules also apply. General state can also be set to 
+disable/enable all of the buttons or check / uncheck them. State
+updates can also be done at the window level. 
 
-The `tabs` collection of `LocationButton` / `PageButton` gives
-to the add-on devs the flexibility to set the status of a button
-per tab. The information not specified are inherited from the
-global state of the button. That should be enough to replicate
-any kind of button in location bar Firefox UI has already.
-
-## Discussions
-
-- https://etherpad.mozilla.org/locationbar-button
 
 ## Mockup
 
-![mock](http://people.mozilla.com/~shorlander/files/addons-in-toolbar-i01/images/addon-types.png)
+![mockup](http://people.mozilla.com/~shorlander/files/addons-in-toolbar-i01/images/addon-types.png)
 
 ## Existing Work
 
-* http://digdug2k.wordpress.com/2013/07/18/the-new-pageactions-are-here/
+* ﻿http://digdug2k.wordpress.com/2013/07/18/the-new-pageactions-are-here/
 * https://github.com/mfinkle/skeleton-addon-fxandroid/blob/master/bootstrap.js
+
+
+[MatchPattern]:https://addons.mozilla.org/en-US/developers/docs/sdk/latest/modules/sdk/page-mod/match-pattern.html
+[Navbar Buttons]:./Navbar Buttons.md

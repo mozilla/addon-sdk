@@ -1,67 +1,74 @@
+# Anchored Panels - [Bug 907450](https://bugzilla.mozilla.org/show_bug.cgi?id=907450)
+
 ## Requirements
 
-* the content of panels is composed from HTML content located in
-the add-ons data folder.
-* panels can be shown programmatically
-* panels are always visually anchored to their related button
+* Content of panels is composed from HTML content located in the add-ons data folder.
+* Panels can be shown programmatically
+* Panels are always visually anchored to their related button
 
 ## API
 
-I believe we don't need an additional component for that, but
-some sugar syntax.
-Once the [Navbar Buttons](./Navbar Buttons.md) are implemented,
-we could have:
+No additional component are required for this, maybe some helper functions to
+simplify a user workflow. With [Navbar Buttons](./Navbar Buttons.md) it's as
+simple as:
 
 ```js
-const { data } = require("sdk/self");
+let { Panel } = require("sdk/panel");
+let { ToggleButton } = require("sdk/panel");
 
-let panel = require("sdk/panel").Panel();
-
-let myButton = require("sdk/button").Button({
+let button = ToggleButton({
   id: "panel-button",
-  image: data.url("icon.png"),
-  label: "My Panel Button",
-  type: "checked"
+  image: "./icon.png",
+  label: "My Panel Button"
 });
 
-myButton.on("click", function() {
-    // the status need to be "pressed"
-    this.checked = true;
+let panel = Panel({ /*...*/ })
 
-    // we can use the panel positioning API to display the
-    // panel anchored to the button
-    panel.show({position: myButton});
-});
-
-panel.on("hide", function() {
-    // when the panel is hide, we have to "unpress" the button
-    myButton.checked = false;
-});
+button.on("change", button => {
+  if (button.checked) panel.show({ position: button })
+  else panel.hide()
+})
+panel.on("show", () => button.checked = true)
+panel.on("hide", () => button.checked = false)
 ```
 
-That would works for [Location bar buttons](./Location Bar Buttons.md)
-too. Of course we could implement a `panel` property to buttons as
-shortcut, as widget does:
+That is going to works for [Location bar buttons](./Location Bar Buttons.md) as well
+since they're no different.
+
+To reduce boilerplate to a user we can provide polymorphic function to take care of it:
 
 ```js
-const { data } = require("sdk/self");
+let { Panel } = require("sdk/panel");
+let { ToggleButton } = require("sdk/panel");
 
-let panel = require("sdk/panel").Panel();
+let anchor = method();
 
-let myButton = require("sdk/button").Button({
-  id: "panel-button",
-  image: data.url("icon.png"),
-  label: "My Panel Button",
-  panel: panel
+anchor.define(ToggleButton, function(button, panel) {
+  // show / hide panel based depending on the state of
+  // button.
+  button.on("change", button => {
+    if (button.checked) panel.show({ position: button })
+    else panel.hide()
+  })
+  // Update button state depending on the button type
+  panel.on("show", () => button.checked = true);
+  panel.on("hide", () => button.checked = false);
 });
+
+anchor.define(ActionButton, function(button, panel) {
+  button.on("click", button => panel.show({ position: button })
+})
+
+anchor(button, button);
 ```
 
-That basically does similar work of the previous code, under the
-hood.
+Note that in the example above for sake of simplicity anchoring assumes
+to deal with a panel, but approach could be enhanced even further to
+enable general anchoring for example to anchor buttons with a sidebar
+or widget with a panel etc...  All the new UI components can be made
+compatible to anchoring gradually without changing any of the existing
+UI components.
 
-## Discussions
-
-- https://etherpad.mozilla.org/anchored-panels
 
 ## Mockup
 
