@@ -12,6 +12,7 @@ const { setTimeout } = require('sdk/timers');
 const { isPrivate } = require('sdk/private-browsing');
 const { data } = require('sdk/self');
 const { URL } = require('sdk/url');
+const { defer } = require('sdk/core/promise');
 
 const { BUILTIN_SIDEBAR_MENUITEMS, isSidebarShowing,
         getSidebarMenuitems, getExtraSidebarMenuitems, makeID, simulateCommand,
@@ -43,9 +44,7 @@ exports.testSideBarIsInNewPrivateWindows = function(assert, done) {
   }).then(done).then(null, assert.fail);
 }
 
-// Disabled in order to land other fixes, see bug 910647 for further details.
-/*
-exports.testSidebarIsOpenInNewPrivateWindow = function(assert, done) {
+exports.testSidebarMigration = function*(assert) {
   const { Sidebar } = require('sdk/ui/sidebar');
   let testName = 'testSidebarIsOpenInNewPrivateWindow';
   let window = getMostRecentBrowserWindow();
@@ -53,41 +52,38 @@ exports.testSidebarIsOpenInNewPrivateWindow = function(assert, done) {
   let sidebar = Sidebar({
     id: testName,
     title: testName,
-    url: 'data:text/html;charset=utf-8,'+testName
+    url: 'data:text/html;charset=utf-8,' + testName
   });
 
   assert.equal(isPrivate(window), false, 'the window is not private');
 
-  sidebar.on('show', function() {
-    assert.equal(isSidebarShowing(window), true, 'the sidebar is showing');
-    assert.equal(isShowing(sidebar), true, 'the sidebar is showing');
+  yield sidebar.show();
+  assert.equal(isSidebarShowing(window), true, 'the sidebar is showing');
+  assert.equal(isShowing(sidebar), true, 'the sidebar is showing');
 
-    windowPromise(window.OpenBrowserWindow({private: true}), 'DOMContentLoaded').then(function(window2) {
-      assert.equal(isPrivate(window2), true, 'the new window is private');
+  let window2 = yield windowPromise(window.OpenBrowserWindow({ private: true }), 'load');
+  assert.equal(isPrivate(window2), true, 'the new window2 is private');
 
-      let sidebarEle = window2.document.getElementById('sidebar');
+  assert.equal(isSidebarShowing(window), true, 'the sidebar is showing in old window still');
+  assert.equal(isSidebarShowing(window2), false, 'the sidebar is showing in the new private window');
+  assert.equal(isShowing(sidebar), false, 'the sidebar is showing');
 
-      // wait for the sidebar to load something
-      function onSBLoad() {
-        sidebarEle.contentDocument.getElementById('web-panels-browser').addEventListener('load', function() {
-          assert.equal(isSidebarShowing(window), true, 'the sidebar is showing in old window still');
-          assert.equal(isSidebarShowing(window2), true, 'the sidebar is showing in the new private window');
-          assert.equal(isShowing(sidebar), true, 'the sidebar is showing');
+  yield sidebar.show();
+  assert.equal(isSidebarShowing(window), true, 'the sidebar is showing');
+  assert.equal(isShowing(sidebar), true, 'the sidebar is showing');
 
-          sidebar.destroy();
-          close(window2).then(done);
-        }, true);
-      }
+  let window3 = yield windowPromise(window2.OpenBrowserWindow({ private: true }), 'load');
+  assert.equal(isPrivate(window3), true, 'the new window3 is private');
+  assert.equal(isSidebarShowing(window), true, 'the sidebar is showing in old window still');
+  assert.equal(isSidebarShowing(window2), true, 'the sidebar is showing in old window still');
+  assert.equal(isSidebarShowing(window3), true, 'the sidebar is showing in the new private window');
+  assert.equal(isShowing(sidebar), true, 'the sidebar is showing');
 
-      sidebarEle.addEventListener('load', onSBLoad, true);
-
-      assert.pass('waiting for the sidebar to open...');
-    }, assert.fail).then(null, assert.fail);
-  });
-
-  sidebar.show();
+  sidebar.destroy();
+  yield close(window2);
+  yield close(window3);
 }
-*/
+
 // TEST: edge case where web panel is destroyed while loading
 exports.testDestroyEdgeCaseBugWithPrivateWindow = function(assert, done) {
   const { Sidebar } = require('sdk/ui/sidebar');
