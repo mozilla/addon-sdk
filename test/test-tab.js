@@ -193,7 +193,7 @@ exports["test tab.readyState"] = (assert, done) => {
     },
     onReady: (tab) => {
       assert.notEqual(["interactive", "complete"].indexOf(tab.readyState), -1,
-        "tab is either interactive or complete when onReady");
+        "tab is either interactive or complete when onReady, it is " + tab.readyState);
     },
     onLoad: (tab) => {
       assert.equal(tab.readyState, "complete", "tab is complete onLoad");
