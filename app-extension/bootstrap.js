@@ -76,12 +76,16 @@ function readURI(uri) {
 
 // We don't do anything on install & uninstall yet, but in a future
 // we should allow add-ons to cleanup after uninstall.
-function install(data, reason) {}
+let installing = null;
+function install(data, reasonCode) {
+  // work around for bug 660107
+  installing = REASON[reasonCode];
+}
 function uninstall(data, reason) {}
 
 function startup(data, reasonCode) {
   try {
-    let reason = REASON[reasonCode];
+    let reason = installing ? installing : REASON[reasonCode];
     // URI for the root of the XPI file.
     // 'jar:' URI if the addon is packed, 'file:' URI otherwise.
     // (Used by l10n module in order to fetch `locale` folder)
