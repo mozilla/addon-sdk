@@ -1,0 +1,25 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
+<html>
+  <body>
+    <button id=post>ping!</button>
+    <div>pongs: <span id=pong-count>0</span></div>
+  </body>
+  <script>
+    window.addEventListener("message", event => {
+      console.log("Document message", event, event.data, event.source !== window && event.source === window.parent);
+      if (event.data === "pong")
+        document.getElementById("pong-count").textContent++;
+    });
+    window.addEventListener("click", event => {
+      if (event.target.id === "post") {
+          console.log("click!")
+          console.log(window.parent === window);
+          window.parent.postMessage("ping", "*");
+      }
+    });
+    console.log(window.parent === window)
+  </script>
+</html>
